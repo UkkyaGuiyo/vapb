@@ -6,8 +6,8 @@ import sys
 import bpy
 
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
-PACKAGE = Path(__import__("os").environ["VAPB_SOURCE_PACKAGE"])
+ROOT = Path(__file__).resolve().parents[2]
+PACKAGE = ROOT.parent / "3DCG" / "RepresentativeAvatar-CaseA-ver1.3.1" / "RepresentativeAvatar-CaseA-Ver1.3.1.unitypackage"
 sys.path.insert(0, str(ROOT))
 
 import unitypackage_blender_importer as addon  # noqa: E402

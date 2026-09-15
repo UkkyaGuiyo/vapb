@@ -13,7 +13,7 @@ import tempfile
 import bpy
 
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 
@@ -208,13 +208,13 @@ SkinnedMeshRenderer:
         assert sum(node.type == "BSDF_PRINCIPLED" for node in assigned.node_tree.nodes) == 1, "Duplicate Principled BSDF was generated"
         material_guids = {material.get("unity_material_guid") for material in bpy.data.materials if material.get("unity_material_guid")}
         assert material_guid in material_guids and duplicate_material_guid in material_guids, "Same-name materials collapsed"
-        export_path = temp_path / __import__("os").environ["VAPB_PRIVATE_LABEL_1"]
+        export_path = temp_path / "ArcaNight SAMPLE_VENDOR.fbx"
         export_result = bpy.ops.export_scene.unitypackage_roundtrip(
             filepath=str(export_path),
             selected_only=False,
         )
         assert "FINISHED" in export_result, export_result
-        manifest_path = temp_path / __import__("os").environ["VAPB_PRIVATE_LABEL_2"]
+        manifest_path = temp_path / "ArcaNight SAMPLE_VENDOR.materialmap.json"
         assert manifest_path.is_file(), "Material map sidecar was not written"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         assert manifest["schema_version"] == 1

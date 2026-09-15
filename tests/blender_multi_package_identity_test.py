@@ -9,7 +9,7 @@ from pathlib import Path
 import bpy
 
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 
