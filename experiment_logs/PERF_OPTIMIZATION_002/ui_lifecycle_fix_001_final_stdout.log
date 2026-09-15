@@ -1,0 +1,8 @@
+# Historical diagnostic summary (identifiers redacted)
+
+Original format: .log
+PASS markers: 0
+FAIL markers: 1
+ERROR markers: 2
+Issue categories: IMPORT, MATERIAL, TEXTURE, PREFAB, UNITY, BLENDER
+Raw object names, paths, IDs, stack traces, and asset content omitted.

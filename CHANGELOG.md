@@ -1,0 +1,22 @@
+# Changelog
+
+## 0.3.0 candidate - 2026-09-15
+
+- Added the manual Editable Texture Workflow for imported Unity Images.
+- Added identity/status display and safe same-file Save/Reload actions in the Image Editor sidebar.
+- Preserved the 0.2.0 import/material identity chain; missing, dirty, packed, and non-Unity sources are guarded.
+
+## 0.2.0 - 2026-09-15
+
+- Blender 5.2.1 LTS baselineを確定
+- UnityPackage selective extraction performanceをBaseline化
+- async import lifecycle stabilizationとpost-import native crash fixを反映
+- Material GUID / Texture GUID binding fix
+- FBX `.meta` externalObjects support
+- ambiguous same-name Material rejection
+- explicit UV material graph
+- locale-independent Node type lookup
+- active Material Output selection
+- Japanese UI Material Preview graph support
+- save/reopen Material binding persistence
+- Human Material Preview verification PASSを記録

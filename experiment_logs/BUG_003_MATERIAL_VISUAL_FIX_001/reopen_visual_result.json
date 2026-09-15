@@ -1,0 +1,9 @@
+{
+  "historical_redacted_aggregate": {
+    "status": "PASS",
+    "binding_signatures_before": 147,
+    "binding_signatures_after": 147,
+    "binding_signature_comparison": "MATCH",
+    "graph_signature_comparison": "MATCH"
+  }
+}

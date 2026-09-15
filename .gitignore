@@ -1,0 +1,32 @@
+# Licensed Unity packages and extracted/generated avatar data
+*.unitypackage
+*.blend
+*.blend1
+*.blend2
+
+# Python and IDE caches
+__pycache__/
+*.py[cod]
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local scratch/output directories
+temp/
+tmp/
+Temp/
+test_output/
+artifacts/
+
+# Local credential/config files
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.*
+secrets.*

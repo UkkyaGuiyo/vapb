@@ -1,0 +1,9 @@
+{
+  "historical_redacted_aggregate": {
+    "status": "PASS",
+    "active_output_pass": 14,
+    "reach_pass": 14,
+    "graph_signature_comparison": "MATCH",
+    "binding_signature_comparison": "MATCH"
+  }
+}

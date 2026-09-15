@@ -1,0 +1,8 @@
+{
+  "historical_redacted_aggregate": {
+    "nodes_get_principled": false,
+    "nodes_get_output": false,
+    "principled_count": 2,
+    "output_count": 2
+  }
+}

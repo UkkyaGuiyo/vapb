@@ -1,0 +1,10 @@
+{
+  "historical_redacted_aggregate": {
+    "status": "PASS",
+    "import_state": "FINISHED",
+    "modal_registered_after_finish": false,
+    "stress_cycles": 100,
+    "delete_restore_cycles": 100,
+    "elapsed_seconds": 32.69
+  }
+}

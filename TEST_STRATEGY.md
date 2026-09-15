@@ -1,0 +1,119 @@
+# Test Strategy
+
+## Policy
+
+Acceptance Testを機能実装前に定義し、Blender 5.2.1 LTS onlyで実行する。単体テストや設定確認だけを実データ成功の代替にしない。Baselineとの差分、実Package結果、未検証事項を分けて記録する。
+
+## Test Levels
+
+1. **Unit**: parser、path safety、material model、identity変換、lifecycle cleanup。
+2. **Synthetic Integration**: Blender登録、operator handoff、最小Scene、roundtrip manifest。
+3. **Real Package Integration**: `RepresentativeAvatar-CaseA-Ver1.3.1.unitypackage`の実展開・FBX・Prefab・Material・Image。
+4. **Foreground UI Lifecycle**: File Browserからのforeground開始、async prepare、Prefab handoff、modal終了。
+5. **Post-Import Stress**: visibility、select/deselect、shading、frame、delete/restore後のprocess生存。
+6. **Serial Import**: 同一Packageの連続実行とsession混線防止。
+7. **Multi-Package Integration**: 複数Packageのidentity collision、merge、cleanup。現状未実装。
+8. **Roundtrip Export**: FBXとmaterialmap sidecarのschema、binding、再読込。
+9. **Unity Finalizer**: Unity EditorでGUID/Path優先remap、元`.mat`非変更。
+10. **End-to-End**: Blender編集 → Export → Unity import/finalize →最終Prefab。現状未完了。
+
+## Baseline Regression
+
+毎回最低限、次を確認する。
+
+- Add-on register / unregister
+- Real Package import returns `FINISHED`
+- Object約113、Mesh約103、Armature 4、Shape Keys存在
+- Native crashなし、完了後modal残留なし
+- PackageReader性能と抽出件数の意図しない悪化なし
+- ZIP `testzip None`
+
+Material変更時は件数だけで合格にしない。Material bindingとTexture bindingの正確性を別途確認する。
+
+## BUG-002 Acceptance Tests
+
+実装前に以下を受入条件として固定する。現Baselineでは未実装・未達であり、今回の移行では修正しない。
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| MAT-001 | Unity Renderer Material Slot → Blender Material Slot | 正しいUnity Material GUIDへ対応する |
+| MAT-002 | Unity Material Main Texture GUID → Blender Image | 正しいTexture GUIDのImageへ対応する |
+| MAT-003 | Blender Image filepath | sourceまたは保持された有効Pathが存在する |
+| MAT-004 | Material Preview | missing texture由来のMAGENTAがない |
+| MAT-005 | Save `.blend` → reopen | bindingが保持される |
+| MAT-006 | 同名Material / 別GUID | 別Assetとして混同しない |
+| MAT-007 | Prefab explicit Renderer binding | name fallbackより優先される |
+| MAT-008 | FBX `.meta` externalObjects | GUID mappingを適切に利用する |
+
+## BUG-003 Acceptance Tests
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| VIS-001 | Material uses nodes | 対象Materialで`use_nodes == True` |
+| VIS-002 | Image Texture node identity | Main Texture相当のImage Texture Nodeが存在し、正しいImage datablockを参照する |
+| VIS-003 | Base Color connection | Main Texture Color出力が最終的にPrincipled BSDF Base Colorへ到達する |
+| VIS-004 | Shader output connection | Surface shaderがMaterial Output Surfaceへ接続されている |
+| VIS-005 | Color multiplication | Unity Main Color / Base ColorとTexture Colorの乗算等が成立する |
+| VIS-006 | UV path | Textureが適切なUV経路またはImage Texture default UVで参照される |
+| VIS-007 | Alpha path | 透明MaterialのAlpha経路が成立し、不透明Materialを誤って透明化しない |
+| VIS-008 | Representative real materials | Face/Skin、Hair、SampleGarment/Clothesの3系統でnode graphが成立する |
+| VIS-009 | Save/reopen persistence | `.blend`再起動後もnode graphとImage bindingが保持される |
+| VIS-010 | Human Material Preview | 通常UIで肌・髪・目・着物等のTextureが目視表示される。0.2.0 Baselineではユーザー実機確認PASS |
+
+## BUG-003 Locale / Active Output Acceptance Tests
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| VIS-011 | Active Material Output | Textureを受け取るSurface Shaderが接続された`OUTPUT_MATERIAL`が`is_active_output == True` |
+| VIS-012 | Locale-independent Node Lookup | 日本語UIでもPrincipled / Material Outputを表示名ではなくNode typeで取得できる |
+| VIS-013 | Single Effective Surface Graph | 描画対象のactive Surface chainが一意で、不要なduplicate Principled / Outputを生成しない |
+| VIS-014 | Japanese UI Regression | `ja_JP`条件でTexture → Shader → active Material Outputの到達性が成立する |
+
+## Editable Texture Workflow Acceptance Tests
+
+実装前に以下を受入条件として固定する。既存のImage datablockをSource of Truthとして使用し、同じworking fileへ手動保存・手動再読込する。自動watcher、コピー、backup、GUID再発行、`.meta`新規生成は行わない。
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| ETX-001 | Imported Texture Identity | ImageにUnity GUID、Asset Path、Source Path、filepathが表示・保持される |
+| ETX-002 | Direct Save | Blender編集を同じworking fileへ保存し、filepathとImage datablockが変わらない |
+| ETX-003 | External Edit Reload | 外部変更後、既存Image.reload()で同じImage datablockへ再読込できる |
+| ETX-004 | Material Persistence | 再読込後もMaterialのImage Texture node bindingが同じImageを参照する |
+| ETX-005 | No Automatic Copy | `_modified`、`_copy`、`_backup`等の自動ファイルを生成しない |
+| ETX-006 | No New GUID | 保存・再読込でUnity GUIDを変更しない |
+| ETX-007 | Meta Preservation | 既存のUnity `.meta`由来identityとworking filepathを保持する |
+| ETX-008 | Save/Reopen | `.blend`保存・再開後もImage、filepath、GUID、Asset Path、bindingが保持される |
+| ETX-009 | Missing Source File | source消失時に`MISSING_SOURCE`を返し、fallbackや代替Imageを生成しない |
+| ETX-010 | Real Package Visual Reload | Face/Hair/SampleGarmentの実Packageで外部変更→再読込→Material Preview更新→元bytes復元を確認する。UI視認ができない場合は`UNVERIFIED`とする |
+
+## MRUS Recovery Acceptance Tests (PLANNED / UNVERIFIED)
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| REC-001 | LipSync capture | Avatar DescriptorのLipSync modeとviseme assignmentを正しく記録する |
+| REC-002 | LipSync restore | Shape Keyが維持されている場合、元viseme assignmentを復元する |
+| REC-003 | Object rename rebind | Face → Face_Finalでもpersistent identityで対象を再発見する |
+| REC-004 | Missing Shape Key | Shape Key削除時に代替割当せず`MISSING_TARGET`にする |
+| REC-005 | Animator binding path rebind | identity対応が明確なHierarchy/path変更を新pathへ変換する |
+| REC-006 | PhysBone target recovery | root / collider targetが存在する場合、正しいidentityへrestoreする |
+| REC-007 | Missing dependency | Modular Avatar等の依存が無いProjectでは`MISSING_DEPENDENCY`を返し、代替Componentを生成しない |
+| REC-008 | Ambiguous identity | 候補が複数ある場合、勝手に決めず`AMBIGUOUS`にする |
+| REC-009 | Restore report | 全restore対象についてstatusを記録する |
+| REC-010 | Roundtrip E2E | UnityPackage → Blender → edit → export → Unity Finalizer → Avatar validationを通す |
+
+現時点ではREC-001〜REC-010は実装前のPLANNED / UNVERIFIEDであり、0.2.0 Baselineの達成済み機能を示さない。
+
+## MRUS Roadmap
+
+0.2.0 Importer Baseline → Editable Texture Workflow → Multi-Package Identity → Bridge Manifest v2 / State Snapshot → Unity Finalizer（Material、LipSync / Avatar Descriptor、Animator / Expressions、PhysBone / Contact、Third-party Components）→ Full End-to-End Roundtrip。
+
+## Evidence Rules
+
+- `PASS`: 実行結果と対象環境が記録されている。
+- `IMPLEMENTED`: sourceの存在だけでなく、該当テストがある。
+- `UNVERIFIED`: UI操作、環境依存、または未実装機能を成功扱いしない。
+- `experiment_logs/`は各実験の詳細証拠として保持し、現行`TEST_RESULTS.md`は現Baselineを主にする。
+
+## Current Baseline Result
+
+0.2.0 Baselineでは41 Python tests PASS、Blender 5.2.1 register/unregister PASS、実Package foreground FINISHED、BUG-002/BUG-003 CLOSED、VIS-010 human Material Preview PASSを確認済み。詳細は`TEST_RESULTS.md`と`experiment_logs/BASELINE_0_2_0_FREEZE_001/REPORT.md`を参照する。

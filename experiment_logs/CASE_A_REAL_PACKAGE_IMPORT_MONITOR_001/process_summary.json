@@ -1,0 +1,18 @@
+{
+  "historical_redacted_aggregate": {
+    "monitor_pid": 9276,
+    "poll_seconds": 2,
+    "file_snapshot_seconds": 6,
+    "sample_count": 251,
+    "restart_observed": false,
+    "gpu_probe": true,
+    "console_capture": false,
+    "gpu_values_recorded": false,
+    "completion_confirmation_received": true,
+    "exact_ui_completion_timestamp_recorded": false,
+    "temp_folder_count": 4,
+    "temp_folders_created": 4,
+    "temp_folders_deleted": 1,
+    "temp_folders_still_present_at_stop": 3
+  }
+}
