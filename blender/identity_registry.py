@@ -50,7 +50,6 @@ def register_datablocks(
             datablock.get("unity_prefab_file_id") or None,
             asset_type=asset_type,
         )
-        if identity.source_guid or identity.source_asset_path:
-            registry.register_asset(identity, asset_type=asset_type, display_name=getattr(datablock, "name", ""))
+        registry.register_asset(identity, asset_type=asset_type, display_name=getattr(datablock, "name", ""))
     save_scene_registry(scene, registry)
     return registry

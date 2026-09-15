@@ -46,6 +46,11 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 | MPI-010 | Legacy isolation | package metadataのない旧datablockを推測結合しない |
 | MPI-011 | Propagation / reverse lookup | Object、Material、Imageのcustom propertyとlookupが一致する |
 | MPI-012 | Scene persistence | registry JSON roundtripとsingle-package回帰が通る |
+| MPI-013 | Same package / different prefab / same fileID | Asset Path scopeにより別identity・別recordになる |
+| MPI-014 | fileID without parent | `AMBIGUOUS_IDENTITY`でcanonical registryへ登録しない |
+| MPI-015 | GUID + fileID scope | 異なる親GUIDの同一fileIDが別identityになる |
+| MPI-016 | Same package two prefabs | 同一Package内の別Prefabがoverwriteなしで登録される |
+| MPI-017 | Save / reopen | `.blend`再開後もpackage/path/fileIDと別identityを保持する |
 
 ## BUG-002 Acceptance Tests
 

@@ -97,10 +97,11 @@ Identity Layerは今後、import・edit・merge・exportを横断する独立設
 ## Package-Scoped Identity (0.4.0 candidate)
 
 - `PackageIdentity`の内容SHA-256を`source_package_id = sha256:<64hex>`として、Packageのファイル名やパスから独立したnamespaceにする。
-- Canonical asset identityは`(source_package_id, source_guid, source_file_id または source_asset_path)`。GUID/path/fileIDはBlender Object、Material、Imageのcustom propertyへ伝播する。
+- Canonical asset identityは、GUIDがある場合は`(source_package_id, guid, source_guid, file_id, source_file_id)`、GUIDがない場合は`(source_package_id, path, source_asset_path, file_id, source_file_id)`。fileID単独は`AMBIGUOUS_IDENTITY`として登録しない。GUID/path/fileIDはBlender Object、Material、Imageのcustom propertyへ伝播する。
 - `SceneIdentityRegistry`をScene custom propertyへJSON保存し、package metadata、asset lookup、GUID/path reverse lookup、collision reportを提供する。
 - 同一Package内の同一identityは再登録可能だが、異なるPackage間の同一GUIDまたは同一Asset Pathはcollisionとして報告する。自動merge、名前だけの推測、silent overwriteは行わない。
 - 旧来のPackage情報が無いdatablockは`LEGACY_UNSCOPED`として扱い、現在Packageへ推測結合しない。
+- Prefabの`unity_source_prefab`は抽出filesystem path、`unity_asset_path`は`AssetEntry.unity_path`由来の`Assets/...`相対pathとして分離する。
 
 ## Explicitly Not Implemented
 

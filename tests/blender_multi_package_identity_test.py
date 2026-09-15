@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 from pathlib import Path
 
 import bpy
@@ -51,6 +52,18 @@ def main() -> None:
     assert len(object_identity) == 1
     assert object_identity[0]["identity"]["source_package_id"] == package_a
 
+    prefab_a = bpy.data.objects.new("PrefabA", None)
+    prefab_a["unity_source_package_id"] = package_a
+    prefab_a["unity_asset_path"] = "Assets/Avatar.prefab"
+    prefab_a["unity_prefab_file_id"] = "1001"
+    prefab_b = bpy.data.objects.new("PrefabB", None)
+    prefab_b["unity_source_package_id"] = package_a
+    prefab_b["unity_asset_path"] = "Assets/Clothes.prefab"
+    prefab_b["unity_prefab_file_id"] = "1001"
+    register_datablocks(scene, [prefab_a, prefab_b], package_a, "Object")
+    registry = load_scene_registry(scene)
+    assert len(registry.find_by_asset_path("Assets/Avatar.prefab")) == 1
+    assert len(registry.find_by_asset_path("Assets/Clothes.prefab")) == 1
     image_a = bpy.data.images.new("Shared.png", width=1, height=1)
     image_a["unity_source_package_id"] = package_a
     image_a["unity_guid"] = "a" * 32
@@ -64,6 +77,13 @@ def main() -> None:
     register_datablocks(scene, [image_b], package_b, "Image")
     statuses = {item["status"] for item in load_scene_registry(scene).detect_collisions()}
     assert CROSS_PACKAGE_PATH_COLLISION in statuses
+
+    save_path = Path(tempfile.gettempdir()) / "mpi_017_identity.blend"
+    bpy.ops.wm.save_as_mainfile(filepath=str(save_path))
+    bpy.ops.wm.open_mainfile(filepath=str(save_path))
+    reopened = load_scene_registry(bpy.context.scene)
+    assert len(reopened.find_by_asset_path("Assets/Avatar.prefab")) == 1
+    assert len(reopened.find_by_asset_path("Assets/Clothes.prefab")) == 1
 
     print("MULTI_PACKAGE_IDENTITY_OK")
 

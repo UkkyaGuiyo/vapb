@@ -38,7 +38,15 @@ try:
     ]
     assert object_records
     assert all(record["identity"]["source_package_id"] == package_id for record in object_records)
-    assert any(record["identity"]["source_asset_path"].startswith("Assets/") for record in object_records)
+    assert all(record["identity"]["source_asset_path"].startswith("Assets/") for record in object_records)
+    assert all("Temp" not in record["identity"]["source_asset_path"] for record in object_records)
+    assert any(record["identity"]["source_file_id"] for record in object_records)
+    roots = [obj for obj in bpy.data.objects if obj.get("unity_source_prefab")]
+    assert roots
+    assert all(Path(str(obj["unity_source_prefab"])).is_absolute() for obj in roots)
+    reconstructed = [obj for obj in bpy.data.objects if obj.get("unity_prefab_file_id")]
+    assert reconstructed
+    assert all(str(obj.get("unity_asset_path", "")).startswith("Assets/") for obj in reconstructed)
     print(f"REAL_MULTI_PACKAGE_IDENTITY_OK objects={len(object_records)} package_id={package_id}")
 finally:
     addon.unregister()

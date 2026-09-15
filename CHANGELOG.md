@@ -6,6 +6,9 @@
 - Propagated package identity to imported Object, Material, and Image datablocks.
 - Added Scene package registry, GUID/path reverse lookup, duplicate import status, and cross-package collision reporting.
 - Added MPI-001..012 unit/synthetic acceptance coverage while preserving single-package behavior.
+- Fixed canonical sub-asset identity so fileID is scoped by parent GUID or Asset Path; fileID-only records are explicit `AMBIGUOUS_IDENTITY`.
+- Fixed Prefab `unity_asset_path` propagation to use the Unity-relative AssetDatabase path rather than the temporary extracted filesystem path.
+- Added MPI-013..017 including same-fileID prefab separation and `.blend` save/reopen persistence.
 
 
 ## 0.3.0 - 2026-09-15

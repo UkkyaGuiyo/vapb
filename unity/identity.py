@@ -43,8 +43,15 @@ class AssetIdentity:
 
     @property
     def key(self) -> tuple[str, ...]:
-        discriminator = self.source_file_id or self.source_asset_path
-        return (self.source_package_id, self.source_guid, discriminator)
+        if self.source_guid:
+            return (self.source_package_id, "guid", self.source_guid, "file_id", self.source_file_id or "")
+        if self.source_asset_path:
+            return (self.source_package_id, "path", self.source_asset_path, "file_id", self.source_file_id or "")
+        return (self.source_package_id, "ambiguous", "file_id", self.source_file_id or "")
+
+    @property
+    def is_ambiguous(self) -> bool:
+        return not self.source_guid and not self.source_asset_path
 
     @property
     def is_legacy(self) -> bool:
@@ -107,13 +114,17 @@ class SceneIdentityRegistry:
     def __init__(self, packages: Iterable[dict[str, Any]] = (), assets: Iterable[dict[str, Any]] = ()):
         self.packages: dict[str, dict[str, Any]] = {}
         self.assets: dict[tuple[str, ...], dict[str, Any]] = {}
+        self.ambiguous_assets: list[dict[str, Any]] = []
         for package in packages:
             self.packages[str(package["source_package_id"])] = dict(package)
         for asset in assets:
             identity = AssetIdentity.from_dict(asset["identity"])
             record = dict(asset)
             record["identity"] = identity.to_dict()
-            self.assets[identity.key] = record
+            if identity.is_ambiguous:
+                self.ambiguous_assets.append(record)
+            else:
+                self.assets[identity.key] = record
 
     def register_package(self, metadata: dict[str, Any]) -> str:
         package_id = str(metadata["source_package_id"])
@@ -123,6 +134,15 @@ class SceneIdentityRegistry:
         return NO_COLLISION
 
     def register_asset(self, identity: AssetIdentity, *, asset_type: str = "", display_name: str = "") -> str:
+        if identity.is_ambiguous:
+            self.ambiguous_assets.append(
+                {
+                    "identity": identity.to_dict(),
+                    "asset_type": asset_type or identity.asset_type,
+                    "display_name": display_name,
+                }
+            )
+            return AMBIGUOUS_IDENTITY
         existing = self.assets.get(identity.key)
         if existing is not None:
             return SAME_PACKAGE_SAME_ASSET
@@ -166,6 +186,7 @@ class SceneIdentityRegistry:
             "schema_version": 1,
             "packages": list(self.packages.values()),
             "assets": list(self.assets.values()),
+            "ambiguous_assets": list(self.ambiguous_assets),
             "collisions": self.detect_collisions(),
         }
 
@@ -175,4 +196,6 @@ class SceneIdentityRegistry:
     @classmethod
     def from_json(cls, value: str) -> "SceneIdentityRegistry":
         payload = json.loads(value)
-        return cls(payload.get("packages", ()), payload.get("assets", ()))
+        registry = cls(payload.get("packages", ()), payload.get("assets", ()))
+        registry.ambiguous_assets.extend(payload.get("ambiguous_assets", ()))
+        return registry

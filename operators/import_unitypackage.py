@@ -721,6 +721,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             planning_prefab = None
             selected_planning_path = None
             selected_unity_path = None
+            prefab_unity_path = ""
             if self.import_mode == "RECONSTRUCT" and prefab_paths:
                 selected_planning_path = self._selected_prefab(prefab_paths)
                 if selected_planning_path:
@@ -745,6 +746,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             if planning_prefab is not None and selected_planning_path is not None:
                 final_entry = asset_db.find_path(selected_unity_path or "")
                 if final_entry is not None and final_entry.path.is_file():
+                    prefab_unity_path = final_entry.unity_path
                     prefab = self._performance.measure("prefab_parse", parse_prefab, final_entry.path)
                 else:
                     prefab = None
@@ -794,21 +796,24 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     asset_db=asset_db,
                     material_library=material_library,
                 )
+            prefab_root = None
+            prefab_object_map = {}
             if prefab is not None and self.apply_prefab_transforms:
                 self._set_phase(context, "Reconstructing Prefab", 0.90)
-                _root, object_map = self._performance.measure(
+                prefab_root, prefab_object_map = self._performance.measure(
                     "prefab_reconstruct",
                     build_prefab_hierarchy,
                     prefab,
                     imported_objects,
                     package_key.source_package_id,
+                    prefab_unity_path,
                 )
                 if self.use_materials:
                     self._performance.measure(
                         "material_mapping",
                         apply_prefab_materials,
                         prefab,
-                        object_map,
+                        prefab_object_map,
                         asset_db,
                         material_library,
                     )
@@ -846,7 +851,10 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             scene["unitypackage_import_sequence"] = [
                 package["source_package_id"] for package in package_registry.packages.values()
             ]
-            register_datablocks(scene, imported_objects, package_key.source_package_id, "Object")
+            object_registry_items = list(imported_objects) + list(prefab_object_map.values())
+            if prefab_root is not None:
+                object_registry_items.append(prefab_root)
+            register_datablocks(scene, object_registry_items, package_key.source_package_id, "Object")
             register_datablocks(scene, material_library.values(), package_key.source_package_id, "Material")
             register_datablocks(
                 scene,

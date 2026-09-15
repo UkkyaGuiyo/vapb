@@ -34,12 +34,14 @@ def build_prefab_hierarchy(
     prefab: PrefabData,
     imported_objects: Iterable[bpy.types.Object],
     source_package_id: str = "",
+    source_prefab_unity_path: str = "",
 ):
     imported = list(imported_objects)
     root = bpy.data.objects.new(prefab.display_name, None)
     bpy.context.scene.collection.objects.link(root)
     root["unity_source_prefab"] = str(prefab.path)
-    root["unity_asset_path"] = str(prefab.path).replace("\\", "/")
+    if source_prefab_unity_path:
+        root["unity_asset_path"] = str(source_prefab_unity_path).replace("\\", "/")
     if source_package_id:
         root["unity_source_package_id"] = source_package_id
     by_name: dict[str, list[bpy.types.Object]] = {}
@@ -58,7 +60,8 @@ def build_prefab_hierarchy(
         # Some Unity assets use values outside Blender 4.2 IDProperty's
         # signed C-int range, so preserve the lossless decimal form as text.
         obj["unity_prefab_file_id"] = str(game_object_id)
-        obj["unity_asset_path"] = str(prefab.path).replace("\\", "/")
+        if source_prefab_unity_path:
+            obj["unity_asset_path"] = str(source_prefab_unity_path).replace("\\", "/")
         if source_package_id:
             obj["unity_source_package_id"] = source_package_id
         game_object_map[game_object_id] = obj

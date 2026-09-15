@@ -9,6 +9,7 @@ from unitypackage_blender_importer.unity.identity import (
     CROSS_PACKAGE_GUID_COLLISION,
     CROSS_PACKAGE_PATH_COLLISION,
     DUPLICATE_PACKAGE_IMPORT,
+    AMBIGUOUS_IDENTITY,
     LEGACY_UNSCOPED,
     NO_COLLISION,
     AssetIdentity,
@@ -89,7 +90,10 @@ class MultiPackageIdentityTests(unittest.TestCase):
         }
         identity = get_asset_identity(props, "Image")
         self.assertEqual(identity.asset_type, "Image")
-        self.assertEqual(identity.key, ("sha256:" + "e" * 64, "a" * 32, "Assets/A.png"))
+        self.assertEqual(
+            identity.key,
+            ("sha256:" + "e" * 64, "guid", "a" * 32, "file_id", ""),
+        )
         registry = SceneIdentityRegistry()
         registry.register_asset(identity, asset_type="Image")
         self.assertEqual(registry.lookup_by_identity(identity)[0]["asset_type"], "Image")
@@ -111,3 +115,46 @@ class MultiPackageIdentityTests(unittest.TestCase):
         restored = SceneIdentityRegistry.from_json(registry.to_json())
         self.assertEqual(restored.to_dict(), registry.to_dict())
         self.assertEqual(json.loads(restored.to_json())["schema_version"], 1)
+
+    def test_mpi_013_same_package_prefabs_scope_same_file_id_by_path(self):
+        package_id = "sha256:" + "1" * 64
+        avatar = AssetIdentity(package_id, "", "Assets/Avatar.prefab", "12345")
+        clothes = AssetIdentity(package_id, "", "Assets/Clothes.prefab", "12345")
+        self.assertNotEqual(avatar.key, clothes.key)
+        registry = SceneIdentityRegistry()
+        self.assertEqual(registry.register_asset(avatar, asset_type="Object"), NO_COLLISION)
+        self.assertEqual(registry.register_asset(clothes, asset_type="Object"), NO_COLLISION)
+        self.assertEqual(len(registry.assets), 2)
+
+    def test_mpi_014_file_id_without_parent_is_ambiguous(self):
+        identity = AssetIdentity("sha256:" + "2" * 64, "", "", "12345")
+        self.assertTrue(identity.is_ambiguous)
+        registry = SceneIdentityRegistry()
+        self.assertEqual(registry.register_asset(identity, asset_type="Object"), AMBIGUOUS_IDENTITY)
+        self.assertEqual(registry.assets, {})
+        self.assertEqual(len(registry.ambiguous_assets), 1)
+        restored = SceneIdentityRegistry.from_json(registry.to_json())
+        self.assertEqual(len(restored.ambiguous_assets), 1)
+
+    def test_mpi_015_guid_and_file_id_are_parent_scoped(self):
+        package_id = "sha256:" + "3" * 64
+        left = AssetIdentity(package_id, "a" * 32, "Assets/A.prefab", "1001")
+        right = AssetIdentity(package_id, "b" * 32, "Assets/B.prefab", "1001")
+        self.assertNotEqual(left.key, right.key)
+
+    def test_mpi_016_same_package_two_prefabs_register_without_overwrite(self):
+        package_id = "sha256:" + "4" * 64
+        registry = SceneIdentityRegistry()
+        for path in ("Assets/A.prefab", "Assets/B.prefab"):
+            status = registry.register_asset(AssetIdentity(package_id, "", path, "1001"), asset_type="Object")
+            self.assertEqual(status, NO_COLLISION)
+        self.assertEqual(len(registry.find_by_asset_path("Assets/A.prefab")), 1)
+        self.assertEqual(len(registry.find_by_asset_path("Assets/B.prefab")), 1)
+
+    def test_mpi_017_roundtrip_preserves_sub_asset_scope(self):
+        package_id = "sha256:" + "5" * 64
+        registry = SceneIdentityRegistry()
+        identity = AssetIdentity(package_id, "", "Assets/A.prefab", "1001")
+        registry.register_asset(identity, asset_type="Object")
+        restored = SceneIdentityRegistry.from_json(registry.to_json())
+        self.assertEqual(restored.lookup_by_identity(identity)[0]["identity"], identity.to_dict())

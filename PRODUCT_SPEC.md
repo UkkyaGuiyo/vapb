@@ -93,6 +93,8 @@ MRUSはUnityPackage → State Snapshot / Identity Capture → Blender Import →
 - Object、Material、Imageには`unity_source_package_id`と既存のGUID/path/fileIDを保持し、canonical identityを構成する。
 - SceneにはPackage registryを保存し、import sequence、source path/name、SHA-256、asset countsを記録する。
 - 同一GUIDまたは同一Asset Pathが複数Packageに現れた場合はcollision reportへ記録する。自動解決や自動mergeはしない。
+- Sub-assetのfileIDは親GUIDまたは親Asset Pathのscope内でのみ有効とし、fileID単独はambiguousとしてcanonical registryへ登録しない。
+- Prefab Objectの`unity_source_prefab`（抽出filesystem path）と`unity_asset_path`（Unity `Assets/...` path）を混同しない。
 - 既存のsingle-package GUID/path lookup、Material mapping、Texture mapping、Prefab reconstructionは維持する。
 
 ## Current Scope Boundary
