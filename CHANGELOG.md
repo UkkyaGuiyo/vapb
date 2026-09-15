@@ -13,6 +13,7 @@
 - Added MPV-001..012 synthetic Real Multi-Package Visual E2E diagnostics and save/reopen coverage; real two-package foreground retest remains human-required.
 - Added UnityPackage Exporter and reachability-pruning specification only; exporter implementation is not included.
 - Hardened distribution ZIP generation: tracked runtime Python is included by default, development-only trees are excluded explicitly, and extracted ZIP register/unregister is tested in Blender 5.2.1.
+- Added Blender 5.2.1 native FileHandler routing for `.unitypackage` drops from the 3D View to the existing import operator.
 
 
 ## 0.3.0 - 2026-09-15

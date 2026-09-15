@@ -221,3 +221,7 @@ Distribution ZIPはtracked runtime Pythonを原則収録し、`tests/`、`tools/
 ## Public Repository Hygiene (PUB-001..015)
 
 Tracked textに開発者固有pathや明白なcredential patternを含めず、proprietary binary assetを追跡しない。real-world package probeは`UNITYPACKAGE_REAL_TEST_FILE`またはCLI引数でのみ入力し、未指定時はskipする。current treeはgeneric hygiene testで検査し、reachable historyは別監査でPublic化前のレビュー対象とする。
+
+## Native UnityPackage Drag & Drop (DND-001..014)
+
+Blender 5.2.1公開`bpy.types.FileHandler`を使い、`.unitypackage`をVIEW_3Dへdropした場合だけ既存`import_scene.unitypackage`へ委譲する。独自のPackage Reader、extraction、material import、dependency resolverは作らない。background synthetic testではFileHandler登録、VIEW_3D poll、既存operator handoff、register/unregister cycle、既存CPD/SPD grouped import regressionを確認する。実Windows Explorerからのdropは`REAL-DND-001: HUMAN RETEST REQUIRED`とする。

@@ -117,3 +117,10 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 - Current tracked tree: developer path、real-world fixture identity、obvious credential、proprietary binary assetなし。generic `test_public_repo_hygiene.py` PASS。
 - Real-package probe: env/CLI supplied path only。未指定時は`REAL_PACKAGE_TEST_SKIPPED`。
 - Reachable history: 過去の実環境検証由来のreal-package identity / local path参照を検出。credential、private key、proprietary binaryは未検出。history rewriteは未実施で、Public化前レビュー対象。
+
+## Native UnityPackage Drag & Drop (2026-09-16)
+
+- Blender 5.2.1公開FileHandler APIをruntime introspectionし、`bl_import_operator`、`.unitypackage` extension、`poll_drop(context)`を確認。
+- FileHandlerはVIEW_3Dでのみpollを通し、既存`import_scene.unitypackage`へhandoffするadapterとして実装。独自import pipelineは追加していない。
+- Synthetic valid Package handoff、register/unregister cycle、既存CPD/SPD/MPI/MPV/integration regression: PASS。
+- `REAL-DND-001: HUMAN RETEST REQUIRED` — Windows Explorerから実際にBlender 3D Viewへdropする目視確認のみ未実施。
