@@ -103,3 +103,11 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 - Sibling Discoveryの同一フォルダ限定、GUID exact match、transitive discovery、duplicate provider ambiguity、SampleAvatarB-like `Import Together`をBlender 5.2.1でPASS。SampleAvatarB起点でMetarialとTexture providerを検出し、3 Packageをgroup import、Geometry/Material/Texture結合を確認。
 - 今回のHuman Retest Targetは実アセットをrepoへ追加せず、上記synthetic SampleAvatarB-like fixtureで受入経路を確認。実BOOTH分割Packageのforeground確認は`REAL-CPD-001: HUMAN RETEST REQUIRED`。
 - UnityPackage ExporterはPHASE Cへ分離し、PRODUCT_SPEC / ARCHITECTURE / TEST_STRATEGYの確定設計のみ。Exporter本体、Unity Finalizer、未知Component resolverは未実装。
+
+## Distribution Pipeline Hardening (2026-09-16)
+
+- 原因: 旧allowlistがroot `preferences.py` / `external_editor.py`をZIPから除外し、Blender enable時に`ModuleNotFoundError`となっていた。
+- 修正: tracked `.py`をruntime候補とし、`tests/`、`tools/`、`experiment_logs/`のみを明示除外。future runtime directory fixtureも自動収録判定をPASS。
+- Distribution tests: source/ZIP runtime set equality、ZIP CRC、root layout、asset/credential exclusion、revision-derived filenameをPASS。
+- Extracted ZIPのみのBlender 5.2.1 register/unregister: `DIST_BENDER_INSTALL_OK`。
+- 既存Python 63件にdistribution 2件を加え、65件PASS。CPD/SPD/MPI/MPV/通常integrationのproduction logicは未変更。

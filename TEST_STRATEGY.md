@@ -213,3 +213,7 @@ Exporter、reachability pruning、GUID/path collision policy、Unity Finalizer r
 | SPD-005 | Grouped import | SampleAvatarB起点のImport TogetherでGeometry/Material/Textureを同一Sceneへ反映 |
 
 SPD-001..005はPython fixtureおよびBlender 5.2.1 synthetic SampleAvatarB-like testでPASS。実アセットのforeground目視は別途Human Retest。
+
+## Distribution Pipeline Acceptance (DIST-001..018)
+
+Distribution ZIPはtracked runtime Pythonを原則収録し、`tests/`、`tools/`、`experiment_logs/`だけを明示除外する。buildは指定Git revisionから行い、source runtime setとZIP runtime setを比較する。固定SHA・固定ローカルZIPへの依存は禁止し、抽出ZIPのみでBlender 5.2.1のregister/unregisterを確認する。

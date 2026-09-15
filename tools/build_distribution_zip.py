@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 import zipfile
@@ -19,6 +20,16 @@ DOCS = (
     "README.md",
     "CHANGELOG.md",
 )
+EXCLUDED_RUNTIME_PREFIXES = ("tests/", "tools/", "experiment_logs/")
+
+
+def is_runtime_python(path: str) -> bool:
+    """Tracked Python is runtime by default; only dev-only trees are excluded."""
+    return path.endswith(".py") and not path.startswith(EXCLUDED_RUNTIME_PREFIXES)
+
+
+def runtime_python_paths(paths: list[str]) -> set[str]:
+    return {path for path in paths if is_runtime_python(path)}
 
 
 def git_files(repo: Path, revision: str) -> list[str]:
@@ -30,14 +41,33 @@ def git_files(repo: Path, revision: str) -> list[str]:
         text=True,
     )
     files = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    runtime = [
-        path for path in files
-        if path.endswith(".py") and (
-            "/" not in path
-            or path.startswith(("blender/", "operators/", "ui/", "unity/"))
-        )
-    ]
+    runtime = sorted(runtime_python_paths(files))
     return runtime + [path for path in DOCS if path in files]
+
+
+def revision_sha(repo: Path, revision: str) -> str:
+    return subprocess.run(
+        ["git", "rev-parse", f"{revision}^{{commit}}"],
+        cwd=repo, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+
+
+def branch_name(repo: Path, revision: str) -> str:
+    result = subprocess.run(
+        ["git", "branch", "--show-current"],
+        cwd=repo, check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    if result:
+        return result
+    if revision.startswith("origin/"):
+        return revision.removeprefix("origin/")
+    return "detached"
+
+
+def distribution_filename(repo: Path, revision: str) -> str:
+    project = repo.name
+    branch = re.sub(r"[^A-Za-z0-9._-]+", "-", branch_name(repo, revision)).strip("-") or "detached"
+    return f"{project}_{branch}_{revision_sha(repo, revision)[:7]}.zip"
 
 
 def build(repo: Path, revision: str, output: Path) -> tuple[str, int]:
@@ -64,6 +94,13 @@ def validate_zip(path: Path, source_members: list[str]) -> None:
         names = set(archive.namelist())
         assert names
         assert all(name.startswith(f"{PACKAGE_ROOT}/") for name in names)
+        source_runtime = runtime_python_paths(source_members)
+        zip_runtime = {
+            name.removeprefix(f"{PACKAGE_ROOT}/")
+            for name in names
+            if name.startswith(f"{PACKAGE_ROOT}/") and name.endswith(".py")
+        }
+        assert source_runtime == zip_runtime, (sorted(source_runtime - zip_runtime), sorted(zip_runtime - source_runtime))
         for member in source_members:
             assert f"{PACKAGE_ROOT}/{member}" in names, member
         assert f"{PACKAGE_ROOT}/preferences.py" in names
@@ -75,9 +112,19 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--revision", default="HEAD")
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--output-dir", type=Path)
     args = parser.parse_args()
-    digest, count = build(args.repo.resolve(), args.revision, args.output.resolve())
+    repo = args.repo.resolve()
+    revision = args.revision
+    output = args.output
+    if output is None:
+        if args.output_dir is None:
+            parser.error("one of --output or --output-dir is required")
+        output = args.output_dir / distribution_filename(repo, revision)
+    digest, count = build(repo, revision, output.resolve())
+    print(f"REVISION={revision_sha(repo, revision)}")
+    print(f"FILENAME={output.name}")
     print(f"RUNTIME_MEMBERS={count}")
     print(f"SHA256={digest}")
 
