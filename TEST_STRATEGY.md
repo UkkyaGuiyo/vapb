@@ -102,6 +102,11 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 | EXT-008 | Dirty Protection | `image.is_dirty == True`の場合`UNSAVED_CHANGES`で起動を拒否する |
 | EXT-009 | Unity Identity Protection | 起動前後でGUID、Asset Path、Source Path、Image datablockが不変である |
 | EXT-010 | Real UI | Blender 5.2.1実UIで代表Textureを選択Editorへ開く。Computer Use不可時は`UNVERIFIED`とする |
+| EXT-011 | Launch Failure Handling | `Popen()`の`OSError`を`EDITOR_LAUNCH_FAILED`へ変換し、operatorが`ERROR` reportと`CANCELLED`相当で処理する |
+
+### External Texture Editor Human Follow-up
+
+2026-09-15、Blender 5.2.1 Japanese UI / Krita / `SampleGarment_col.png`で、ETX-010、EXT-003、EXT-005、EXT-010をPASS確認した。外部編集後の同一working file保存、BlenderのReload from Disk、Image Editor・Material Preview・3D avatarへの反映、再起動後のKrita保持、直接起動を含む。過去の未検証記録は履歴として保持し、現行結果へ追記する。
 
 ## MRUS Recovery Acceptance Tests (PLANNED / UNVERIFIED)
 

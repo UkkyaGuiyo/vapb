@@ -10,6 +10,7 @@ from typing import Callable, Iterable
 
 
 EDITOR_NOT_FOUND = "EDITOR_NOT_FOUND"
+EDITOR_LAUNCH_FAILED = "EDITOR_LAUNCH_FAILED"
 LAUNCH_OK = "OK"
 
 KNOWN_EDITORS = (
@@ -113,5 +114,8 @@ def launch_editor(editor_path: str | os.PathLike[str], texture_path: str | os.Pa
     if not texture.is_file():
         return "MISSING_SOURCE"
     process_factory = popen or subprocess.Popen
-    process_factory([str(editor), str(texture.resolve())], shell=False)
+    try:
+        process_factory([str(editor), str(texture.resolve())], shell=False)
+    except OSError:
+        return EDITOR_LAUNCH_FAILED
     return LAUNCH_OK

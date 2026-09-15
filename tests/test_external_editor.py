@@ -5,6 +5,7 @@ import tempfile
 import unittest
 
 from unitypackage_blender_importer.external_editor import (
+    EDITOR_LAUNCH_FAILED,
     EDITOR_NOT_FOUND,
     LAUNCH_OK,
     discover_editors,
@@ -45,3 +46,15 @@ class ExternalEditorTests(unittest.TestCase):
             texture.write_bytes(b"texture")
             self.assertIsNone(validate_editor_path(Path(temp) / "missing.exe"))
             self.assertEqual(launch_editor(Path(temp) / "missing.exe", texture), EDITOR_NOT_FOUND)
+
+    def test_os_launch_failure_returns_explicit_status(self):
+        with tempfile.TemporaryDirectory() as temp:
+            executable = Path(temp) / "editor.exe"
+            texture = Path(temp) / "texture.png"
+            executable.write_bytes(b"editor")
+            texture.write_bytes(b"texture")
+
+            def failing_popen(*args, **kwargs):
+                raise OSError("launch failed")
+
+            self.assertEqual(launch_editor(executable, texture, popen=failing_popen), EDITOR_LAUNCH_FAILED)

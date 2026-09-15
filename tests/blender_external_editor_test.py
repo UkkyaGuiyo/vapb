@@ -21,6 +21,7 @@ PNG = base64.b64decode(
 def main() -> None:
     import unitypackage_blender_importer as addon
     from unitypackage_blender_importer import preferences
+    from unitypackage_blender_importer.external_editor import EDITOR_LAUNCH_FAILED
     from unitypackage_blender_importer.operators import texture_editing
 
     with tempfile.TemporaryDirectory(prefix="external_editor_test_") as temp:
@@ -78,6 +79,15 @@ def main() -> None:
 
             image.filepath = str(root / "missing.png")
             assert texture_editing.launch_image_in_editor(image, editor) == texture_editing.INVALID_SOURCE
+
+            report_calls = []
+
+            class FakeOperator:
+                def report(self, levels, message):
+                    report_calls.append((levels, message))
+
+            texture_editing._report_result(FakeOperator(), EDITOR_LAUNCH_FAILED)
+            assert report_calls == [({"ERROR"}, EDITOR_LAUNCH_FAILED)]
         finally:
             texture_editing.launch_editor = original_launcher
             texture_editing.save_preferences = original_save_preferences

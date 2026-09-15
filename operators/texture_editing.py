@@ -7,7 +7,7 @@ from pathlib import Path
 
 import bpy  # type: ignore
 
-from ..external_editor import EDITOR_NOT_FOUND, launch_editor, discover_editors, validate_editor_path
+from ..external_editor import EDITOR_LAUNCH_FAILED, EDITOR_NOT_FOUND, launch_editor, discover_editors, validate_editor_path
 from ..preferences import get_preferences, save_preferences
 
 
@@ -156,6 +156,7 @@ def _report_result(operator, status):
         NOT_UNITY_TEXTURE: {"WARNING"},
         INVALID_SOURCE: {"ERROR"},
         EDITOR_NOT_FOUND: {"ERROR"},
+        EDITOR_LAUNCH_FAILED: {"ERROR"},
     }
     operator.report(messages.get(status, {"ERROR"}), status)
 

@@ -106,6 +106,8 @@ The workflow refuses missing files, dirty reloads, ordinary non-Unity images, an
 
 `Open in External Editor` opens the first-time editor selection menu, then launches the saved editor directly on later uses. `Change External Editor` or the menu allows a detected editor or `Browse for executable...`; the path/name is stored in Blender Add-on Preferences. The launcher passes the existing working texture as a separate argument, never uses `shell=True`, and does not watch or automatically reload the file.
 
+If the operating system refuses the launch after validation, the launcher returns `EDITOR_LAUNCH_FAILED` and the Blender operator reports an error without exposing a traceback.
+
 ## Current Limitations
 
 - Transparent / cutout / blend material visual pathは未検証です。
