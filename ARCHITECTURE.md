@@ -63,6 +63,13 @@ Final Prefab
 - `ui/texture_panel.py`: Image Editor sidebar for Unity Asset Path, GUID, working filepath, existence, dirty state, and manual actions.
 - mtime comparison is initiated only by the `Reload Changed Unity Textures` button. There is no watcher, polling thread, automatic pack, fallback path, or automatic backup.
 
+## External Texture Editor Launcher
+
+- `external_editor.py`: narrow Windows App Paths/PATH/common-install detection, executable validation, and argument-list `Popen` launch.
+- `preferences.py`: `AddonPreferences` storage for `external_editor_path` and `external_editor_name`; these values are environment preferences, not Image identity.
+- `operators/texture_editing.py`: selection menu, executable browser, direct launch, and existing Unity source/dirty/packed/identity guards.
+- `ui/texture_panel.py`: one-line selected editor display plus Open/Change controls. No watcher, temp copy, or editor-exit wait exists.
+
 ## Identity Layer
 
 ### Currently Stored

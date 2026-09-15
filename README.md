@@ -104,6 +104,8 @@ Select an imported image in the Image Editor and open the `Unity Texture` sideba
 
 The workflow refuses missing files, dirty reloads, ordinary non-Unity images, and packed-source conflicts. It never creates a copy, backup, new GUID, or `.meta`; use the importer `Keep Extracted` option for editable source files.
 
+`Open in External Editor` opens the first-time editor selection menu, then launches the saved editor directly on later uses. `Change External Editor` or the menu allows a detected editor or `Browse for executable...`; the path/name is stored in Blender Add-on Preferences. The launcher passes the existing working texture as a separate argument, never uses `shell=True`, and does not watch or automatically reload the file.
+
 ## Current Limitations
 
 - Transparent / cutout / blend material visual pathは未検証です。

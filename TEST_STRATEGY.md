@@ -86,6 +86,23 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 | ETX-009 | Missing Source File | source消失時に`MISSING_SOURCE`を返し、fallbackや代替Imageを生成しない |
 | ETX-010 | Real Package Visual Reload | Face/Hair/SampleGarmentの実Packageで外部変更→再読込→Material Preview更新→元bytes復元を確認する。UI視認ができない場合は`UNVERIFIED`とする |
 
+## External Texture Editor Launcher Acceptance Tests
+
+実装前に以下を受入条件として固定する。Editor設定はAddon Preferencesに保存し、Texture identityや`.blend` Image custom propertyへ保存しない。外部起動は`[editor_executable, working_texture]`のargument list、`shell=False`、非同期`Popen`で行う。
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| EXT-001 | Editor Discovery | Windowsのknown editor候補をbest-effortで検出し、重複なく一覧化する |
+| EXT-002 | Manual Selection | Browseで選択した実在`.exe`のpath/nameがAddon Preferencesへ保存される |
+| EXT-003 | Persistence | Blender再起動相当後もAddon PreferencesからEditor path/nameを取得できる |
+| EXT-004 | First Launch | Editor未設定時、OpenボタンからEditor selection menuへ進める |
+| EXT-005 | Direct Launch | Editor設定済みならselectionなしで登録Editorを直接起動する |
+| EXT-006 | Argument Safety | `subprocess.Popen([editor, texture], shell=False)`形式で、shell command連結を行わない |
+| EXT-007 | Missing Editor | 保存Editorが存在しない場合`EDITOR_NOT_FOUND`を返し、勝手にfallbackしない |
+| EXT-008 | Dirty Protection | `image.is_dirty == True`の場合`UNSAVED_CHANGES`で起動を拒否する |
+| EXT-009 | Unity Identity Protection | 起動前後でGUID、Asset Path、Source Path、Image datablockが不変である |
+| EXT-010 | Real UI | Blender 5.2.1実UIで代表Textureを選択Editorへ開く。Computer Use不可時は`UNVERIFIED`とする |
+
 ## MRUS Recovery Acceptance Tests (PLANNED / UNVERIFIED)
 
 | ID | Acceptance Test | 合格条件 |

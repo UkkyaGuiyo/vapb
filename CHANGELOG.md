@@ -5,6 +5,7 @@
 - Added the manual Editable Texture Workflow for imported Unity Images.
 - Added identity/status display and safe same-file Save/Reload actions in the Image Editor sidebar.
 - Preserved the 0.2.0 import/material identity chain; missing, dirty, packed, and non-Unity sources are guarded.
+- Added persistent External Texture Editor selection, safe manual executable browse, and non-blocking argument-list launch.
 
 ## 0.2.0 - 2026-09-15
 

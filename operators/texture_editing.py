@@ -7,6 +7,9 @@ from pathlib import Path
 
 import bpy  # type: ignore
 
+from ..external_editor import EDITOR_NOT_FOUND, launch_editor, discover_editors, validate_editor_path
+from ..preferences import get_preferences, save_preferences
+
 
 STATUS_OK = "OK"
 MISSING_SOURCE = "MISSING_SOURCE"
@@ -131,6 +134,19 @@ def reload_changed_unity_textures():
     return result
 
 
+def launch_image_in_editor(image, editor_path):
+    """Validate the imported source and launch it without changing the Image."""
+    status, path = _source_status(image)
+    if status != STATUS_OK:
+        return status
+    if _dirty(image):
+        return UNSAVED_CHANGES
+    identity = (image.as_pointer(), image.get("unity_guid"), image.get("unity_asset_path"), image.get("unity_source_path"), image.filepath)
+    result = launch_editor(editor_path, path)
+    after = (image.as_pointer(), image.get("unity_guid"), image.get("unity_asset_path"), image.get("unity_source_path"), image.filepath)
+    return result if identity == after else INVALID_SOURCE
+
+
 def _report_result(operator, status):
     messages = {
         STATUS_OK: {"INFO"},
@@ -139,6 +155,7 @@ def _report_result(operator, status):
         PACKED_SOURCE_CONFLICT: {"WARNING"},
         NOT_UNITY_TEXTURE: {"WARNING"},
         INVALID_SOURCE: {"ERROR"},
+        EDITOR_NOT_FOUND: {"ERROR"},
     }
     operator.report(messages.get(status, {"ERROR"}), status)
 
@@ -189,8 +206,122 @@ class UNITYTEXTURE_OT_reload_changed(bpy.types.Operator):
         return {"FINISHED"}
 
 
+class UNITYTEXTURE_MT_external_editor(bpy.types.Menu):
+    bl_label = "Select External Editor"
+    bl_idname = "UNITYTEXTURE_MT_external_editor"
+
+    def draw(self, context):
+        layout = self.layout
+        editors = discover_editors()
+        for editor in editors:
+            operator = layout.operator("unity_texture.select_external_editor", text=editor["name"])
+            operator.editor_path = editor["path"]
+            operator.editor_name = editor["name"]
+        if editors:
+            layout.separator()
+        layout.operator("unity_texture.browse_external_editor", text="Browse for executable...")
+
+
+class UNITYTEXTURE_OT_choose_external_editor(bpy.types.Operator):
+    bl_idname = "unity_texture.choose_external_editor"
+    bl_label = "Change External Editor"
+
+    def execute(self, context):
+        bpy.ops.wm.call_menu(name=UNITYTEXTURE_MT_external_editor.bl_idname)
+        return {"FINISHED"}
+
+
+class UNITYTEXTURE_OT_open_external_editor(bpy.types.Operator):
+    bl_idname = "unity_texture.open_external_editor"
+    bl_label = "Open in External Editor"
+
+    @classmethod
+    def poll(cls, context):
+        return getattr(getattr(context, "space_data", None), "image", None) is not None
+
+    def invoke(self, context, event):
+        preferences = get_preferences(context)
+        if not preferences or not preferences.external_editor_path:
+            bpy.ops.wm.call_menu(name=UNITYTEXTURE_MT_external_editor.bl_idname)
+            return {"FINISHED"}
+        return self.execute(context)
+
+    def execute(self, context):
+        preferences = get_preferences(context)
+        if not preferences or not preferences.external_editor_path:
+            bpy.ops.wm.call_menu(name=UNITYTEXTURE_MT_external_editor.bl_idname)
+            return {"FINISHED"}
+        status = launch_image_in_editor(context.space_data.image, preferences.external_editor_path)
+        _report_result(self, status)
+        return {"FINISHED"} if status == STATUS_OK else {"CANCELLED"}
+
+
+class UNITYTEXTURE_OT_select_external_editor(bpy.types.Operator):
+    bl_idname = "unity_texture.select_external_editor"
+    bl_label = "Use External Editor"
+
+    editor_path: bpy.props.StringProperty(subtype="FILE_PATH")
+    editor_name: bpy.props.StringProperty()
+
+    def execute(self, context):
+        path = validate_editor_path(self.editor_path)
+        if path is None:
+            self.report({"ERROR"}, EDITOR_NOT_FOUND)
+            return {"CANCELLED"}
+        preferences = get_preferences(context)
+        if preferences is None:
+            self.report({"ERROR"}, "Addon preferences unavailable")
+            return {"CANCELLED"}
+        preferences.external_editor_path = str(path)
+        preferences.external_editor_name = self.editor_name or path.stem
+        save_preferences()
+        status = launch_image_in_editor(context.space_data.image, path)
+        _report_result(self, status)
+        return {"FINISHED"} if status == STATUS_OK else {"CANCELLED"}
+
+
+class UNITYTEXTURE_OT_browse_external_editor(bpy.types.Operator):
+    bl_idname = "unity_texture.browse_external_editor"
+    bl_label = "Browse for executable..."
+
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
+    filter_glob: bpy.props.StringProperty(default="*.exe", options={"HIDDEN"})
+    image_name: bpy.props.StringProperty(options={"HIDDEN"})
+
+    def invoke(self, context, event):
+        image = getattr(getattr(context, "space_data", None), "image", None)
+        if image is None:
+            self.report({"WARNING"}, NOT_UNITY_TEXTURE)
+            return {"CANCELLED"}
+        self.image_name = image.name
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
+
+    def execute(self, context):
+        path = validate_editor_path(self.filepath)
+        if path is None:
+            self.report({"ERROR"}, EDITOR_NOT_FOUND)
+            return {"CANCELLED"}
+        preferences = get_preferences(context)
+        image = bpy.data.images.get(self.image_name)
+        if preferences is None or image is None:
+            self.report({"ERROR"}, NOT_UNITY_TEXTURE)
+            return {"CANCELLED"}
+        preferences.external_editor_path = str(path)
+        preferences.external_editor_name = path.stem
+        save_preferences()
+        status = launch_image_in_editor(image, path)
+        _report_result(self, status)
+        return {"FINISHED"} if status == STATUS_OK else {"CANCELLED"}
+
+
 TEXTURE_EDITING_CLASSES = (
     UNITYTEXTURE_OT_save_source,
     UNITYTEXTURE_OT_reload_source,
     UNITYTEXTURE_OT_reload_changed,
+    UNITYTEXTURE_MT_external_editor,
+    UNITYTEXTURE_OT_choose_external_editor,
+    UNITYTEXTURE_OT_open_external_editor,
+    UNITYTEXTURE_OT_select_external_editor,
+    UNITYTEXTURE_OT_browse_external_editor,
 )

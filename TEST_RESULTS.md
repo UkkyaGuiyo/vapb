@@ -58,3 +58,9 @@ Historical evidence remains under `experiment_logs/`; those files are not modifi
 - ETX-010 real-package identity/reload automation: PASS; Face/Hair/SampleGarment representatives present. Material Preview UI visual inspection: UNVERIFIED because Computer Use was unavailable.
 - Python: 41/41 PASS. `compileall`: PASS. Synthetic Blender integration: PASS. Real package: 113 objects / 103 meshes / 4 armatures / 40 shape keys / 147 bindings / identity errors 0.
 - Version metadata is now `(0, 3, 0)` as a candidate only; 0.2.0 remains the frozen baseline.
+
+## External Texture Editor Candidate Verification
+
+- EXT-001: PASS; EXT-002/003: Addon Preferences and executable validation PASS, Browse/restart persistence UI/runtime surface UNVERIFIED; EXT-004: implemented, foreground menu UI UNVERIFIED; EXT-005..009: helper/integration PASS including argument safety, missing-editor, dirty, packed, and identity protection.
+- EXT-010: UNVERIFIED for foreground UI/editor pixels because Computer Use was unavailable; direct launch helper is automated PASS.
+- Existing ETX-001..009: PASS maintained. Real package regression: 113 objects / 103 meshes / 4 armatures / 40 shape keys / 147 bindings / identity errors 0. BUG-002 and BUG-003 remain PASS.

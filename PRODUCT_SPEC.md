@@ -31,6 +31,8 @@ Imported Unity textures remain the working representation of the original Unity 
 
 The Image Editor sidebar exposes the identity and file state and provides manual `Save to Unity Source`, `Reload from Disk`, and `Reload Changed Unity Textures` actions. Save writes to the existing working file only after Unity identity, existing filepath, file existence, and write access checks succeed. Reload calls `Image.reload()` on the existing datablock, preserving material bindings.
 
+The same sidebar provides `Open in External Editor`. Known Windows editors are detected without recursive filesystem scanning; the user may browse for any executable. The selected editor path/name is stored only in Addon Preferences. Launch uses the existing source validation, refuses dirty/missing/packed/conflicting sources, and passes `[editor_executable, working_texture]` to non-blocking `subprocess.Popen(..., shell=False)`. No watcher or automatic reload is created.
+
 Missing files return `MISSING_SOURCE`; dirty images refuse reload with `UNSAVED_CHANGES`; packed images return `PACKED_SOURCE_CONFLICT`. No fallback search, automatic copy/backup, GUID or `.meta` creation, auto-packing, watcher, or background polling is part of this workflow. For editable source files, import with `Keep Extracted` enabled.
 
 ## Texture Policy
