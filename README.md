@@ -17,7 +17,7 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 1. **File → Import → Unity Package / VRChat Avatar (.unitypackage)** を選ぶ。
 2. `.unitypackage` を選択する。
 
-または、Windows Explorerから`.unitypackage`をBlenderの3D Viewportへドラッグ＆ドロップできます。Drag & DropはFile > Importと同じ`import_scene.unitypackage`経路へ渡されます。Top-level importでは同一フォルダのSibling Discoveryも自動実行され、事前にcheckboxを有効化する必要はありません。GUIDが一意に連鎖する`COMPLETE`だけをImport Togetherし、`PARTIAL` / `AMBIGUOUS`は安全のため推測しません。
+または、Windows Explorerから`.unitypackage`をBlenderの3D Viewportへドラッグ＆ドロップできます。Drag & DropはFile > Importと同じ`import_scene.unitypackage`経路へ渡されます。Top-level importでは同一フォルダのSibling Discoveryも自動実行され、事前にcheckboxを有効化する必要はありません。GUIDが一意に連鎖する`COMPLETE`ではForeground UIにImport Together / Import Selected Only / Cancelを表示し、Backgroundでは決定論的にImport Togetherします。`PARTIAL` / `AMBIGUOUS`は安全のため推測しません。
 3. 複数のPrefabがある場合は、表示された **Prefab** 候補から選ぶ。
 4. **Reconstruct Prefab** または **Import Raw FBX** と各オプションを確認して実行する。
 

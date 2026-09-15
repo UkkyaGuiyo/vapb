@@ -108,7 +108,7 @@ def _discard_prepared_session(session_id: str, context=None) -> None:
             operator._performance = None
 
 
-def _schedule_prepared_session(session_id: str, *, show_dialog: bool) -> None:
+def _schedule_prepared_session(session_id: str, *, show_dialog: bool, show_group_dialog: bool = False) -> None:
     launched = False
 
     def handoff():
@@ -122,7 +122,11 @@ def _schedule_prepared_session(session_id: str, *, show_dialog: bool) -> None:
         if not launched:
             launched = True
             try:
-                if show_dialog:
+                if show_group_dialog:
+                    bpy.ops.import_scene.unitypackage_siblings(
+                        "INVOKE_DEFAULT", session_id=session_id
+                    )
+                elif show_dialog:
                     bpy.ops.import_scene.unitypackage_prefab(
                         "INVOKE_DEFAULT", session_id=session_id
                     )
@@ -198,6 +202,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._prepare_cancel = Event()
         self._prepare_events: SimpleQueue[str] = SimpleQueue()
         self._sibling_discovery = None
+        self._sibling_import_together = True
 
     def _ui_log(self, message: str) -> None:
         print(f"[UI] {message}")
@@ -525,14 +530,27 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             session_id, self, perf_counter(), context.window_manager
         )
         show_dialog = self.import_mode == "RECONSTRUCT" and len(self._prefab_paths) > 1
+        show_group_dialog = (
+            not getattr(bpy.app, "background", False)
+            and self._sibling_discovery is not None
+            and self._sibling_discovery.status == "COMPLETE"
+            and bool(self._sibling_discovery.packages)
+            and not show_dialog
+        )
         if show_dialog:
             self._set_prepare_state("PREPARED")
             self._set_phase(context, "Waiting for Prefab selection", 0.30)
         self._stop_async_prepare()
         # Returning FINISHED is the actual WindowManager modal-handler removal.
         self._modal_registered = False
-        self._ui_log(f"prepare modal handoff session={session_id} dialog={show_dialog}")
-        _schedule_prepared_session(session_id, show_dialog=show_dialog)
+        self._ui_log(
+            f"prepare modal handoff session={session_id} "
+            f"dialog={show_dialog or show_group_dialog}"
+        )
+        if show_group_dialog:
+            _schedule_prepared_session(session_id, show_dialog=False, show_group_dialog=True)
+        else:
+            _schedule_prepared_session(session_id, show_dialog=show_dialog)
         return {"FINISHED"}
 
     def _selected_prefab(self, prefab_paths: list[Path]) -> Path | None:
@@ -914,7 +932,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     "unresolved_guids": sorted(discovery.unresolved_guids),
                     "ambiguous_guids": sorted(discovery.ambiguous_guids),
                 }
-                if discovery.status == "COMPLETE" and discovery.packages:
+                if discovery.status == "COMPLETE" and discovery.packages and self._sibling_import_together:
                     group_id = uuid4().hex
                     scene["unitypackage_group_import"] = {
                         "group_import_id": group_id,
@@ -1024,8 +1042,53 @@ class UNITYPACKAGE_OT_import_prefab(bpy.types.Operator):
         _discard_prepared_session(self.session_id, context)
 
 
+class UNITYPACKAGE_OT_import_siblings(bpy.types.Operator):
+    bl_idname = "import_scene.unitypackage_siblings"
+    bl_label = "Related UnityPackages detected"
+
+    session_id: StringProperty(options={"HIDDEN"})
+    import_action: EnumProperty(
+        name="Action",
+        items=[
+            ("TOGETHER", "Import Together", "Import the primary and uniquely related Packages"),
+            ("PRIMARY_ONLY", "Import Selected Only", "Import only the primary Package"),
+        ],
+        default="TOGETHER",
+    )
+
+    def draw(self, context):
+        session = _PREPARED_SESSIONS.get(self.session_id)
+        layout = self.layout
+        if session is None or session.operator._sibling_discovery is None:
+            layout.label(text="Prepared UnityPackage session expired")
+            return
+        discovery = session.operator._sibling_discovery
+        layout.label(text=f"Primary: {Path(session.operator.filepath).name}")
+        layout.label(text="Related:")
+        for candidate in discovery.packages:
+            layout.label(text=f"  {Path(candidate.path).name}")
+        layout.label(text=f"Resolved dependencies: {sum(item.match_count for item in discovery.packages)}")
+        layout.prop(self, "import_action", expand=True)
+
+    def execute(self, context):
+        session = _PREPARED_SESSIONS.get(self.session_id)
+        if session is None:
+            self.report({"ERROR"}, "Prepared UnityPackage session expired")
+            return {"CANCELLED"}
+        session.operator._sibling_import_together = self.import_action == "TOGETHER"
+        _schedule_prepared_session(self.session_id, show_dialog=False)
+        return {"FINISHED"}
+
+    def invoke(self, context, _event):
+        return context.window_manager.invoke_props_dialog(self, width=620)
+
+    def cancel(self, context):
+        _discard_prepared_session(self.session_id, context)
+
+
 UNITYPACKAGE_CLASSES = (
     UNITYPACKAGE_OT_import,
     UNITYPACKAGE_OT_import_prepared,
     UNITYPACKAGE_OT_import_prefab,
+    UNITYPACKAGE_OT_import_siblings,
 )
