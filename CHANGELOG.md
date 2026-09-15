@@ -4,6 +4,8 @@
 
 - Top-level UnityPackage imports now automatically perform GUID-based sibling discovery for File > Import and native drag-and-drop; unique complete chains are grouped without a user checkbox.
 - Foreground complete discovery now presents Import Together, Import Selected Only, and Cancel; background tests remain deterministic.
+- Sibling discovery reuses each package's archive index within one discovery pass, avoiding duplicate root/candidate scans.
+- Partial discovery now presents an explicit foreground choice with Primary Only as the safe default; it never auto-groups in background.
 
 - Added content-addressed `source_package_id` and canonical package-scoped asset identity.
 - Propagated package identity to imported Object, Material, and Image datablocks.

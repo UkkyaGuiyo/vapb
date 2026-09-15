@@ -4,6 +4,7 @@ from pathlib import Path
 import io
 import tarfile
 import tempfile
+from unittest.mock import patch
 import unittest
 
 from unitypackage_blender_importer.unity.sibling_discovery import discover_siblings
@@ -24,6 +25,26 @@ def _package(path: Path, records):
 
 
 class SiblingDiscoveryTests(unittest.TestCase):
+    def test_discovery_reuses_each_archive_scan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_guid, texture_guid = "a" * 32, "b" * 32
+            root_package = root / "root.unitypackage"
+            provider = root / "provider.unitypackage"
+            _package(root_package, [("c" * 32, "Assets/root.prefab", f"guid: {material_guid}\n")])
+            _package(provider, [(material_guid, "Assets/provider.mat", f"guid: {texture_guid}\n")])
+            original = __import__("unitypackage_blender_importer.unity.sibling_discovery", fromlist=["_asset_texts"])._asset_texts
+            calls = []
+
+            def traced(path):
+                calls.append(Path(path).resolve())
+                return original(path)
+
+            with patch("unitypackage_blender_importer.unity.sibling_discovery._asset_texts", traced):
+                result = discover_siblings(root_package)
+            self.assertEqual(result.status, "PARTIAL")
+            self.assertEqual(calls.count(root_package.resolve()), 1)
+            self.assertEqual(calls.count(provider.resolve()), 1)
     def test_no_related_package_is_none(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

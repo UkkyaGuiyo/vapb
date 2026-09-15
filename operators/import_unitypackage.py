@@ -382,6 +382,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 f"unresolved={len(discovery.unresolved_guids)} "
                 f"ambiguous={len(discovery.ambiguous_guids)}"
             )
+            self._sibling_import_together = discovery.status == "COMPLETE"
         self._set_prepare_state("PREPARED")
         self._set_phase(context, "Asset index ready", 0.30)
 
@@ -533,7 +534,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         show_group_dialog = (
             not getattr(bpy.app, "background", False)
             and self._sibling_discovery is not None
-            and self._sibling_discovery.status == "COMPLETE"
+            and self._sibling_discovery.status in {"COMPLETE", "PARTIAL"}
             and bool(self._sibling_discovery.packages)
             and not show_dialog
         )
@@ -932,7 +933,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     "unresolved_guids": sorted(discovery.unresolved_guids),
                     "ambiguous_guids": sorted(discovery.ambiguous_guids),
                 }
-                if discovery.status == "COMPLETE" and discovery.packages and self._sibling_import_together:
+                if discovery.status in {"COMPLETE", "PARTIAL"} and discovery.packages and self._sibling_import_together:
                     group_id = uuid4().hex
                     scene["unitypackage_group_import"] = {
                         "group_import_id": group_id,
@@ -1063,6 +1064,7 @@ class UNITYPACKAGE_OT_import_siblings(bpy.types.Operator):
             layout.label(text="Prepared UnityPackage session expired")
             return
         discovery = session.operator._sibling_discovery
+        layout.label(text=f"Discovery status: {discovery.status}")
         layout.label(text=f"Primary: {Path(session.operator.filepath).name}")
         layout.label(text="Related:")
         for candidate in discovery.packages:
@@ -1080,6 +1082,9 @@ class UNITYPACKAGE_OT_import_siblings(bpy.types.Operator):
         return {"FINISHED"}
 
     def invoke(self, context, _event):
+        session = _PREPARED_SESSIONS.get(self.session_id)
+        if session is not None and session.operator._sibling_discovery.status == "PARTIAL":
+            self.import_action = "PRIMARY_ONLY"
         return context.window_manager.invoke_props_dialog(self, width=620)
 
     def cancel(self, context):

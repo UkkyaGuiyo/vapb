@@ -119,7 +119,7 @@ Scene内のPackage-scoped providerをGUIDで探索し、Prefab Renderer→Materi
 
 ### Automatic Sibling Package Discovery
 
-Top-level `.unitypackage` imports, whether started from File > Import or the native 3D View drag-and-drop handler, automatically run a lightweight same-directory sibling discovery after the primary package index is prepared. Discovery follows exact GUID coverage and transitive dependencies. A unique `COMPLETE` plan offers a foreground Import Together / Import Selected Only / Cancel dialog and imports together by default; background runs deterministically as Import Together. `NONE` keeps the import single-package, and `PARTIAL` / `AMBIGUOUS` results never guess a provider. Internal grouped child imports set `group_child` and do not rediscover siblings.
+Top-level `.unitypackage` imports, whether started from File > Import or the native 3D View drag-and-drop handler, automatically run a lightweight same-directory sibling discovery after the primary package index is prepared. Discovery follows exact GUID coverage and transitive dependencies. A unique `COMPLETE` plan offers a foreground Import Together / Import Selected Only / Cancel dialog and imports together by default; background runs deterministically as Import Together. `NONE` keeps the import single-package. `PARTIAL` offers the same foreground choice but defaults to Primary Only; background never guesses. `AMBIGUOUS` never auto-selects a provider. Internal grouped child imports set `group_child` and do not rediscover siblings.
 
 Material-only / Texture-only Packageは、対応assetが1件以上あれば`FINISHED`とし、空またはunsupported Packageだけを明確なERRORとする。未解決Dependencyは`unitypackage_dependency_registry`へ保存し、`.blend` save/reopen後も再解決可能とする。
 

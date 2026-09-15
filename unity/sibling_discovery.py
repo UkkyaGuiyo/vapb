@@ -55,9 +55,9 @@ def _asset_texts(path: Path) -> list[tuple[str, str, bytes]]:
     return result
 
 
-def required_guids(package_path: Path) -> set[str]:
+def required_guids(package_path: Path, records: list[tuple[str, str, bytes]] | None = None) -> set[str]:
     required: set[str] = set()
-    for _guid, unity_path, payload in _asset_texts(package_path):
+    for _guid, unity_path, payload in (records if records is not None else _asset_texts(package_path)):
         text = payload.decode("utf-8", "replace")
         if unity_path.lower().endswith(".prefab"):
             required.update(re.findall(r"guid:\s*([0-9a-fA-F]{32})", text))
@@ -71,15 +71,24 @@ def required_guids(package_path: Path) -> set[str]:
     }
 
 
-def provided_guids(package_path: Path) -> set[str]:
-    return {guid.lower() for guid, _path, _payload in _asset_texts(package_path)}
+def provided_guids(package_path: Path, records: list[tuple[str, str, bytes]] | None = None) -> set[str]:
+    return {guid.lower() for guid, _path, _payload in (records if records is not None else _asset_texts(package_path))}
 
 
 def discover_siblings(root_path: Path, *, max_depth: int = 32) -> SiblingDiscoveryResult:
     root_path = Path(root_path).resolve()
     sibling_paths = sorted(path for path in root_path.parent.glob("*.unitypackage") if path.resolve() != root_path)
+    record_cache: dict[Path, list[tuple[str, str, bytes]]] = {}
+
+    def records_for(path: Path) -> list[tuple[str, str, bytes]]:
+        key = path.resolve()
+        if key not in record_cache:
+            record_cache[key] = _asset_texts(path)
+        return record_cache[key]
+
     selected = {root_path.resolve()}
-    unresolved = required_guids(root_path) - provided_guids(root_path)
+    root_records = records_for(root_path)
+    unresolved = required_guids(root_path, root_records) - provided_guids(root_path, root_records)
     candidates: list[SiblingPackageCandidate] = []
     providers: dict[str, list[Path]] = {}
     changed = True
@@ -89,14 +98,14 @@ def discover_siblings(root_path: Path, *, max_depth: int = 32) -> SiblingDiscove
         for path in sibling_paths:
             if path.resolve() in selected:
                 continue
-            provided = provided_guids(path)
+            provided = provided_guids(path, records_for(path))
             for guid in unresolved & provided:
                 providers.setdefault(guid, []).append(path)
         ambiguous_now = {guid for guid, paths in providers.items() if len(paths) > 1}
         for path in sibling_paths:
             if path.resolve() in selected:
                 continue
-            provided = provided_guids(path)
+            provided = provided_guids(path, records_for(path))
             matched = (unresolved & provided) - ambiguous_now
             if not matched:
                 continue
@@ -106,7 +115,7 @@ def discover_siblings(root_path: Path, *, max_depth: int = 32) -> SiblingDiscove
             candidate.coverage_ratio = candidate.match_count / len(unresolved) if unresolved else 0.0
             candidates.append(candidate)
             selected.add(path.resolve())
-            unresolved = (unresolved - provided) | (required_guids(path) - provided)
+            unresolved = (unresolved - provided) | (required_guids(path, records_for(path)) - provided)
             changed = True
             break
     ambiguous = {guid for guid, paths in providers.items() if len(paths) > 1}

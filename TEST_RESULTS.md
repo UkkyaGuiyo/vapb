@@ -128,3 +128,5 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 ## Automatic Sibling Discovery (2026-09-16)
 
 Top-level File > Import and native 3D View drag-and-drop now run same-directory sibling discovery automatically after primary index preparation. The public sibling checkbox was removed. Foreground `COMPLETE` discovery offers Import Together / Import Selected Only / Cancel; background uses deterministic Import Together. Synthetic Geometry → Material → Texture grouped import covers `COMPLETE`, transitive discovery, CPD resolution, and texture graph binding; `NONE`, `PARTIAL`, and `AMBIGUOUS` safety are covered by unit fixtures. Real combined verification remains `REAL-GROUP-001: HUMAN RETEST REQUIRED`.
+
+The discovery implementation caches archive records per package for the duration of one pass, so a root or candidate archive is scanned once before GUID matching and transitive planning. Foreground `PARTIAL` discovery offers the same explicit choice but defaults to Primary Only; background does not auto-group partial results. The cache regression is covered by `test_discovery_reuses_each_archive_scan`.
