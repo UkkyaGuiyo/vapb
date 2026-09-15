@@ -9,8 +9,8 @@ import time
 import bpy
 
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
-PACKAGE = Path(__import__("os").environ["VAPB_SOURCE_PACKAGE"])
+ROOT = Path(r"<LOCAL_PATH>")
+PACKAGE = Path(r"<LOCAL_PATH>")
 sys.path.insert(0, str(ROOT))
 
 import unitypackage_blender_importer as addon  # noqa: E402

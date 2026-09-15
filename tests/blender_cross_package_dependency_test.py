@@ -131,24 +131,24 @@ def run_order(paths: tuple[Path, Path, Path], blend_path: Path) -> dict:
     return result
 
 
-def run_grouped_sample_avatar_b(root: Path, fbx_bytes: bytes, png: bytes, material_guid: str, texture_guid: str) -> dict:
-    """Exercise the user-facing SampleAvatarB + same-folder Import Together path."""
+def run_grouped_synthetic(root: Path, fbx_bytes: bytes, png: bytes, material_guid: str, texture_guid: str) -> dict:
+    """Exercise the generic same-folder Import Together path."""
     from unitypackage_blender_importer.blender.identity_registry import load_scene_registry
 
-    root = root / "sample_avatar_b_group"
+    root = root / "synthetic_group"
     root.mkdir()
-    sample_avatar_b = root / "SampleAvatarB.unitypackage"
-    metarial = root / "Metarial.unitypackage"
-    textures = root / "HankaTextures.unitypackage"
-    package(sample_avatar_b, [("e" * 32, "Assets/SampleAvatarB/Body.fbx", fbx_bytes), ("f" * 32, "Assets/SampleAvatarB/SampleAvatarB.prefab", prefab("e" * 32, material_guid))], material_guid)
-    package(metarial, [(material_guid, "Assets/Metarial/HankaMaterial.mat", material(texture_guid))])
-    package(textures, [(texture_guid, "Assets/HankaTextures/SampleAvatarB.png", png)])
+    synthetic_avatar = root / "SyntheticAvatar.unitypackage"
+    material_provider = root / "SyntheticMaterialProvider.unitypackage"
+    textures = root / "SyntheticTextureProvider.unitypackage"
+    package(synthetic_avatar, [("e" * 32, "Assets/SyntheticAvatar/Body.fbx", fbx_bytes), ("f" * 32, "Assets/SyntheticAvatar/SyntheticAvatar.prefab", prefab("e" * 32, material_guid))], material_guid)
+    package(material_provider, [(material_guid, "Assets/SyntheticMaterialProvider/SyntheticAvatarMaterial.mat", material(texture_guid))])
+    package(textures, [(texture_guid, "Assets/SyntheticTextureProvider/SyntheticAvatar.png", png)])
     addon = __import__("unitypackage_blender_importer")
     addon.register()
     from unitypackage_blender_importer.operators import import_unitypackage as module
     module.UNITYPACKAGE_OT_import._show_prefab_dialog_if_needed = lambda self, _context, _paths: False
     result = bpy.ops.import_scene.unitypackage(
-        filepath=str(sample_avatar_b), import_mode="RECONSTRUCT", prefab_choice="AUTO",
+        filepath=str(synthetic_avatar), import_mode="RECONSTRUCT", prefab_choice="AUTO",
         keep_extracted=False, include_sibling_packages=True,
     )
     assert "FINISHED" in result, result
@@ -185,7 +185,7 @@ def main() -> None:
         package(geometry, [(fbx_guid, "Assets/Geometry/Body.fbx", fbx_bytes), (prefab_guid, "Assets/Geometry/Coat.prefab", prefab(fbx_guid, material_guid))], material_guid)
         package(appearance, [(material_guid, "Assets/Appearance/CoatMaterial.mat", material(texture_guid))])
         package(textures, [(texture_guid, "Assets/Textures/Coat.png", png)])
-        grouped = run_grouped_sample_avatar_b(root, fbx_bytes, png, material_guid, texture_guid)
+        grouped = run_grouped_synthetic(root, fbx_bytes, png, material_guid, texture_guid)
         bpy.ops.object.select_all(action="SELECT")
         bpy.ops.object.delete(use_global=False)
         for material_data in list(bpy.data.materials):
@@ -231,8 +231,8 @@ def main() -> None:
         assert coat.data.materials[3] == local
         assert coat.data.materials[4] == provider
         print("CPD_POLICY_DIAGNOSTIC=" + json.dumps({"ambiguous_refused": "AMBIGUOUS_PROVIDER" in statuses, "local_priority": coat.data.materials[3] == local, "external_guid_bind": coat.data.materials[4] == provider}, sort_keys=True))
-        print("CPD_DIAGNOSTIC=" + json.dumps({"geometry_first": first, "provider_first": reverse, "grouped_sample_avatar_b": grouped}, sort_keys=True))
-        print("CPD-001..006,009,011,013=PASS; CPD-007/008/010/012=PASS (dedicated ambiguity, local-priority, no-name, external-GUID policy fixtures); SPD-001..005=PASS (grouped SampleAvatarB-like import)")
+        print("CPD_DIAGNOSTIC=" + json.dumps({"geometry_first": first, "provider_first": reverse, "grouped_synthetic": grouped}, sort_keys=True))
+        print("CPD-001..006,009,011,013=PASS; CPD-007/008/010/012=PASS (dedicated ambiguity, local-priority, no-name, external-GUID policy fixtures); SPD-001..005=PASS (grouped synthetic import)")
     print("CROSS_PACKAGE_DEPENDENCY_OK")
 
 

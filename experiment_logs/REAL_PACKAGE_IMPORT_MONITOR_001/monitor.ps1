@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$ExperimentRoot = $env:VAPB_EXPERIMENT_ROOT,
+    [string]$ExperimentRoot = '<LOCAL_PATH>',
     [int]$PollSeconds = 2,
     [int]$FileSnapshotSeconds = 6
 )
@@ -329,7 +329,7 @@ foreach ($folderPath in @($folderStates.Keys)) {
 }
 
 $summary = [ordered]@{
-    experiment = 'CASE_A_REAL_PACKAGE_IMPORT_MONITOR_001'
+    experiment = 'REAL_PACKAGE_IMPORT_MONITOR_001'
     monitor_start = $monitorStart.ToString('o')
     monitor_end = $monitorEnd.ToString('o')
     monitor_pid = $monitorProcessId

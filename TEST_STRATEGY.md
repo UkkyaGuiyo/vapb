@@ -8,7 +8,7 @@ Acceptance Testを機能実装前に定義し、Blender 5.2.1 LTS onlyで実行�
 
 1. **Unit**: parser、path safety、material model、identity変換、lifecycle cleanup。
 2. **Synthetic Integration**: Blender登録、operator handoff、最小Scene、roundtrip manifest。
-3. **Real Package Integration**: `RepresentativeAvatar-CaseA-Ver1.3.1.unitypackage`の実展開・FBX・Prefab・Material・Image。
+3. **Real Package Integration**: `private-real-package.unitypackage`の実展開・FBX・Prefab・Material・Image。
 4. **Foreground UI Lifecycle**: File Browserからのforeground開始、async prepare、Prefab handoff、modal終了。
 5. **Post-Import Stress**: visibility、select/deselect、shading、frame、delete/restore後のprocess生存。
 6. **Serial Import**: 同一Packageの連続実行とsession混線防止。
@@ -78,7 +78,7 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 | VIS-005 | Color multiplication | Unity Main Color / Base ColorとTexture Colorの乗算等が成立する |
 | VIS-006 | UV path | Textureが適切なUV経路またはImage Texture default UVで参照される |
 | VIS-007 | Alpha path | 透明MaterialのAlpha経路が成立し、不透明Materialを誤って透明化しない |
-| VIS-008 | Representative real materials | Face/Skin、Hair、SampleGarment/Clothesの3系統でnode graphが成立する |
+| VIS-008 | Representative real materials | Face/Skin、Hair、SyntheticMaterial/Clothesの3系統でnode graphが成立する |
 | VIS-009 | Save/reopen persistence | `.blend`再起動後もnode graphとImage bindingが保持される |
 | VIS-010 | Human Material Preview | 通常UIで肌・髪・目・着物等のTextureが目視表示される。0.3.0 Baselineでユーザー実機確認PASS |
 
@@ -106,7 +106,7 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 | ETX-007 | Meta Preservation | 既存のUnity `.meta`由来identityとworking filepathを保持する |
 | ETX-008 | Save/Reopen | `.blend`保存・再開後もImage、filepath、GUID、Asset Path、bindingが保持される |
 | ETX-009 | Missing Source File | source消失時に`MISSING_SOURCE`を返し、fallbackや代替Imageを生成しない |
-| ETX-010 | Real Package Visual Reload | Face/Hair/SampleGarmentの実Packageで外部変更→再読込→Material Preview更新→元bytes復元を確認する。UI視認ができない場合は`UNVERIFIED`とする |
+| ETX-010 | Real Package Visual Reload | Face/Hair/SyntheticMaterialの実Packageで外部変更→再読込→Material Preview更新→元bytes復元を確認する。UI視認ができない場合は`UNVERIFIED`とする |
 
 ## External Texture Editor Launcher Acceptance Tests
 
@@ -128,7 +128,7 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 
 ### External Texture Editor Human Follow-up
 
-2026-09-15、Blender 5.2.1 Japanese UI / Krita / `SampleGarment_col.png`で、ETX-010、EXT-003、EXT-005、EXT-010をPASS確認した。外部編集後の同一working file保存、BlenderのReload from Disk、Image Editor・Material Preview・3D avatarへの反映、再起動後のKrita保持、直接起動を含む。過去の未検証記録は履歴として保持し、現行結果へ追記する。
+2026-09-15、Blender 5.2.1 Japanese UI / Krita / `SyntheticMaterial_col.png`で、ETX-010、EXT-003、EXT-005、EXT-010をPASS確認した。外部編集後の同一working file保存、BlenderのReload from Disk、Image Editor・Material Preview・3D avatarへの反映、再起動後のKrita保持、直接起動を含む。過去の未検証記録は履歴として保持し、現行結果へ追記する。
 
 ## MRUS Recovery Acceptance Tests (PLANNED / UNVERIFIED)
 
@@ -210,10 +210,14 @@ Exporter、reachability pruning、GUID/path collision policy、Unity Finalizer r
 | SPD-002 | GUID exact provider | prefab/material/FBX externalObjectsのGUIDで候補を一意化し、名前推測しない |
 | SPD-003 | Transitive discovery | A→B→Cの依存を未解決GUIDがなくなるまで検出 |
 | SPD-004 | Ambiguity safe | 同GUID provider複数時はAMBIGUOUS/PARTIALとして自動選択しない |
-| SPD-005 | Grouped import | SampleAvatarB起点のImport TogetherでGeometry/Material/Textureを同一Sceneへ反映 |
+| SPD-005 | Grouped import | SyntheticAvatar起点のImport TogetherでGeometry/Material/Textureを同一Sceneへ反映 |
 
-SPD-001..005はPython fixtureおよびBlender 5.2.1 synthetic SampleAvatarB-like testでPASS。実アセットのforeground目視は別途Human Retest。
+SPD-001..005はPython fixtureおよびBlender 5.2.1 synthetic SyntheticAvatar-like testでPASS。実アセットのforeground目視は別途Human Retest。
 
 ## Distribution Pipeline Acceptance (DIST-001..018)
 
 Distribution ZIPはtracked runtime Pythonを原則収録し、`tests/`、`tools/`、`experiment_logs/`だけを明示除外する。buildは指定Git revisionから行い、source runtime setとZIP runtime setを比較する。固定SHA・固定ローカルZIPへの依存は禁止し、抽出ZIPのみでBlender 5.2.1のregister/unregisterを確認する。
+
+## Public Repository Hygiene (PUB-001..015)
+
+Tracked textに開発者固有pathや明白なcredential patternを含めず、proprietary binary assetを追跡しない。real-world package probeは`UNITYPACKAGE_REAL_TEST_FILE`またはCLI引数でのみ入力し、未指定時はskipする。current treeはgeneric hygiene testで検査し、reachable historyは別監査でPublic化前のレビュー対象とする。

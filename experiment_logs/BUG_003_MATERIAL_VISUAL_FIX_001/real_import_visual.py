@@ -5,8 +5,8 @@ import sys
 import time
 import bpy
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
-PACKAGE = Path(__import__("os").environ["VAPB_SOURCE_PACKAGE"])
+ROOT = Path(r"<LOCAL_PATH>")
+PACKAGE = Path(r"<LOCAL_PATH>")
 OUT = Path(__file__).with_name("real_import_visual_result.json")
 BLEND = Path(__file__).with_name("BUG_003_real_import.blend")
 sys.path.insert(0, str(ROOT))
@@ -94,7 +94,7 @@ def finish():
         "binding_signatures": binding_signatures(),
         "graph_signatures": graph_signatures(),
         "stats": {"materials_with_nodes": sum(r["use_nodes"] for r in rows), "materials_with_base_texture": len(textured), "materials_with_basecolor_link": sum(r["base_color_link"] for r in textured), "materials_with_basecolor_multiply": sum(r["base_color_multiply"] for r in textured), "materials_with_surface_link": sum(r["surface_link"] for r in textured), "materials_with_uv_link": sum(r["uv_link"] for r in textured), "materials_with_all_texture_uv_links": sum(r["all_texture_uv_links"] for r in textured), "materials_with_alpha_link": sum(r["alpha_links"] > 0 for r in rows)},
-        "representatives": {name: next((r for r in rows if r["name"] == name), None) for name in ("Face", "Hair", __import__("os").environ["VAPB_PRIVATE_LABEL_1"])},
+        "representatives": {name: next((r for r in rows if r["name"] == name), None) for name in ("Face", "Hair", "SyntheticMaterial")},
         "materials": rows, "material_preview_ui": "UNVERIFIED_NO_COMPUTER_USE",
     }
     bpy.ops.wm.save_as_mainfile(filepath=str(BLEND))

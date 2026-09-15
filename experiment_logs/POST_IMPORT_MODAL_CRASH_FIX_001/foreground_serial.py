@@ -8,8 +8,8 @@ import time
 import bpy
 
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
-PACKAGE = Path(__import__("os").environ["VAPB_SOURCE_PACKAGE"])
+ROOT = Path(r"<LOCAL_PATH>")
+PACKAGE = Path(r"<LOCAL_PATH>")
 RESULT = Path(__file__).with_name("foreground_serial_result.json")
 sys.path.insert(0, str(ROOT))
 

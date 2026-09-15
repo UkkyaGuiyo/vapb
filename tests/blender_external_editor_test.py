@@ -27,14 +27,14 @@ def main() -> None:
     with tempfile.TemporaryDirectory(prefix="external_editor_test_") as temp:
         root = Path(temp)
         editor = root / "PortablePaint.exe"
-        source = root / "SampleGarment_col.png"
+        source = root / "SyntheticMaterial_col.png"
         editor.write_bytes(b"test executable")
         source.write_bytes(PNG)
 
         assert "FINISHED" in bpy.ops.preferences.addon_enable(module=addon.__name__)
         image = bpy.data.images.load(str(source), check_existing=True)
         image["unity_guid"] = "c" * 32
-        image["unity_asset_path"] = "Assets/SampleGarment_col.png"
+        image["unity_asset_path"] = "Assets/SyntheticMaterial_col.png"
         image["unity_source_path"] = str(source)
         image["unity_source_mtime_ns"] = str(source.stat().st_mtime_ns)
         image_pointer = image.as_pointer()

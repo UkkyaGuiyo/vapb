@@ -82,10 +82,10 @@ class RoundTripManifestTests(unittest.TestCase):
 
     def test_sidecar_write_is_versioned_json(self):
         with tempfile.TemporaryDirectory(prefix="roundtrip_manifest_test_") as temp:
-            fbx_path = Path(temp) / "ArcaNight SAMPLE_VENDOR.fbx"
+            fbx_path = Path(temp) / "private-package-root.fbx"
             fbx_path.write_bytes(b"FBX")
             output = write_material_manifest([], fbx_path)
             self.assertEqual(output, sidecar_path(fbx_path))
             payload = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(payload["schema_version"], 1)
-            self.assertEqual(payload["fbx_file"], "ArcaNight SAMPLE_VENDOR.fbx")
+            self.assertEqual(payload["fbx_file"], "private-package-root.fbx")

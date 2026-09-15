@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 
-$experimentRoot = $env:VAPB_EXPERIMENT_ROOT
-$blenderPath = $env:VAPB_EXPERIMENT_ROOT
+$experimentRoot = '<LOCAL_PATH>'
+$blenderPath = 'LOCAL_PATH_REQUIRES_CONFIGURATION Files\Blender Foundation\Blender 4.2\blender.exe'
 $runnerPath = Join-Path $experimentRoot 'real_package_verify.py'
 $csvPath = Join-Path $experimentRoot 'after_monitor.csv'
 $stdoutPath = Join-Path $experimentRoot 'blender_stdout.log'

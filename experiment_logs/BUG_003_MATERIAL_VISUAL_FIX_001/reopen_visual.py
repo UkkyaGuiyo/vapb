@@ -3,7 +3,7 @@ from pathlib import Path
 import json
 import bpy
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
+ROOT = Path(r"<LOCAL_PATH>")
 before = json.loads((ROOT / "real_import_visual_result.json").read_text(encoding="utf-8"))
 def binding_signatures():
     return sorted((obj.name, index, str(material.get("unity_material_guid"))) for obj in bpy.data.objects if obj.type == "MESH" for index, material in enumerate(obj.data.materials) if material and material.get("unity_material_guid"))

@@ -6,8 +6,8 @@ from pathlib import Path
 import bpy
 
 
-REPO_ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
-PACKAGE = Path(__import__("os").environ["VAPB_SOURCE_PACKAGE"])
+REPO_ROOT = Path(r"<LOCAL_PATH>")
+PACKAGE = Path(r"<LOCAL_PATH>")
 sys.path.insert(0, str(REPO_ROOT))
 
 import unitypackage_blender_importer as addon  # noqa: E402

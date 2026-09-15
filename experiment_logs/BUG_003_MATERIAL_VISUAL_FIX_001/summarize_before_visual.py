@@ -59,7 +59,7 @@ result = {
     "materials_with_basecolor_link": sum(bool(item["base_color_inputs"]) for item in materials),
     "materials_with_missing_image": sum(any(not item["size"] or item["size"] == [0, 0] for item in material["textures"]) for material in materials),
     "materials_with_broken_surface_link": sum(not item["surface_inputs"] for item in materials),
-    "representatives": {name: next((item for item in materials if item["name"] == name), None) for name in ("SampleGarment", "Body", "Hair")},
+    "representatives": {name: next((item for item in materials if item["name"] == name), None) for name in ("SyntheticMaterial", "Body", "Hair")},
     "materials": materials,
 }
 OUT.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")

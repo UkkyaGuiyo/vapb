@@ -5,8 +5,8 @@ import sys
 import time
 import bpy
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
-PACKAGE = Path(__import__("os").environ["VAPB_SOURCE_PACKAGE"])
+ROOT = Path(r"<LOCAL_PATH>")
+PACKAGE = Path(r"<LOCAL_PATH>")
 args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 locale = args[0] if args else "en_US"
 out = Path(__file__).with_name(f"real_{locale}_result.json")
@@ -106,7 +106,7 @@ def main():
         "texture_to_active_surface_pass": sum(row["textured_principled_reaches_active"] for row in textured),
         "texture_origin_to_active_surface_pass": sum(row["texture_reaches_active_surface"] for row in textured),
         "locale_lookup_failures": sum(not row["type_lookup_principled"] or not row["type_lookup_output"] for row in textured),
-        "representatives": {name: next((row for row in rows if row["name"] == name), None) for name in ("Face", "Hair", __import__("os").environ["VAPB_PRIVATE_LABEL_1"])},
+        "representatives": {name: next((row for row in rows if row["name"] == name), None) for name in ("Face", "Hair", "SyntheticMaterial")},
         "materials": rows,
         "binding_signatures": binding_signatures(),
         "graph_signatures": graph_signatures(),

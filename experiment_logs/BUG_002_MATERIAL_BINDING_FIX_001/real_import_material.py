@@ -7,8 +7,8 @@ import time
 
 import bpy
 
-ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
-PACKAGE = Path(__import__("os").environ["VAPB_SOURCE_PACKAGE"])
+ROOT = Path(r"<LOCAL_PATH>")
+PACKAGE = Path(r"<LOCAL_PATH>")
 OUT = Path(__file__).with_name("real_import_material_result.json")
 BLEND = Path(__file__).with_name("BUG_002_real_import.blend")
 sys.path.insert(0, str(ROOT))

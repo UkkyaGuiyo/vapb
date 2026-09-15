@@ -1,5 +1,10 @@
-"""Blender 5.2.1 real-package identity propagation probe."""
+"""Optional local real-package identity probe.
 
+Set ``UNITYPACKAGE_REAL_TEST_FILE`` or pass a path after ``--``. The public
+repository intentionally contains no real-world package identity.
+"""
+
+import os
 from pathlib import Path
 import sys
 
@@ -7,7 +12,14 @@ import bpy
 
 
 ROOT = Path(__file__).resolve().parents[2]
-PACKAGE = ROOT.parent / "3DCG" / "RepresentativeAvatar-CaseA-ver1.3.1" / "RepresentativeAvatar-CaseA-Ver1.3.1.unitypackage"
+package_raw = os.environ.get("UNITYPACKAGE_REAL_TEST_FILE", "")
+if "--" in sys.argv:
+    after_separator = sys.argv[sys.argv.index("--") + 1:]
+    package_raw = after_separator[0] if after_separator else package_raw
+if not package_raw:
+    print("REAL_PACKAGE_TEST_SKIPPED")
+    raise SystemExit(0)
+PACKAGE = Path(package_raw).expanduser().resolve()
 sys.path.insert(0, str(ROOT))
 
 import unitypackage_blender_importer as addon  # noqa: E402

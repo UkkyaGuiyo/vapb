@@ -1,5 +1,6 @@
 {
   "historical_redacted_aggregate": {
+    "experiment": "REAL_PACKAGE_IMPORT_MONITOR_001",
     "monitor_pid": 9276,
     "poll_seconds": 2,
     "file_snapshot_seconds": 6,

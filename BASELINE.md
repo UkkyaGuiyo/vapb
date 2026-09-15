@@ -7,7 +7,7 @@
 - Target: Blender 5.2.1 LTS only
 - Python: 3.13.13
 - Add-on version: 0.3.0
-- Reference Package: `RepresentativeAvatar-CASE_A.3.1.unitypackage`
+- Reference Package: `private-real-package.unitypackage`
 - Baseline ZIP: see `experiment_logs/BASELINE_0_3_0_FREEZE_001/REPORT.md`
 - Baseline SHA-256: see `experiment_logs/BASELINE_0_3_0_FREEZE_001/REPORT.md`
 
@@ -27,7 +27,7 @@
 - Prefab hierarchy reconstruction.
 - Post-import modal crash fix.
 - Material / Texture identity and Japanese locale Material graph fixes.
-- Human Material Preview verification: Face/Skin, Hair, SampleGarment/Clothes, Gloves, accessories; no MAGENTA or white-only rendering reported by the user.
+- Human Material Preview verification: Face/Skin, Hair, SyntheticMaterial/Clothes, Gloves, accessories; no MAGENTA or white-only rendering reported by the user.
 - 147 / 147 Material binding persistence and Japanese save/reopen graph match.
 - Serial import and ZIP validation PASS.
 - Editable Texture Workflow: external edit, same-file save, reload, and Material Preview update PASS.

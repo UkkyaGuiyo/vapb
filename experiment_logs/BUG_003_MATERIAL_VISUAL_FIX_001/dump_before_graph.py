@@ -5,7 +5,7 @@ import json
 import bpy
 
 OUT = Path(__file__).with_name("before_sample_garment_graph.json")
-TARGETS = ("SampleGarment", "Body", "Hair")
+TARGETS = ("SyntheticMaterial", "Body", "Hair")
 
 
 def dump(material):

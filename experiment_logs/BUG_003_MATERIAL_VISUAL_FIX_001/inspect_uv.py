@@ -4,7 +4,7 @@ import json
 
 rows=[]
 for obj in bpy.data.objects:
-    if obj.type != 'MESH' or not obj.data or not any(m and m.name == 'SampleGarment' for m in obj.data.materials):
+    if obj.type != 'MESH' or not obj.data or not any(m and m.name == 'SyntheticMaterial' for m in obj.data.materials):
         continue
     layers=obj.data.uv_layers
     values=[]

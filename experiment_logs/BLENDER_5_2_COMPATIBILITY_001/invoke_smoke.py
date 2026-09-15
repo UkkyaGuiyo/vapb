@@ -6,7 +6,7 @@ import sys
 import bpy
 
 
-sys.path.insert(0, str(Path(__import__("os").environ["VAPB_REPO_PARENT"])))
+sys.path.insert(0, str(Path(r"<LOCAL_PATH>")))
 import unitypackage_blender_importer as addon  # noqa: E402
 
 addon.register()

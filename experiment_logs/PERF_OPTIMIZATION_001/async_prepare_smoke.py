@@ -14,7 +14,7 @@ from types import SimpleNamespace
 import bpy
 
 
-REPO_ROOT = Path(__import__("os").environ["VAPB_WORK_ROOT"])
+REPO_ROOT = Path(r"<LOCAL_PATH>")
 import sys
 
 sys.path.insert(0, str(REPO_ROOT))

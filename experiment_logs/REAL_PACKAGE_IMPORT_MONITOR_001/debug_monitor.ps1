@@ -1,5 +1,5 @@
 $ErrorActionPreference = 'Stop'
-$root = $env:VAPB_EXPERIMENT_ROOT
+$root = '<LOCAL_PATH>'
 $events = Join-Path $root 'debug_events.log'
 New-Item -ItemType Directory -Path $root -Force | Out-Null
 Set-Content -LiteralPath $events -Value 'before' -Encoding UTF8

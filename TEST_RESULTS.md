@@ -20,9 +20,9 @@
 - Real-package identity probe: `REAL_MULTI_PACKAGE_IDENTITY_OK`; 8 Object registry records had `Assets/...` paths, with reconstructed sub-assets retaining fileID scope.
 - Automatic collision resolution, multi-package merge, UnityPackage export, and foreground visual Material Preview remain out of scope for this phase.
 
-測定日: 2026-09-15  
+測定日: 2026-09-15
 Version: 0.3.0
-対象: Blender 5.2.1 LTS / `RepresentativeAvatar-CaseA-Ver1.3.1.unitypackage`
+対象: Blender 5.2.1 LTS / `private-real-package.unitypackage`
 
 ## Automated Verification
 
@@ -58,7 +58,7 @@ PASS, user-reported on 2026-09-15 in Blender 5.2.1 Japanese UI Material Preview:
 
 - Face / Skin
 - Hair
-- SampleGarment / Clothes
+- SyntheticMaterial / Clothes
 - Gloves
 - Accessories
 - MAGENTA: none
@@ -75,7 +75,7 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 # 0.3.0 Baseline Verification (2026-09-15)
 
 - Editable Texture ETX-001..009: PASS in Blender 5.2.1 integration test, including same Image datablock, same filepath, material binding, identity, `.blend` reopen, missing-source refusal, dirty refusal, packed conflict, and no copy/backup.
-- ETX-010 real-package identity/reload automation: PASS; Face/Hair/SampleGarment representatives present. Material Preview UI visual inspection: UNVERIFIED because Computer Use was unavailable.
+- ETX-010 real-package identity/reload automation: PASS; Face/Hair/SyntheticMaterial representatives present. Material Preview UI visual inspection: UNVERIFIED because Computer Use was unavailable.
 - Python: 41/41 PASS. `compileall`: PASS. Synthetic Blender integration: PASS. Real package: 113 objects / 103 meshes / 4 armatures / 40 shape keys / 147 bindings / identity errors 0.
 - Version metadata is `(0, 3, 0)` and this commit is the formal 0.3.0 baseline.
 
@@ -87,7 +87,7 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 
 ## 0.3.0 Final Hardening (2026-09-15)
 
-- Human follow-up verification in Blender 5.2.1 Japanese UI with Krita: ETX-010 PASS, EXT-003 PASS, EXT-005 PASS, EXT-010 PASS. `SampleGarment_col.png` opened in Krita, saved to the same working file, reloaded from disk, and the Image Editor / Material Preview / 3D avatar reflected the edit; Krita remained selected after restart.
+- Human follow-up verification in Blender 5.2.1 Japanese UI with Krita: ETX-010 PASS, EXT-003 PASS, EXT-005 PASS, EXT-010 PASS. `SyntheticMaterial_col.png` opened in Krita, saved to the same working file, reloaded from disk, and the Image Editor / Material Preview / 3D avatar reflected the edit; Krita remained selected after restart.
 - Launch hardening: `launch_editor()` catches only `OSError` from `Popen()` and returns `EDITOR_LAUNCH_FAILED`; the operator reports it as `ERROR` and returns `CANCELLED`. Argument-list launch with `shell=False` is unchanged.
 - EXT-001..010: PASS. EXT-011: PASS (`OSError("launch failed")` is converted to `EDITOR_LAUNCH_FAILED` without leaking to the test process; operator report is `ERROR`).
 - Python: 45/45 PASS. `compileall`: PASS. Blender 5.2.1 register/unregister and External Texture Editor integration: PASS. Synthetic import/roundtrip: `BLENDER_INTEGRATION_OK`.
@@ -100,8 +100,8 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 - `.blend` save/reopen後もDependency registry、Material binding、Texture bindingを保持。
 - `unitypackage_dependency_registry`はUNRESOLVED、RESOLVED_LOCAL、RESOLVED_CROSS_PACKAGE、AMBIGUOUS_PROVIDERを保存する設計。名前だけのcross-package fallbackは行わない。
 - CPD-001..006、009、011、013: synthetic PASS。CPD-007/008/010は専用policy fixture PASS。CPD-012はexternalObjectsのGUID解決policyをPASS（実FBXのslot名が不一致の場合はslot推測せず安全に未解決）。
-- Sibling Discoveryの同一フォルダ限定、GUID exact match、transitive discovery、duplicate provider ambiguity、SampleAvatarB-like `Import Together`をBlender 5.2.1でPASS。SampleAvatarB起点でMetarialとTexture providerを検出し、3 Packageをgroup import、Geometry/Material/Texture結合を確認。
-- 今回のHuman Retest Targetは実アセットをrepoへ追加せず、上記synthetic SampleAvatarB-like fixtureで受入経路を確認。実BOOTH分割Packageのforeground確認は`REAL-CPD-001: HUMAN RETEST REQUIRED`。
+- Sibling Discoveryの同一フォルダ限定、GUID exact match、transitive discovery、duplicate provider ambiguity、SyntheticAvatar-like `Import Together`をBlender 5.2.1でPASS。SyntheticAvatar起点でSyntheticMaterialProviderとTexture providerを検出し、3 Packageをgroup import、Geometry/Material/Texture結合を確認。
+- 今回のHuman Retest Targetは実アセットをrepoへ追加せず、上記synthetic SyntheticAvatar-like fixtureで受入経路を確認。実BOOTH分割Packageのforeground確認は`REAL-CPD-001: HUMAN RETEST REQUIRED`。
 - UnityPackage ExporterはPHASE Cへ分離し、PRODUCT_SPEC / ARCHITECTURE / TEST_STRATEGYの確定設計のみ。Exporter本体、Unity Finalizer、未知Component resolverは未実装。
 
 ## Distribution Pipeline Hardening (2026-09-16)
@@ -111,3 +111,9 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 - Distribution tests: source/ZIP runtime set equality、ZIP CRC、root layout、asset/credential exclusion、revision-derived filenameをPASS。
 - Extracted ZIPのみのBlender 5.2.1 register/unregister: `DIST_BENDER_INSTALL_OK`。
 - 既存Python 63件にdistribution 2件を加え、65件PASS。CPD/SPD/MPI/MPV/通常integrationのproduction logicは未変更。
+
+## Public Repository Hygiene (2026-09-16)
+
+- Current tracked tree: developer path、real-world fixture identity、obvious credential、proprietary binary assetなし。generic `test_public_repo_hygiene.py` PASS。
+- Real-package probe: env/CLI supplied path only。未指定時は`REAL_PACKAGE_TEST_SKIPPED`。
+- Reachable history: 過去の実環境検証由来のreal-package identity / local path参照を検出。credential、private key、proprietary binaryは未検出。history rewriteは未実施で、Public化前レビュー対象。
