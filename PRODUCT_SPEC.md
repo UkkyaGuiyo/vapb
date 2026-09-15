@@ -87,6 +87,14 @@ MRUSはUnityPackage → State Snapshot / Identity Capture → Blender Import →
 - 不足依存や曖昧な対象を勝手に代替・割当すること
 - Unity serialization完全互換エンジンを実装すること
 
+## 0.4.0 candidate: Multi-Package Identity Foundation
+
+- Package fingerprintは内容SHA-256から生成し、同名・別パスのPackageでも内容が同じなら同じPackage identity、内容が違えば別identityとする。
+- Object、Material、Imageには`unity_source_package_id`と既存のGUID/path/fileIDを保持し、canonical identityを構成する。
+- SceneにはPackage registryを保存し、import sequence、source path/name、SHA-256、asset countsを記録する。
+- 同一GUIDまたは同一Asset Pathが複数Packageに現れた場合はcollision reportへ記録する。自動解決や自動mergeはしない。
+- 既存のsingle-package GUID/path lookup、Material mapping、Texture mapping、Prefab reconstructionは維持する。
+
 ## Current Scope Boundary
 
-BUG-002のMaterial / Texture binding修正は本Baseline移行の対象外とする。今回の変更は仕様、設計、テスト基準、ドキュメントの固定に限り、機能コードの挙動を変更しない。
+BUG-002 / BUG-003 / Editable Textureの既存挙動は回帰対象として維持する。今回の変更はPackage-scoped identity、registry、collision reportとそのテストに限定し、production logicの自動mergeやUnityPackage exportは行わない。

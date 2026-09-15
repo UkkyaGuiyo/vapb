@@ -1,5 +1,15 @@
 # Current 0.3.0 Baseline Test Results
 
+## 0.4.0 candidate Multi-Package Identity (2026-09-15)
+
+- Python: 54/54 PASS; `compileall`: PASS.
+- Blender 5.2.1 LTS synthetic registry test: `MULTI_PACKAGE_IDENTITY_OK`.
+- MPI-001..012: PASS through package fingerprint, canonical key, propagation, reverse lookup, duplicate/legacy handling, collision reporting, and JSON persistence.
+- Real Package: `FINISHED`; 113 objects / 103 meshes / 4 armatures / 40 shape keys / 112 materials / 112 images.
+- Existing Material/Texture regression: 147 bindings, identity errors 0.
+- Package SHA-256 measurement: 385,655,203 bytes, 490.961 ms on the verification machine; `source_package_id=sha256:PRIVATE_ASSET_ID_REMOVED`.
+- Automatic collision resolution, multi-package merge, UnityPackage export, and foreground visual Material Preview remain out of scope for this phase.
+
 測定日: 2026-09-15  
 Version: 0.3.0
 対象: Blender 5.2.1 LTS / `RepresentativeAvatar-CaseA-Ver1.3.1.unitypackage`

@@ -19,6 +19,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 
 from ..blender.fbx_importer import apply_import_options, import_fbx_files
 from ..blender.hierarchy_builder import build_prefab_hierarchy
+from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package
 from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, build_material_library
 from ..blender.performance import PerformanceTimer
 from ..ui.import_panel import draw_import_options
@@ -314,6 +315,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 extraction.root,
                 package_index,
                 extraction.assets,
+                package_key.source_package_id,
             )
             phase("Scanning meta files")
             timed("meta_scan", asset_db.scan_missing_meta)
@@ -683,6 +685,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 extraction.root,
                 index,
                 extraction.assets,
+                self._prepared_package_key.source_package_id,
             )
             self._performance.measure("meta_scan", asset_db.scan_missing_meta)
             fbx_paths = self._performance.measure("fbx_scan", asset_db.fbxs)
@@ -711,6 +714,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             prefab_paths = list(self._prefab_paths)
             if extraction is None or extraction_dir is None or asset_db is None:
                 raise UnityPackageError("Prepared import state is unavailable")
+            package_key = self._prepared_package_key
+            if package_key is None:
+                raise UnityPackageError("Package identity is unavailable")
 
             planning_prefab = None
             selected_planning_path = None
@@ -750,7 +756,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 raise UnityPackageError("No .fbx asset was found in the UnityPackage")
 
             self._set_phase(context, "Importing FBX", 0.55)
-            imported_objects = self._performance.measure("fbx_import", import_fbx_files, fbx_paths)
+            imported_objects = self._performance.measure(
+                "fbx_import", import_fbx_files, fbx_paths, package_key.source_package_id
+            )
             if not imported_objects:
                 raise UnityPackageError("FBX import produced no Blender objects")
             imported_objects = apply_import_options(
@@ -759,6 +767,16 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 use_bone_weights=self.use_bone_weights,
                 use_shape_keys=self.use_shape_keys,
             )
+            extracted_fbx_paths = {
+                str(entry.path.resolve()): entry.unity_path
+                for entry in asset_db.by_guid.values()
+                if entry.path.suffix.lower() == ".fbx"
+            }
+            for obj in imported_objects:
+                source_fbx = obj.get("unity_source_fbx", "")
+                unity_path = extracted_fbx_paths.get(str(Path(str(source_fbx)).resolve()))
+                if unity_path:
+                    obj["unity_asset_path"] = unity_path
             material_library = {}
             if self.use_materials:
                 self._set_phase(context, "Building Materials and Textures", 0.75)
@@ -783,6 +801,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     build_prefab_hierarchy,
                     prefab,
                     imported_objects,
+                    package_key.source_package_id,
                 )
                 if self.use_materials:
                     self._performance.measure(
@@ -795,10 +814,49 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     )
 
             scene = context.scene
+            existing_registry = load_scene_registry(scene)
+            package_registry, package_status = register_package(
+                scene,
+                {
+                    "source_package_id": package_key.source_package_id,
+                    "package_sha256": package_key.sha256,
+                    "source_package_path": package_key.path,
+                    "source_package_name": package_key.package_name,
+                    "import_sequence": len(existing_registry.packages) + 1,
+                    "selected_prefab": str(prefab.path) if prefab else "",
+                    "asset_counts": {
+                        "fbx": len(fbx_paths),
+                        "materials": len(material_library),
+                        "images": sum(
+                            1
+                            for image in bpy.data.images
+                            if image.get("unity_source_package_id") == package_key.source_package_id
+                        ),
+                    },
+                },
+            )
+            if package_status != "NO_COLLISION":
+                self.report({"WARNING"}, package_status)
             scene["unitypackage_source"] = str(package_path)
+            scene["unitypackage_source_package_id"] = package_key.source_package_id
+            scene["unitypackage_package_sha256"] = package_key.sha256
             scene["unitypackage_extracted_root"] = str(extraction_dir)
             scene["unitypackage_fbx_count"] = len(fbx_paths)
             scene["unitypackage_prefab"] = str(prefab.path) if prefab else ""
+            scene["unitypackage_import_sequence"] = [
+                package["source_package_id"] for package in package_registry.packages.values()
+            ]
+            register_datablocks(scene, imported_objects, package_key.source_package_id, "Object")
+            register_datablocks(scene, material_library.values(), package_key.source_package_id, "Material")
+            register_datablocks(
+                scene,
+                [image for image in bpy.data.images if image.get("unity_source_package_id") == package_key.source_package_id],
+                package_key.source_package_id,
+                "Image",
+            )
+            collisions = load_scene_registry(scene).detect_collisions()
+            if collisions:
+                self.report({"WARNING"}, f"Detected {len(collisions)} cross-package identity collision(s)")
             if extraction.errors:
                 for error in extraction.errors:
                     print(f"[UnityPackage Importer] {error}")

@@ -40,8 +40,8 @@
 - File Browser cancel/re-run manual test is not confirmed.
 - Arbitrary Prefab manual selection UI is not confirmed.
 - Normal UI Undo-key behavior is not confirmed.
-- Transparent / cutout / blend material visual path is not validated by the reference package.
 - Multi-Package integration is not implemented.
+- 0.4.0 candidate adds package-scoped identity and collision reporting; automatic multi-package merge remains out of scope.
 - Bridge UnityPackage export is not complete.
 - Unity Finalizer is not implemented.
 - MRUS implementation is not implemented; REC-001..010 remain PLANNED / UNVERIFIED.

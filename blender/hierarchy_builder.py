@@ -30,11 +30,18 @@ def apply_transform(obj, transform) -> None:
     obj.scale = (transform.scale["x"], transform.scale["y"], transform.scale["z"])
 
 
-def build_prefab_hierarchy(prefab: PrefabData, imported_objects: Iterable[bpy.types.Object]):
+def build_prefab_hierarchy(
+    prefab: PrefabData,
+    imported_objects: Iterable[bpy.types.Object],
+    source_package_id: str = "",
+):
     imported = list(imported_objects)
     root = bpy.data.objects.new(prefab.display_name, None)
     bpy.context.scene.collection.objects.link(root)
     root["unity_source_prefab"] = str(prefab.path)
+    root["unity_asset_path"] = str(prefab.path).replace("\\", "/")
+    if source_package_id:
+        root["unity_source_package_id"] = source_package_id
     by_name: dict[str, list[bpy.types.Object]] = {}
     for obj in imported:
         by_name.setdefault(obj.name.casefold(), []).append(obj)
@@ -51,6 +58,9 @@ def build_prefab_hierarchy(prefab: PrefabData, imported_objects: Iterable[bpy.ty
         # Some Unity assets use values outside Blender 4.2 IDProperty's
         # signed C-int range, so preserve the lossless decimal form as text.
         obj["unity_prefab_file_id"] = str(game_object_id)
+        obj["unity_asset_path"] = str(prefab.path).replace("\\", "/")
+        if source_package_id:
+            obj["unity_source_package_id"] = source_package_id
         game_object_map[game_object_id] = obj
     transform_to_game_object = {
         transform_id: transform.game_object_id

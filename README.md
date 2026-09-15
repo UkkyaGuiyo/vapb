@@ -1,6 +1,6 @@
 # Unity Package / VRChat Avatar Importer
 
-Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.3.0。Unity Editorを起動せず、UnityPackageを一時フォルダへ安全に復元し、FBXをBlenderへ読み込みます。
+Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.4.0 candidate。Unity Editorを起動せず、UnityPackageを一時フォルダへ安全に復元し、FBXをBlenderへ読み込みます。
 
 Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と、Blender内部引数を受け取るconstructor形式に対応しています。legacy `bpy.ops.import_scene.fbx` は既存のArmature、Weight、Shape Key、Material Slotの挙動を維持するため継続使用します。
 
@@ -112,7 +112,7 @@ If the operating system refuses the launch after validation, the launcher return
 
 - Transparent / cutout / blend material visual pathは未検証です。
 - Unity Shaderの外観はBlender Principled BSDFによる近似です。
-- Multi-package integrationは未実装です。
+- Multi-package identity foundationは実装済みです。異なるPackageの同一GUID/Asset Pathは検出・報告しますが、自動merge・自動置換は行いません。
 - UnityPackage exporterは未完成です。
 - File Browser cancel/re-run、任意Prefab手動選択、通常UI Undo-keyは未確認です。
 

@@ -11,7 +11,14 @@ import bpy  # type: ignore
 SUPPORTED_TEXTURE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".tga", ".bmp", ".tif", ".tiff", ".exr", ".psd"}
 
 
-def load_texture(path: Path, pack: bool = False, guid: str = "", unity_path: str = "", meta_path: Optional[Path] = None):
+def load_texture(
+    path: Path,
+    pack: bool = False,
+    guid: str = "",
+    unity_path: str = "",
+    meta_path: Optional[Path] = None,
+    source_package_id: str = "",
+):
     image = bpy.data.images.load(str(path), check_existing=True)
     if pack and image.packed_file is None:
         image.pack()
@@ -24,6 +31,8 @@ def load_texture(path: Path, pack: bool = False, guid: str = "", unity_path: str
         image["unity_guid"] = guid
     if unity_path:
         image["unity_asset_path"] = unity_path
+    if source_package_id:
+        image["unity_source_package_id"] = source_package_id
     meta = Path(meta_path) if meta_path else path.with_name(path.name + ".meta")
     try:
         meta_text = meta.read_text(encoding="utf-8", errors="replace")
@@ -54,6 +63,12 @@ def load_texture_by_guid(asset_db, guid: Optional[str], pack: bool = False):
     if not entry or entry.path.suffix.lower() not in SUPPORTED_TEXTURE_EXTENSIONS:
         return None
     try:
-        return load_texture(entry.path, pack=pack, guid=entry.guid, unity_path=entry.unity_path)
+        return load_texture(
+            entry.path,
+            pack=pack,
+            guid=entry.guid,
+            unity_path=entry.unity_path,
+            source_package_id=getattr(asset_db, "source_package_id", ""),
+        )
     except (RuntimeError, OSError):
         return None

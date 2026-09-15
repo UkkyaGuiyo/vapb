@@ -8,7 +8,7 @@ from typing import Iterable
 import bpy  # type: ignore
 
 
-def import_fbx(path: Path, use_custom_props: bool = True) -> list[bpy.types.Object]:
+def import_fbx(path: Path, use_custom_props: bool = True, source_package_id: str = "") -> list[bpy.types.Object]:
     before = set(bpy.data.objects)
     bpy.ops.import_scene.fbx(
         filepath=str(path),
@@ -24,14 +24,16 @@ def import_fbx(path: Path, use_custom_props: bool = True) -> list[bpy.types.Obje
     imported = [obj for obj in bpy.data.objects if obj not in before]
     for obj in imported:
         obj["unity_source_fbx"] = str(path)
+        if source_package_id:
+            obj["unity_source_package_id"] = source_package_id
     return imported
 
 
-def import_fbx_files(paths: Iterable[Path]) -> list[bpy.types.Object]:
+def import_fbx_files(paths: Iterable[Path], source_package_id: str = "") -> list[bpy.types.Object]:
     imported: list[bpy.types.Object] = []
     for path in paths:
         try:
-            imported.extend(import_fbx(path))
+            imported.extend(import_fbx(path, source_package_id=source_package_id))
         except (OSError, RuntimeError) as exc:
             print(f"[UnityPackage Importer] FBX import failed: {path}: {exc}")
     return imported

@@ -3,7 +3,7 @@
 bl_info = {
     "name": "Unity Package / VRChat Avatar Importer",
     "author": "OpenAI",
-    "version": (0, 3, 0),
+    "version": (0, 4, 0),
     "blender": (5, 2, 0),
     "location": "File > Import > Unity Package / VRChat Avatar (.unitypackage)",
     "description": "Imports UnityPackage assets and exports FBX with Unity Material reconnect metadata for Blender 5.2.1 LTS.",

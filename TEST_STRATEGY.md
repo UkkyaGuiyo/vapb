@@ -12,7 +12,7 @@ Acceptance Testを機能実装前に定義し、Blender 5.2.1 LTS onlyで実行�
 4. **Foreground UI Lifecycle**: File Browserからのforeground開始、async prepare、Prefab handoff、modal終了。
 5. **Post-Import Stress**: visibility、select/deselect、shading、frame、delete/restore後のprocess生存。
 6. **Serial Import**: 同一Packageの連続実行とsession混線防止。
-7. **Multi-Package Integration**: 複数Packageのidentity collision、merge、cleanup。現状未実装。
+7. **Multi-Package Integration**: 複数Packageのidentity propagation、registry、reverse lookup、collision report。自動mergeは対象外。
 8. **Roundtrip Export**: FBXとmaterialmap sidecarのschema、binding、再読込。
 9. **Unity Finalizer**: Unity EditorでGUID/Path優先remap、元`.mat`非変更。
 10. **End-to-End**: Blender編集 → Export → Unity import/finalize →最終Prefab。現状未完了。
@@ -29,6 +29,23 @@ Acceptance Testを機能実装前に定義し、Blender 5.2.1 LTS onlyで実行�
 - ZIP `testzip None`
 
 Material変更時は件数だけで合格にしない。Material bindingとTexture bindingの正確性を別途確認する。
+
+## Multi-Package Identity Acceptance Tests (MPI-001..012)
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| MPI-001 | Package fingerprint | 同一bytesは同じSHA-256 package idになる |
+| MPI-002 | Path independence | Package移動・改名でidentityが変わらない |
+| MPI-003 | Byte distinction | 異なるbytesは別package idになる |
+| MPI-004 | Canonical key | package + GUID + path/fileIDで一意化される |
+| MPI-005 | Same-name assets | 同名でも別pathは衝突しない |
+| MPI-006 | GUID collision | 異なるPackageの同一GUIDを報告する |
+| MPI-007 | Path collision | 異なるPackageの同一Asset Pathを報告する |
+| MPI-008 | No auto-merge | collision発生時もasset recordを統合しない |
+| MPI-009 | Duplicate import | 同一Packageの再importを明示statusにする |
+| MPI-010 | Legacy isolation | package metadataのない旧datablockを推測結合しない |
+| MPI-011 | Propagation / reverse lookup | Object、Material、Imageのcustom propertyとlookupが一致する |
+| MPI-012 | Scene persistence | registry JSON roundtripとsingle-package回帰が通る |
 
 ## BUG-002 Acceptance Tests
 

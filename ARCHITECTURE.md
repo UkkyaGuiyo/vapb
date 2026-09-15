@@ -94,9 +94,17 @@ Identity Layerは今後、import・edit・merge・exportを横断する独立設
 
 準備workerはBlender datablockを変更しない。準備modalは完了時に`FINISHED`でWindowManagerから終了し、UUID sessionを次のevent-loopへ渡す。Prefab dialogとprepared importは別Operatorで実行し、cancel、exception、timeoutで抽出先・progress・sessionをcleanupする。
 
+## Package-Scoped Identity (0.4.0 candidate)
+
+- `PackageIdentity`の内容SHA-256を`source_package_id = sha256:<64hex>`として、Packageのファイル名やパスから独立したnamespaceにする。
+- Canonical asset identityは`(source_package_id, source_guid, source_file_id または source_asset_path)`。GUID/path/fileIDはBlender Object、Material、Imageのcustom propertyへ伝播する。
+- `SceneIdentityRegistry`をScene custom propertyへJSON保存し、package metadata、asset lookup、GUID/path reverse lookup、collision reportを提供する。
+- 同一Package内の同一identityは再登録可能だが、異なるPackage間の同一GUIDまたは同一Asset Pathはcollisionとして報告する。自動merge、名前だけの推測、silent overwriteは行わない。
+- 旧来のPackage情報が無いdatablockは`LEGACY_UNSCOPED`として扱い、現在Packageへ推測結合しない。
+
 ## Explicitly Not Implemented
 
-UnityPackageの再梱包、Unity Finalizerの自動実行、完全なShader互換、PhysBone preview、複数Package integrationは現行実装では提供しない。
+UnityPackageの再梱包、Unity Finalizerの自動実行、完全なShader互換、PhysBone preview、複数Packageの自動mergeは現行実装では提供しない。
 
 ## Maximum Recoverable Unity State (MRUS) Architecture
 

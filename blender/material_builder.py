@@ -32,11 +32,19 @@ def _set_input(node, name: str, value) -> None:
         socket.default_value = value
 
 
-def _existing_material(data: UnityMaterialData):
+def _existing_material(data: UnityMaterialData, source_package_id: str = ""):
     for material in bpy.data.materials:
-        if data.guid and material.get("unity_material_guid") == data.guid:
+        if (
+            data.guid
+            and material.get("unity_material_guid") == data.guid
+            and material.get("unity_source_package_id", "") == source_package_id
+        ):
             return material
-        if not data.guid and material.get("unity_material_path") == data.unity_path:
+        if (
+            not data.guid
+            and material.get("unity_material_path") == data.unity_path
+            and material.get("unity_source_package_id", "") == source_package_id
+        ):
             return material
     return bpy.data.materials.new(data.name)
 
@@ -109,10 +117,12 @@ def _set_surface_mode(material, normalized: NormalizedMaterial) -> None:
             pass
 
 
-def _save_metadata(material, data: UnityMaterialData, normalized: NormalizedMaterial) -> None:
+def _save_metadata(material, data: UnityMaterialData, normalized: NormalizedMaterial, source_package_id: str = "") -> None:
     material["unity_source_material"] = str(data.path)
     material["unity_material_guid"] = data.guid
     material["unity_material_path"] = data.unity_path
+    if source_package_id:
+        material["unity_source_package_id"] = source_package_id
     material["unity_material_name"] = data.name
     material["unity_shader_guid"] = data.shader_guid
     material["unity_shader_name"] = normalized.shader_name or data.shader_name
@@ -144,12 +154,13 @@ def build_material(
     timing=None,
 ):
     normalized = normalize_material(data)
-    material = _existing_material(data)
+    source_package_id = getattr(asset_db, "source_package_id", "")
+    material = _existing_material(data, source_package_id)
     material.use_nodes = True
     material.diffuse_color = normalized.base_color
     material.use_backface_culling = normalized.cull_backface
     _set_surface_mode(material, normalized)
-    _save_metadata(material, data, normalized)
+    _save_metadata(material, data, normalized, source_package_id)
 
     nodes = material.node_tree.nodes
     links = material.node_tree.links

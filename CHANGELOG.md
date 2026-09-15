@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 candidate - 2026-09-15
+
+- Added content-addressed `source_package_id` and canonical package-scoped asset identity.
+- Propagated package identity to imported Object, Material, and Image datablocks.
+- Added Scene package registry, GUID/path reverse lookup, duplicate import status, and cross-package collision reporting.
+- Added MPI-001..012 unit/synthetic acceptance coverage while preserving single-package behavior.
+
+
 ## 0.3.0 - 2026-09-15
 
 - Added the manual Editable Texture Workflow for imported Unity Images.
