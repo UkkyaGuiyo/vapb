@@ -1,6 +1,6 @@
 # Unity Package / VRChat Avatar Importer
 
-Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.2.0。Unity Editorを起動せず、UnityPackageを一時フォルダへ安全に復元し、FBXをBlenderへ読み込みます。
+Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.3.0。Unity Editorを起動せず、UnityPackageを一時フォルダへ安全に復元し、FBXをBlenderへ読み込みます。
 
 Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と、Blender内部引数を受け取るconstructor形式に対応しています。legacy `bpy.ops.import_scene.fbx` は既存のArmature、Weight、Shape Key、Material Slotの挙動を維持するため継続使用します。
 

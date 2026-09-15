@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.0 candidate - 2026-09-15
+## 0.3.0 - 2026-09-15
 
 - Added the manual Editable Texture Workflow for imported Unity Images.
 - Added identity/status display and safe same-file Save/Reload actions in the Image Editor sidebar.

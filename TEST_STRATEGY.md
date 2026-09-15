@@ -58,7 +58,7 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 | VIS-007 | Alpha path | 透明MaterialのAlpha経路が成立し、不透明Materialを誤って透明化しない |
 | VIS-008 | Representative real materials | Face/Skin、Hair、SampleGarment/Clothesの3系統でnode graphが成立する |
 | VIS-009 | Save/reopen persistence | `.blend`再起動後もnode graphとImage bindingが保持される |
-| VIS-010 | Human Material Preview | 通常UIで肌・髪・目・着物等のTextureが目視表示される。0.2.0 Baselineではユーザー実機確認PASS |
+| VIS-010 | Human Material Preview | 通常UIで肌・髪・目・着物等のTextureが目視表示される。0.3.0 Baselineでユーザー実機確認PASS |
 
 ## BUG-003 Locale / Active Output Acceptance Tests
 
@@ -123,11 +123,11 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 | REC-009 | Restore report | 全restore対象についてstatusを記録する |
 | REC-010 | Roundtrip E2E | UnityPackage → Blender → edit → export → Unity Finalizer → Avatar validationを通す |
 
-現時点ではREC-001〜REC-010は実装前のPLANNED / UNVERIFIEDであり、0.2.0 Baselineの達成済み機能を示さない。
+現時点ではREC-001〜REC-010はPLANNED / UNVERIFIEDであり、0.3.0 Baselineの達成済み機能を示さない。
 
 ## MRUS Roadmap
 
-0.2.0 Importer Baseline → Editable Texture Workflow → Multi-Package Identity → Bridge Manifest v2 / State Snapshot → Unity Finalizer（Material、LipSync / Avatar Descriptor、Animator / Expressions、PhysBone / Contact、Third-party Components）→ Full End-to-End Roundtrip。
+0.3.0 Importer Baseline → Multi-Package Identity → Bridge Manifest v2 / State Snapshot → Unity Finalizer（Material、LipSync / Avatar Descriptor、Animator / Expressions、PhysBone / Contact、Third-party Components）→ Full End-to-End Roundtrip。
 
 ## Evidence Rules
 
@@ -138,4 +138,4 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 
 ## Current Baseline Result
 
-0.2.0 Baselineでは41 Python tests PASS、Blender 5.2.1 register/unregister PASS、実Package foreground FINISHED、BUG-002/BUG-003 CLOSED、VIS-010 human Material Preview PASSを確認済み。詳細は`TEST_RESULTS.md`と`experiment_logs/BASELINE_0_2_0_FREEZE_001/REPORT.md`を参照する。
+0.3.0 Baselineでは45 Python tests PASS、Blender 5.2.1 register/unregister PASS、実Package foreground FINISHED、BUG-002/BUG-003 CLOSED、ETX-010 / EXT-003 / EXT-005 / EXT-010 human verification PASSを確認済み。詳細は`TEST_RESULTS.md`と`experiment_logs/BASELINE_0_3_0_FREEZE_001/REPORT.md`を参照する。
