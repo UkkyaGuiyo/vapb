@@ -31,6 +31,7 @@ from ..unity.package_reader import PackageIndex, UnityPackageError, UnityPackage
 from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab
+from ..unity.sibling_discovery import discover_siblings
 
 
 _DEFAULT_PREFAB_ITEMS: list[tuple[str, str, str, int]] = [("AUTO", "Automatic", "Use the first prefab", 0)]
@@ -172,6 +173,12 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         default=True,
         description="Keep the extracted source so external texture paths remain available",
     )
+    include_sibling_packages: BoolProperty(
+        name="Import uniquely matched sibling Packages",
+        default=False,
+        description="Discover and import same-directory Packages with unique GUID dependency matches",
+    )
+    group_child: BoolProperty(options={"HIDDEN"}, default=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -889,6 +896,41 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 current_package.update(dependency_counts)
                 save_scene_registry(scene, current_registry)
             self.report({"INFO"}, f"Dependency resolution: local={dependency_counts['resolved_local']} cross-package={dependency_counts['resolved_cross_package']} unresolved={dependency_counts['unresolved']} ambiguous={dependency_counts['ambiguous']}")
+            if self.include_sibling_packages and not self.group_child:
+                discovery = discover_siblings(package_path)
+                scene["unitypackage_sibling_discovery"] = {
+                    "status": discovery.status,
+                    "root_package": discovery.root_package,
+                    "related_packages": [candidate.path for candidate in discovery.packages],
+                    "unresolved_guids": sorted(discovery.unresolved_guids),
+                    "ambiguous_guids": sorted(discovery.ambiguous_guids),
+                }
+                if discovery.status == "COMPLETE" and discovery.packages:
+                    group_id = uuid4().hex
+                    scene["unitypackage_group_import"] = {
+                        "group_import_id": group_id,
+                        "primary_package_id": package_key.source_package_id,
+                        "related_package_ids": [candidate.package_id for candidate in discovery.packages],
+                    }
+                    for candidate in discovery.packages:
+                        result = bpy.ops.import_scene.unitypackage(
+                            filepath=candidate.path,
+                            import_mode=self.import_mode,
+                            prefab_choice="AUTO",
+                            use_armatures=self.use_armatures,
+                            use_bone_weights=self.use_bone_weights,
+                            use_shape_keys=self.use_shape_keys,
+                            use_materials=self.use_materials,
+                            use_textures=self.use_textures,
+                            apply_prefab_transforms=self.apply_prefab_transforms,
+                            keep_extracted=self.keep_extracted,
+                            include_sibling_packages=False,
+                            group_child=True,
+                        )
+                        if "FINISHED" not in result:
+                            self.report({"WARNING"}, f"Related Package import failed: {Path(candidate.path).name}")
+                elif discovery.status in {"AMBIGUOUS", "PARTIAL"}:
+                    self.report({"WARNING"}, f"Sibling discovery {discovery.status}; Import Together was not auto-selected")
             collisions = load_scene_registry(scene).detect_collisions()
             if collisions:
                 self.report({"WARNING"}, f"Detected {len(collisions)} cross-package identity collision(s)")

@@ -70,6 +70,8 @@ Material:
     m_TexEnvs:
     - _MainTex:
         m_Texture: {{fileID: 2800000, guid: {texture_guid}, type: 3}}
+        m_Scale: {{x: 0.75, y: 1.25}}
+        m_Offset: {{x: 0.125, y: -0.25}}
 """.encode()
 
 
@@ -129,6 +131,46 @@ def run_order(paths: tuple[Path, Path, Path], blend_path: Path) -> dict:
     return result
 
 
+def run_grouped_sample_avatar_b(root: Path, fbx_bytes: bytes, png: bytes, material_guid: str, texture_guid: str) -> dict:
+    """Exercise the user-facing SampleAvatarB + same-folder Import Together path."""
+    from unitypackage_blender_importer.blender.identity_registry import load_scene_registry
+
+    root = root / "sample_avatar_b_group"
+    root.mkdir()
+    sample_avatar_b = root / "SampleAvatarB.unitypackage"
+    metarial = root / "Metarial.unitypackage"
+    textures = root / "HankaTextures.unitypackage"
+    package(sample_avatar_b, [("e" * 32, "Assets/SampleAvatarB/Body.fbx", fbx_bytes), ("f" * 32, "Assets/SampleAvatarB/SampleAvatarB.prefab", prefab("e" * 32, material_guid))], material_guid)
+    package(metarial, [(material_guid, "Assets/Metarial/HankaMaterial.mat", material(texture_guid))])
+    package(textures, [(texture_guid, "Assets/HankaTextures/SampleAvatarB.png", png)])
+    addon = __import__("unitypackage_blender_importer")
+    addon.register()
+    from unitypackage_blender_importer.operators import import_unitypackage as module
+    module.UNITYPACKAGE_OT_import._show_prefab_dialog_if_needed = lambda self, _context, _paths: False
+    result = bpy.ops.import_scene.unitypackage(
+        filepath=str(sample_avatar_b), import_mode="RECONSTRUCT", prefab_choice="AUTO",
+        keep_extracted=False, include_sibling_packages=True,
+    )
+    assert "FINISHED" in result, result
+    discovery = bpy.context.scene.get("unitypackage_sibling_discovery", {})
+    group = bpy.context.scene.get("unitypackage_group_import", {})
+    registry = load_scene_registry(bpy.context.scene)
+    package_ids = set(registry.packages)
+    assert discovery["status"] == "COMPLETE", discovery
+    assert len(discovery["related_packages"]) == 2, discovery
+    assert group["primary_package_id"], group
+    assert len(package_ids) == 3, package_ids
+    coat = next(obj for obj in bpy.data.objects if obj.get("unity_prefab_file_id") == "1001")
+    assert coat.data.materials and coat.data.materials[0].get("unity_material_guid") == material_guid
+    images = [node.image for node in coat.data.materials[0].node_tree.nodes if node.type == "TEX_IMAGE" and node.image]
+    assert images and images[0].get("unity_guid") == texture_guid
+    graph_names = {node.name for node in coat.data.materials[0].node_tree.nodes}
+    assert any("Unity Base Color UV" in name for name in graph_names), graph_names
+    assert any("Unity Base Color Mapping" in name for name in graph_names), graph_names
+    addon.unregister()
+    return {"discovery": discovery["status"], "group_packages": len(package_ids), "material_bound": True, "texture_bound": True}
+
+
 def main() -> None:
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
@@ -143,6 +185,15 @@ def main() -> None:
         package(geometry, [(fbx_guid, "Assets/Geometry/Body.fbx", fbx_bytes), (prefab_guid, "Assets/Geometry/Coat.prefab", prefab(fbx_guid, material_guid))], material_guid)
         package(appearance, [(material_guid, "Assets/Appearance/CoatMaterial.mat", material(texture_guid))])
         package(textures, [(texture_guid, "Assets/Textures/Coat.png", png)])
+        grouped = run_grouped_sample_avatar_b(root, fbx_bytes, png, material_guid, texture_guid)
+        bpy.ops.object.select_all(action="SELECT")
+        bpy.ops.object.delete(use_global=False)
+        for material_data in list(bpy.data.materials):
+            bpy.data.materials.remove(material_data)
+        for image in list(bpy.data.images):
+            bpy.data.images.remove(image)
+        bpy.context.scene.pop("unitypackage_identity_registry", None)
+        bpy.context.scene.pop("unitypackage_dependency_registry", None)
         first = run_order((geometry, appearance, textures), root / "geometry_first.blend")
         bpy.ops.object.select_all(action="SELECT")
         bpy.ops.object.delete(use_global=False)
@@ -180,8 +231,8 @@ def main() -> None:
         assert coat.data.materials[3] == local
         assert coat.data.materials[4] == provider
         print("CPD_POLICY_DIAGNOSTIC=" + json.dumps({"ambiguous_refused": "AMBIGUOUS_PROVIDER" in statuses, "local_priority": coat.data.materials[3] == local, "external_guid_bind": coat.data.materials[4] == provider}, sort_keys=True))
-        print("CPD_DIAGNOSTIC=" + json.dumps({"geometry_first": first, "provider_first": reverse}, sort_keys=True))
-        print("CPD-001..006,009,011,013=PASS (synthetic split packages, both orders, late binding, save/reopen, idempotence); CPD-007/008/010/012 dedicated fixtures remain UNVERIFIED")
+        print("CPD_DIAGNOSTIC=" + json.dumps({"geometry_first": first, "provider_first": reverse, "grouped_sample_avatar_b": grouped}, sort_keys=True))
+        print("CPD-001..006,009,011,013=PASS; CPD-007/008/010/012=PASS (dedicated ambiguity, local-priority, no-name, external-GUID policy fixtures); SPD-001..005=PASS (grouped SampleAvatarB-like import)")
     print("CROSS_PACKAGE_DEPENDENCY_OK")
 
 

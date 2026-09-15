@@ -201,3 +201,15 @@ Exporter、reachability pruning、GUID/path collision policy、Unity Finalizer r
 | CPD-013 | Registry roundtrip | JSON persistenceがsave/reopenで保持される |
 | CPD-014 | MPI regression | MPI-001..017 PASS |
 | CPD-015 | MPV regression | MPV-001..012 PASS |
+
+## Phase B Sibling Package Acceptance (SPD-001..005)
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| SPD-001 | Same-folder discovery | 選択Packageの親フォルダだけを探索し、別製品フォルダを見ない |
+| SPD-002 | GUID exact provider | prefab/material/FBX externalObjectsのGUIDで候補を一意化し、名前推測しない |
+| SPD-003 | Transitive discovery | A→B→Cの依存を未解決GUIDがなくなるまで検出 |
+| SPD-004 | Ambiguity safe | 同GUID provider複数時はAMBIGUOUS/PARTIALとして自動選択しない |
+| SPD-005 | Grouped import | SampleAvatarB起点のImport TogetherでGeometry/Material/Textureを同一Sceneへ反映 |
+
+SPD-001..005はPython fixtureおよびBlender 5.2.1 synthetic SampleAvatarB-like testでPASS。実アセットのforeground目視は別途Human Retest。

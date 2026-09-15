@@ -356,6 +356,23 @@ def apply_materials_by_name(
                 replacement = by_name.get(slot.name.casefold()) or by_name.get(strip_material_suffix(slot.name).casefold())
             if replacement is not None:
                 obj.data.materials[index] = replacement
+        # A model can carry externalObjects metadata before Blender has
+        # created material slots (for example, a geometry-only FBX). Keep the
+        # dependency as unresolved metadata instead of dropping it. It is
+        # intentionally limited to the no-slot case so real slot indices are
+        # never guessed.
+        if scene and external_objects and len(obj.data.materials) == 0:
+            for target_guid in external_objects.values():
+                if target_guid and asset_db.find_guid(target_guid) is None:
+                    capture_dependency(scene, {
+                        "dependency_type": "FBX_EXTERNAL_MATERIAL",
+                        "consumer_package_id": asset_db.source_package_id,
+                        "consumer_asset_path": obj.get("unity_asset_path", obj.get("unity_source_fbx", "")),
+                        "consumer_object_path": obj.get("unity_asset_path", ""),
+                        "consumer_slot_index": 0,
+                        "target_guid": target_guid,
+                        "target_file_id": "",
+                    })
 
 
 def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.Object], asset_db, material_library, scene=None) -> None:

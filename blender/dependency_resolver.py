@@ -89,11 +89,11 @@ def _bind_material(record: dict[str, Any], material: Any) -> bool:
     while len(consumer.data.materials) <= slot:
         consumer.data.materials.append(None)
     consumer.data.materials[slot] = material
+    record["binding_source"] = "dependency_resolver"
     return True
 
 
 def _bind_texture(record: dict[str, Any], image: Any) -> bool:
-    material_name = str(record.get("consumer_object_path", ""))
     material = next((item for item in bpy.data.materials if item.get("unity_material_guid") == record.get("consumer_asset_guid") and item.get("unity_source_package_id") == record.get("consumer_package_id")), None)
     if material is None:
         record["status"] = MISSING_CONSUMER
@@ -101,17 +101,67 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
     nodes = material.node_tree.nodes
     links = material.node_tree.links
     label = str(record.get("texture_label", "Base Color"))
-    node_name = f"Unity {label} {material.name}"
-    tex = nodes.get(node_name) or next(
-        (node for node in nodes if node.type == "TEX_IMAGE" and node.name.startswith(f"Unity {label} ")),
-        None,
-    ) or nodes.new("ShaderNodeTexImage")
-    tex.name = tex.label = node_name
-    tex.image = image
+    texture_data = record.get("texture_ref") or {}
+    try:
+        from .material_builder import _texture_node
+        from ..unity.material_model import UnityTextureRef
+        ref = UnityTextureRef(
+            property_name=str(texture_data.get("property_name", label)),
+            guid=str(texture_data.get("guid", record.get("target_guid", ""))),
+            file_id=int(texture_data.get("file_id", 0) or 0),
+            scale=tuple(texture_data.get("scale", (1.0, 1.0)))[:2],
+            offset=tuple(texture_data.get("offset", (0.0, 0.0)))[:2],
+        )
+        tex = _texture_node(nodes, links, material.name, label, ref, image)
+    except (TypeError, ValueError, AttributeError, RuntimeError, ImportError):
+        tex_name = f"Unity {label} {material.name}"
+        tex = nodes.get(tex_name) or nodes.new("ShaderNodeTexImage")
+        tex.name = tex.label = tex_name
+        tex.image = image
+    tex["unity_dependency_binding_source"] = "dependency_resolver"
+    tex["unity_dependency_provider_guid"] = image.get("unity_guid", "")
+    bsdf = next((node for node in nodes if node.type == "BSDF_PRINCIPLED"), None)
+    if bsdf is None:
+        return True
+
+    def replace_input(socket, output):
+        if socket is None or output is None:
+            return
+        for link in list(socket.links):
+            links.remove(link)
+        links.new(output, socket)
+
+    def material_color(key, default):
+        try:
+            props = json.loads(str(material.get("unity_props", "{}")))
+            value = props.get("colors", {}).get(key)
+            return tuple(value) if value is not None else default
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return default
+
     if label == "Base Color":
-        bsdf = next((node for node in nodes if node.type == "BSDF_PRINCIPLED"), None)
-        if bsdf is not None and bsdf.inputs.get("Base Color") is not None:
-            links.new(tex.outputs.get("Color"), bsdf.inputs.get("Base Color"))
+        mix = nodes.get(f"Unity Base Color Mix {material.name}") or nodes.new("ShaderNodeMixRGB")
+        mix.name = mix.label = f"Unity Base Color Mix {material.name}"
+        mix.blend_type = "MULTIPLY"
+        mix.inputs[0].default_value = 1.0
+        mix.inputs[1].default_value = material_color("_Color", (1.0, 1.0, 1.0, 1.0))
+        replace_input(mix.inputs.get("Color2"), tex.outputs.get("Color"))
+        replace_input(bsdf.inputs.get("Base Color"), mix.outputs.get("Color"))
+    elif label == "Normal":
+        normal = nodes.get(f"Unity Normal Map {material.name}") or nodes.new("ShaderNodeNormalMap")
+        normal.name = normal.label = f"Unity Normal Map {material.name}"
+        replace_input(normal.inputs.get("Color"), tex.outputs.get("Color"))
+        replace_input(bsdf.inputs.get("Normal"), normal.outputs.get("Normal"))
+    elif label == "Emission":
+        replace_input(bsdf.inputs.get("Emission Color"), tex.outputs.get("Color"))
+    elif label == "Metallic":
+        replace_input(bsdf.inputs.get("Metallic"), tex.outputs.get("Color"))
+        invert = nodes.get(f"Unity Smoothness to Roughness {material.name}") or nodes.new("ShaderNodeMath")
+        invert.name = invert.label = f"Unity Smoothness to Roughness {material.name}"
+        invert.operation = "SUBTRACT"
+        invert.inputs[0].default_value = 1.0
+        replace_input(invert.inputs[1], tex.outputs.get("Alpha"))
+        replace_input(bsdf.inputs.get("Roughness"), invert.outputs.get("Value"))
     return True
 
 
@@ -120,8 +170,6 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
     counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "late_bindings_applied": 0}
     changed = False
     for record in registry.get("dependencies", []):
-        if record.get("status") == RESOLVED_LOCAL or record.get("status") == RESOLVED_CROSS_PACKAGE:
-            continue
         provider_type = "Material" if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"} else "Image"
         candidates = _providers(record.get("target_guid", ""), provider_type)
         local = [item for item in candidates if item.get("unity_source_package_id") == record.get("consumer_package_id")]
@@ -151,12 +199,36 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                 counts["late_bindings_applied"] += 1
                 changed = True
                 continue
+        if status in {AMBIGUOUS_PROVIDER, UNRESOLVED} and record.get("binding_source") == "dependency_resolver":
+            _unbind_dependency(record)
         record["status"] = status
         counts["ambiguous" if status == AMBIGUOUS_PROVIDER else "unresolved"] += 1
         changed = True
     if changed:
         save_dependency_registry(scene, registry)
     return counts
+
+
+def _unbind_dependency(record: dict[str, Any]) -> None:
+    if record.get("dependency_type") == "MATERIAL_TEXTURE":
+        material = next((item for item in bpy.data.materials if item.get("unity_material_guid") == record.get("consumer_asset_guid") and item.get("unity_source_package_id") == record.get("consumer_package_id")), None)
+        if material is None:
+            return
+        provider_guid = record.get("resolved_provider_guid", "")
+        for node in list(material.node_tree.nodes):
+            if node.get("unity_dependency_binding_source") == "dependency_resolver" and node.get("unity_dependency_provider_guid") == provider_guid:
+                node.image = None
+        return
+    consumer = _find_consumer(record)
+    if consumer is None or not getattr(consumer, "data", None) or not hasattr(consumer.data, "materials"):
+        return
+    slot = int(record.get("consumer_slot_index", 0))
+    if slot >= len(consumer.data.materials):
+        return
+    current = consumer.data.materials[slot]
+    if current is not None and current.get("unity_source_package_id") == record.get("resolved_provider_package_id") and current.get("unity_material_guid") == record.get("resolved_provider_guid"):
+        consumer.data.materials[slot] = None
+    record["binding_source"] = ""
 
 
 def resolve_after_import(scene: Any) -> dict[str, int]:
@@ -184,4 +256,5 @@ def capture_material_texture_dependencies(scene: Any, materials: Iterable[Any]) 
                 "target_guid": target_guid,
                 "target_file_id": "",
                 "texture_label": label,
+                "texture_ref": dict(texture),
             })
