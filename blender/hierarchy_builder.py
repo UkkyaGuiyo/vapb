@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Iterable
 
 import bpy  # type: ignore
@@ -11,6 +12,7 @@ from ..unity.prefab_parser import PrefabData
 
 
 _UNITY_TO_BLENDER = Matrix(((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, -1.0, 0.0)))
+_BLENDER_DUPLICATE_SUFFIX = re.compile(r"\.\d{3}$")
 
 
 def unity_position(value: dict[str, float]):
@@ -45,12 +47,21 @@ def build_prefab_hierarchy(
     if source_package_id:
         root["unity_source_package_id"] = source_package_id
     by_name: dict[str, list[bpy.types.Object]] = {}
+    by_base_name: dict[str, list[bpy.types.Object]] = {}
     for obj in imported:
         by_name.setdefault(obj.name.casefold(), []).append(obj)
+        base_name = _BLENDER_DUPLICATE_SUFFIX.sub("", obj.name).casefold()
+        if base_name != obj.name.casefold():
+            by_base_name.setdefault(base_name, []).append(obj)
     used: set[int] = set()
     game_object_map: dict[int, bpy.types.Object] = {}
     for game_object_id, game_object in prefab.game_objects.items():
-        candidates = by_name.get(game_object.name.casefold(), [])
+        exact_candidates = by_name.get(game_object.name.casefold(), [])
+        if exact_candidates:
+            candidates = exact_candidates
+        else:
+            base_candidates = by_base_name.get(game_object.name.casefold(), [])
+            candidates = base_candidates if len(base_candidates) == 1 else []
         obj = next((candidate for candidate in candidates if candidate.as_pointer() not in used), None)
         if obj is None:
             obj = bpy.data.objects.new(game_object.name, None)

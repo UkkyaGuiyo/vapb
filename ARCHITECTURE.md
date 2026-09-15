@@ -139,3 +139,13 @@ Object renameやhierarchy変更後は、旧Object path → persistent identity �
 Phase 1 Asset import確認 → Phase 2 Identity resolution → Phase 3 Object/Bone/Shape Key rebind → Phase 4 Material restore → Phase 5 Avatar Descriptor/LipSync restore → Phase 6 Animator/Expression restore → Phase 7 PhysBone/Contact restore → Phase 8 Third-party component restore → Phase 9 Validation Report。
 
 Restore resultは`RESTORED`、`REBOUND`、`PARTIAL`、`MISSING_TARGET`、`MISSING_DEPENDENCY`、`AMBIGUOUS`、`UNSUPPORTED`、`ERROR`に分類し、黙って失敗しない。
+-
+## Multi-Package Visual Binding (0.4.0 candidate)
+
+Material/Texture bindingの解決順は、現在import中のPackageのAssetDatabase、Prefabの明示GUID参照、package-scoped registryを正本とする。Prefab GameObject名がFBX import時の`.###`重複suffixで変わった場合は、exact nameを優先し、base nameの候補が一つだけなら採用し、複数候補では空のplaceholderへ勝手に割り当てない。
+
+Real Multi-Package Visual E2Eの初回診断では、Package BのMaterial/Imageは発見・生成済みだったがRenderer slotが0件だった。原因はPrefab名と`.###`付きFBX Object名の不一致でhierarchyがplaceholderを作り、material mapping対象が空Objectになったことだった。suffix-safe lookup後はB slot 1件、B Image node 1件、cross-package material reuse 0件となった。
+
+## UnityPackage Exporter (PLANNED)
+
+将来の実装境界は `Imported Packages → Blender Scene → Select Export Root/Set → Reachability → Identity Resolution → FBX/Texture/Material/Meta Generation → Unity standard asset/meta/pathname → tar.gz .unitypackage` とする。未使用datablockは編集中にpruneせず、exportのreachability判定だけで除外する。本候補では仕様のみで、Exporterは実装しない。

@@ -1,5 +1,13 @@
 # Current 0.3.0 Baseline Test Results
 
+## 0.4.0 candidate Real Multi-Package Visual E2E (2026-09-15)
+
+- 初回synthetic A→B診断: B Material/Image discovery 1/1、Image node 1、Renderer slot 0、cross-package reuse 0。Texture extraction/loadは成功しており、Prefab GameObject名とFBX import後の`.###`付きObject名の不一致で空placeholderがmapping対象になったことを特定した。
+- 修正後: `MPV_SYNTHETIC_OK`、B Renderer slot 1、B Image node 1、cross-package reuse 0。exact nameを優先し、base nameが一意な場合だけ`.###` suffix fallback、曖昧な場合は拒否する。
+- `MPV-001..011`: synthetic A→B visual binding、同名Material/Texture isolation、Prefab GUID、externalObjects、ambiguous-safe lookup、save/reopenをPASS。`MPV_REOPEN_DIAGNOSTIC`でB package identityとslot保持を確認する。`MPV-012`は別実行したMPI-017、Blender integration、Python、compileall、real-package regressionの結果を根拠にPASSとする。
+- 実Package A+Bの第二Packageは本作業で一意に指定・確認できていないため、`MPV-REAL-001`のForeground Material Preview/二Package目視確認は`HUMAN RETEST REQUIRED`。実Package A単体の既存回帰は下記の通りPASSであり、A+B PASSとは扱わない。
+- Exporterとreachability pruningは仕様を追加したのみで、実装・roundtripは未実施（PLANNED / UNVERIFIED）。
+
 ## 0.4.0 candidate Multi-Package Identity / Blocker Fix (2026-09-15)
 
 - Python: 59/59 PASS; `compileall`: PASS.

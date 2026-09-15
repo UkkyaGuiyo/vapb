@@ -123,3 +123,11 @@ If the operating system refuses the launch after validation, the launcher return
 - Blender実機でのFBXファイルそのものを用いた形状確認は、パッケージに含まれるFBXの内容に依存します。付属テストは展開、パス検証、列挙、Prefab YAML解析とBlenderアドオン有効化を対象にします。
 - Unity側のMaterial RestoreはFBX内のExported Material名がmanifest生成後に変更されていないことを前提にします。別ツールでMaterial名を変更した場合はSlotを特定できません。
 - Unity側Restoreは元`.mat`のGUIDを変更せず、Unity EditorのAssetImporter remapへ参照を登録します。実際のShader表示は、対象Projectに元Shaderと元`.mat`が存在する場合に限られます。
+-
+### Multi-Package Material / Texture Binding
+
+複数UnityPackageを同一Sceneへ順次importする場合も、Material、Texture、Prefab Renderer slotはPackage identityを境界に解決します。同名や同一filenameは自動mergeせず、Prefab Object名がBlenderの`.###`重複suffixで変化した場合は一意なbase名だけを安全にfallbackします。
+
+### UnityPackage Exporter (planned)
+
+UnityPackageの再梱包Exporterとreachability pruningは将来仕様です。現在のアドオンはimport/editを提供し、ExporterやUnity Finalizer roundtripは実装していません。

@@ -161,3 +161,24 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 ## Current Baseline Result
 
 0.3.0 Baselineでは45 Python tests PASS、Blender 5.2.1 register/unregister PASS、実Package foreground FINISHED、BUG-002/BUG-003 CLOSED、ETX-010 / EXT-003 / EXT-005 / EXT-010 human verification PASSを確認済み。詳細は`TEST_RESULTS.md`と`experiment_logs/BASELINE_0_3_0_FREEZE_001/REPORT.md`を参照する。
+-
+## Real Multi-Package Visual E2E Acceptance Tests (MPV-001..012)
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| MPV-001 | Sequential A→B import | 同一SceneでA/Bのgeometryが共存する |
+| MPV-002 | B Renderer slot | BのslotがB Material GUIDを参照する |
+| MPV-003 | B Material node | BのImage Texture nodeがB Imageを参照する |
+| MPV-004 | Same material name | 同名MaterialでもPackage identityが分離される |
+| MPV-005 | Same texture filename | 同名Texture filenameでもcross-package共有しない |
+| MPV-006 | externalObjects GUID | FBX externalObjectsのGUID解決がPackage scopedである |
+| MPV-007 | Prefab Renderer GUID | Prefab明示Renderer参照がname fallbackより優先される |
+| MPV-008 | Unique suffix fallback | `.###` suffix除去後の一意base名だけをfallback採用する |
+| MPV-009 | Ambiguous refusal | 複数候補のname fallbackを未解決のまま拒否する |
+| MPV-010 | No placeholder slot | placeholder Objectに解決済みMaterialを割り当てない |
+| MPV-011 | Save / reopen | A/B bindingとpackage identityが再開後も保持される |
+| MPV-012 | Regression | MPI-001..017とsingle-package material/texture回帰がPASSする |
+
+## UnityPackage Exporter Acceptance (EXP-001..015, PLANNED)
+
+Exporter、reachability pruning、GUID/path collision policy、Unity Finalizer roundtripはEXP-001..015として仕様化するが、0.4.0 candidateでは未実装・未検証である。Export時のみpruneし、編集時の未使用datablockを削除しないことを必須条件とする。

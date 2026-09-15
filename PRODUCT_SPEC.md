@@ -100,3 +100,16 @@ MRUSはUnityPackage → State Snapshot / Identity Capture → Blender Import →
 ## Current Scope Boundary
 
 BUG-002 / BUG-003 / Editable Textureの既存挙動は回帰対象として維持する。今回の変更はPackage-scoped identity、registry、collision reportとそのテストに限定し、production logicの自動mergeやUnityPackage exportは行わない。
+-
+## 0.4.0 candidate: Real Multi-Package Visual E2E
+
+- 複数Packageを同一Sceneへ順次importしても、Object、Material、Image、Renderer slotは`source_package_id`を境界として解決する。
+- 同名Material、同名Texture filename、同一GUIDが別Packageに存在しても、名前だけのcross-package再利用やsilent mergeを行わない。
+- Prefab GameObject名とBlenderの重複suffix（`.001`等）が異なる場合は、同一base名が一意なときだけfallbackし、複数候補なら未解決のままにする。
+- MPV-001..012はsynthetic A→B E2E、binding、isolation、ambiguous-safe lookup、save/reopenを受入対象とする。実Package A+Bの目視確認は別途人手確認とする。
+
+## UnityPackage Exporter (PLANNED)
+
+将来のExporterは、選択したExport Root/Setからreachabilityを計算し、解決済みidentityをUnity標準の`<GUID>/asset`、`asset.meta`、`pathname`へ生成してtar.gzの`.unitypackage`を作る。単なるZIP拡張子変更ではない。編集時のBlender datablockは削除せず、reachabilityによるpruningはexport時だけ適用する。Exporter本体、Unity Finalizer、実Package roundtripは本候補では未実装である。
+
+Exporterのcollision status候補は`PRESERVE_GUID`、`NEW_ASSET_GUID`、`GUID_COLLISION_REMAP`、`PATH_COLLISION`、`AMBIGUOUS_SOURCE`、`UNSUPPORTED_EXPORT`とする。
