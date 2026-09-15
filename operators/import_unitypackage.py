@@ -19,8 +19,10 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 
 from ..blender.fbx_importer import apply_import_options, import_fbx_files
 from ..blender.hierarchy_builder import build_prefab_hierarchy
-from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package
+from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package, save_scene_registry
 from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, build_material_library
+from ..blender.texture_loader import load_textures_from_database
+from ..blender.dependency_resolver import capture_material_texture_dependencies, load_dependency_registry, resolve_after_import
 from ..blender.performance import PerformanceTimer
 from ..ui.import_panel import draw_import_options
 from ..unity.asset_database import AssetDatabase
@@ -653,6 +655,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         texture_guid = str(texture.guid).lower()
                         if texture_guid in index.records:
                             wanted.add(texture_guid)
+        if self.use_textures and not fbx_guids and not material_guids:
+            wanted.update(
+                guid for guid, record in index.records.items()
+                if Path(record.unity_path).suffix.lower() in {".png", ".jpg", ".jpeg", ".tga", ".bmp", ".tif", ".tiff", ".exr", ".psd"}
+            )
         return wanted
 
     def _extract_selected_dependencies(
@@ -754,21 +761,20 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             else:
                 prefab = None
 
-            if not fbx_paths:
-                raise UnityPackageError("No .fbx asset was found in the UnityPackage")
-
-            self._set_phase(context, "Importing FBX", 0.55)
-            imported_objects = self._performance.measure(
-                "fbx_import", import_fbx_files, fbx_paths, package_key.source_package_id
-            )
-            if not imported_objects:
-                raise UnityPackageError("FBX import produced no Blender objects")
-            imported_objects = apply_import_options(
-                imported_objects,
-                use_armatures=self.use_armatures,
-                use_bone_weights=self.use_bone_weights,
-                use_shape_keys=self.use_shape_keys,
-            )
+            imported_objects = []
+            if fbx_paths:
+                self._set_phase(context, "Importing FBX", 0.55)
+                imported_objects = self._performance.measure(
+                    "fbx_import", import_fbx_files, fbx_paths, package_key.source_package_id
+                )
+                if not imported_objects:
+                    raise UnityPackageError("FBX import produced no Blender objects")
+                imported_objects = apply_import_options(
+                    imported_objects,
+                    use_armatures=self.use_armatures,
+                    use_bone_weights=self.use_bone_weights,
+                    use_shape_keys=self.use_shape_keys,
+                )
             extracted_fbx_paths = {
                 str(entry.path.resolve()): entry.unity_path
                 for entry in asset_db.by_guid.values()
@@ -789,13 +795,16 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     timing=self._performance,
                 )
                 self._performance.measure(
-                    "material_mapping",
-                    apply_materials_by_name,
-                    imported_objects,
-                    material_library.values(),
-                    asset_db=asset_db,
-                    material_library=material_library,
+                    "material_mapping", apply_materials_by_name, imported_objects,
+                    material_library.values(), asset_db=asset_db,
+                    material_library=material_library, scene=context.scene,
                 )
+                if not fbx_paths and not material_library:
+                    self._performance.measure(
+                        "texture_load", load_textures_from_database, asset_db,
+                        pack=not self.keep_extracted,
+                    )
+                capture_material_texture_dependencies(context.scene, material_library.values())
             prefab_root = None
             prefab_object_map = {}
             if prefab is not None and self.apply_prefab_transforms:
@@ -816,9 +825,14 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         prefab_object_map,
                         asset_db,
                         material_library,
+                        context.scene,
                     )
 
             scene = context.scene
+            supported_asset_count = len(fbx_paths) + len(prefab_paths) + len(material_library)
+            supported_asset_count += sum(1 for image in bpy.data.images if image.get("unity_source_package_id") == package_key.source_package_id)
+            if supported_asset_count == 0:
+                raise UnityPackageError("UnityPackage contains no supported FBX, Prefab, Material, or Texture asset")
             existing_registry = load_scene_registry(scene)
             package_registry, package_status = register_package(
                 scene,
@@ -862,6 +876,19 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 package_key.source_package_id,
                 "Image",
             )
+            dependency_counts = resolve_after_import(scene)
+            package_kind = "MIXED_PACKAGE" if fbx_paths and (material_library or supported_asset_count > len(fbx_paths)) else "GEOMETRY_PACKAGE" if fbx_paths else "ASSET_PROVIDER_PACKAGE"
+            current_registry = load_scene_registry(scene)
+            current_package = current_registry.packages.get(package_key.source_package_id)
+            if current_package is not None:
+                current_package["package_kind"] = package_kind
+                current_package["dependency_refs_captured"] = len([
+                    record for record in load_dependency_registry(scene).get("dependencies", [])
+                    if record.get("consumer_package_id") == package_key.source_package_id
+                ])
+                current_package.update(dependency_counts)
+                save_scene_registry(scene, current_registry)
+            self.report({"INFO"}, f"Dependency resolution: local={dependency_counts['resolved_local']} cross-package={dependency_counts['resolved_cross_package']} unresolved={dependency_counts['unresolved']} ambiguous={dependency_counts['ambiguous']}")
             collisions = load_scene_registry(scene).detect_collisions()
             if collisions:
                 self.report({"WARNING"}, f"Detected {len(collisions)} cross-package identity collision(s)")

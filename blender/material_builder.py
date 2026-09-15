@@ -14,6 +14,7 @@ from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import PrefabData, ref_file_id, ref_guid
 from ..unity.profiles.base import normalize_material
 from .texture_loader import load_texture_by_guid
+from .dependency_resolver import capture_dependency
 
 
 def _measure(tracker, phase: str, function, *args, **kwargs):
@@ -312,6 +313,7 @@ def apply_materials_by_name(
     materials: Iterable[bpy.types.Material],
     asset_db=None,
     material_library: Optional[dict[str, bpy.types.Material]] = None,
+    scene=None,
 ) -> None:
     materials = list(materials)
     by_name, by_guid = _material_maps(materials)
@@ -326,9 +328,25 @@ def apply_materials_by_name(
                 meta_text = Path(str(source_fbx) + ".meta").read_text(encoding="utf-8", errors="replace")
             except OSError:
                 meta_text = ""
+        external_objects = {}
+        if asset_db and meta_text:
+            from ..unity.material_mapping import parse_external_objects
+            external_objects = parse_external_objects(meta_text)
         for index, slot in enumerate(obj.data.materials):
             if slot is None:
                 continue
+            if scene and external_objects:
+                target_guid = external_objects.get(slot.name) or external_objects.get(strip_material_suffix(slot.name))
+                if target_guid and asset_db.find_guid(target_guid) is None:
+                    capture_dependency(scene, {
+                        "dependency_type": "FBX_EXTERNAL_MATERIAL",
+                        "consumer_package_id": asset_db.source_package_id,
+                        "consumer_asset_path": obj.get("unity_asset_path", obj.get("unity_source_fbx", "")),
+                        "consumer_object_path": obj.get("unity_asset_path", ""),
+                        "consumer_slot_index": index,
+                        "target_guid": target_guid,
+                        "target_file_id": "",
+                    })
             replacement = None
             if asset_db and meta_text:
                 entry = resolve_material_entry(meta_text, slot.name, asset_db)
@@ -340,7 +358,7 @@ def apply_materials_by_name(
                 obj.data.materials[index] = replacement
 
 
-def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.Object], asset_db, material_library) -> None:
+def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.Object], asset_db, material_library, scene=None) -> None:
     """Follow Prefab Renderer ``m_Materials`` GUIDs into Blender slots."""
     for document in prefab.renderer_documents():
         game_object_id = ref_file_id(document.data.get("m_GameObject"))
@@ -357,6 +375,18 @@ def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.O
             entry = asset_db.find_guid(guid)
             material = material_library.get(str(entry.path)) if entry else None
             if material is None:
+                if scene and guid:
+                    capture_dependency(scene, {
+                        "dependency_type": "PREFAB_RENDERER_MATERIAL",
+                        "consumer_package_id": asset_db.source_package_id,
+                        "consumer_asset_path": obj.get("unity_asset_path", ""),
+                        "consumer_object_path": obj.get("unity_asset_path", ""),
+                        "consumer_game_object_file_id": str(game_object_id),
+                        "consumer_slot_index": index,
+                        "target_guid": guid,
+                        "target_file_id": ref_file_id(reference) or "",
+                        "source_prefab_asset_path": obj.get("unity_asset_path", ""),
+                    })
                 continue
             while len(obj.data.materials) <= index:
                 obj.data.materials.append(None)

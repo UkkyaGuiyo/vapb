@@ -36,3 +36,6 @@
 - Japanese UI Material Preview graph support
 - save/reopen Material binding persistence
 - Human Material Preview verification PASSを記録
+- Added package-scoped Cross-Package Dependency Resolver for Renderer Material, FBX externalObjects Material, and Material Texture references.
+- Added Material-only and Texture-only package import with persistent unresolved records and late binding in either import order.
+- Added synthetic CPD split-package and save/reopen coverage; real BOOTH split-package validation remains human-required.

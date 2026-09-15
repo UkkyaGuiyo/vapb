@@ -113,3 +113,10 @@ BUG-002 / BUG-003 / Editable Textureの既存挙動は回帰対象として維�
 将来のExporterは、選択したExport Root/Setからreachabilityを計算し、解決済みidentityをUnity標準の`<GUID>/asset`、`asset.meta`、`pathname`へ生成してtar.gzの`.unitypackage`を作る。単なるZIP拡張子変更ではない。編集時のBlender datablockは削除せず、reachabilityによるpruningはexport時だけ適用する。Exporter本体、Unity Finalizer、実Package roundtripは本候補では未実装である。
 
 Exporterのcollision status候補は`PRESERVE_GUID`、`NEW_ASSET_GUID`、`GUID_COLLISION_REMAP`、`PATH_COLLISION`、`AMBIGUOUS_SOURCE`、`UNSUPPORTED_EXPORT`とする。
+## 0.4.0 candidate: Cross-Package Dependency Resolution
+
+Scene内のPackage-scoped providerをGUIDで探索し、Prefab Renderer→Material、FBX externalObjects→Material、Material→Textureを対象にlocal priority、unique cross-package binding、unresolved persistence、ambiguous refusal、late bindingを行う。名前だけのcross-package推測やimport順による勝者選択は行わない。
+
+Material-only / Texture-only Packageは、対応assetが1件以上あれば`FINISHED`とし、空またはunsupported Packageだけを明確なERRORとする。未解決Dependencyは`unitypackage_dependency_registry`へ保存し、`.blend` save/reopen後も再解決可能とする。
+
+今回のproduction対象はMaterial、Texture、Rendererのみ。Animator、PhysBone、Contact、MonoBehaviour、Unity Finalizer、UnityPackage Exporterは対象外である。

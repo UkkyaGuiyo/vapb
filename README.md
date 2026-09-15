@@ -131,3 +131,6 @@ If the operating system refuses the launch after validation, the launcher return
 ### UnityPackage Exporter (planned)
 
 UnityPackageの再梱包Exporterとreachability pruningは将来仕様です。現在のアドオンはimport/editを提供し、ExporterやUnity Finalizer roundtripは実装していません。
+### Cross-Package Dependencies
+
+Geometry-only、Material-only、Texture-onlyのUnityPackageを同一Sceneへ順次importできます。Prefab Renderer→Material、Material→TextureはPackage-scoped GUIDを正本にScene-wide resolverでlate bindし、未解決・曖昧参照は`unitypackage_dependency_registry`へ保存します。ExporterやUnity Finalizerは未実装です。

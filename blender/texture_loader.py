@@ -72,3 +72,19 @@ def load_texture_by_guid(asset_db, guid: Optional[str], pack: bool = False):
         )
     except (RuntimeError, OSError):
         return None
+
+
+def load_textures_from_database(asset_db, pack: bool = False) -> list:
+    """Load standalone supported textures and preserve their Unity identity."""
+    loaded = []
+    for path in asset_db.textures():
+        guid = asset_db.guid_for_path(path)
+        entry = asset_db.find_guid(guid)
+        if entry is None:
+            continue
+        try:
+            loaded.append(load_texture(path, pack=pack, guid=entry.guid, unity_path=entry.unity_path,
+                                       source_package_id=getattr(asset_db, "source_package_id", "")))
+        except (RuntimeError, OSError):
+            continue
+    return loaded

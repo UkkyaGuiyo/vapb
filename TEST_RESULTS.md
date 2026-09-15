@@ -93,3 +93,11 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 - Python: 45/45 PASS. `compileall`: PASS. Blender 5.2.1 register/unregister and External Texture Editor integration: PASS. Synthetic import/roundtrip: `BLENDER_INTEGRATION_OK`.
 - Real package: `FINISHED`, 113 objects / 103 meshes / 4 armatures / 40 shape keys / 147 material bindings / identity errors 0. BUG-002 and BUG-003: PASS.
 - Version remains `(0, 3, 0)`. This baseline is tagged `v0.3.0`; no GitHub Release is created in this phase.
+## 0.4.0 candidate Cross-Package Dependency Resolution (2026-09-16)
+
+- Synthetic split-package E2E: Geometry Package（FBX + Prefab、Material 0）→ Material Package（FBX 0、Material 1）→ Texture Package（FBX 0、Texture 1）を確認。
+- Geometry-first / Provider-firstの両順序で `CROSS_PACKAGE_DEPENDENCY_OK`。Material-only / Texture-only importは`FINISHED`、Material slotとTexture nodeはunique providerへ`RESOLVED_CROSS_PACKAGE`。
+- `.blend` save/reopen後もDependency registry、Material binding、Texture bindingを保持。
+- `unitypackage_dependency_registry`はUNRESOLVED、RESOLVED_LOCAL、RESOLVED_CROSS_PACKAGE、AMBIGUOUS_PROVIDERを保存する設計。名前だけのcross-package fallbackは行わない。
+- CPD-001..006、009、011、013: synthetic PASS。CPD-007（ambiguity）、008（local priority）、010（no-name guessing）、012（実FBX externalObjects cross-package dedicated fixture）は専用fixture未実行のためUNVERIFIED。実BOOTH分割PackageのA+B/C foreground確認は、正確な実Package組み合わせが特定できるまで`REAL-CPD-001: HUMAN RETEST REQUIRED`。
+- Exporter、Unity Finalizer、Animator、PhysBone、MonoBehaviour resolverは未実装。

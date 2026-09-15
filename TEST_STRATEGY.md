@@ -182,3 +182,22 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 ## UnityPackage Exporter Acceptance (EXP-001..015, PLANNED)
 
 Exporter、reachability pruning、GUID/path collision policy、Unity Finalizer roundtripはEXP-001..015として仕様化するが、0.4.0 candidateでは未実装・未検証である。Export時のみpruneし、編集時の未使用datablockを削除しないことを必須条件とする。
+## Cross-Package Dependency Acceptance Tests (CPD-001..015)
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| CPD-001 | Material-only Package | FBX 0 / Material > 0でFINISHED |
+| CPD-002 | Texture-only Package | FBX 0 / Material 0 / Texture > 0でFINISHED |
+| CPD-003 | Geometry first pending | 未提供Material GUIDをUNRESOLVED保存 |
+| CPD-004 | Material late bind | 後続Packageのunique Materialへcross-package bind |
+| CPD-005 | Reverse import order | Provider firstでも最終結果が同一 |
+| CPD-006 | Save/reopen pending | 保存・再開後もDependency recordを保持し解決可能 |
+| CPD-007 | Ambiguous provider | 同GUID provider複数時はAMBIGUOUS_PROVIDER、無自動bind |
+| CPD-008 | Local priority | local providerをcross-package providerより優先 |
+| CPD-009 | Material→Texture | 後続Texture-only PackageでImage nodeをlate bind |
+| CPD-010 | No name guessing | 同名だけではcross-package bindしない |
+| CPD-011 | Idempotence | resolver再実行でslot/node/recordを増殖させない |
+| CPD-012 | externalObjects | FBX externalObjects GUIDをDependency record化・解決 |
+| CPD-013 | Registry roundtrip | JSON persistenceがsave/reopenで保持される |
+| CPD-014 | MPI regression | MPI-001..017 PASS |
+| CPD-015 | MPV regression | MPV-001..012 PASS |

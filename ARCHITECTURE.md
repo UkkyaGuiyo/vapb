@@ -149,3 +149,10 @@ Real Multi-Package Visual E2Eの初回診断では、Package BのMaterial/Image�
 ## UnityPackage Exporter (PLANNED)
 
 将来の実装境界は `Imported Packages → Blender Scene → Select Export Root/Set → Reachability → Identity Resolution → FBX/Texture/Material/Meta Generation → Unity standard asset/meta/pathname → tar.gz .unitypackage` とする。未使用datablockは編集中にpruneせず、exportのreachability判定だけで除外する。本候補では仕様のみで、Exporterは実装しない。
+## Cross-Package Dependency Resolver (0.4.0 candidate)
+
+`SceneIdentityRegistry`はasset identity/collision、`DependencyRegistry`はconsumer→providerのreference relationshipを担当する。後者はScene custom property `unitypackage_dependency_registry`へJSON保存し、`PREFAB_RENDERER_MATERIAL`、`FBX_EXTERNAL_MATERIAL`、`MATERIAL_TEXTURE`を記録する。
+
+Resolution orderはconsumer Package内のunique provider、次にScene全体のunique provider。0件は`UNRESOLVED`、1件のcross-package providerは`RESOLVED_CROSS_PACKAGE`、2件以上は`AMBIGUOUS_PROVIDER`として自動選択しない。新Package import完了ごとにresolverを再実行するため、Geometry→Material、Material→Geometryの双方でlate bindingできる。
+
+ProviderはMaterial/Imageのcustom property（Package ID、GUID、Asset Path）で検索し、Blender Object名やMaterial名だけをcross-package identityに使わない。未使用assetやunresolved assetは編集中に削除しない。
