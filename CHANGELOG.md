@@ -2,6 +2,8 @@
 
 ## 0.4.0 candidate - 2026-09-15
 
+- Top-level UnityPackage imports now automatically perform GUID-based sibling discovery for File > Import and native drag-and-drop; unique complete chains are grouped without a user checkbox.
+
 - Added content-addressed `source_package_id` and canonical package-scoped asset identity.
 - Propagated package identity to imported Object, Material, and Image datablocks.
 - Added Scene package registry, GUID/path reverse lookup, duplicate import status, and cross-package collision reporting.

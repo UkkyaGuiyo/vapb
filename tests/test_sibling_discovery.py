@@ -24,6 +24,26 @@ def _package(path: Path, records):
 
 
 class SiblingDiscoveryTests(unittest.TestCase):
+    def test_no_related_package_is_none(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            _package(root / "root.unitypackage", [("a" * 32, "Assets/root.prefab", "guid: " + "b" * 32)])
+            _package(root / "unrelated.unitypackage", [("c" * 32, "Assets/unrelated.mat", "")])
+            result = discover_siblings(root / "root.unitypackage")
+            self.assertEqual(result.status, "NONE")
+            self.assertFalse(result.packages)
+
+    def test_partial_does_not_guess_unresolved_provider(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_guid, texture_guid = "a" * 32, "b" * 32
+            _package(root / "root.unitypackage", [("c" * 32, "Assets/root.prefab", f"guid: {material_guid}\n")])
+            _package(root / "provider.unitypackage", [(material_guid, "Assets/provider.mat", f"guid: {texture_guid}\n")])
+            result = discover_siblings(root / "root.unitypackage")
+            self.assertEqual(result.status, "PARTIAL")
+            self.assertEqual([Path(item.path).name for item in result.packages], ["provider.unitypackage"])
+            self.assertIn(texture_guid, result.unresolved_guids)
+
     def test_guid_exact_transitive_and_unrelated_filename(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -117,6 +117,10 @@ Exporterのcollision status候補は`PRESERVE_GUID`、`NEW_ASSET_GUID`、`GUID_C
 
 Scene内のPackage-scoped providerをGUIDで探索し、Prefab Renderer→Material、FBX externalObjects→Material、Material→Textureを対象にlocal priority、unique cross-package binding、unresolved persistence、ambiguous refusal、late bindingを行う。名前だけのcross-package推測やimport順による勝者選択は行わない。
 
+### Automatic Sibling Package Discovery
+
+Top-level `.unitypackage` imports, whether started from File > Import or the native 3D View drag-and-drop handler, automatically run a lightweight same-directory sibling discovery after the primary package index is prepared. Discovery follows exact GUID coverage and transitive dependencies. A unique `COMPLETE` plan imports related packages together; `NONE` keeps the import single-package, and `PARTIAL` / `AMBIGUOUS` results never guess a provider. Internal grouped child imports set `group_child` and do not rediscover siblings.
+
 Material-only / Texture-only Packageは、対応assetが1件以上あれば`FINISHED`とし、空またはunsupported Packageだけを明確なERRORとする。未解決Dependencyは`unitypackage_dependency_registry`へ保存し、`.blend` save/reopen後も再解決可能とする。
 
 今回のproduction対象はMaterial、Texture、Rendererのみ。Animator、PhysBone、Contact、MonoBehaviour、Unity Finalizer、UnityPackage Exporterは対象外である。

@@ -124,3 +124,7 @@ Historical 0.2.0 evidence remains under `experiment_logs/`; those files are not 
 - FileHandlerはVIEW_3Dでのみpollを通し、既存`import_scene.unitypackage`へhandoffするadapterとして実装。独自import pipelineは追加していない。
 - Synthetic valid Package handoff、register/unregister cycle、既存CPD/SPD/MPI/MPV/integration regression: PASS。
 - `REAL-DND-001: HUMAN RETEST REQUIRED` — Windows Explorerから実際にBlender 3D Viewへdropする目視確認のみ未実施。
+
+## Automatic Sibling Discovery (2026-09-16)
+
+Top-level File > Import and native 3D View drag-and-drop now run same-directory sibling discovery automatically after primary index preparation. The public sibling checkbox was removed. Synthetic Geometry → Material → Texture grouped import covers `COMPLETE`, transitive discovery, CPD resolution, and texture graph binding; `NONE`, `PARTIAL`, and `AMBIGUOUS` safety are covered by unit fixtures. Real combined verification remains `REAL-GROUP-001: HUMAN RETEST REQUIRED`.

@@ -75,8 +75,11 @@ Material:
 """.encode()
 
 
-def import_package(path: Path):
-    return bpy.ops.import_scene.unitypackage(filepath=str(path), import_mode="RECONSTRUCT", prefab_choice="AUTO", keep_extracted=False)
+def import_package(path: Path, *, group_child: bool = False):
+    return bpy.ops.import_scene.unitypackage(
+        filepath=str(path), import_mode="RECONSTRUCT", prefab_choice="AUTO",
+        keep_extracted=False, group_child=group_child,
+    )
 
 
 def make_fbx() -> bytes:
@@ -118,7 +121,7 @@ def run_order(paths: tuple[Path, Path, Path], blend_path: Path) -> dict:
     from unitypackage_blender_importer.operators import import_unitypackage as module
     module.UNITYPACKAGE_OT_import._show_prefab_dialog_if_needed = lambda self, _context, _paths: False
     for path in paths:
-        result = import_package(path)
+        result = import_package(path, group_child=True)
         assert "FINISHED" in result, (path, result)
         if path.name == "Geometry.unitypackage" and paths[0] == path:
             pending = [item for item in __import__("unitypackage_blender_importer.blender.dependency_resolver", fromlist=["load_dependency_registry"]).load_dependency_registry(bpy.context.scene)["dependencies"] if item["dependency_type"] == "PREFAB_RENDERER_MATERIAL"]
@@ -149,7 +152,7 @@ def run_grouped_synthetic(root: Path, fbx_bytes: bytes, png: bytes, material_gui
     module.UNITYPACKAGE_OT_import._show_prefab_dialog_if_needed = lambda self, _context, _paths: False
     result = bpy.ops.import_scene.unitypackage(
         filepath=str(synthetic_avatar), import_mode="RECONSTRUCT", prefab_choice="AUTO",
-        keep_extracted=False, include_sibling_packages=True,
+        keep_extracted=False,
     )
     assert "FINISHED" in result, result
     discovery = bpy.context.scene.get("unitypackage_sibling_discovery", {})

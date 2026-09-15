@@ -52,6 +52,27 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 | MPI-016 | Same package two prefabs | 同一Package内の別Prefabがoverwriteなしで登録される |
 | MPI-017 | Save / reopen | `.blend`再開後もpackage/path/fileIDと別identityを保持する |
 
+## Automatic Sibling Discovery Acceptance Tests (ASD-001..016)
+
+| ID | Acceptance Test | 合格条件 |
+|---|---|---|
+| ASD-001 | File > Import top-level | checkboxなしでSibling Discoveryが発火する |
+| ASD-002 | Native Drag & Drop top-level | checkboxなしで同じDiscovery経路を使う |
+| ASD-003 | No related package | `NONE`としてPrimaryだけをImportする |
+| ASD-004 | Unique provider | `COMPLETE`として安全に検出する |
+| ASD-005 | Transitive providers | A→B→Cを一度のplanで検出する |
+| ASD-006 | Background complete | unique chainを決定論的にImport Togetherする |
+| ASD-007 | Group child | 子Importで再Discoveryしない |
+| ASD-008 | Cycle | 無限再帰しない |
+| ASD-009 | Duplicate provider | `AMBIGUOUS`として拒否する |
+| ASD-010 | Ambiguous | 自動Importしない |
+| ASD-011 | Partial | 未解決providerを推測しない |
+| ASD-012 | Filename independence | GUID coverageだけで判定する |
+| ASD-013 | CPD after group | grouped import後にMaterial dependencyが解決する |
+| ASD-014 | Texture graph parity | grouped import後にTexture bindingが解決する |
+| ASD-015 | Existing D&D | FileHandler routingがPASSする |
+| ASD-016 | Existing File import | `import_scene.unitypackage`がPASSする |
+
 ## BUG-002 Acceptance Tests
 
 実装前に以下を受入条件として固定する。現Baselineでは未実装・未達であり、今回の移行では修正しない。

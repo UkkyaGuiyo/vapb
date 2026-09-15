@@ -173,11 +173,6 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         default=True,
         description="Keep the extracted source so external texture paths remain available",
     )
-    include_sibling_packages: BoolProperty(
-        name="Import uniquely matched sibling Packages",
-        default=False,
-        description="Discover and import same-directory Packages with unique GUID dependency matches",
-    )
     group_child: BoolProperty(options={"HIDDEN"}, default=False)
 
     def __init__(self, *args, **kwargs):
@@ -202,6 +197,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._prepare_window_manager = None
         self._prepare_cancel = Event()
         self._prepare_events: SimpleQueue[str] = SimpleQueue()
+        self._sibling_discovery = None
 
     def _ui_log(self, message: str) -> None:
         print(f"[UI] {message}")
@@ -370,6 +366,17 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._prefab_paths = prepared.prefab_paths
         self._package_reader = prepared.package_reader
         self._package_index = prepared.package_index
+        if not getattr(self, "group_child", False) and Path(self.filepath).is_file():
+            self._set_phase(context, "Discovering sibling Packages", 0.32)
+            self._sibling_discovery = discover_siblings(self.filepath)
+            discovery = self._sibling_discovery
+            print(
+                "[UnityPackage Importer] Sibling discovery: "
+                f"status={discovery.status} providers={len(discovery.packages)} "
+                f"resolved={sum(item.match_count for item in discovery.packages)} "
+                f"unresolved={len(discovery.unresolved_guids)} "
+                f"ambiguous={len(discovery.ambiguous_guids)}"
+            )
         self._set_prepare_state("PREPARED")
         self._set_phase(context, "Asset index ready", 0.30)
 
@@ -896,8 +903,10 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 current_package.update(dependency_counts)
                 save_scene_registry(scene, current_registry)
             self.report({"INFO"}, f"Dependency resolution: local={dependency_counts['resolved_local']} cross-package={dependency_counts['resolved_cross_package']} unresolved={dependency_counts['unresolved']} ambiguous={dependency_counts['ambiguous']}")
-            if self.include_sibling_packages and not self.group_child:
-                discovery = discover_siblings(package_path)
+            if not getattr(self, "group_child", False):
+                discovery = self._sibling_discovery
+                if discovery is None:
+                    discovery = discover_siblings(package_path)
                 scene["unitypackage_sibling_discovery"] = {
                     "status": discovery.status,
                     "root_package": discovery.root_package,
@@ -924,7 +933,6 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             use_textures=self.use_textures,
                             apply_prefab_transforms=self.apply_prefab_transforms,
                             keep_extracted=self.keep_extracted,
-                            include_sibling_packages=False,
                             group_child=True,
                         )
                         if "FINISHED" not in result:

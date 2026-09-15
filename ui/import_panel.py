@@ -14,4 +14,3 @@ def draw_import_options(layout, operator) -> None:
     options.prop(operator, "use_textures")
     options.prop(operator, "apply_prefab_transforms")
     options.prop(operator, "keep_extracted")
-    options.prop(operator, "include_sibling_packages")
