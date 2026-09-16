@@ -6,6 +6,7 @@
 - Reworked sibling discovery around metadata-first manifests, bounded neighbor expansion, visual completeness, and payload-read accounting.
 - Added synthetic adjacent-package grouped import coverage for Base Color, Normal, and preserve-only texture roles.
 - Added demand-driven selected-Prefab visual closure, missing-dependency foreground flow, exact-GUID manual package/folder validation, and resolution provenance.
+- Fixed consumer-binding diagnostics so a provider lookup cannot overwrite `MISSING_CONSUMER`; primary-local visual GUIDs are excluded before sibling resolution.
 
 ## 0.4.0 candidate - 2026-09-15
 

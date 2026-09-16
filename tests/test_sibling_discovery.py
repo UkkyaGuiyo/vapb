@@ -98,6 +98,21 @@ class SiblingDiscoveryTests(unittest.TestCase):
             self.assertEqual(selected.visual_status, "COMPLETE")
             self.assertNotIn(texture_b, selected.unresolved_visual_guids)
 
+    def test_primary_local_fbx_guid_is_not_reported_as_external_missing(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fbx_guid, material_guid = "a" * 32, "b" * 32
+            prefab_payload = _visual_prefab(material_guid) + f"m_SourcePrefab: {{guid: {fbx_guid}, type: 3}}\n"
+            fbx_meta = f"guid: {fbx_guid}\nexternalObjects:\n- first: Material\n  second: {{fileID: 2100000, guid: {material_guid}, type: 2}}\n"
+            _package(root / "geometry.unitypackage", [
+                ("c" * 32, "Assets/root.prefab", prefab_payload),
+                (fbx_guid, "Assets/root.fbx", "FBX"),
+            ], {fbx_guid: fbx_meta})
+            _package(root / "appearance.unitypackage", [(material_guid, "Assets/A.mat", "")])
+            result = discover_siblings(root / "geometry.unitypackage")
+            self.assertEqual(result.visual_status, "COMPLETE")
+            self.assertNotIn(fbx_guid, result.unresolved_visual_guids)
+
     def test_single_package_skips_archive_payload_scan(self):
         with tempfile.TemporaryDirectory() as temp:
             package_path = Path(temp) / "single.unitypackage"

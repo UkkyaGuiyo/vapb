@@ -112,10 +112,37 @@ def test_texture_roles():
     assert {record["texture_label"] for record in records} == {"Base Color", "Normal"}, records
 
 
+def test_provider_found_consumer_missing_is_not_reported_bound():
+    from unitypackage_blender_importer.blender.dependency_resolver import load_dependency_registry, resolve_scene_dependencies
+
+    clear_scene()
+    material = bpy.data.materials.new("ProviderOnly")
+    material["unity_material_guid"] = "f" * 32
+    material["unity_source_package_id"] = "sha256:" + "2" * 64
+    scene = bpy.context.scene
+    scene["unitypackage_dependency_registry"] = json.dumps({"schema_version": 1, "dependencies": [{
+        "dependency_type": "PREFAB_RENDERER_MATERIAL",
+        "consumer_package_id": "sha256:" + "1" * 64,
+        "consumer_asset_path": "Assets/Missing.prefab",
+        "consumer_game_object_file_id": "123",
+        "consumer_object_path": "MissingObject",
+        "consumer_slot_index": 0,
+        "target_guid": "f" * 32,
+        "target_file_id": "2100000",
+    }]})
+    counts = resolve_scene_dependencies(scene)
+    record = load_dependency_registry(scene)["dependencies"][0]
+    assert record["provider_status"] == "RESOLVED_CROSS_PACKAGE", record
+    assert record["binding_status"] == "MISSING_CONSUMER", record
+    assert record["status"] == "MISSING_CONSUMER", record
+    assert counts["missing_consumer"] == 1, counts
+
+
 def main():
     test_prefab_instance_override()
     test_texture_roles()
-    print("REGRESSION_FIX_DIAGNOSTIC=" + json.dumps({"prefab_instance_override": "PASS", "texture_roles": "PASS"}, sort_keys=True))
+    test_provider_found_consumer_missing_is_not_reported_bound()
+    print("REGRESSION_FIX_DIAGNOSTIC=" + json.dumps({"prefab_instance_override": "PASS", "texture_roles": "PASS", "missing_consumer_masking": "PASS"}, sort_keys=True))
     print("REGRESSION_FIX_OK")
 
 

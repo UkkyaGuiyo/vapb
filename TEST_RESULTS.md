@@ -133,9 +133,11 @@ The discovery implementation caches archive records per package for the duration
 
 ## 2026-09-16 Visual Discovery Hardening
 
-- Python suite: 92 tests PASS.
+- Python suite: 93 tests PASS.
 - Blender 5.2.1: regression fix, CPD/SPD, adjacent-neighbor E2E, manual provider E2E, MPI, MPV, DND, editable texture workflow, and external editor tests PASS.
 - Metadata-first accounting: discovery reports zero texture and FBX payload bytes read; adjacent synthetic grouped import resolves Base Color and Normal while preserving unsupported roles without binding them.
 - Distribution install test requires the generated ZIP path and is run after the exact remote revision ZIP is built.
 
 Manual provider synthetic E2E: `MANUAL_PROVIDER_E2E_OK`. A provider outside the bounded automatic neighborhood is validated by exact GUID, imported separately, late-binds the existing unresolved material dependency, and records `USER_SELECTED_PACKAGE` provenance.
+
+Real failed-scene forensic evidence: provider slot binding was masked as `RESOLVED_CROSS_PACKAGE` despite missing consumer binding; the missing visual GUID was a primary-local FBX. Resolver and primary-local subtraction regressions are covered by RF-002/RF-003.

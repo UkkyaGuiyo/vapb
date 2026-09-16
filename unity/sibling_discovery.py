@@ -207,6 +207,9 @@ def discover_siblings(
     relevant = [entry for entry in root_manifest if not selected or entry.asset_path in selected]
     selected_guids = {entry.guid for entry in relevant if entry.extension == ".prefab"}
     required = _visual_requirements_for_guids(root_path, root_manifest, selected_guids, accounting)
+    # A selected Prefab may reference its own FBX as a visual dependency. Local
+    # assets are already available and must never become sibling-missing GUIDs.
+    required -= {entry.guid for entry in root_manifest}
     if not required:
         return SiblingDiscoveryResult(str(root_path), [], set(), set(), [], "NONE", "NONE", manifest_entries=len(root_manifest), accounting=accounting)
     sibling_paths = _candidate_paths(root_path, required, extra_paths=extra_package_paths)

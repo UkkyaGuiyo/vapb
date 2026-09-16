@@ -51,6 +51,8 @@ def capture_dependency(scene: Any, record: dict[str, Any]) -> dict[str, Any]:
         existing.setdefault("resolved_provider_guid", "")
         existing.setdefault("resolved_provider_asset_path", "")
         existing.setdefault("resolution_provenance", "UNRESOLVED")
+        existing.setdefault("provider_status", "UNRESOLVED")
+        existing.setdefault("binding_status", "UNRESOLVED")
         dependencies.append(existing)
     save_dependency_registry(scene, registry)
     return existing
@@ -180,7 +182,7 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
         provider_provenance = json.loads(str(scene.get("unitypackage_provider_provenance", "{}")))
     except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
         provider_provenance = {}
-    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "late_bindings_applied": 0}
+    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "late_bindings_applied": 0}
     changed = False
     for record in registry.get("dependencies", []):
         provider_type = "Material" if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"} else "Image"
@@ -198,6 +200,7 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
             status = AMBIGUOUS_PROVIDER
         else:
             status = UNRESOLVED
+        record["provider_status"] = status
         if provider is not None:
             if record.get("dependency_type") == "MATERIAL_TEXTURE":
                 applied = _bind_texture(record, provider)
@@ -205,6 +208,7 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                 applied = _bind_material(record, provider)
             if applied:
                 record["status"] = status
+                record["binding_status"] = "BOUND"
                 record["resolved_provider_package_id"] = provider.get("unity_source_package_id", "")
                 record["resolved_provider_guid"] = provider.get("unity_material_guid", provider.get("unity_guid", ""))
                 record["resolved_provider_asset_path"] = provider.get("unity_material_path", provider.get("unity_asset_path", ""))
@@ -216,9 +220,19 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                 counts["late_bindings_applied"] += 1
                 changed = True
                 continue
+            record["status"] = MISSING_CONSUMER
+            record["binding_status"] = MISSING_CONSUMER
+            record["resolution_provenance"] = provider_provenance.get(
+                provider.get("unity_source_package_id", ""),
+                "AUTO_LOCAL" if status == RESOLVED_LOCAL else "AUTO_BOUNDED_DISCOVERY",
+            )
+            counts["missing_consumer"] += 1
+            changed = True
+            continue
         if status in {AMBIGUOUS_PROVIDER, UNRESOLVED} and record.get("binding_source") == "dependency_resolver":
             _unbind_dependency(record)
         record["status"] = status
+        record["binding_status"] = status
         record["resolution_provenance"] = "AMBIGUOUS" if status == AMBIGUOUS_PROVIDER else "UNRESOLVED"
         counts["ambiguous" if status == AMBIGUOUS_PROVIDER else "unresolved"] += 1
         changed = True
