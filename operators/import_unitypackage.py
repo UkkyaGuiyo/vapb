@@ -171,7 +171,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         ],
         default="RECONSTRUCT",
     )
-    prefab_choice: EnumProperty(name="Prefab", items=_prefab_items)
+    # This is transport state for background/programmatic callers.  The
+    # foreground picker has its own dynamic EnumProperty below; keeping this
+    # value as a string avoids assigning a token from one RNA enum context to
+    # another one with a different item callback.
+    prefab_choice: StringProperty(name="Prefab", default="AUTO", options={"HIDDEN"})
     use_armatures: BoolProperty(name="Armature", default=True)
     use_bone_weights: BoolProperty(name="Bone Weights", default=True)
     use_shape_keys: BoolProperty(name="Shape Keys", default=True)
@@ -207,6 +211,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._prepare_window_manager = None
         self._prepare_cancel = Event()
         self._prepare_events: SimpleQueue[str] = SimpleQueue()
+        self._selected_prefab_choice: str | None = None
         self._sibling_discovery = None
         self._sibling_import_together = True
         self._manual_provider_paths: set[str] = set()
@@ -625,9 +630,12 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
     def _selected_prefab(self, prefab_paths: list[Path]) -> Path | None:
         if not prefab_paths:
             return None
-        if self.prefab_choice.startswith("PREFAB_"):
+        choice = self._selected_prefab_choice
+        if choice is None:
+            choice = self.prefab_choice
+        if choice.startswith("PREFAB_"):
             try:
-                return prefab_paths[int(self.prefab_choice.split("_", 1)[1])]
+                return prefab_paths[int(choice.split("_", 1)[1])]
             except (ValueError, IndexError):
                 pass
         return prefab_paths[0]
@@ -1123,7 +1131,7 @@ class UNITYPACKAGE_OT_import_prefab(bpy.types.Operator):
         if session is None:
             self.report({"ERROR"}, "Prepared UnityPackage session expired")
             return {"CANCELLED"}
-        session.operator.prefab_choice = self.prefab_choice
+        session.operator._selected_prefab_choice = self.prefab_choice
         session.operator._discover_selected_visual_dependencies()
         discovery = session.operator._sibling_discovery
         if discovery and getattr(discovery, "unresolved_visual_guids", set()):

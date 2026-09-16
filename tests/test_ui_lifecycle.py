@@ -287,9 +287,36 @@ class UILifecycleTests(unittest.TestCase):
         selector.prefab_choice = "PREFAB_0"
         with patch.object(module, "_schedule_prepared_session") as schedule:
             self.assertEqual({"FINISHED"}, selector.execute(FakeContext()))
-        self.assertEqual("PREFAB_0", operator.prefab_choice)
+        self.assertEqual("PREFAB_0", operator._selected_prefab_choice)
+        self.assertEqual(Path("one.prefab"), operator._selected_prefab(operator._prefab_paths or [Path("one.prefab")]))
         schedule.assert_called_once_with(session_id, show_dialog=False)
         module._PREPARED_SESSIONS.pop(session_id, None)
+
+    def test_prefab_selection_tokens_are_stable_session_state(self):
+        operator = _operator()
+        operator._prefab_paths = [Path("one.prefab"), Path("two.prefab"), Path("three.prefab")]
+        operator._prefab_items = [
+            ("AUTO", "Automatic", "", 0),
+            ("PREFAB_0", "one", "one.prefab", 1),
+            ("PREFAB_1", "two", "two.prefab", 2),
+            ("PREFAB_2", "three", "three.prefab", 3),
+        ]
+        for token, expected in (("AUTO", "one.prefab"), ("PREFAB_0", "one.prefab"), ("PREFAB_1", "two.prefab"), ("PREFAB_2", "three.prefab")):
+            operator._selected_prefab_choice = token if token != "AUTO" else None
+            operator.prefab_choice = token
+            self.assertEqual(Path(expected), operator._selected_prefab(operator._prefab_paths))
+
+    def test_invalid_programmatic_prefab_token_falls_back_to_first(self):
+        operator = _operator()
+        operator._prefab_paths = [Path("one.prefab"), Path("two.prefab")]
+        operator.prefab_choice = "PREFAB_99"
+        self.assertEqual(Path("one.prefab"), operator._selected_prefab(operator._prefab_paths))
+
+    def test_programmatic_explicit_prefab_selection_remains_compatible(self):
+        operator = _operator()
+        operator._prefab_paths = [Path("one.prefab"), Path("two.prefab")]
+        operator.prefab_choice = "PREFAB_1"
+        self.assertEqual(Path("two.prefab"), operator._selected_prefab(operator._prefab_paths))
 
     def test_prefab_selection_runs_visual_discovery_and_opens_group_dialog(self):
         operator = _operator()

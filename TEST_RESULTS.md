@@ -141,3 +141,9 @@ The discovery implementation caches archive records per package for the duration
 Manual provider synthetic E2E: `MANUAL_PROVIDER_E2E_OK`. A provider outside the bounded automatic neighborhood is validated by exact GUID, imported separately, late-binds the existing unresolved material dependency, and records `USER_SELECTED_PACKAGE` provenance.
 
 Real failed-scene forensic evidence: provider slot binding was masked as `RESOLVED_CROSS_PACKAGE` despite missing consumer binding; the missing visual GUID was a primary-local FBX. Resolver and primary-local subtraction regressions are covered by RF-002/RF-003.
+
+## 2026-09-16 Prefab Selection Handoff
+
+- Python suite: 96 tests PASS.
+- Blender 5.2.1 synthetic foreground handoff: `PREFAB_SELECTION_FOREGROUND_E2E_OK`.
+- The dialog retains its dynamic Prefab EnumProperty, while the prepared parent stores the selected token in stable string state; AUTO, first, middle, last, invalid fallback, and programmatic explicit selection are covered.

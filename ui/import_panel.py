@@ -3,8 +3,6 @@
 
 def draw_import_options(layout, operator) -> None:
     layout.prop(operator, "import_mode")
-    if operator.import_mode == "RECONSTRUCT":
-        layout.prop(operator, "prefab_choice")
     options = layout.box()
     options.label(text="Options")
     options.prop(operator, "use_armatures")
