@@ -85,6 +85,18 @@ Material:
 """.encode()
 
 
+def unrelated_material_with_missing_texture(guid: str) -> bytes:
+    return f"""%YAML 1.1
+--- !u!21 &2100000
+Material:
+  m_Name: UnrelatedMaterial
+  m_SavedProperties:
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {{fileID: 2800000, guid: {guid}, type: 3}}
+""".encode()
+
+
 def main() -> None:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     with tempfile.TemporaryDirectory(prefix="adjacent_neighbor_") as temp:
@@ -95,12 +107,14 @@ def main() -> None:
         appearance_dir.mkdir(parents=True)
         fbx_guid, prefab_guid, material_guid = "a" * 32, "b" * 32, "c" * 32
         main_guid, normal_guid, matcap_guid, mask_guid = "d" * 32, "e" * 32, "f" * 32, "1" * 32
+        unrelated_material_guid, unrelated_texture_guid = "2" * 32, "3" * 32
         png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
         geometry = geometry_dir / "geometry.unitypackage"
         appearance = appearance_dir / "appearance.unitypackage"
         package(geometry, [(fbx_guid, "Assets/Geometry/Body.fbx", make_fbx()), (prefab_guid, "Assets/Geometry/Body.prefab", prefab(fbx_guid, material_guid))], material_guid)
         package(appearance, [
             (material_guid, "Assets/Appearance/Body.mat", material_with_roles(main_guid, normal_guid, matcap_guid, mask_guid)),
+            (unrelated_material_guid, "Assets/Appearance/Unrelated.mat", unrelated_material_with_missing_texture(unrelated_texture_guid)),
             (main_guid, "Assets/Appearance/Main.png", png),
             (normal_guid, "Assets/Appearance/Normal.png", png),
             (matcap_guid, "Assets/Appearance/MatCap.png", png),

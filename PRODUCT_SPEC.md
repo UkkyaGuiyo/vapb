@@ -117,6 +117,8 @@ Exporterのcollision status候補は`PRESERVE_GUID`、`NEW_ASSET_GUID`、`GUID_C
 ## Visual Dependency and Texture Role Contract (0.4.0 candidate)
 
 Visual completeness is determined only from geometry/prefab, material, and texture GUID coverage. Nonvisual Unity dependencies remain diagnostic state and do not block a visual Import Together decision. Discovery uses a bounded metadata-first manifest and never reads texture or FBX payload bytes while planning. The canonical texture classifier is shared by initial material construction and late binding; unknown shader properties are preserve-only and cannot become Base Color.
+
+If bounded discovery is incomplete, foreground users can locate a package or a direct/one-level-child folder. The importer validates exact GUID coverage before accepting candidates, records `USER_SELECTED_PACKAGE` or `USER_SELECTED_FOLDER` provenance, and re-evaluates the selected-Prefab closure. Explicit user-selected package paths take precedence over automatic ambiguity; zero coverage is rejected. Continue With Missing Assets imports resolved content and persists unresolved visual dependencies.
 ## 0.4.0 candidate: Cross-Package Dependency Resolution
 
 Scene内のPackage-scoped providerをGUIDで探索し、Prefab Renderer→Material、FBX externalObjects→Material、Material→Textureを対象にlocal priority、unique cross-package binding、unresolved persistence、ambiguous refusal、late bindingを行う。名前だけのcross-package推測やimport順による勝者選択は行わない。

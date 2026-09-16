@@ -5,6 +5,7 @@
 - Centralized texture role classification for initial build and late binding; unknown properties are preserve-only.
 - Reworked sibling discovery around metadata-first manifests, bounded neighbor expansion, visual completeness, and payload-read accounting.
 - Added synthetic adjacent-package grouped import coverage for Base Color, Normal, and preserve-only texture roles.
+- Added demand-driven selected-Prefab visual closure, missing-dependency foreground flow, exact-GUID manual package/folder validation, and resolution provenance.
 
 ## 0.4.0 candidate - 2026-09-15
 

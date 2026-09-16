@@ -160,3 +160,7 @@ ProviderはMaterial/Imageのcustom property（Package ID、GUID、Asset Path）�
 ### Bounded Visual Discovery Pipeline
 
 The import state machine is `prefab selection -> visual graph -> bounded sibling discovery -> explicit sibling choice -> grouped import`. Discovery builds a pathname/meta manifest, reads only selected prefab/material text and FBX `.meta` external-object data, then searches the selected folder followed by a single parent/child neighborhood expansion when visual GUIDs remain unresolved. `visual_status` (`NONE`, `PARTIAL`, `COMPLETE`, `AMBIGUOUS`) is kept separate from nonvisual dependency diagnostics.
+
+### Manual Provider Resolution
+
+`PARTIAL` does not discard uniquely identified providers. The foreground prepared-session state can enter `WAITING_MISSING_DEPENDENCY_RESOLUTION`, where a package or bounded user-granted folder is inspected by manifest GUID coverage before it is added to the graph. The graph is then re-evaluated transitively; accepted provider packages use the ordinary grouped-import and scene resolver path, while each dependency record stores resolution provenance. `Continue With Missing Assets` leaves `UNRESOLVED` records persistent and imports available geometry/material/texture data.

@@ -228,6 +228,7 @@ Exporter、reachability pruning、GUID/path collision policy、Unity Finalizer r
 - TR-001..003: canonical Base Color/Normal/explicit-role classification, deterministic precedence, and preserve-only unknown properties.
 - MD-001..003: one manifest scan per package, bounded neighbor expansion, and zero texture/FBX payload bytes during discovery.
 - NS-001: adjacent Geometry/Appearance fixture performs grouped import and verifies Base Color, Normal, and preserve-only bindings.
+- MR-001..015: selected-Prefab closure, manual package/folder GUID validation, ambiguity refusal, provenance, late binding, unresolved continuation, and zero-payload discovery.
 
 ## Phase B Sibling Package Acceptance (SPD-001..005)
 

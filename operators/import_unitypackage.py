@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
+import json
 from pathlib import Path
 from queue import SimpleQueue
 import shutil
@@ -31,7 +32,7 @@ from ..unity.package_reader import PackageIndex, UnityPackageError, UnityPackage
 from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab
-from ..unity.sibling_discovery import discover_siblings
+from ..unity.sibling_discovery import discover_siblings, inspect_provider_folder, inspect_provider_package
 
 
 _DEFAULT_PREFAB_ITEMS: list[tuple[str, str, str, int]] = [("AUTO", "Automatic", "Use the first prefab", 0)]
@@ -44,6 +45,7 @@ PREPARE_STATES = {
     "FILE_SELECTED",
     "PREPARING",
     "PREPARED",
+    "WAITING_MISSING_DEPENDENCY_RESOLUTION",
     "IMPORTING",
     "FINISHED",
     "CANCELLED",
@@ -108,7 +110,7 @@ def _discard_prepared_session(session_id: str, context=None) -> None:
             operator._performance = None
 
 
-def _schedule_prepared_session(session_id: str, *, show_dialog: bool, show_group_dialog: bool = False) -> None:
+def _schedule_prepared_session(session_id: str, *, show_dialog: bool, show_group_dialog: bool = False, show_missing_dialog: bool = False) -> None:
     launched = False
 
     def handoff():
@@ -122,7 +124,11 @@ def _schedule_prepared_session(session_id: str, *, show_dialog: bool, show_group
         if not launched:
             launched = True
             try:
-                if show_group_dialog:
+                if show_missing_dialog:
+                    bpy.ops.import_scene.unitypackage_missing_dependencies(
+                        "INVOKE_DEFAULT", session_id=session_id
+                    )
+                elif show_group_dialog:
                     bpy.ops.import_scene.unitypackage_siblings(
                         "INVOKE_DEFAULT", session_id=session_id
                     )
@@ -203,6 +209,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._prepare_events: SimpleQueue[str] = SimpleQueue()
         self._sibling_discovery = None
         self._sibling_import_together = True
+        self._manual_provider_paths: set[str] = set()
+        self._provider_provenance: dict[str, str] = {}
 
     def _ui_log(self, message: str) -> None:
         print(f"[UI] {message}")
@@ -402,8 +410,36 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 selected_paths.add(selected.relative_to(self._extraction_dir).as_posix())
             except ValueError:
                 pass
-        self._sibling_discovery = discover_siblings(self.filepath, selected_asset_paths=selected_paths)
+        self._sibling_discovery = discover_siblings(
+            self.filepath,
+            selected_asset_paths=selected_paths,
+            extra_package_paths={Path(path) for path in self._manual_provider_paths},
+            provenance_by_path=self._provider_provenance,
+        )
         self._sibling_import_together = self._sibling_discovery.visual_status == "COMPLETE"
+
+    def _accept_manual_package(self, package_path: Path) -> bool:
+        discovery = self._sibling_discovery
+        unresolved = set(getattr(discovery, "unresolved_visual_guids", set())) if discovery else set()
+        candidate = inspect_provider_package(package_path, unresolved)
+        if not candidate.matched_guids:
+            return False
+        self._manual_provider_paths.add(candidate.path)
+        self._provider_provenance[candidate.path] = candidate.resolution_provenance
+        self._discover_selected_visual_dependencies()
+        return True
+
+    def _accept_manual_folder(self, folder: Path) -> tuple[int, set[str]]:
+        discovery = self._sibling_discovery
+        unresolved = set(getattr(discovery, "unresolved_visual_guids", set())) if discovery else set()
+        candidates, ambiguous = inspect_provider_folder(folder, unresolved)
+        for candidate in candidates:
+            if candidate.ambiguous_guids:
+                continue
+            self._manual_provider_paths.add(candidate.path)
+            self._provider_provenance[candidate.path] = "USER_SELECTED_FOLDER"
+        self._discover_selected_visual_dependencies()
+        return len(candidates), ambiguous
 
     def _prepare_import(self, context, package_path: Path) -> None:
         self._set_prepare_state("PREPARING")
@@ -557,6 +593,12 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             and bool(self._sibling_discovery.packages)
             and not show_dialog
         )
+        show_missing_dialog = (
+            not getattr(bpy.app, "background", False)
+            and self._sibling_discovery is not None
+            and bool(getattr(self._sibling_discovery, "unresolved_visual_guids", set()))
+            and not show_dialog
+        )
         if show_dialog:
             self._set_prepare_state("PREPARED")
             self._set_phase(context, "Waiting for Prefab selection", 0.30)
@@ -568,7 +610,14 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             f"dialog={show_dialog or show_group_dialog}"
         )
         if show_group_dialog:
-            _schedule_prepared_session(session_id, show_dialog=False, show_group_dialog=True)
+            if show_missing_dialog:
+                self._set_prepare_state("WAITING_MISSING_DEPENDENCY_RESOLUTION")
+                _schedule_prepared_session(session_id, show_dialog=False, show_missing_dialog=True)
+            else:
+                _schedule_prepared_session(session_id, show_dialog=False, show_group_dialog=True)
+        elif show_missing_dialog:
+            self._set_prepare_state("WAITING_MISSING_DEPENDENCY_RESOLUTION")
+            _schedule_prepared_session(session_id, show_dialog=False, show_missing_dialog=True)
         else:
             _schedule_prepared_session(session_id, show_dialog=show_dialog)
         return {"FINISHED"}
@@ -941,6 +990,10 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 package_key.source_package_id,
                 "Image",
             )
+            if not getattr(self, "group_child", False) and self._sibling_discovery is not None:
+                scene["unitypackage_provider_provenance"] = json.dumps(
+                    getattr(self._sibling_discovery, "resolution_provenance", {}), sort_keys=True
+                )
             dependency_counts = resolve_after_import(scene)
             package_kind = "MIXED_PACKAGE" if fbx_paths and (material_library or supported_asset_count > len(fbx_paths)) else "GEOMETRY_PACKAGE" if fbx_paths else "ASSET_PROVIDER_PACKAGE"
             current_registry = load_scene_registry(scene)
@@ -972,13 +1025,16 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     "accounting": getattr(discovery, "accounting", {}),
                 }
                 visual_status = getattr(discovery, "visual_status", discovery.status)
-                if visual_status == "COMPLETE" and discovery.packages and self._sibling_import_together:
+                if visual_status in {"COMPLETE", "PARTIAL", "AMBIGUOUS"} and discovery.packages and self._sibling_import_together:
                     group_id = uuid4().hex
                     scene["unitypackage_group_import"] = {
                         "group_import_id": group_id,
                         "primary_package_id": package_key.source_package_id,
                         "related_package_ids": [candidate.package_id for candidate in discovery.packages],
                     }
+                    scene["unitypackage_provider_provenance"] = json.dumps(
+                        getattr(discovery, "resolution_provenance", {}), sort_keys=True
+                    )
                     for candidate in discovery.packages:
                         result = bpy.ops.import_scene.unitypackage(
                             filepath=candidate.path,
@@ -1070,7 +1126,10 @@ class UNITYPACKAGE_OT_import_prefab(bpy.types.Operator):
         session.operator.prefab_choice = self.prefab_choice
         session.operator._discover_selected_visual_dependencies()
         discovery = session.operator._sibling_discovery
-        if discovery and discovery.packages:
+        if discovery and getattr(discovery, "unresolved_visual_guids", set()):
+            session.operator._set_prepare_state("WAITING_MISSING_DEPENDENCY_RESOLUTION")
+            _schedule_prepared_session(self.session_id, show_dialog=False, show_missing_dialog=True)
+        elif discovery and discovery.packages:
             _schedule_prepared_session(self.session_id, show_dialog=False, show_group_dialog=True)
         else:
             _schedule_prepared_session(self.session_id, show_dialog=False)
@@ -1085,6 +1144,100 @@ class UNITYPACKAGE_OT_import_prefab(bpy.types.Operator):
 
     def cancel(self, context):
         _discard_prepared_session(self.session_id, context)
+
+
+class UNITYPACKAGE_OT_missing_dependencies(bpy.types.Operator):
+    bl_idname = "import_scene.unitypackage_missing_dependencies"
+    bl_label = "Missing Visual Dependencies"
+
+    session_id: StringProperty(options={"HIDDEN"})
+    action: EnumProperty(
+        name="Action",
+        items=[
+            ("CONTINUE", "Continue With Missing Assets", "Import all currently resolved assets"),
+            ("CANCEL", "Cancel", "Cancel this prepared import"),
+        ],
+        default="CONTINUE",
+    )
+
+    def draw(self, context):
+        session = _PREPARED_SESSIONS.get(self.session_id)
+        if session is None:
+            self.layout.label(text="Prepared UnityPackage session expired")
+            return
+        discovery = session.operator._sibling_discovery
+        missing = sorted(getattr(discovery, "unresolved_visual_guids", set())) if discovery else []
+        self.layout.label(text=f"Missing visual dependencies: {len(missing)}")
+        self.layout.label(text="Materials and textures are validated by GUID.")
+        self.layout.operator("import_scene.unitypackage_locate_provider", text="Locate UnityPackage...").session_id = self.session_id
+        self.layout.operator("import_scene.unitypackage_locate_folder", text="Locate Folder...").session_id = self.session_id
+        self.layout.prop(self, "action", expand=True)
+
+    def execute(self, context):
+        session = _PREPARED_SESSIONS.get(self.session_id)
+        if session is None:
+            self.report({"ERROR"}, "Prepared UnityPackage session expired")
+            return {"CANCELLED"}
+        if self.action == "CANCEL":
+            _discard_prepared_session(self.session_id, context)
+            return {"CANCELLED"}
+        session.operator._sibling_import_together = True
+        _schedule_prepared_session(self.session_id, show_dialog=False)
+        return {"FINISHED"}
+
+    def invoke(self, context, _event):
+        return context.window_manager.invoke_props_dialog(self, width=640)
+
+    def cancel(self, context):
+        _discard_prepared_session(self.session_id, context)
+
+
+class UNITYPACKAGE_OT_locate_provider(ImportHelper, bpy.types.Operator):
+    bl_idname = "import_scene.unitypackage_locate_provider"
+    bl_label = "Locate UnityPackage Provider"
+    filename_ext = ".unitypackage"
+    filter_glob: StringProperty(default="*.unitypackage", options={"HIDDEN"})
+    session_id: StringProperty(options={"HIDDEN"})
+
+    def execute(self, context):
+        session = _PREPARED_SESSIONS.get(self.session_id)
+        if session is None:
+            self.report({"ERROR"}, "Prepared UnityPackage session expired")
+            return {"CANCELLED"}
+        if not session.operator._accept_manual_package(Path(self.filepath)):
+            self.report({"WARNING"}, "Selected UnityPackage provides none of the missing visual dependencies")
+            return {"CANCELLED"}
+        if session.operator._sibling_discovery and session.operator._sibling_discovery.unresolved_visual_guids:
+            _schedule_prepared_session(self.session_id, show_dialog=False, show_missing_dialog=True)
+        else:
+            session.operator._sibling_import_together = True
+            _schedule_prepared_session(self.session_id, show_dialog=False)
+        return {"FINISHED"}
+
+
+class UNITYPACKAGE_OT_locate_folder(bpy.types.Operator):
+    bl_idname = "import_scene.unitypackage_locate_folder"
+    bl_label = "Locate UnityPackage Folder"
+    directory: StringProperty(subtype="DIR_PATH")
+    session_id: StringProperty(options={"HIDDEN"})
+
+    def execute(self, context):
+        session = _PREPARED_SESSIONS.get(self.session_id)
+        if session is None:
+            self.report({"ERROR"}, "Prepared UnityPackage session expired")
+            return {"CANCELLED"}
+        count, ambiguous = session.operator._accept_manual_folder(Path(self.directory))
+        if not count:
+            self.report({"WARNING"}, "No selected-folder UnityPackage provides a missing visual dependency")
+            return {"CANCELLED"}
+        if ambiguous:
+            self.report({"WARNING"}, f"Ambiguous providers require explicit package selection: {len(ambiguous)} GUID(s)")
+        _schedule_prepared_session(self.session_id, show_dialog=False, show_missing_dialog=bool(session.operator._sibling_discovery.unresolved_visual_guids))
+        return {"FINISHED"}
+
+    def invoke(self, context, _event):
+        context.window_manager.fileselect_add(self)
+        return {"RUNNING_MODAL"}
 
 
 class UNITYPACKAGE_OT_import_siblings(bpy.types.Operator):
@@ -1139,5 +1292,8 @@ UNITYPACKAGE_CLASSES = (
     UNITYPACKAGE_OT_import,
     UNITYPACKAGE_OT_import_prepared,
     UNITYPACKAGE_OT_import_prefab,
+    UNITYPACKAGE_OT_missing_dependencies,
+    UNITYPACKAGE_OT_locate_provider,
+    UNITYPACKAGE_OT_locate_folder,
     UNITYPACKAGE_OT_import_siblings,
 )

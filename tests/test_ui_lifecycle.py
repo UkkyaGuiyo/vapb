@@ -310,6 +310,52 @@ class UILifecycleTests(unittest.TestCase):
             schedule.assert_called_once_with(session_id, show_dialog=False, show_group_dialog=True)
             module._PREPARED_SESSIONS.pop(session_id, None)
 
+    def test_missing_dependency_continue_preserves_prepared_session_and_imports_resolved(self):
+        operator = _operator()
+        operator._sibling_import_together = False
+        operator._sibling_discovery = SimpleNamespace(unresolved_visual_guids={"a" * 32}, packages=[])
+        session_id = "session-missing-continue"
+        module._PREPARED_SESSIONS[session_id] = module._PreparedSession(session_id, operator, 0.0)
+        missing = module.UNITYPACKAGE_OT_missing_dependencies()
+        missing.session_id = session_id
+        missing.action = "CONTINUE"
+        with patch.object(module, "_schedule_prepared_session") as schedule:
+            self.assertEqual({"FINISHED"}, missing.execute(FakeContext()))
+        self.assertTrue(operator._sibling_import_together)
+        schedule.assert_called_once_with(session_id, show_dialog=False)
+        self.assertIn(session_id, module._PREPARED_SESSIONS)
+        module._PREPARED_SESSIONS.pop(session_id, None)
+
+    def test_manual_provider_package_selection_revalidates_and_schedules_import(self):
+        operator = _operator()
+        operator._accept_manual_package = Mock(return_value=True)
+        operator._sibling_discovery = SimpleNamespace(unresolved_visual_guids=set())
+        session_id = "session-manual-package"
+        module._PREPARED_SESSIONS[session_id] = module._PreparedSession(session_id, operator, 0.0)
+        picker = module.UNITYPACKAGE_OT_locate_provider()
+        picker.session_id = session_id
+        picker.filepath = "provider.unitypackage"
+        with patch.object(module, "_schedule_prepared_session") as schedule:
+            self.assertEqual({"FINISHED"}, picker.execute(FakeContext()))
+        operator._accept_manual_package.assert_called_once_with(Path("provider.unitypackage"))
+        schedule.assert_called_once_with(session_id, show_dialog=False)
+        module._PREPARED_SESSIONS.pop(session_id, None)
+
+    def test_manual_folder_selection_keeps_ambiguous_candidates_out(self):
+        operator = _operator()
+        operator._accept_manual_folder = Mock(return_value=(2, {"a" * 32}))
+        operator._sibling_discovery = SimpleNamespace(unresolved_visual_guids={"a" * 32})
+        session_id = "session-manual-folder"
+        module._PREPARED_SESSIONS[session_id] = module._PreparedSession(session_id, operator, 0.0)
+        picker = module.UNITYPACKAGE_OT_locate_folder()
+        picker.session_id = session_id
+        picker.directory = "providers"
+        picker.report = Mock()
+        with patch.object(module, "_schedule_prepared_session") as schedule:
+            self.assertEqual({"FINISHED"}, picker.execute(FakeContext()))
+        schedule.assert_called_once_with(session_id, show_dialog=False, show_missing_dialog=True)
+        module._PREPARED_SESSIONS.pop(session_id, None)
+
     def test_prepared_session_watchdog_cleans_expired_session(self):
         operator = _operator()
         context = FakeContext()

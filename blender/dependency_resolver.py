@@ -50,6 +50,7 @@ def capture_dependency(scene: Any, record: dict[str, Any]) -> dict[str, Any]:
         existing.setdefault("resolved_provider_package_id", "")
         existing.setdefault("resolved_provider_guid", "")
         existing.setdefault("resolved_provider_asset_path", "")
+        existing.setdefault("resolution_provenance", "UNRESOLVED")
         dependencies.append(existing)
     save_dependency_registry(scene, registry)
     return existing
@@ -175,6 +176,10 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
 
 def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
     registry = load_dependency_registry(scene)
+    try:
+        provider_provenance = json.loads(str(scene.get("unitypackage_provider_provenance", "{}")))
+    except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
+        provider_provenance = {}
     counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "late_bindings_applied": 0}
     changed = False
     for record in registry.get("dependencies", []):
@@ -203,6 +208,10 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                 record["resolved_provider_package_id"] = provider.get("unity_source_package_id", "")
                 record["resolved_provider_guid"] = provider.get("unity_material_guid", provider.get("unity_guid", ""))
                 record["resolved_provider_asset_path"] = provider.get("unity_material_path", provider.get("unity_asset_path", ""))
+                record["resolution_provenance"] = provider_provenance.get(
+                    record["resolved_provider_package_id"],
+                    "AUTO_LOCAL" if status == RESOLVED_LOCAL else "AUTO_BOUNDED_DISCOVERY",
+                )
                 counts["resolved_local" if status == RESOLVED_LOCAL else "resolved_cross_package"] += 1
                 counts["late_bindings_applied"] += 1
                 changed = True
@@ -210,6 +219,7 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
         if status in {AMBIGUOUS_PROVIDER, UNRESOLVED} and record.get("binding_source") == "dependency_resolver":
             _unbind_dependency(record)
         record["status"] = status
+        record["resolution_provenance"] = "AMBIGUOUS" if status == AMBIGUOUS_PROVIDER else "UNRESOLVED"
         counts["ambiguous" if status == AMBIGUOUS_PROVIDER else "unresolved"] += 1
         changed = True
     if changed:

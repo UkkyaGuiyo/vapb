@@ -108,6 +108,8 @@ Texture properties use one canonical role classifier for initial material build 
 
 Sibling discovery is metadata-first and bounded. It reads pathname, `.meta`, selected prefab/material text, and FBX external-object metadata, while texture and FBX payload bytes remain unread during planning. It starts in the selected package folder and expands only to the immediate bundle parent and one-level child folders when visual GUIDs remain unresolved. `visual_status` is independent from nonvisual Unity dependency state; ambiguous providers are never auto-selected.
 
+When visual dependencies remain unresolved, the foreground flow opens `Missing Visual Dependencies`. A user may locate one UnityPackage or an explicitly granted folder; candidates are accepted only when their manifest GUIDs cover unresolved visual references. Zero-coverage packages are rejected, ambiguous folder results are not auto-selected, and accepted providers trigger the same resolver/late-binding path as automatic discovery. `Continue With Missing Assets` preserves unresolved records while importing everything already resolved.
+
 Select an imported image in the Image Editor and open the `Unity Texture` sidebar. It displays Unity Asset Path, Unity GUID, working file path, file existence, and dirty state. `Save to Unity Source` writes Blender edits to that same existing file; `Reload from Disk` refreshes the same Image datablock after an external editor change; `Reload Changed Unity Textures` performs a manual mtime scan.
 
 The workflow refuses missing files, dirty reloads, ordinary non-Unity images, and packed-source conflicts. It never creates a copy, backup, new GUID, or `.meta`; use the importer `Keep Extracted` option for editable source files.

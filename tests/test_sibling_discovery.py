@@ -7,7 +7,7 @@ import tempfile
 from unittest.mock import patch
 import unittest
 
-from unitypackage_blender_importer.unity.sibling_discovery import discover_siblings
+from unitypackage_blender_importer.unity.sibling_discovery import discover_siblings, inspect_provider_folder, inspect_provider_package
 
 
 def _add(archive, name, data):
@@ -29,7 +29,75 @@ def _visual_prefab(material_guid: str) -> str:
     return f"MeshRenderer:\n  m_Materials:\n  - {{fileID: 2100000, guid: {material_guid}, type: 2}}\n"
 
 
+def _material(texture_guid: str) -> str:
+    return f"m_Texture: {{fileID: 2800000, guid: {texture_guid}, type: 3}}\n"
+
+
 class SiblingDiscoveryTests(unittest.TestCase):
+    def test_closure_001_ignores_unrelated_broken_material(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_a, material_b = "a" * 32, "b" * 32
+            texture_x, texture_y = "c" * 32, "d" * 32
+            _package(root / "geometry.unitypackage", [("e" * 32, "Assets/root.prefab", _visual_prefab(material_a))])
+            _package(root / "appearance.unitypackage", [
+                (material_a, "Assets/A.mat", _material(texture_x)),
+                (material_b, "Assets/B.mat", _material(texture_y)),
+                (texture_x, "Assets/X.png", "PNG"),
+            ])
+            result = discover_siblings(root / "geometry.unitypackage")
+            self.assertEqual(result.visual_status, "COMPLETE")
+            self.assertNotIn(texture_y, result.unresolved_visual_guids)
+
+    def test_closure_002_resolves_selected_material_texture(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_a, texture_x = "a" * 32, "b" * 32
+            _package(root / "geometry.unitypackage", [("c" * 32, "Assets/root.prefab", _visual_prefab(material_a))])
+            _package(root / "appearance.unitypackage", [(material_a, "Assets/A.mat", _material(texture_x)), (texture_x, "Assets/X.png", "PNG")])
+            self.assertEqual(discover_siblings(root / "geometry.unitypackage").visual_status, "COMPLETE")
+
+    def test_closure_003_missing_selected_texture_is_partial(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_a, texture_x = "a" * 32, "b" * 32
+            _package(root / "geometry.unitypackage", [("c" * 32, "Assets/root.prefab", _visual_prefab(material_a))])
+            _package(root / "appearance.unitypackage", [(material_a, "Assets/A.mat", _material(texture_x))])
+            result = discover_siblings(root / "geometry.unitypackage")
+            self.assertEqual(result.visual_status, "PARTIAL")
+            self.assertIn(texture_x, result.unresolved_visual_guids)
+
+    def test_closure_005_provider_record_order_does_not_change_result(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_a, texture_x = "a" * 32, "b" * 32
+            _package(root / "geometry.unitypackage", [("c" * 32, "Assets/root.prefab", _visual_prefab(material_a))])
+            records = [(texture_x, "Assets/X.png", "PNG"), (material_a, "Assets/A.mat", _material(texture_x))]
+            _package(root / "appearance.unitypackage", records)
+            first = discover_siblings(root / "geometry.unitypackage")
+            _package(root / "appearance.unitypackage", list(reversed(records)))
+            second = discover_siblings(root / "geometry.unitypackage")
+            self.assertEqual(first.visual_status, second.visual_status)
+            self.assertEqual(first.unresolved_visual_guids, second.unresolved_visual_guids)
+
+    def test_closure_selected_prefab_does_not_include_other_prefab_graph(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_a, material_b = "a" * 32, "b" * 32
+            texture_a, texture_b = "c" * 32, "d" * 32
+            _package(root / "geometry.unitypackage", [
+                ("e" * 32, "Assets/A.prefab", _visual_prefab(material_a)),
+                ("f" * 32, "Assets/B.prefab", _visual_prefab(material_b)),
+            ])
+            _package(root / "appearance.unitypackage", [
+                (material_a, "Assets/A.mat", _material(texture_a)),
+                (texture_a, "Assets/A.png", "PNG"),
+                (material_b, "Assets/B.mat", _material(texture_b)),
+            ])
+            selected = discover_siblings(root / "geometry.unitypackage", selected_asset_paths={"Assets/A.prefab"})
+            self.assertEqual(selected.visual_status, "COMPLETE")
+            self.assertNotIn(texture_b, selected.unresolved_visual_guids)
+
     def test_single_package_skips_archive_payload_scan(self):
         with tempfile.TemporaryDirectory() as temp:
             package_path = Path(temp) / "single.unitypackage"
@@ -41,6 +109,50 @@ class SiblingDiscoveryTests(unittest.TestCase):
             self.assertEqual(scan.call_count, 1)
             self.assertEqual(result.accounting["texture_payload_bytes_read"], 0)
             self.assertEqual(result.accounting["fbx_payload_bytes_read"], 0)
+
+    def test_manual_package_coverage_reports_zero_partial_and_complete(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            guid_a, guid_b = "a" * 32, "b" * 32
+            package_path = root / "provider.unitypackage"
+            _package(package_path, [(guid_a, "Assets/A.mat", "")])
+            zero = inspect_provider_package(package_path, {guid_b})
+            partial = inspect_provider_package(package_path, {guid_a, guid_b})
+            complete = inspect_provider_package(package_path, {guid_a})
+            self.assertEqual(zero.match_count, 0)
+            self.assertEqual(partial.matched_guids, {guid_a})
+            self.assertEqual(complete.coverage_ratio, 1.0)
+            self.assertEqual(complete.resolution_provenance, "USER_SELECTED_PACKAGE")
+
+    def test_manual_folder_marks_duplicate_guid_ambiguous(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            guid = "a" * 32
+            _package(root / "one.unitypackage", [(guid, "Assets/A.mat", "")])
+            _package(root / "two.unitypackage", [(guid, "Assets/B.mat", "")])
+            candidates, ambiguous = inspect_provider_folder(root, {guid})
+            self.assertEqual(len(candidates), 2)
+            self.assertEqual(ambiguous, {guid})
+            self.assertTrue(all(candidate.ambiguous_guids == {guid} for candidate in candidates))
+
+    def test_explicit_manual_package_resolves_automatic_ambiguity(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            guid = "a" * 32
+            geometry = root / "geometry.unitypackage"
+            first = root / "one.unitypackage"
+            second = root / "two.unitypackage"
+            _package(geometry, [("b" * 32, "Assets/root.prefab", _visual_prefab(guid))])
+            _package(first, [(guid, "Assets/A.mat", "")])
+            _package(second, [(guid, "Assets/B.mat", "")])
+            result = discover_siblings(
+                geometry,
+                extra_package_paths={second},
+                provenance_by_path={str(second.resolve()): "USER_SELECTED_PACKAGE"},
+            )
+            self.assertEqual(result.visual_status, "COMPLETE")
+            self.assertEqual([Path(item.path).name for item in result.packages], ["two.unitypackage"])
+            self.assertEqual(result.resolution_provenance[result.packages[0].package_id], "USER_SELECTED_PACKAGE")
 
     def test_discovery_reuses_each_archive_scan(self):
         with tempfile.TemporaryDirectory() as temp:
