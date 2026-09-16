@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
+import re
 from typing import Any, Optional
 
 from .yaml_parser import UnityYAMLDocument, parse_unity_yaml
@@ -63,6 +64,47 @@ class PrefabData:
     def mesh_filter_documents(self) -> list[UnityYAMLDocument]:
         return [d for d in self.documents if d.class_id == MESH_FILTER]
 
+    def modification_materials(self) -> list[dict[str, Any]]:
+        """Read PrefabInstance material overrides with wrapped Unity refs.
+
+        Unity commonly wraps the ``guid`` and ``type`` fields over multiple
+        lines.  The generic YAML subset parser intentionally does not attempt
+        to model this editor serialization, so use a narrow parser for the
+        exact override records we need and refuse incomplete records.
+        """
+        result: list[dict[str, Any]] = []
+        for document in self.documents:
+            if document.class_id != 1001:
+                continue
+            chunks = re.split(r"\n\s*- target:\s*", document.raw)
+            names: dict[str, str] = {}
+            material_chunks: list[tuple[str, str]] = []
+            for chunk in chunks[1:]:
+                target = re.match(r"\{fileID:\s*(-?\d+),\s*guid:\s*([0-9a-fA-F]{32})", chunk)
+                if not target:
+                    continue
+                target_file_id, target_guid = target.groups()
+                name_value = re.search(r"propertyPath:\s*m_Name\s*\n\s*value:\s*(.+)", chunk)
+                if name_value:
+                    names[target_file_id] = name_value.group(1).strip()
+                material = re.search(
+                    r"propertyPath:\s*m_Materials\.Array\.data\[(\d+)\].*?"
+                    r"objectReference:\s*\{fileID:\s*-?\d+,\s*guid:\s*([0-9a-fA-F]{32})",
+                    chunk,
+                    re.DOTALL,
+                )
+                if material:
+                    material_chunks.append((target_file_id, target_guid, material.group(1), material.group(2)))
+            for target_file_id, target_guid, slot_index, material_guid in material_chunks:
+                result.append({
+                    "target_file_id": target_file_id,
+                    "target_source_guid": target_guid.lower(),
+                    "slot_index": int(slot_index),
+                    "material_guid": material_guid.lower(),
+                    "object_name": names.get(target_file_id, ""),
+                })
+        return result
+
     def referenced_fbx_guids(self) -> set[str]:
         guids: set[str] = set()
         for doc in self.renderer_documents() + self.mesh_filter_documents():
@@ -109,4 +151,3 @@ def parse_prefab(path: Path) -> PrefabData:
                 {axis: float(scale.get(axis, 1.0)) for axis in ("x", "y", "z")},
             )
     return PrefabData(Path(path), documents, game_objects, transforms)
-

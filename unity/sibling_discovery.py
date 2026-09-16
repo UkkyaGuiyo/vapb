@@ -87,6 +87,12 @@ def discover_siblings(root_path: Path, *, max_depth: int = 32) -> SiblingDiscove
         return record_cache[key]
 
     selected = {root_path.resolve()}
+    # A package with no same-directory sibling has no discovery work to do.
+    # In particular, do not read the full primary archive just to prove that
+    # there are no candidates; the normal import path already builds its own
+    # index and this scan is only an optional cross-package pass.
+    if not sibling_paths:
+        return SiblingDiscoveryResult(str(root_path), [], set(), set(), [], "NONE")
     root_records = records_for(root_path)
     unresolved = required_guids(root_path, root_records) - provided_guids(root_path, root_records)
     candidates: list[SiblingPackageCandidate] = []

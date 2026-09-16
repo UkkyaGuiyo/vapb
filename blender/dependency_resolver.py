@@ -66,7 +66,10 @@ def _find_consumer(record: dict[str, Any]) -> Any | None:
     package_id = record.get("consumer_package_id", "")
     file_id = str(record.get("consumer_game_object_file_id", ""))
     path = str(record.get("consumer_object_path", ""))
+    object_name = str(record.get("consumer_object_name", ""))
     candidates = [obj for obj in bpy.data.objects if obj.get("unity_source_package_id") == package_id]
+    if object_name:
+        candidates = [obj for obj in candidates if obj.name == object_name]
     if path:
         candidates = [obj for obj in candidates if obj.get("unity_asset_path", "") == path]
     if file_id:
@@ -245,7 +248,8 @@ def capture_material_texture_dependencies(scene: Any, materials: Iterable[Any]) 
             target_guid = str((texture or {}).get("guid", ""))
             if not target_guid:
                 continue
-            label = "Normal" if "normal" in property_name.lower() else "Emission" if "emission" in property_name.lower() else "Metallic" if any(key in property_name.lower() for key in ("metallic", "smoothness")) else "Base Color"
+            lowered = property_name.lower()
+            label = "Normal" if any(key in lowered for key in ("normal", "bump")) else "Emission" if "emission" in lowered else "Metallic" if any(key in lowered for key in ("metallic", "smoothness")) else "Base Color"
             capture_dependency(scene, {
                 "dependency_type": "MATERIAL_TEXTURE",
                 "consumer_package_id": material.get("unity_source_package_id", ""),

@@ -1,6 +1,8 @@
+from pathlib import Path
+import tempfile
 import unittest
 
-from unitypackage_blender_importer.unity.prefab_parser import ref_file_id
+from unitypackage_blender_importer.unity.prefab_parser import parse_prefab, ref_file_id
 
 
 class PrefabFileIdTests(unittest.TestCase):
@@ -14,6 +16,35 @@ class PrefabFileIdTests(unittest.TestCase):
 
     def test_invalid_file_id_is_not_coerced(self):
         self.assertIsNone(ref_file_id({"fileID": "not-a-number"}))
+
+    def test_wrapped_prefab_instance_material_override_is_parsed(self):
+        text = """%YAML 1.1
+--- !u!1001 &100
+PrefabInstance:
+  m_Modification:
+    m_Modifications:
+    - target: {fileID: -123, guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+        type: 3}
+      propertyPath: m_Name
+      value: Coat
+    - target: {fileID: -123, guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value:
+      objectReference: {fileID: 2100000, guid: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb,
+        type: 2}
+"""
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "Avatar.prefab"
+            path.write_text(text, encoding="utf-8")
+            overrides = parse_prefab(path).modification_materials()
+        self.assertEqual(overrides, [{
+            "target_file_id": "-123",
+            "target_source_guid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "slot_index": 0,
+            "material_guid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "object_name": "Coat",
+        }])
 
 
 if __name__ == "__main__":

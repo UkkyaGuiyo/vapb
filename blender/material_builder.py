@@ -408,3 +408,49 @@ def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.O
             while len(obj.data.materials) <= index:
                 obj.data.materials.append(None)
             obj.data.materials[index] = material
+
+
+def apply_prefab_modification_materials(prefab: PrefabData, imported_objects, asset_db, material_library, scene=None) -> None:
+    """Apply exact PrefabInstance material overrides from imported object names."""
+    imported = list(imported_objects)
+    for override in prefab.modification_materials():
+        object_name = str(override.get("object_name", ""))
+        candidates = [obj for obj in imported if obj.name == object_name and getattr(obj, "data", None) and hasattr(obj.data, "materials")]
+        if len(candidates) != 1:
+            if scene and override.get("material_guid"):
+                capture_dependency(scene, {
+                    "dependency_type": "PREFAB_RENDERER_MATERIAL",
+                    "consumer_package_id": asset_db.source_package_id,
+                    "consumer_asset_path": str(prefab.path),
+                    "consumer_object_path": str(prefab.path),
+                    "consumer_object_name": object_name,
+                    "consumer_game_object_file_id": str(override.get("target_file_id", "")),
+                    "consumer_slot_index": int(override.get("slot_index", 0)),
+                    "target_guid": str(override["material_guid"]),
+                    "target_file_id": str(override.get("target_file_id", "")),
+                    "source_prefab_asset_path": str(prefab.path),
+                })
+            continue
+        obj = candidates[0]
+        guid = str(override.get("material_guid", ""))
+        entry = asset_db.find_guid(guid)
+        material = material_library.get(str(entry.path)) if entry else None
+        if material is None:
+            if scene and guid:
+                capture_dependency(scene, {
+                    "dependency_type": "PREFAB_RENDERER_MATERIAL",
+                    "consumer_package_id": asset_db.source_package_id,
+                    "consumer_asset_path": str(prefab.path),
+                    "consumer_object_path": str(prefab.path),
+                    "consumer_object_name": object_name,
+                    "consumer_game_object_file_id": str(override.get("target_file_id", "")),
+                    "consumer_slot_index": int(override.get("slot_index", 0)),
+                    "target_guid": guid,
+                    "target_file_id": str(override.get("target_file_id", "")),
+                    "source_prefab_asset_path": str(prefab.path),
+                })
+            continue
+        slot = int(override.get("slot_index", 0))
+        while len(obj.data.materials) <= slot:
+            obj.data.materials.append(None)
+        obj.data.materials[slot] = material

@@ -20,7 +20,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 from ..blender.fbx_importer import apply_import_options, import_fbx_files
 from ..blender.hierarchy_builder import build_prefab_hierarchy
 from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package, save_scene_registry
-from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, build_material_library
+from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, apply_prefab_modification_materials, build_material_library
 from ..blender.texture_loader import load_textures_from_database
 from ..blender.dependency_resolver import capture_material_texture_dependencies, load_dependency_registry, resolve_after_import
 from ..blender.performance import PerformanceTimer
@@ -856,6 +856,15 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         apply_prefab_materials,
                         prefab,
                         prefab_object_map,
+                        asset_db,
+                        material_library,
+                        context.scene,
+                    )
+                    self._performance.measure(
+                        "material_mapping",
+                        apply_prefab_modification_materials,
+                        prefab,
+                        imported_objects,
                         asset_db,
                         material_library,
                         context.scene,

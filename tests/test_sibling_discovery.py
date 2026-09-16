@@ -25,6 +25,15 @@ def _package(path: Path, records):
 
 
 class SiblingDiscoveryTests(unittest.TestCase):
+    def test_single_package_skips_archive_payload_scan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package_path = Path(temp) / "single.unitypackage"
+            _package(package_path, [("a" * 32, "Assets/single.prefab", "")])
+            with patch("unitypackage_blender_importer.unity.sibling_discovery._asset_texts") as scan:
+                result = discover_siblings(package_path)
+            self.assertEqual(result.status, "NONE")
+            scan.assert_not_called()
+
     def test_discovery_reuses_each_archive_scan(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
