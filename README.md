@@ -120,6 +120,19 @@ If the operating system refuses the launch after validation, the launcher return
 
 ## Current Limitations
 
+Native FBX model transforms and skin parenting are preserved during Prefab
+reconstruction. Converted scene-only ancestors place the model exactly once;
+serialized transforms on matched FBX objects are retained as
+`unity_prefab_model_transform` metadata, not reapplied as another model-axis
+conversion. Genuine transform/reparenting overrides on those model objects
+remain unsupported without reliable source/default comparison. Put explicit
+scene placement on a scene-only parent instead.
+
+Uniquely and structurally corresponding Prefab bone GameObjects are represented
+by native Bone identity properties and root `unity_prefab_bone_identities`
+metadata rather than duplicate Empty objects. Bones needed as Object parents
+for separate scene attachments retain their Empty representation.
+
 - Transparent / cutout / blend material visual pathは未検証です。
 - Unity Shaderの外観はBlender Principled BSDFによる近似です。
 - Multi-package identity foundationは実装済みです。異なるPackageの同一GUID/Asset Pathは検出・報告しますが、自動merge・自動置換は行いません。

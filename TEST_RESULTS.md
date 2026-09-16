@@ -154,3 +154,21 @@ Real failed-scene forensic evidence: provider slot binding was masked as `RESOLV
 - Focused foreground synthetic E2E: `GROUP_IMPORT_E2E_OK`; children finish synchronously, preserve primary Meshes, create no async/session workflow or recursive discovery, and precede final primary resolution.
 - Wrapped transform/reference and multiple Renderer material-slot fixtures cover selected dependency extraction and visual closure.
 - Real local foreground verification: primary Meshes persist after grouped completion; all expected Renderer slots and canonical Base Color/Normal bindings match their exact GUIDs. Commercial assets and diagnostic reports remain outside the repository.
+
+## 2026-09-17 Prepared Handoff / Native Model Hierarchy
+
+- Python 3.13.13: 103 tests PASS; compileall PASS.
+- UIH-001..003: ten fresh foreground processes, actual props dialogs and
+  native RET input after draw, middle Prefab -> sibling dialog -> import:
+  10/10 PASS. One pump, no duplicate dialog, zero stale sessions.
+- Controlled baseline rejected invoke stalls; corrected rejected-once recovery
+  PASS. Exact original intermittent human failure trigger remains unconfirmed.
+- TR-001..005 and necessary attachment bone-parent fixture PASS.
+- Existing twelve Blender regression scripts run once, all PASS.
+- Real local foreground first-attempt acceptance PASS: 15 Meshes, 18 Objects,
+  two Empty objects, native-equivalent upright world matrices and drawn-face
+  bounds. Single-package control retains 102 Meshes and identical image maps.
+- Staged candidate ZIP extracted register/unregister PASS. Final exact-remote
+  ZIP register/unregister is verified again after push.
+- Mapped model-instance transform overrides remain unsupported without
+  reliable source/default comparison. Private evidence is not committed.

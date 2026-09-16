@@ -77,6 +77,10 @@ class _PreparedSession:
     operator: "UNITYPACKAGE_OT_import"
     created_at: float
     window_manager: Any = None
+    pending_stage: str = ""
+    active_stage: str = ""
+    pump_registered: bool = False
+    handoff_attempts: int = 0
 
 
 def _session_prefab_items(_self, _context):
@@ -111,41 +115,69 @@ def _discard_prepared_session(session_id: str, context=None) -> None:
 
 
 def _schedule_prepared_session(session_id: str, *, show_dialog: bool, show_group_dialog: bool = False, show_missing_dialog: bool = False) -> None:
-    launched = False
+    session = _PREPARED_SESSIONS.get(session_id)
+    if session is None:
+        return
+    stage = "MISSING" if show_missing_dialog else "SIBLINGS" if show_group_dialog else "PREFAB" if show_dialog else "IMPORT"
+    if session.active_stage == stage and not session.pending_stage:
+        return
+    if session.pending_stage != stage:
+        session.pending_stage = stage
+        session.handoff_attempts = 0
+    session.active_stage = ""
+    if session.pump_registered:
+        return
+    session.pump_registered = True
 
     def handoff():
-        nonlocal launched
         session = _PREPARED_SESSIONS.get(session_id)
         if session is None:
             return None
         if perf_counter() - session.created_at > _SESSION_TIMEOUT_SECONDS:
             _discard_prepared_session(session_id)
             return None
-        if not launched:
-            launched = True
+        if session.pending_stage:
+            next_stage = session.pending_stage
+            session.pending_stage = ""
+            session.handoff_attempts += 1
             try:
-                if show_missing_dialog:
-                    bpy.ops.import_scene.unitypackage_missing_dependencies(
+                if next_stage == "MISSING":
+                    result = bpy.ops.import_scene.unitypackage_missing_dependencies(
                         "INVOKE_DEFAULT", session_id=session_id
                     )
-                elif show_group_dialog:
-                    bpy.ops.import_scene.unitypackage_siblings(
+                elif next_stage == "SIBLINGS":
+                    result = bpy.ops.import_scene.unitypackage_siblings(
                         "INVOKE_DEFAULT", session_id=session_id
                     )
-                elif show_dialog:
-                    bpy.ops.import_scene.unitypackage_prefab(
+                elif next_stage == "PREFAB":
+                    result = bpy.ops.import_scene.unitypackage_prefab(
                         "INVOKE_DEFAULT", session_id=session_id
                     )
                 else:
-                    bpy.ops.import_scene.unitypackage_prepared(
+                    result = bpy.ops.import_scene.unitypackage_prepared(
                         "EXEC_DEFAULT", session_id=session_id
                     )
             except Exception as exc:
                 print(f"[UnityPackage Importer] Prepared session handoff failed: {exc}")
                 _discard_prepared_session(session_id)
                 return None
-        # Keep a lightweight watchdog while the user dialog is open.
-        return 1.0
+            if session_id not in _PREPARED_SESSIONS:
+                return None
+            if "RUNNING_MODAL" in result or "FINISHED" in result:
+                # execute() may have queued the following stage during invoke.
+                if not session.pending_stage:
+                    session.active_stage = next_stage
+            elif not session.pending_stage:
+                # A rejected invoke is NOT an opened dialog. Retry only while
+                # the same session remains alive; user cancel removes it.
+                if session.handoff_attempts >= 3:
+                    print("[UnityPackage Importer] Prepared dialog was rejected three times")
+                    _discard_prepared_session(session_id)
+                    return None
+                session.pending_stage = next_stage
+        # One pump owns every transition; no independent, stale stage timers.
+        # Pending work runs on the next event-loop tick, not after a UI sleep.
+        return 0.0 if session.pending_stage else 0.1
 
     timers = getattr(getattr(bpy, "app", None), "timers", None)
     if timers is None or not hasattr(timers, "register"):

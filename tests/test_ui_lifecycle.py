@@ -418,6 +418,80 @@ class UILifecycleTests(unittest.TestCase):
             prepared.execute(context)
         self.assertNotIn(session_id, module._PREPARED_SESSIONS)
 
+    def test_uih_rejected_invoke_keeps_pending_stage_and_retries_once(self):
+        operator = _operator()
+        sid = "uih-retry"
+        session = module._PreparedSession(sid, operator, perf_counter())
+        callbacks = []
+        invoke = Mock(side_effect=[{"CANCELLED"}, {"RUNNING_MODAL"}])
+        ops = SimpleNamespace(import_scene=SimpleNamespace(unitypackage_siblings=invoke))
+        timers = SimpleNamespace(register=lambda cb, **kw: callbacks.append(cb))
+        with patch.object(module.bpy, "ops", ops, create=True), patch.object(module.bpy.app, "timers", timers, create=True):
+            module._PREPARED_SESSIONS[sid] = session
+            try:
+                module._schedule_prepared_session(sid, show_dialog=False, show_group_dialog=True)
+                self.assertEqual(0.0, callbacks[0]())
+                self.assertEqual("SIBLINGS", session.pending_stage)
+                callbacks[0]()
+                self.assertEqual("SIBLINGS", session.active_stage)
+                callbacks[0]()
+                self.assertEqual(2, invoke.call_count)
+            finally:
+                module._PREPARED_SESSIONS.pop(sid, None)
+            self.assertIsNone(callbacks[0]())
+
+    def test_uih_transition_has_one_pump_no_duplicate_dialog_and_no_stale_session(self):
+        operator = _operator()
+        sid = "uih-transition"
+        session = module._PreparedSession(sid, operator, perf_counter())
+        callbacks = []
+
+        def open_prefab(*args, **kwargs):
+            module._schedule_prepared_session(sid, show_dialog=False, show_group_dialog=True)
+            return {"FINISHED"}
+
+        def import_prepared(*args, **kwargs):
+            module._PREPARED_SESSIONS.pop(sid)
+            return {"FINISHED"}
+
+        siblings = Mock(return_value={"RUNNING_MODAL"})
+        ops = SimpleNamespace(import_scene=SimpleNamespace(
+            unitypackage_prefab=Mock(side_effect=open_prefab), unitypackage_siblings=siblings,
+            unitypackage_prepared=Mock(side_effect=import_prepared)))
+        timers = SimpleNamespace(register=lambda cb, **kw: callbacks.append(cb))
+        with patch.object(module.bpy, "ops", ops, create=True), patch.object(module.bpy.app, "timers", timers, create=True):
+            module._PREPARED_SESSIONS[sid] = session
+            try:
+                module._schedule_prepared_session(sid, show_dialog=True)
+                callbacks[0]()
+                module._schedule_prepared_session(sid, show_dialog=False, show_group_dialog=True)
+                callbacks[0]()
+                module._schedule_prepared_session(sid, show_dialog=False, show_group_dialog=True)
+                callbacks[0]()
+                self.assertEqual(1, len(callbacks))
+                siblings.assert_called_once()
+                module._schedule_prepared_session(sid, show_dialog=False)
+                self.assertIsNone(callbacks[0]())
+                self.assertNotIn(sid, module._PREPARED_SESSIONS)
+                self.assertIsNone(callbacks[0]())
+            finally:
+                module._PREPARED_SESSIONS.pop(sid, None)
+
+    def test_uih_repeated_rejection_is_bounded_and_cleans_session(self):
+        operator = _operator()
+        sid = "uih-bounded"
+        callbacks = []
+        invoke = Mock(return_value={"CANCELLED"})
+        ops = SimpleNamespace(import_scene=SimpleNamespace(unitypackage_prefab=invoke))
+        timers = SimpleNamespace(register=lambda cb, **kw: callbacks.append(cb))
+        with patch.object(module.bpy, "ops", ops, create=True), patch.object(module.bpy.app, "timers", timers, create=True):
+            module._PREPARED_SESSIONS[sid] = module._PreparedSession(sid, operator, perf_counter())
+            module._schedule_prepared_session(sid, show_dialog=True)
+            callbacks[0](); callbacks[0]()
+            self.assertIsNone(callbacks[0]())
+            self.assertEqual(3, invoke.call_count)
+            self.assertNotIn(sid, module._PREPARED_SESSIONS)
+
     def test_worker_exception_cancels_and_reports(self):
         operator = _operator()
         context = FakeContext()

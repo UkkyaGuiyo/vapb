@@ -115,6 +115,16 @@ Material:
 """.encode("utf-8")
         large_file_id = 9223372036854775807
         prefab_bytes = f"""%YAML 1.1
+--- !u!1 &900
+GameObject:
+  m_Name: ScenePlacement
+--- !u!4 &901
+Transform:
+  m_GameObject: {{fileID: 900}}
+  m_Father: {{fileID: 0}}
+  m_LocalRotation: {{x: 0, y: 0, z: 0, w: 1}}
+  m_LocalPosition: {{x: 1, y: 2, z: 3}}
+  m_LocalScale: {{x: 1, y: 1, z: 1}}
 --- !u!1 &{large_file_id}
 GameObject:
   m_Name: AvatarBody
@@ -123,9 +133,9 @@ GameObject:
 --- !u!4 &101
 Transform:
   m_GameObject: {{fileID: {large_file_id}}}
-  m_Father: {{fileID: 0}}
+  m_Father: {{fileID: 901}}
   m_LocalRotation: {{x: 0, y: 0, z: 0, w: 1}}
-  m_LocalPosition: {{x: 1, y: 2, z: 3}}
+  m_LocalPosition: {{x: 0, y: 0, z: 0}}
   m_LocalScale: {{x: 1, y: 1, z: 1}}
 --- !u!137 &200
 SkinnedMeshRenderer:
@@ -177,8 +187,11 @@ SkinnedMeshRenderer:
             for obj in bpy.data.objects
             if obj.get("unity_prefab_file_id") == str(large_file_id)
         )
-        assert body.parent in roots, "Prefab parent hierarchy was not restored"
-        assert tuple(round(value, 3) for value in body.location) == (1.0, 3.0, -2.0), body.location
+        placement = next(o for o in bpy.data.objects if o.get("unity_prefab_file_id") == "900")
+        assert body.parent.type == "ARMATURE", "Native skin hierarchy was not retained"
+        assert body.parent.parent == placement and placement.parent in roots
+        bpy.context.view_layer.update()
+        assert tuple(round(value, 3) for value in body.matrix_world.translation) == (1.0, 3.0, -2.0), body.matrix_world
         assert body.data.materials and body.data.materials[0], "Prefab material slot was not assigned"
         assigned = body.data.materials[0]
         assert assigned.get("unity_material_guid") == material_guid, "Prefab explicit material GUID was not preserved"
