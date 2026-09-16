@@ -487,6 +487,30 @@ class UILifecycleTests(unittest.TestCase):
         operator._prepare_import.assert_called_once_with(context, Path("avatar.unitypackage"))
         self.assertEqual(0, context.window_manager.modal_calls)
 
+    def test_foreground_group_child_is_synchronous_without_modal_or_dialog(self):
+        operator = _operator()
+        context = FakeContext()
+        module.bpy.app.background = False
+        operator.group_child = True
+        operator.filepath = "provider.unitypackage"
+        operator._prepare_import = Mock()
+        operator._run_import = Mock(return_value={"FINISHED"})
+        operator._start_async_prepare = Mock()
+        self.assertEqual({"FINISHED"}, operator.execute(context))
+        operator._prepare_import.assert_called_once_with(context, Path("provider.unitypackage"))
+        operator._run_import.assert_called_once_with(context)
+        operator._start_async_prepare.assert_not_called()
+        self.assertEqual(0, context.window_manager.modal_calls)
+        self.assertEqual(0, context.window_manager.dialog_calls)
+
+    def test_group_child_selected_discovery_is_disabled(self):
+        operator = _operator()
+        operator.group_child = True
+        operator.filepath = "provider.unitypackage"
+        with patch.object(module, "discover_siblings") as discovery:
+            operator._discover_selected_visual_dependencies()
+        discovery.assert_not_called()
+
     def test_second_async_start_does_not_register_again(self):
         operator = _operator()
         context = FakeContext()

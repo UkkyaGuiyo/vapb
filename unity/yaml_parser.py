@@ -116,8 +116,45 @@ def _parse_indented(lines: list[str]) -> Any:
     return result
 
 
+def _fold_flow_lines(lines: list[str]) -> list[str]:
+    """Join wrapped flow maps/lists before parsing indentation-based fields."""
+    folded: list[str] = []
+    index = 0
+    while index < len(lines):
+        line = lines[index]
+        index += 1
+        stripped = line.strip()
+        value = stripped[2:].lstrip() if stripped.startswith("- ") else stripped
+        if not value.startswith(("{", "[")):
+            value = value.split(":", 1)[1].lstrip() if ":" in value else ""
+        if value.startswith(("{", "[")):
+            depth = 0
+            quote = None
+            escaped = False
+            while True:
+                for char in value:
+                    if quote:
+                        if char == quote and not escaped:
+                            quote = None
+                        escaped = char == "\\" and not escaped
+                    elif char in "'\"":
+                        quote = char
+                        escaped = False
+                    elif char in "{[":
+                        depth += 1
+                    elif char in "}]":
+                        depth -= 1
+                if depth <= 0 or index >= len(lines):
+                    break
+                value = lines[index].strip()
+                line += " " + value
+                index += 1
+        folded.append(line)
+    return folded
+
+
 def _parse_document_body(body: str) -> dict[str, Any]:
-    lines = body.splitlines()
+    lines = _fold_flow_lines(body.splitlines())
     data: dict[str, Any] = {}
     index = 0
     while index < len(lines):

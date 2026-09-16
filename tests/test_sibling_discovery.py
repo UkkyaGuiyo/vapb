@@ -34,6 +34,23 @@ def _material(texture_guid: str) -> str:
 
 
 class SiblingDiscoveryTests(unittest.TestCase):
+    def test_all_renderer_slots_are_required_in_selected_visual_closure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            first, second = "a" * 32, "b" * 32
+            payload = f"""--- !u!137 &10
+SkinnedMeshRenderer:
+  m_Materials:
+  - {{fileID: 2100000, guid: {first}, type: 2}}
+  - {{fileID: 2100000, guid: {second},
+      type: 2}}
+"""
+            _package(root / "geometry.unitypackage", [("c" * 32, "Assets/root.prefab", payload)])
+            _package(root / "appearance.unitypackage", [(first, "Assets/A.mat", ""), (second, "Assets/B.mat", "")])
+            result = discover_siblings(root / "geometry.unitypackage")
+            self.assertEqual(result.packages[0].matched_guids, {first, second})
+            self.assertEqual(result.packages[0].match_count, 2)
+
     def test_closure_001_ignores_unrelated_broken_material(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

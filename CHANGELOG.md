@@ -8,6 +8,9 @@
 - Added demand-driven selected-Prefab visual closure, missing-dependency foreground flow, exact-GUID manual package/folder validation, and resolution provenance.
 - Fixed consumer-binding diagnostics so a provider lookup cannot overwrite `MISSING_CONSUMER`; primary-local visual GUIDs are excluded before sibling resolution.
 - Fixed foreground multi-Prefab selection handoff by separating the dynamic dialog EnumProperty from stable parent transport state.
+- Fixed wrapped Unity YAML flow maps/lists so selected Prefabs reach geometry extraction with complete transforms and asset references.
+- Made grouped provider children synchronous and non-interactive; final primary dependency resolution now waits for their completion.
+- Included every Renderer material slot in selected visual dependency discovery.
 
 ## 0.4.0 candidate - 2026-09-15
 

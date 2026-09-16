@@ -239,4 +239,5 @@ def main() -> None:
     print("CROSS_PACKAGE_DEPENDENCY_OK")
 
 
-main()
+if __name__ == "__main__":
+    main()

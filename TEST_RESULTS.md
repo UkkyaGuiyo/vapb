@@ -147,3 +147,10 @@ Real failed-scene forensic evidence: provider slot binding was masked as `RESOLV
 - Python suite: 96 tests PASS.
 - Blender 5.2.1 synthetic foreground handoff: `PREFAB_SELECTION_FOREGROUND_E2E_OK`.
 - The dialog retains its dynamic Prefab EnumProperty, while the prepared parent stores the selected token in stable string state; AUTO, first, middle, last, invalid fallback, and programmatic explicit selection are covered.
+
+## 2026-09-16 Grouped Import Lifecycle
+
+- Python 3.13.13: 100 tests PASS; compileall PASS.
+- Focused foreground synthetic E2E: `GROUP_IMPORT_E2E_OK`; children finish synchronously, preserve primary Meshes, create no async/session workflow or recursive discovery, and precede final primary resolution.
+- Wrapped transform/reference and multiple Renderer material-slot fixtures cover selected dependency extraction and visual closure.
+- Real local foreground verification: primary Meshes persist after grouped completion; all expected Renderer slots and canonical Base Color/Normal bindings match their exact GUIDs. Commercial assets and diagnostic reports remain outside the repository.

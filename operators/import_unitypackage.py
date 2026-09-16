@@ -676,7 +676,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         if self._performance is None:
             self._performance = PerformanceTimer()
         self._begin_progress(context)
-        if not getattr(bpy.app, "background", False) and context.window is not None:
+        if not getattr(self, "group_child", False) and not getattr(bpy.app, "background", False) and context.window is not None:
             self._set_prepare_state("FILE_SELECTED")
             self._start_async_prepare(context, package_path)
             return {"RUNNING_MODAL"}
@@ -1002,19 +1002,6 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 scene["unitypackage_provider_provenance"] = json.dumps(
                     getattr(self._sibling_discovery, "resolution_provenance", {}), sort_keys=True
                 )
-            dependency_counts = resolve_after_import(scene)
-            package_kind = "MIXED_PACKAGE" if fbx_paths and (material_library or supported_asset_count > len(fbx_paths)) else "GEOMETRY_PACKAGE" if fbx_paths else "ASSET_PROVIDER_PACKAGE"
-            current_registry = load_scene_registry(scene)
-            current_package = current_registry.packages.get(package_key.source_package_id)
-            if current_package is not None:
-                current_package["package_kind"] = package_kind
-                current_package["dependency_refs_captured"] = len([
-                    record for record in load_dependency_registry(scene).get("dependencies", [])
-                    if record.get("consumer_package_id") == package_key.source_package_id
-                ])
-                current_package.update(dependency_counts)
-                save_scene_registry(scene, current_registry)
-            self.report({"INFO"}, f"Dependency resolution: local={dependency_counts['resolved_local']} cross-package={dependency_counts['resolved_cross_package']} unresolved={dependency_counts['unresolved']} ambiguous={dependency_counts['ambiguous']}")
             if not getattr(self, "group_child", False):
                 discovery = self._sibling_discovery
                 if discovery is None:
@@ -1058,9 +1045,24 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             group_child=True,
                         )
                         if "FINISHED" not in result:
-                            self.report({"WARNING"}, f"Related Package import failed: {Path(candidate.path).name}")
+                            raise UnityPackageError(f"Related Package import did not finish: {Path(candidate.path).name}")
                 elif visual_status in {"AMBIGUOUS", "PARTIAL"}:
                     self.report({"WARNING"}, f"Sibling discovery {discovery.status}; Import Together was not auto-selected")
+            # Group children are synchronous; only resolve the primary after
+            # every selected provider has created its materials and images.
+            dependency_counts = resolve_after_import(scene)
+            package_kind = "MIXED_PACKAGE" if fbx_paths and (material_library or supported_asset_count > len(fbx_paths)) else "GEOMETRY_PACKAGE" if fbx_paths else "ASSET_PROVIDER_PACKAGE"
+            current_registry = load_scene_registry(scene)
+            current_package = current_registry.packages.get(package_key.source_package_id)
+            if current_package is not None:
+                current_package["package_kind"] = package_kind
+                current_package["dependency_refs_captured"] = len([
+                    record for record in load_dependency_registry(scene).get("dependencies", [])
+                    if record.get("consumer_package_id") == package_key.source_package_id
+                ])
+                current_package.update(dependency_counts)
+                save_scene_registry(scene, current_registry)
+            self.report({"INFO"}, f"Dependency resolution: local={dependency_counts['resolved_local']} cross-package={dependency_counts['resolved_cross_package']} unresolved={dependency_counts['unresolved']} ambiguous={dependency_counts['ambiguous']}")
             collisions = load_scene_registry(scene).detect_collisions()
             if collisions:
                 self.report({"WARNING"}, f"Detected {len(collisions)} cross-package identity collision(s)")

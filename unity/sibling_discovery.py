@@ -9,6 +9,7 @@ import tarfile
 
 from .material_mapping import parse_external_objects
 from .package_identity import PackageIdentity
+from .yaml_parser import parse_unity_yaml
 
 
 TEXTUAL_EXTENSIONS = {".prefab", ".mat"}
@@ -106,6 +107,14 @@ def _visual_guids_from_text(extension: str, payload: bytes) -> set[str]:
     text = payload.decode("utf-8", "replace")
     if extension == ".prefab":
         found = {guid.lower() for guid in re.findall(r"m_Materials(?:\.Array\.data\[\d+\])?[\s\S]{0,420}?guid:\s*([0-9a-fA-F]{32})", text)}
+        # The legacy raw fallback sees the first reference in each list. Read
+        # every Renderer slot, including wrapped references and later slots.
+        for document in parse_unity_yaml(text):
+            if document.class_id not in {23, 137}:
+                continue
+            references = document.data.get("m_Materials", [])
+            if isinstance(references, list):
+                found.update(str(ref["guid"]).lower() for ref in references if isinstance(ref, dict) and ref.get("guid"))
         found.update(guid.lower() for guid in re.findall(r"propertyPath:\s*m_Materials\.Array\.data\[\d+\][\s\S]{0,260}?objectReference:\s*\{[^}]*guid:\s*([0-9a-fA-F]{32})", text))
         return found
     if extension == ".mat":
