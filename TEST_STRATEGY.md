@@ -223,6 +223,12 @@ Exporter、reachability pruning、GUID/path collision policy、Unity Finalizer r
 | CPD-014 | MPI regression | MPI-001..017 PASS |
 | CPD-015 | MPV regression | MPV-001..012 PASS |
 
+## Texture Role and Metadata-First Guards
+
+- TR-001..003: canonical Base Color/Normal/explicit-role classification, deterministic precedence, and preserve-only unknown properties.
+- MD-001..003: one manifest scan per package, bounded neighbor expansion, and zero texture/FBX payload bytes during discovery.
+- NS-001: adjacent Geometry/Appearance fixture performs grouped import and verifies Base Color, Normal, and preserve-only bindings.
+
 ## Phase B Sibling Package Acceptance (SPD-001..005)
 
 | ID | Acceptance Test | 合格条件 |

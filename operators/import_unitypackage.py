@@ -371,7 +371,12 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._prefab_paths = prepared.prefab_paths
         self._package_reader = prepared.package_reader
         self._package_index = prepared.package_index
-        if not getattr(self, "group_child", False) and Path(self.filepath).is_file():
+        defer_discovery = (
+            not getattr(bpy.app, "background", False)
+            and self.import_mode == "RECONSTRUCT"
+            and len(self._prefab_paths) > 1
+        )
+        if not getattr(self, "group_child", False) and Path(self.filepath).is_file() and not defer_discovery:
             self._set_phase(context, "Discovering sibling Packages", 0.32)
             self._sibling_discovery = discover_siblings(self.filepath)
             discovery = self._sibling_discovery
@@ -385,6 +390,20 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             self._sibling_import_together = discovery.status == "COMPLETE"
         self._set_prepare_state("PREPARED")
         self._set_phase(context, "Asset index ready", 0.30)
+
+    def _discover_selected_visual_dependencies(self) -> None:
+        """Run bounded discovery after foreground Prefab selection."""
+        if getattr(self, "group_child", False) or not Path(self.filepath).is_file():
+            return
+        selected = self._selected_prefab(self._prefab_paths)
+        selected_paths: set[str] = set()
+        if selected is not None and self._extraction_dir is not None:
+            try:
+                selected_paths.add(selected.relative_to(self._extraction_dir).as_posix())
+            except ValueError:
+                pass
+        self._sibling_discovery = discover_siblings(self.filepath, selected_asset_paths=selected_paths)
+        self._sibling_import_together = self._sibling_discovery.visual_status == "COMPLETE"
 
     def _prepare_import(self, context, package_path: Path) -> None:
         self._set_prepare_state("PREPARING")
@@ -832,7 +851,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     material_library.values(), asset_db=asset_db,
                     material_library=material_library, scene=context.scene,
                 )
-                if not fbx_paths and not material_library:
+                # Provider-only packages still need their non-canonical image
+                # datablocks available for preserve-only dependency status.
+                # They are not connected to Principled sockets, but loading
+                # them is part of actual import rather than discovery.
+                if not fbx_paths:
                     self._performance.measure(
                         "texture_load", load_textures_from_database, asset_db,
                         pack=not self.keep_extracted,
@@ -937,12 +960,19 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     discovery = discover_siblings(package_path)
                 scene["unitypackage_sibling_discovery"] = {
                     "status": discovery.status,
+                    "visual_status": getattr(discovery, "visual_status", discovery.status),
                     "root_package": discovery.root_package,
                     "related_packages": [candidate.path for candidate in discovery.packages],
                     "unresolved_guids": sorted(discovery.unresolved_guids),
+                    "unresolved_visual_guids": sorted(getattr(discovery, "unresolved_visual_guids", discovery.unresolved_guids)),
                     "ambiguous_guids": sorted(discovery.ambiguous_guids),
+                    "ambiguous_visual_guids": sorted(getattr(discovery, "ambiguous_visual_guids", discovery.ambiguous_guids)),
+                    "unresolved_external_guids": sorted(getattr(discovery, "unresolved_external_guids", set())),
+                    "manifest_entries": getattr(discovery, "manifest_entries", 0),
+                    "accounting": getattr(discovery, "accounting", {}),
                 }
-                if discovery.status in {"COMPLETE", "PARTIAL"} and discovery.packages and self._sibling_import_together:
+                visual_status = getattr(discovery, "visual_status", discovery.status)
+                if visual_status == "COMPLETE" and discovery.packages and self._sibling_import_together:
                     group_id = uuid4().hex
                     scene["unitypackage_group_import"] = {
                         "group_import_id": group_id,
@@ -965,7 +995,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         )
                         if "FINISHED" not in result:
                             self.report({"WARNING"}, f"Related Package import failed: {Path(candidate.path).name}")
-                elif discovery.status in {"AMBIGUOUS", "PARTIAL"}:
+                elif visual_status in {"AMBIGUOUS", "PARTIAL"}:
                     self.report({"WARNING"}, f"Sibling discovery {discovery.status}; Import Together was not auto-selected")
             collisions = load_scene_registry(scene).detect_collisions()
             if collisions:
@@ -1038,7 +1068,12 @@ class UNITYPACKAGE_OT_import_prefab(bpy.types.Operator):
             self.report({"ERROR"}, "Prepared UnityPackage session expired")
             return {"CANCELLED"}
         session.operator.prefab_choice = self.prefab_choice
-        _schedule_prepared_session(self.session_id, show_dialog=False)
+        session.operator._discover_selected_visual_dependencies()
+        discovery = session.operator._sibling_discovery
+        if discovery and discovery.packages:
+            _schedule_prepared_session(self.session_id, show_dialog=False, show_group_dialog=True)
+        else:
+            _schedule_prepared_session(self.session_id, show_dialog=False)
         return {"FINISHED"}
 
     def invoke(self, context, _event):

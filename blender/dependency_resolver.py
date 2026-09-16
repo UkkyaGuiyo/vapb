@@ -7,6 +7,8 @@ from typing import Any, Iterable
 
 import bpy  # type: ignore
 
+from ..unity.texture_roles import TextureRole, canonical_texture_properties, classify_texture_property
+
 
 SCENE_DEPENDENCY_REGISTRY = "unitypackage_dependency_registry"
 UNRESOLVED = "UNRESOLVED"
@@ -104,6 +106,9 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
     nodes = material.node_tree.nodes
     links = material.node_tree.links
     label = str(record.get("texture_label", "Base Color"))
+    if label == TextureRole.PRESERVE_ONLY.value:
+        record["binding_source"] = "preserve_only"
+        return True
     texture_data = record.get("texture_ref") or {}
     try:
         from .material_builder import _texture_node
@@ -244,12 +249,35 @@ def capture_material_texture_dependencies(scene: Any, materials: Iterable[Any]) 
             props = json.loads(str(material.get("unity_props", "{}")))
         except (TypeError, ValueError, json.JSONDecodeError):
             continue
-        for property_name, texture in (props.get("textures") or {}).items():
+        textures = props.get("textures") or {}
+        normalized = {}
+        try:
+            normalized = json.loads(str(material.get("unity_normalized", "{}")))
+        except (TypeError, ValueError, json.JSONDecodeError):
+            normalized = {}
+        family = str(material.get("unity_shader_family", ""))
+        shader_name = str(material.get("unity_shader_name", ""))
+        canonical = canonical_texture_properties(textures, family, shader_name)
+        canonical_guids = {
+            str((textures.get(property_name) or {}).get("guid", "")): role
+            for role, property_name in canonical.items()
+        }
+        normalized_guids = {
+            str((normalized.get(key) or {}).get("guid", "")): role
+            for key, role in (("base_color_tex", TextureRole.BASE_COLOR), ("normal_tex", TextureRole.NORMAL), ("emission_tex", TextureRole.EMISSION), ("metallic_tex", TextureRole.METALLIC))
+            if normalized.get(key)
+        }
+        seen_roles: set[TextureRole] = set()
+        for property_name, texture in textures.items():
             target_guid = str((texture or {}).get("guid", ""))
             if not target_guid:
                 continue
-            lowered = property_name.lower()
-            label = "Normal" if any(key in lowered for key in ("normal", "bump")) else "Emission" if "emission" in lowered else "Metallic" if any(key in lowered for key in ("metallic", "smoothness")) else "Base Color"
+            role = normalized_guids.get(target_guid) or canonical_guids.get(target_guid) or classify_texture_property(family, shader_name, property_name)
+            if role in {TextureRole.BASE_COLOR, TextureRole.NORMAL, TextureRole.EMISSION, TextureRole.METALLIC, TextureRole.ROUGHNESS, TextureRole.OCCLUSION}:
+                if role in seen_roles:
+                    continue
+                seen_roles.add(role)
+            label = role.value
             capture_dependency(scene, {
                 "dependency_type": "MATERIAL_TEXTURE",
                 "consumer_package_id": material.get("unity_source_package_id", ""),

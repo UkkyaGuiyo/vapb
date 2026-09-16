@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 candidate - 2026-09-16
+
+- Centralized texture role classification for initial build and late binding; unknown properties are preserve-only.
+- Reworked sibling discovery around metadata-first manifests, bounded neighbor expansion, visual completeness, and payload-read accounting.
+- Added synthetic adjacent-package grouped import coverage for Base Color, Normal, and preserve-only texture roles.
+
 ## 0.4.0 candidate - 2026-09-15
 
 - Top-level UnityPackage imports now automatically perform GUID-based sibling discovery for File > Import and native drag-and-drop; unique complete chains are grouped without a user checkbox.

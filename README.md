@@ -102,6 +102,12 @@ PhysBone、Contact、Animator Controller、Expressions、Modular Avatar、NDMF�
 
 ## Editable Texture Workflow
 
+## Visual Dependency Discovery
+
+Texture properties use one canonical role classifier for initial material build and late binding: `_MainTex`/`_BaseMap`/`_BaseColorMap` are Base Color and `_BumpMap`/`_NormalMap` are Normal. Emission, Metallic, Roughness, and Occlusion remain explicit roles; unknown properties are preserve-only metadata and are never substituted into Base Color.
+
+Sibling discovery is metadata-first and bounded. It reads pathname, `.meta`, selected prefab/material text, and FBX external-object metadata, while texture and FBX payload bytes remain unread during planning. It starts in the selected package folder and expands only to the immediate bundle parent and one-level child folders when visual GUIDs remain unresolved. `visual_status` is independent from nonvisual Unity dependency state; ambiguous providers are never auto-selected.
+
 Select an imported image in the Image Editor and open the `Unity Texture` sidebar. It displays Unity Asset Path, Unity GUID, working file path, file existence, and dirty state. `Save to Unity Source` writes Blender edits to that same existing file; `Reload from Disk` refreshes the same Image datablock after an external editor change; `Reload Changed Unity Textures` performs a manual mtime scan.
 
 The workflow refuses missing files, dirty reloads, ordinary non-Unity images, and packed-source conflicts. It never creates a copy, backup, new GUID, or `.meta`; use the importer `Keep Extracted` option for editable source files.

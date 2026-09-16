@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from ..material_model import NormalizedMaterial, UnityMaterialData
+from ..texture_roles import canonical_texture_properties, TextureRole
 
 
 BUILTIN_SHADER_GUID = "0000000000000000f000000000000000"
@@ -54,6 +55,7 @@ def shader_info(material: UnityMaterialData) -> ShaderInfo | None:
 
 def _common(material: UnityMaterialData, info: ShaderInfo | None = None) -> NormalizedMaterial:
     info = info or ShaderInfo("unknown", "")
+    canonical = canonical_texture_properties(material.textures, info.family, info.name)
     normalized = NormalizedMaterial(
         name=material.name,
         family=info.family,
@@ -62,17 +64,17 @@ def _common(material: UnityMaterialData, info: ShaderInfo | None = None) -> Norm
         shader_name=material.shader_name or info.name,
         material_guid=material.guid,
         material_path=material.unity_path,
-        base_color_tex=material.tex("_MainTex", "_BaseMap", "_BaseColorMap"),
+        base_color_tex=material.textures.get(canonical.get(TextureRole.BASE_COLOR, "")),
         base_color=material.color("_Color", "_BaseColor"),
         alpha_mode=info.alpha or "opaque",
         alpha_cutoff=material.f("_Cutoff", 0.5),
-        normal_tex=material.tex("_BumpMap", "_NormalMap"),
+        normal_tex=material.textures.get(canonical.get(TextureRole.NORMAL, "")),
         normal_strength=material.f("_BumpScale", material.f("_NormalScale", 1.0)),
-        emission_tex=material.tex("_EmissionMap", "_EmissionTex"),
+        emission_tex=material.textures.get(canonical.get(TextureRole.EMISSION, "")),
         emission_color=material.color("_EmissionColor", default=(0.0, 0.0, 0.0, 1.0)),
         metallic=material.f("_Metallic", 0.0),
         roughness=max(0.0, min(1.0, 1.0 - material.f("_Glossiness", material.f("_Smoothness", 0.5)))),
-        metallic_tex=material.tex("_MetallicGlossMap"),
+        metallic_tex=material.textures.get(canonical.get(TextureRole.METALLIC, "")),
         cull_backface=int(material.f("_Cull", material.f("_CullMode", material.f("_Culling", 2)))) == 2,
     )
     return normalized

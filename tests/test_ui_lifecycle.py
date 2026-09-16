@@ -291,6 +291,25 @@ class UILifecycleTests(unittest.TestCase):
         schedule.assert_called_once_with(session_id, show_dialog=False)
         module._PREPARED_SESSIONS.pop(session_id, None)
 
+    def test_prefab_selection_runs_visual_discovery_and_opens_group_dialog(self):
+        operator = _operator()
+        with tempfile.NamedTemporaryFile(suffix=".unitypackage") as package_file:
+            operator.filepath = package_file.name
+            operator._prefab_paths = [Path("one.prefab")]
+            operator._extraction_dir = None
+            operator._discover_selected_visual_dependencies = Mock()
+            operator._sibling_discovery = SimpleNamespace(packages=[object()], visual_status="COMPLETE")
+            session_id = "session-grouped-prefab"
+            module._PREPARED_SESSIONS[session_id] = module._PreparedSession(session_id, operator, 0.0)
+            selector = module.UNITYPACKAGE_OT_import_prefab()
+            selector.session_id = session_id
+            selector.prefab_choice = "PREFAB_0"
+            with patch.object(module, "_schedule_prepared_session") as schedule:
+                self.assertEqual({"FINISHED"}, selector.execute(FakeContext()))
+            operator._discover_selected_visual_dependencies.assert_called_once_with()
+            schedule.assert_called_once_with(session_id, show_dialog=False, show_group_dialog=True)
+            module._PREPARED_SESSIONS.pop(session_id, None)
+
     def test_prepared_session_watchdog_cleans_expired_session(self):
         operator = _operator()
         context = FakeContext()

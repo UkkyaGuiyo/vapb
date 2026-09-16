@@ -156,3 +156,7 @@ Real Multi-Package Visual E2Eの初回診断では、Package BのMaterial/Image�
 Resolution orderはconsumer Package内のunique provider、次にScene全体のunique provider。0件は`UNRESOLVED`、1件のcross-package providerは`RESOLVED_CROSS_PACKAGE`、2件以上は`AMBIGUOUS_PROVIDER`として自動選択しない。新Package import完了ごとにresolverを再実行するため、Geometry→Material、Material→Geometryの双方でlate bindingできる。
 
 ProviderはMaterial/Imageのcustom property（Package ID、GUID、Asset Path）で検索し、Blender Object名やMaterial名だけをcross-package identityに使わない。未使用assetやunresolved assetは編集中に削除しない。
+
+### Bounded Visual Discovery Pipeline
+
+The import state machine is `prefab selection -> visual graph -> bounded sibling discovery -> explicit sibling choice -> grouped import`. Discovery builds a pathname/meta manifest, reads only selected prefab/material text and FBX `.meta` external-object data, then searches the selected folder followed by a single parent/child neighborhood expansion when visual GUIDs remain unresolved. `visual_status` (`NONE`, `PARTIAL`, `COMPLETE`, `AMBIGUOUS`) is kept separate from nonvisual dependency diagnostics.
