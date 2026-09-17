@@ -301,16 +301,26 @@ class UILifecycleTests(unittest.TestCase):
             ("PREFAB_1", "two", "two.prefab", 2),
             ("PREFAB_2", "three", "three.prefab", 3),
         ]
-        for token, expected in (("AUTO", "one.prefab"), ("PREFAB_0", "one.prefab"), ("PREFAB_1", "two.prefab"), ("PREFAB_2", "three.prefab")):
+        operator._candidate_selection = module.PrefabSelection("AUTO_SELECTED", "PREFAB_1", "ONLY_COMPLETE_AVATAR_CANDIDATE")
+        for token, expected in (("AUTO", "two.prefab"), ("PREFAB_0", "one.prefab"), ("PREFAB_1", "two.prefab"), ("PREFAB_2", "three.prefab")):
             operator._selected_prefab_choice = token if token != "AUTO" else None
             operator.prefab_choice = token
             self.assertEqual(Path(expected), operator._selected_prefab(operator._prefab_paths))
 
-    def test_invalid_programmatic_prefab_token_falls_back_to_first(self):
+    def test_invalid_programmatic_prefab_token_is_rejected(self):
         operator = _operator()
         operator._prefab_paths = [Path("one.prefab"), Path("two.prefab")]
         operator.prefab_choice = "PREFAB_99"
-        self.assertEqual(Path("one.prefab"), operator._selected_prefab(operator._prefab_paths))
+        with self.assertRaises(module.UnityPackageError):
+            operator._selected_prefab(operator._prefab_paths)
+
+    def test_automatic_selection_rejects_single_ambiguous_candidate(self):
+        operator = _operator()
+        operator._prefab_paths = [Path("one.prefab")]
+        operator.prefab_choice = "AUTO"
+        operator._candidate_selection = module.PrefabSelection("USER_CHOICE_REQUIRED", None, "AMBIGUOUS_PROVIDER")
+        with self.assertRaises(module.UnityPackageError):
+            operator._selected_prefab(operator._prefab_paths)
 
     def test_programmatic_explicit_prefab_selection_remains_compatible(self):
         operator = _operator()

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 from pathlib import Path
 from queue import SimpleQueue
@@ -32,10 +32,15 @@ from ..unity.package_reader import PackageIndex, UnityPackageError, UnityPackage
 from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab
+from ..unity.prefab_candidate_analyzer import (
+    PrefabCandidateAnalysis,
+    PrefabCandidateAnalyzer,
+    PrefabSelection,
+)
 from ..unity.sibling_discovery import discover_siblings, inspect_provider_folder, inspect_provider_package
 
 
-_DEFAULT_PREFAB_ITEMS: list[tuple[str, str, str, int]] = [("AUTO", "Automatic", "Use the first prefab", 0)]
+_DEFAULT_PREFAB_ITEMS: list[tuple[str, str, str, int]] = [("AUTO", "Automatic (Recommended)", "Analyze Prefab structure and visual completeness", 0)]
 _SESSION_TIMEOUT_SECONDS = 300.0
 _PREPARED_SESSIONS: dict[str, "_PreparedSession"] = {}
 
@@ -69,6 +74,8 @@ class _PreparedImport:
     package_reader: UnityPackageReader | None = None
     package_index: PackageIndex | None = None
     reused: bool = False
+    candidate_analyses: list[PrefabCandidateAnalysis] = field(default_factory=list)
+    candidate_selection: PrefabSelection | None = None
 
 
 @dataclass
@@ -248,6 +255,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._sibling_import_together = True
         self._manual_provider_paths: set[str] = set()
         self._provider_provenance: dict[str, str] = {}
+        self._candidate_analyses: list[PrefabCandidateAnalysis] = []
+        self._candidate_selection: PrefabSelection | None = None
 
     def _ui_log(self, message: str) -> None:
         print(f"[UI] {message}")
@@ -330,6 +339,21 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         phase("Checking Package identity")
         package_key = timed("package_identity", PackageIdentity.from_path, package_path)
         if existing_ready and existing_key == package_key:
+            candidate_analyses: list[PrefabCandidateAnalysis] = []
+            candidate_selection: PrefabSelection | None = None
+            if self.import_mode == "RECONSTRUCT" and existing_prefab_paths and existing_extraction_dir and existing_package_index:
+                analyzer = timed(
+                    "prefab_candidate_analysis",
+                    PrefabCandidateAnalyzer,
+                    package_path,
+                    existing_package_index,
+                    existing_extraction_dir,
+                    existing_prefab_paths,
+                    existing_asset_db,
+                    self._manual_provider_paths,
+                )
+                candidate_analyses = timed("prefab_candidate_analysis_parse", analyzer.analyze)
+                candidate_selection = analyzer.select(candidate_analyses)
             return _PreparedImport(
                 package_key,
                 existing_extraction_dir,
@@ -341,6 +365,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 existing_package_reader,
                 existing_package_index,
                 reused=True,
+                candidate_analyses=candidate_analyses,
+                candidate_selection=candidate_selection,
             )
 
         extraction_dir = Path(tempfile.mkdtemp(prefix="unitypackage_blender_importer_"))
@@ -378,6 +404,22 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             fbx_paths = timed("fbx_scan", asset_db.fbxs)
             phase("Scanning Prefabs")
             prefab_paths = timed("prefab_scan", asset_db.prefabs)
+            candidate_analyses: list[PrefabCandidateAnalysis] = []
+            candidate_selection: PrefabSelection | None = None
+            if self.import_mode == "RECONSTRUCT" and prefab_paths:
+                phase("Analyzing Prefab candidates")
+                analyzer = timed(
+                    "prefab_candidate_analysis",
+                    PrefabCandidateAnalyzer,
+                    package_path,
+                    package_index,
+                    extraction.root,
+                    prefab_paths,
+                    asset_db,
+                    self._manual_provider_paths,
+                )
+                candidate_analyses = timed("prefab_candidate_analysis_parse", analyzer.analyze)
+                candidate_selection = analyzer.select(candidate_analyses)
         except Exception:
             shutil.rmtree(extraction_dir, ignore_errors=True)
             raise
@@ -396,6 +438,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             timings,
             reader,
             package_index,
+            False,
+            candidate_analyses,
+            candidate_selection,
         )
 
     def _apply_prepared(self, context, prepared: _PreparedImport) -> None:
@@ -403,6 +448,15 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             self._performance.add(phase, seconds)
         if prepared.reused:
             self._prepared_package_key = prepared.package_key
+            self._candidate_analyses = list(prepared.candidate_analyses or [])
+            self._candidate_selection = prepared.candidate_selection
+            if (
+                self._selected_prefab_choice is None
+                and self.prefab_choice == "AUTO"
+                and self._candidate_selection
+                and self._candidate_selection.mode == "AUTO_SELECTED"
+            ):
+                self._selected_prefab_choice = self._candidate_selection.token
             self._set_prepare_state("PREPARED")
             self._set_phase(context, "Reusing prepared asset index", 0.30)
             return
@@ -416,14 +470,38 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._prefab_paths = prepared.prefab_paths
         self._package_reader = prepared.package_reader
         self._package_index = prepared.package_index
+        self._candidate_analyses = list(prepared.candidate_analyses or [])
+        self._candidate_selection = prepared.candidate_selection
+        if (
+            self._selected_prefab_choice is None
+            and self.prefab_choice == "AUTO"
+            and self._candidate_selection
+            and self._candidate_selection.mode == "AUTO_SELECTED"
+        ):
+            self._selected_prefab_choice = self._candidate_selection.token
         defer_discovery = (
             not getattr(bpy.app, "background", False)
             and self.import_mode == "RECONSTRUCT"
             and len(self._prefab_paths) > 1
+            and (
+                self._candidate_selection is None
+                or self._candidate_selection.mode == "USER_CHOICE_REQUIRED"
+            )
+            and self._selected_prefab_choice is None
         )
         if not getattr(self, "group_child", False) and Path(self.filepath).is_file() and not defer_discovery:
             self._set_phase(context, "Discovering sibling Packages", 0.32)
-            self._sibling_discovery = discover_siblings(self.filepath)
+            selected_candidate = next(
+                (item for item in self._candidate_analyses if item.token == self._selected_prefab_choice),
+                None,
+            )
+            selected_paths = {selected_candidate.unity_path} if selected_candidate else set()
+            extra_paths = set(selected_candidate.provider_packages) if selected_candidate else set()
+            self._sibling_discovery = discover_siblings(
+                self.filepath,
+                selected_asset_paths=selected_paths,
+                extra_package_paths=extra_paths,
+            )
             discovery = self._sibling_discovery
             print(
                 "[UnityPackage Importer] Sibling discovery: "
@@ -447,10 +525,17 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 selected_paths.add(selected.relative_to(self._extraction_dir).as_posix())
             except ValueError:
                 pass
+        selected_candidate = next(
+            (item for item in self._candidate_analyses if item.token == self._selected_prefab_choice),
+            None,
+        )
+        extra_paths = {Path(path) for path in self._manual_provider_paths}
+        if selected_candidate:
+            extra_paths.update(selected_candidate.provider_packages)
         self._sibling_discovery = discover_siblings(
             self.filepath,
             selected_asset_paths=selected_paths,
-            extra_package_paths={Path(path) for path in self._manual_provider_paths},
+            extra_package_paths=extra_paths,
             provenance_by_path=self._provider_provenance,
         )
         self._sibling_import_together = self._sibling_discovery.visual_status == "COMPLETE"
@@ -614,15 +699,29 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._ui_log("worker completed")
         self._apply_prepared(context, prepared)
         session_id = uuid4().hex
-        self._prefab_items = [("AUTO", "Automatic (first prefab)", "Use the first detected prefab", 0)]
+        self._prefab_items = [("AUTO", "Automatic (Recommended)", "Use deterministic structural and completeness analysis", 0)]
+        analysis_by_token = {item.token: item for item in self._candidate_analyses}
         self._prefab_items.extend(
-            (f"PREFAB_{index}", path.name, str(path), index + 1)
+            (
+                f"PREFAB_{index}",
+                analysis_by_token.get(f"PREFAB_{index}").display_name if analysis_by_token.get(f"PREFAB_{index}") else path.name,
+                ", ".join(analysis_by_token.get(f"PREFAB_{index}").reasons) if analysis_by_token.get(f"PREFAB_{index}") else str(path),
+                index + 1,
+            )
             for index, path in enumerate(self._prefab_paths)
         )
         _PREPARED_SESSIONS[session_id] = _PreparedSession(
             session_id, self, perf_counter(), context.window_manager
         )
-        show_dialog = self.import_mode == "RECONSTRUCT" and len(self._prefab_paths) > 1
+        show_dialog = (
+            self.import_mode == "RECONSTRUCT"
+            and len(self._prefab_paths) > 1
+            and (
+                self._candidate_selection is None
+                or self._candidate_selection.mode == "USER_CHOICE_REQUIRED"
+            )
+            and self._selected_prefab_choice is None
+        )
         show_group_dialog = (
             not getattr(bpy.app, "background", False)
             and self._sibling_discovery is not None
@@ -668,9 +767,22 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         if choice.startswith("PREFAB_"):
             try:
                 return prefab_paths[int(choice.split("_", 1)[1])]
-            except (ValueError, IndexError):
-                pass
-        return prefab_paths[0]
+            except (ValueError, IndexError) as exc:
+                raise UnityPackageError(f"Invalid Prefab selection: {choice}") from exc
+        selection = self._candidate_selection
+        if choice == "AUTO" and selection and selection.mode == "AUTO_SELECTED" and selection.token:
+            try:
+                return prefab_paths[int(selection.token.split("_", 1)[1])]
+            except (ValueError, IndexError) as exc:
+                raise UnityPackageError("Automatic Prefab selection points to an invalid candidate") from exc
+        if choice == "AUTO" and selection and selection.mode != "AUTO_SELECTED":
+            raise UnityPackageError(f"Automatic Prefab selection is ambiguous ({selection.reason}); choose a Prefab explicitly")
+        if len(prefab_paths) == 1 and choice in {None, "AUTO"}:
+            return prefab_paths[0]
+        if choice == "AUTO":
+            reason = selection.reason if selection else "ANALYSIS_UNAVAILABLE"
+            raise UnityPackageError(f"Automatic Prefab selection is ambiguous ({reason}); choose a Prefab explicitly")
+        raise UnityPackageError(f"Prefab selection is unavailable: {choice}")
 
     def cancel(self, context):
         if self._prepare_state in {"CANCELLED", "FINISHED"}:
@@ -1159,6 +1271,23 @@ class UNITYPACKAGE_OT_import_prefab(bpy.types.Operator):
 
     def draw(self, context):
         self.layout.prop(self, "prefab_choice")
+        session = _PREPARED_SESSIONS.get(self.session_id)
+        if session is None:
+            return
+        selected = session.operator._candidate_selection
+        if selected is not None:
+            self.layout.label(text=f"Automatic result: {selected.reason}")
+        for candidate in session.operator._candidate_analyses:
+            row = self.layout.row()
+            marker = "Recommended" if selected and selected.token == candidate.token else candidate.visual_status
+            row.label(text=f"{candidate.display_name}: {candidate.candidate_kind}, {marker}")
+            detail = self.layout.row()
+            detail.label(
+                text=(
+                    f"Renderers {candidate.renderer_count}, material slots {candidate.material_slot_count}, "
+                    f"missing {len(candidate.unresolved_visual_guids)}, ambiguous {len(candidate.ambiguous_visual_guids)}"
+                )
+            )
 
     def execute(self, context):
         session = _PREPARED_SESSIONS.get(self.session_id)

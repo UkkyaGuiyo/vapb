@@ -18,7 +18,7 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 2. `.unitypackage` を選択する。
 
 または、Windows Explorerから`.unitypackage`をBlenderの3D Viewportへドラッグ＆ドロップできます。Drag & DropはFile > Importと同じ`import_scene.unitypackage`経路へ渡されます。Top-level importでは同一フォルダのSibling Discoveryも自動実行され、事前にcheckboxを有効化する必要はありません。GUIDが一意に連鎖する`COMPLETE`ではForeground UIにImport Together / Import Selected Only / Cancelを表示し、Backgroundでは決定論的にImport Togetherします。`PARTIAL`でもForeground UIで明示的にImport Togetherを選択できますが、既定値はPrimary Onlyです。`AMBIGUOUS`は安全のため自動選択しません。
-3. 複数のPrefabがある場合は、表示された **Prefab** 候補から選ぶ。
+3. 複数のPrefabがある場合、既定の **Automatic (Recommended)** はRenderer構造とvisual dependency closureをmetadata-firstで解析します。完全なAvatar候補が一意なら自動選択し、完全なAvatar候補が複数、またはProviderが曖昧なら候補Chooserを表示します。AutomaticはPrefab配列順・ファイル名・archive順を選択根拠にしません。
 4. **Reconstruct Prefab** または **Import Raw FBX** と各オプションを確認して実行する。
 
 ### BlenderからUnityへ戻す
@@ -43,6 +43,7 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 - `Keep Extracted Files` を有効にした場合も、保持されるのは選択された依存アセットの展開先です。パッケージ全体のミラーではありません。依存関係を解決できない場合は、既存互換性を優先してFBX全体へフォールバックします。
 - Import中はBlenderの進捗表示とフェーズ名を更新し、コンソールへ低負荷の `[PERF]` フェーズ計測を出力します。展開、FBX、Material、Texture、Prefab復元などの所要時間を後から確認できます。
 - キャンセル、エラー、Prefab選択の中断では準備済みの一時展開先を後始末します。`Keep Extracted Files` を有効にして正常完了した場合だけ、テクスチャの外部パス維持のため展開先を保持します。
+- Prefab Candidate Analyzerは、Prefabごとに`AVATAR_LIKE` / `PROP_LIKE` / `EMPTY_OR_UNSUPPORTED`を構造から分類し、Material→TextureとFBX externalObjectsを含むvisual closureを候補単位で判定します。候補解析中にFBXまたはTexture payloadを読み込まず、同一Packageのindexとtextual Material readを共有します。
 
 ## 対応範囲
 

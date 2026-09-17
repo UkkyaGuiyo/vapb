@@ -174,6 +174,10 @@ Material変更時は件数だけで合格にしない。Material bindingとTextu
 
 ## Evidence Rules
 
+## Prefab Candidate Analyzer (PCA-001..015)
+
+PCA fixtureは、構造分類、完全/部分/曖昧visual closure、Material→Texture transitive dependency、FBX payload非読込、Provider indexの一回化、unique automatic selection、multiple-avatar chooser、曖昧Provider拒否を合成Packageで検証する。Foreground synthetic E2Eでは空Prefabが先に存在しても、唯一のvisual候補がAutomaticで選択され、Prefab chooserが開かないことを確認する。明示`PREFAB_N`と既存group import回帰は別テストで維持する。
+
 - `PASS`: 実行結果と対象環境が記録されている。
 - `IMPLEMENTED`: sourceの存在だけでなく、該当テストがある。
 - `UNVERIFIED`: UI操作、環境依存、または未実装機能を成功扱いしない。

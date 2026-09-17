@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0 candidate - 2026-09-17
+
+- Added metadata-first Prefab Candidate Analyzer with structural Avatar/Prop classification and exact visual dependency closure.
+- Added deterministic `Automatic (Recommended)` selection; multiple complete avatars and ambiguous Providers require explicit choice, and Background never falls back to the first Prefab.
+- Added PCA-001..015 synthetic coverage and a foreground Automatic regression.
+
 ## 0.4.0 candidate - 2026-09-16
 
 - Centralized texture role classification for initial build and late binding; unknown properties are preserve-only.

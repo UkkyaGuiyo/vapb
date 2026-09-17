@@ -45,6 +45,12 @@ Materialの表示はBlender上の近似でよい。ただしUnity Asset identity
 
 ## Identity Policy
 
+## Prefab Candidate Analyzer / Automatic Selection
+
+複数Prefabを含むPackageでは、既定の`AUTO`を「最初のPrefab」への別名として扱わない。各候補をRenderer構造、SkinnedMeshRenderer、GameObject/Transform規模、PrefabからのFBX/Material参照、Material→TextureおよびFBX externalObjectsのvisual closureで解析する。候補分類は`AVATAR_LIKE`、`PROP_LIKE`、`EMPTY_OR_UNSUPPORTED`、`UNKNOWN`とし、候補名・ファイル名・archive順・任意の重み付きスコアを選択根拠にしない。
+
+visual closureが完全なAvatar候補が一意ならAutomaticで選択する。完全なAvatar候補が複数、Providerが曖昧、または安全に一意化できない場合はChooserを表示し、Backgroundでは決定論的エラーとして停止する。明示的な`PREFAB_N`は後方互換として候補解析を迂回してその候補を使う。候補解析はmetadata-firstで、FBX/Texture payloadは読み込まない。
+
 名前だけでidentityを決定しない。最低限、次の情報を保持・拡張対象とする。
 
 `source_package`, `source_guid`, `source_asset_path`, `source_file_id`, `source_object_path`, `source_material_guid`, `source_texture_guid`

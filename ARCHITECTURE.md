@@ -164,3 +164,8 @@ The import state machine is `prefab selection -> visual graph -> bounded sibling
 ### Manual Provider Resolution
 
 `PARTIAL` does not discard uniquely identified providers. The foreground prepared-session state can enter `WAITING_MISSING_DEPENDENCY_RESOLUTION`, where a package or bounded user-granted folder is inspected by manifest GUID coverage before it is added to the graph. The graph is then re-evaluated transitively; accepted provider packages use the ordinary grouped-import and scene resolver path, while each dependency record stores resolution provenance. `Continue With Missing Assets` leaves `UNRESOLVED` records persistent and imports available geometry/material/texture data.
+## Prefab Candidate Analyzer
+
+`unity/prefab_candidate_analyzer.py`が、準備済みのPrimary `PackageIndex`と抽出済みPrefabを入力に、同一Bundle近傍のPackage manifestを必要時だけ追加します。`PackageArchiveCache`はPackage indexを一回、Material本文をGUID単位で一回だけ読み、Prefab Renderer→FBX/Material→Texture、FBX `.meta` externalObjectsの閉包を候補ごとに算出します。FBX/Texture payloadは解析中に読みません。
+
+`PrefabCandidateAnalyzer.select()`は、唯一の安全な候補だけを`AUTO_SELECTED`とし、複数の完全Avatarまたは曖昧Providerを`USER_CHOICE_REQUIRED`にします。OperatorはAutomatic候補ならChooserを開かずに既存のSibling Discoveryへ渡し、Chooserが必要な場合だけPrefab UIを表示します。Backgroundで曖昧なAutomaticを最初のPrefabへフォールバックする経路はありません。

@@ -1,5 +1,14 @@
 # Current 0.3.0 Baseline Test Results
 
+## 0.4.0 candidate Prefab Candidate Analyzer (2026-09-17)
+
+- `PCA-001..015`: synthetic analyzer tests PASS in Blender 5.2.1. Structural classification, exact visual closure, transitive Material→Texture, cross-package provider, ambiguity refusal, cache reuse, and FBX payload non-read were verified.
+- Foreground synthetic Automatic E2E: `PCA_FOREGROUND_AUTOMATIC_OK`. A leading empty candidate did not cause first-entry selection; the only supported visual candidate imported and the Prefab chooser invoke count was 0.
+- Existing grouped split-package regression: `GROUP_IMPORT_E2E_OK`; explicit `PREFAB_N` selection remains compatible.
+- Real SAMPLE_AVATAR_B metadata-first AUTO probe: 8 Prefabs analyzed; one `AVATAR_LIKE` / `COMPLETE` candidate was selected with `ONLY_COMPLETE_AVATAR_CANDIDATE`. Full foreground/visual human retest remains required.
+- Real SAMPLE_AVATAR_B background import reached `Import complete` with `Sibling discovery: COMPLETE providers=1`; the existing identity probe still has a harness-level package-id assertion failure after grouped child import and is not counted as a full identity PASS.
+- Real CaseA control: AUTO correctly stopped with `USER_CHOICE_REQUIRED / NO_UNIQUE_COMPLETE_AVATAR_CANDIDATE` for 15 detected Prefabs; explicit `PREFAB_1` completed (`REAL_MULTI_PACKAGE_IDENTITY_OK`, 38 Objects, one package identity). This confirms no unsafe first-Prefab fallback. Material Preview/normal-map visual confirmation remains human-required.
+
 ## 0.4.0 candidate Real Multi-Package Visual E2E (2026-09-15)
 
 - 初回synthetic A→B診断: B Material/Image discovery 1/1、Image node 1、Renderer slot 0、cross-package reuse 0。Texture extraction/loadは成功しており、Prefab GameObject名とFBX import後の`.###`付きObject名の不一致で空placeholderがmapping対象になったことを特定した。

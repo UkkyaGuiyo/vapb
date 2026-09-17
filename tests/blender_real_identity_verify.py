@@ -13,6 +13,8 @@ import bpy
 
 ROOT = Path(__file__).resolve().parents[2]
 package_raw = os.environ.get("UNITYPACKAGE_REAL_TEST_FILE", "")
+prefab_choice = os.environ.get("UNITYPACKAGE_REAL_PREFAB_CHOICE", "AUTO")
+allow_multi_package_identity = os.environ.get("UNITYPACKAGE_ALLOW_MULTI_PACKAGE_IDENTITY") == "1"
 if "--" in sys.argv:
     after_separator = sys.argv[sys.argv.index("--") + 1:]
     package_raw = after_separator[0] if after_separator else package_raw
@@ -38,7 +40,7 @@ def select_first_prefab(self, _context, _prefab_paths):
 module.UNITYPACKAGE_OT_import._show_prefab_dialog_if_needed = select_first_prefab
 try:
     result = bpy.ops.import_scene.unitypackage(
-        filepath=str(PACKAGE), import_mode="RECONSTRUCT", prefab_choice="AUTO", keep_extracted=False
+        filepath=str(PACKAGE), import_mode="RECONSTRUCT", prefab_choice=prefab_choice, keep_extracted=False
     )
     assert result == {"FINISHED"}
     package_id = bpy.context.scene.get("unitypackage_source_package_id", "")
@@ -49,7 +51,12 @@ try:
         if record["asset_type"] == "Object"
     ]
     assert object_records
-    assert all(record["identity"]["source_package_id"] == package_id for record in object_records)
+    object_package_ids = {record["identity"]["source_package_id"] for record in object_records}
+    assert object_package_ids and all(value.startswith("sha256:") for value in object_package_ids)
+    if allow_multi_package_identity:
+        assert object_package_ids
+    else:
+        assert object_package_ids == {package_id}
     assert all(record["identity"]["source_asset_path"].startswith("Assets/") for record in object_records)
     assert all("Temp" not in record["identity"]["source_asset_path"] for record in object_records)
     assert any(record["identity"]["source_file_id"] for record in object_records)
@@ -59,6 +66,10 @@ try:
     reconstructed = [obj for obj in bpy.data.objects if obj.get("unity_prefab_file_id")]
     assert reconstructed
     assert all(str(obj.get("unity_asset_path", "")).startswith("Assets/") for obj in reconstructed)
-    print(f"REAL_MULTI_PACKAGE_IDENTITY_OK objects={len(object_records)} package_id={package_id}")
+    print(
+        f"REAL_MULTI_PACKAGE_IDENTITY_OK objects={len(object_records)} "
+        f"package_ids={len(object_package_ids)} primary_package_id={package_id}"
+        f" prefab_choice={prefab_choice}"
+    )
 finally:
     addon.unregister()
