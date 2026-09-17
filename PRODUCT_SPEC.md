@@ -129,6 +129,21 @@ If bounded discovery is incomplete, foreground users can locate a package or a d
 
 Scene内のPackage-scoped providerをGUIDで探索し、Prefab Renderer→Material、FBX externalObjects→Material、Material→Textureを対象にlocal priority、unique cross-package binding、unresolved persistence、ambiguous refusal、late bindingを行う。名前だけのcross-package推測やimport順による勝者選択は行わない。
 
+## Import Progress Monitor
+
+Foreground import exposes one shared progress session through Blender's
+status bar and native WindowManager progress API. The session reports the
+real architectural stages `READING_PACKAGE`, `ANALYZING_PREFABS`,
+`RESOLVING_PACKAGES`, `IMPORTING_FBX`, `BUILDING_HIERARCHY`,
+`CREATING_VISUALS`, `RESOLVING_DEPENDENCIES`, and `FINALIZING`, together with
+elapsed time and factual item counts when the current operation knows them.
+Unknown-duration work remains indeterminate; simulated percentage animation is
+not allowed. Before native FBX import, the monitor marks the operation as
+blocking and tells the user that Blender may temporarily stop responding.
+Grouped provider imports share the parent session and cannot clear it early.
+Terminal success or failure clears the foreground status text while preserving
+the final state and structured console transition log for diagnostics.
+
 ### Automatic Sibling Package Discovery
 
 Top-level `.unitypackage` imports, whether started from File > Import or the native 3D View drag-and-drop handler, automatically run a lightweight same-directory sibling discovery after the primary package index is prepared. Discovery follows exact GUID coverage and transitive dependencies. A unique `COMPLETE` plan offers a foreground Import Together / Import Selected Only / Cancel dialog and imports together by default; background runs deterministically as Import Together. `NONE` keeps the import single-package. `PARTIAL` offers the same foreground choice but defaults to Primary Only; background never guesses. `AMBIGUOUS` never auto-selects a provider. Internal grouped child imports set `group_child` and do not rediscover siblings.

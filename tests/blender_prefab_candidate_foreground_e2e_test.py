@@ -37,6 +37,14 @@ GameObject:
     ])
     state = {"started": False, "prefab_invokes": 0, "result": None, "error": None}
     addon.register()
+    original_monitor = module.ImportProgressMonitor
+
+    class RecordingMonitor(original_monitor):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            state["monitor"] = self
+
+    module.ImportProgressMonitor = RecordingMonitor
     original_prefab_invoke = module.UNITYPACKAGE_OT_import_prefab.invoke
 
     def prefab_invoke(self, context, event):
@@ -63,8 +71,26 @@ GameObject:
             if state["started"] and not module._PREPARED_SESSIONS and any(obj.get("unity_prefab_file_id") == "1001" for obj in bpy.data.objects):
                 assert state["prefab_invokes"] == 0, state
                 assert any(obj.get("unity_prefab_file_id") == "1001" for obj in bpy.data.objects), state
+                history = state["monitor"].history
+                stages = [item["stage"] for item in history]
+                expected = {
+                    module.ImportProgressStage.READING_PACKAGE,
+                    module.ImportProgressStage.ANALYZING_PREFABS,
+                    module.ImportProgressStage.RESOLVING_PACKAGES,
+                    module.ImportProgressStage.IMPORTING_FBX,
+                    module.ImportProgressStage.BUILDING_HIERARCHY,
+                    module.ImportProgressStage.CREATING_VISUALS,
+                    module.ImportProgressStage.RESOLVING_DEPENDENCIES,
+                    module.ImportProgressStage.FINALIZING,
+                    module.ImportProgressStage.COMPLETE,
+                }
+                assert expected.issubset(set(stages)), stages
+                assert stages[-1] == module.ImportProgressStage.COMPLETE, stages
+                assert module._ACTIVE_PROGRESS_MONITOR is None
+                assert state["monitor"].sink.started is False
                 print("PCA_FOREGROUND_AUTOMATIC_OK", state, flush=True)
                 module.UNITYPACKAGE_OT_import_prefab.invoke = original_prefab_invoke
+                module.ImportProgressMonitor = original_monitor
                 addon.unregister()
                 bpy.ops.wm.quit_blender()
                 return None

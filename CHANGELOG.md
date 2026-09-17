@@ -2,6 +2,12 @@
 
 ## 0.4.0 candidate - 2026-09-17
 
+- Added a shared Import Progress Monitor with factual foreground stages, elapsed time, current item/count, structured transitions, and terminal status cleanup.
+- Added explicit pre-FBX blocking feedback and safe grouped-child progress ownership; child provider imports cannot clear the parent session.
+- Added IPM-001..015 unit coverage and synthetic foreground transition verification.
+
+## 0.4.0 candidate - 2026-09-17
+
 - Added metadata-first Prefab Candidate Analyzer with structural Avatar/Prop classification and exact visual dependency closure.
 - Added deterministic `Automatic (Recommended)` selection; multiple complete avatars and ambiguous Providers require explicit choice, and Background never falls back to the first Prefab.
 - Added PCA-001..015 synthetic coverage and a foreground Automatic regression.

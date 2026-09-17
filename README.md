@@ -42,6 +42,8 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 - 各展開パスはアーカイブの物理順をストリーム走査し、asset本文を固定チャンクでコピーします。通常のPrefab再構築では、選択Prefabから辿れるFBX、Material、Textureと各`.meta`だけを最終展開し、無関係なasset本文は書き出しません。複数Prefabの選択肢を先に表示し、選択確定後に依存展開を行います。
 - `Keep Extracted Files` を有効にした場合も、保持されるのは選択された依存アセットの展開先です。パッケージ全体のミラーではありません。依存関係を解決できない場合は、既存互換性を優先してFBX全体へフォールバックします。
 - Import中はBlenderの進捗表示とフェーズ名を更新し、コンソールへ低負荷の `[PERF]` フェーズ計測を出力します。展開、FBX、Material、Texture、Prefab復元などの所要時間を後から確認できます。
+- Foreground importはStatus Barに、実際のstage名、既知のcurrent/total、current item、経過時間を表示します。Prefab候補とprovider走査は実際に処理した件数だけを表示し、未知の所要時間を偽のパーセントで補間しません。
+- Native FBX importの直前には`Importing FBX`と`Blender may temporarily stop responding during this step.`を表示します。FBXのようなBlender APIのblocking operation中はUI再描画が一時停止することがありますが、進捗stateと構造化ログは保持されます。成功・失敗時はStatus Barを消去します。
 - キャンセル、エラー、Prefab選択の中断では準備済みの一時展開先を後始末します。`Keep Extracted Files` を有効にして正常完了した場合だけ、テクスチャの外部パス維持のため展開先を保持します。
 - Prefab Candidate Analyzerは、Prefabごとに`AVATAR_LIKE` / `PROP_LIKE` / `EMPTY_OR_UNSUPPORTED`を構造から分類し、Material→TextureとFBX externalObjectsを含むvisual closureを候補単位で判定します。候補解析中にFBXまたはTexture payloadを読み込まず、同一Packageのindexとtextual Material readを共有します。
 

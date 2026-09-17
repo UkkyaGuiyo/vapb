@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
 import bpy  # type: ignore
 
 
-def import_fbx(path: Path, use_custom_props: bool = True, source_package_id: str = "") -> list[bpy.types.Object]:
+def import_fbx(
+    path: Path,
+    use_custom_props: bool = True,
+    source_package_id: str = "",
+) -> list[bpy.types.Object]:
     before = set(bpy.data.objects)
     bpy.ops.import_scene.fbx(
         filepath=str(path),
@@ -29,13 +33,23 @@ def import_fbx(path: Path, use_custom_props: bool = True, source_package_id: str
     return imported
 
 
-def import_fbx_files(paths: Iterable[Path], source_package_id: str = "") -> list[bpy.types.Object]:
+def import_fbx_files(
+    paths: Iterable[Path],
+    source_package_id: str = "",
+    progress: Callable[[Path, int, int, bool], None] | None = None,
+) -> list[bpy.types.Object]:
     imported: list[bpy.types.Object] = []
-    for path in paths:
+    paths = list(paths)
+    for index, path in enumerate(paths, 1):
         try:
+            if progress is not None:
+                progress(path, index, len(paths), True)
             imported.extend(import_fbx(path, source_package_id=source_package_id))
         except (OSError, RuntimeError) as exc:
             print(f"[UnityPackage Importer] FBX import failed: {path}: {exc}")
+        finally:
+            if progress is not None:
+                progress(path, index, len(paths), False)
     return imported
 
 

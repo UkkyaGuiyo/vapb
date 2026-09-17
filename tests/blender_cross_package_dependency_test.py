@@ -138,8 +138,10 @@ def run_grouped_synthetic(root: Path, fbx_bytes: bytes, png: bytes, material_gui
     """Exercise the generic same-folder Import Together path."""
     from unitypackage_blender_importer.blender.identity_registry import load_scene_registry
 
-    root = root / "synthetic_group"
-    root.mkdir()
+    # Keep this grouped fixture in its own package neighborhood.  The parent
+    # test also builds independent geometry/appearance packages whose repeated
+    # synthetic GUIDs must not become providers for this separate scenario.
+    root = Path(tempfile.mkdtemp(prefix="cpd_group_"))
     synthetic_avatar = root / "SyntheticAvatar.unitypackage"
     material_provider = root / "SyntheticMaterialProvider.unitypackage"
     textures = root / "SyntheticTextureProvider.unitypackage"

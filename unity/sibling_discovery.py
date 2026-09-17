@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import re
 import tarfile
+from typing import Callable
 
 from .material_mapping import parse_external_objects
 from .package_identity import PackageIdentity
@@ -207,6 +208,7 @@ def discover_siblings(
     selected_asset_paths: set[str] | None = None,
     extra_package_paths: set[Path] | None = None,
     provenance_by_path: dict[str, str] | None = None,
+    progress: Callable[[int, int, Path], None] | None = None,
 ) -> SiblingDiscoveryResult:
     del max_depth
     root_path = Path(root_path).resolve()
@@ -235,10 +237,12 @@ def discover_siblings(
     while changed and unresolved:
         changed = False
         providers: dict[str, list[Path]] = {}
-        for path in sibling_paths:
+        for path_index, path in enumerate(sibling_paths, 1):
             if path in selected_paths:
                 continue
             manifests[path] = manifests.get(path) or _manifest(path, accounting)
+            if progress is not None:
+                progress(path_index, len(sibling_paths), path)
             provided[path] = {entry.guid for entry in manifests[path]}
             for guid in unresolved & provided[path]:
                 providers.setdefault(guid, []).append(path)

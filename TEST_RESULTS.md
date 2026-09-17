@@ -1,11 +1,19 @@
 # Current 0.3.0 Baseline Test Results
 
+## 0.4.0 candidate Import Progress Monitor (2026-09-17)
+
+- IPM-001..015: PASS. The Blender-independent state model covers IDLE → WORKING → COMPLETE/FAILED, factual current/total, grouped-child ownership, unknown-duration indeterminate state, heartbeat refresh, and pre/post native FBX blocking callbacks.
+- Python discovery after the new focused coverage: 135 tests PASS. `python -m compileall -q .`: PASS.
+- Foreground synthetic Blender E2E: `PCA_FOREGROUND_AUTOMATIC_OK`; the captured history includes package read, Prefab analysis, related-package resolution, FBX, visuals, hierarchy, resolver, finalization, and COMPLETE. Prefab chooser invocation remained 0 and no active monitor remained.
+- Real local foreground verification: `REAL_FOREGROUND_PROGRESS_OK`; the local SAMPLE_AVATAR_B package was supplied only through the runtime argument, producing 15 reconstructed Prefab meshes, 71 node materials, 57 Base Color links, one blocking-FBX interval, elapsed 111.85 seconds, with 400 recorded progress snapshots including timer heartbeats. The resolved related-package action was selected as Import Together by the local harness; proprietary assets remain outside the repository.
+- Real local explicit chooser/import control: `REAL_MULTI_PACKAGE_IDENTITY_OK`, 38 object records, one package identity, `PREFAB_1`; no production asset or path was committed.
+
 ## 0.4.0 candidate Prefab Candidate Analyzer (2026-09-17)
 
 - `PCA-001..015`: synthetic analyzer tests PASS in Blender 5.2.1. Structural classification, exact visual closure, transitive Material→Texture, cross-package provider, ambiguity refusal, cache reuse, and FBX payload non-read were verified.
 - Foreground synthetic Automatic E2E: `PCA_FOREGROUND_AUTOMATIC_OK`. A leading empty candidate did not cause first-entry selection; the only supported visual candidate imported and the Prefab chooser invoke count was 0.
 - Existing grouped split-package regression: `GROUP_IMPORT_E2E_OK`; explicit `PREFAB_N` selection remains compatible.
-- Real SAMPLE_AVATAR_B metadata-first AUTO probe: 8 Prefabs analyzed; one `AVATAR_LIKE` / `COMPLETE` candidate was selected with `ONLY_COMPLETE_AVATAR_CANDIDATE`. Full foreground/visual human retest remains required.
+- Real SAMPLE_AVATAR_B metadata-first AUTO probe: 8 Prefabs analyzed; one `AVATAR_LIKE` / `COMPLETE` candidate was selected with `ONLY_COMPLETE_AVATAR_CANDIDATE`. Foreground progress and grouped import are covered above; Material Preview appearance remains a separate human visual check.
 - Real SAMPLE_AVATAR_B background import reached `Import complete` with `Sibling discovery: COMPLETE providers=1`; the existing identity probe still has a harness-level package-id assertion failure after grouped child import and is not counted as a full identity PASS.
 - Real CaseA control: AUTO correctly stopped with `USER_CHOICE_REQUIRED / NO_UNIQUE_COMPLETE_AVATAR_CANDIDATE` for 15 detected Prefabs; explicit `PREFAB_1` completed (`REAL_MULTI_PACKAGE_IDENTITY_OK`, 38 Objects, one package identity). This confirms no unsafe first-Prefab fallback. Material Preview/normal-map visual confirmation remains human-required.
 

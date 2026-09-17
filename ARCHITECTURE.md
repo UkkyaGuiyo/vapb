@@ -94,6 +94,20 @@ Identity Layerは今後、import・edit・merge・exportを横断する独立設
 
 準備workerはBlender datablockを変更しない。準備modalは完了時に`FINISHED`でWindowManagerから終了し、UUID sessionを次のevent-loopへ渡す。Prefab dialogとprepared importは別Operatorで実行し、cancel、exception、timeoutで抽出先・progress・sessionをcleanupする。
 
+## Import Progress Ownership
+
+`unity/import_progress.py` owns a Blender-independent `ImportProgressState`
+and deterministic stage model. The foreground operator adapts that state to
+`WindowManager.progress_begin/update/end` and `Workspace.status_text_set`;
+background and unit-test paths use the same state without requiring a window
+context. Stage-index updates represent real completed architectural stages,
+while current/total is emitted only by work that already has a bounded count.
+The prepare worker sends structured transitions through its existing modal
+event queue, so no Blender API is called from the worker. Native FBX import is
+marked `blocking_operation` before `bpy.ops.import_scene.fbx` and cleared in a
+`finally` path. A grouped child borrows the active parent monitor and never
+terminates or clears it.
+
 ## Package-Scoped Identity (0.4.0 candidate)
 
 - `PackageIdentity`の内容SHA-256を`source_package_id = sha256:<64hex>`として、Packageのファイル名やパスから独立したnamespaceにする。

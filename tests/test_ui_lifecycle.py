@@ -257,6 +257,34 @@ class UILifecycleTests(unittest.TestCase):
         schedule.assert_called_once()
         self.assertTrue(schedule.call_args.kwargs["show_dialog"])
 
+    def test_completed_worker_skips_prefab_dialog_for_unique_automatic_candidate(self):
+        operator = _operator()
+        context = FakeContext()
+        future = Future()
+        future.set_result(
+            module._PreparedImport(
+                None,
+                None,
+                None,
+                None,
+                [],
+                [Path("one.prefab"), Path("two.prefab")],
+                {},
+                candidate_selection=module.PrefabSelection(
+                    "AUTO_SELECTED", "PREFAB_1", "ONLY_COMPLETE_AVATAR_CANDIDATE"
+                ),
+            )
+        )
+        operator._prepare_state = "PREPARING"
+        operator._prepare_future = future
+        operator._prepare_window_manager = context.window_manager
+        operator._prepare_timer = context.window_manager.event_timer_add(0.25, window=context.window)
+        with patch.object(module, "_schedule_prepared_session") as schedule:
+            result = operator.modal(context, _event("TIMER", operator._prepare_timer))
+        self.assertEqual({"FINISHED"}, result)
+        self.assertEqual("PREFAB_1", operator._selected_prefab_choice)
+        self.assertFalse(schedule.call_args.kwargs["show_dialog"])
+
     def test_prepared_operator_runs_session_and_removes_it(self):
         operator = _operator()
         context = FakeContext()

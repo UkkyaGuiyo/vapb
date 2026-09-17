@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import tarfile
 import tempfile
-from typing import Iterable
+from typing import Callable, Iterable
 
 from .asset_database import AssetDatabase
 from .material_mapping import parse_external_objects
@@ -252,7 +252,10 @@ class PrefabCandidateAnalyzer:
                 queue.extend(sorted(self._fbx_external_guids(source, guid) - visited))
         return required, resolved, unresolved, ambiguous, providers
 
-    def analyze(self) -> list[PrefabCandidateAnalysis]:
+    def analyze(
+        self,
+        progress: Callable[[int, int, Path], None] | None = None,
+    ) -> list[PrefabCandidateAnalysis]:
         def analyze_once() -> list[PrefabCandidateAnalysis]:
             result: list[PrefabCandidateAnalysis] = []
             for index, path in enumerate(self.prefab_paths):
@@ -302,6 +305,8 @@ class PrefabCandidateAnalyzer:
                     provider_packages=providers,
                     reasons=reasons,
                 ))
+                if progress is not None:
+                    progress(index + 1, len(self.prefab_paths), path)
             return result
 
         result = analyze_once()

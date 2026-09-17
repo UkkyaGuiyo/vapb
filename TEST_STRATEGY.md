@@ -257,3 +257,14 @@ Tracked textに開発者固有pathや明白なcredential patternを含めず、p
 ## Native UnityPackage Drag & Drop (DND-001..014)
 
 Blender 5.2.1公開`bpy.types.FileHandler`を使い、`.unitypackage`をVIEW_3Dへdropした場合だけ既存`import_scene.unitypackage`へ委譲する。独自のPackage Reader、extraction、material import、dependency resolverは作らない。background synthetic testではFileHandler登録、VIEW_3D poll、既存operator handoff、register/unregister cycle、既存CPD/SPD grouped import regressionを確認する。実Windows Explorerからのdropは`REAL-DND-001: HUMAN RETEST REQUIRED`とする。
+
+## Import Progress Monitor (IPM-001..015)
+
+IPM coverage verifies the Blender-independent lifecycle, factual counts,
+terminal cleanup, grouped-child ownership, background safety, pre/post native
+FBX blocking callbacks, failure cleanup, candidate/provider progress callbacks,
+unknown-duration behavior, and elapsed duration. The foreground synthetic
+Blender E2E captures the transition history and asserts a shared session
+reaches `COMPLETE` without stale status. Real-package verification remains
+local-only and supplies its package path through an environment variable or
+command-line argument.

@@ -38,11 +38,13 @@ from ..unity.prefab_candidate_analyzer import (
     PrefabSelection,
 )
 from ..unity.sibling_discovery import discover_siblings, inspect_provider_folder, inspect_provider_package
+from ..unity.import_progress import ImportProgressMonitor, ImportProgressStage, ImportProgressStatus
 
 
 _DEFAULT_PREFAB_ITEMS: list[tuple[str, str, str, int]] = [("AUTO", "Automatic (Recommended)", "Analyze Prefab structure and visual completeness", 0)]
 _SESSION_TIMEOUT_SECONDS = 300.0
 _PREPARED_SESSIONS: dict[str, "_PreparedSession"] = {}
+_ACTIVE_PROGRESS_MONITOR: ImportProgressMonitor | None = None
 
 
 PREPARE_STATES = {
@@ -97,6 +99,41 @@ def _session_prefab_items(_self, _context):
     return session.operator._prefab_items
 
 
+class _BlenderProgressSink:
+    """Render factual stage progress without owning importer control flow."""
+
+    def __init__(self, context):
+        self.context = context
+        self.started = False
+
+    def update(self, state) -> None:
+        window_manager = getattr(self.context, "window_manager", None)
+        if window_manager is not None:
+            if not self.started:
+                window_manager.progress_begin(0, state.stage_count)
+                self.started = True
+            # The only percentage-like value is the factual stage index.  No
+            # fractional progress is invented for an unknown-duration stage.
+            window_manager.progress_update(state.stage_index)
+        workspace = getattr(self.context, "workspace", None)
+        status_text_set = getattr(workspace, "status_text_set", None)
+        if callable(status_text_set):
+            status_text_set(state.status_text())
+
+    def clear(self) -> None:
+        window_manager = getattr(self.context, "window_manager", None)
+        if self.started and window_manager is not None:
+            try:
+                window_manager.progress_end()
+            except (AttributeError, RuntimeError):
+                pass
+        self.started = False
+        workspace = getattr(self.context, "workspace", None)
+        status_text_set = getattr(workspace, "status_text_set", None)
+        if callable(status_text_set):
+            status_text_set(None)
+
+
 def _discard_prepared_session(session_id: str, context=None) -> None:
     session = _PREPARED_SESSIONS.pop(session_id, None)
     if session is None:
@@ -109,12 +146,14 @@ def _discard_prepared_session(session_id: str, context=None) -> None:
     if context is not None:
         operator._finish_performance(context)
     else:
-        if operator._progress_active and session.window_manager is not None:
+        if operator._progress_owner and operator._progress_monitor is not None:
+            operator._progress_monitor.fail("Import session discarded")
+        elif operator._progress_active and session.window_manager is not None:
             try:
                 session.window_manager.progress_end()
             except (AttributeError, RuntimeError):
                 pass
-        operator._progress_active = False
+        operator._end_progress(None)
         if operator._performance is not None:
             operator._performance.finish()
             operator._performance.emit()
@@ -244,6 +283,10 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._package_index: PackageIndex | None = None
         self._performance: PerformanceTimer | None = None
         self._progress_active = False
+        self._progress_monitor: ImportProgressMonitor | None = None
+        self._progress_owner = False
+        self._progress_context = None
+        self._progress_failure_message = ""
         self._prepare_executor: ThreadPoolExecutor | None = None
         self._prepare_future: Future | None = None
         self._prepare_timer = None
@@ -272,20 +315,80 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
     def draw(self, context):
         draw_import_options(self.layout, self)
 
-    def _set_phase(self, context, phase: str, progress: float) -> None:
-        if self._progress_active:
-            context.window_manager.progress_update(progress)
+    def _set_phase(
+        self,
+        context,
+        phase: str,
+        progress: float = 0.0,
+        *,
+        current_item: str | None = None,
+        current_index: int | None = None,
+        current_total: int | None = None,
+        blocking_operation: bool = False,
+    ) -> None:
+        del progress  # Kept for compatibility with existing phase callers.
+        if self._progress_monitor is not None:
+            stage = self._stage_for_phase(phase)
+            self._progress_monitor.set_stage(
+                stage,
+                message=phase,
+                current_item=current_item,
+                current_index=current_index,
+                current_total=current_total,
+                blocking_operation=blocking_operation,
+            )
         self.report({"INFO"}, f"UnityPackage: {phase}")
+
+    @staticmethod
+    def _stage_for_phase(phase: str) -> str:
+        if phase in {"Checking Package identity", "Indexing UnityPackage in archive order", "Extracting dependency candidates", "Building Asset Database", "Scanning meta files", "Scanning FBX", "Scanning Prefabs", "Preparing UnityPackage in background", "Reusing prepared asset index", "Asset index ready", "Extracting selected dependencies", "Building selected Asset Database"}:
+            return ImportProgressStage.READING_PACKAGE
+        if phase in {"Analyzing Prefab candidates", "Waiting for Prefab selection", "Parsing Prefab"}:
+            return ImportProgressStage.ANALYZING_PREFABS
+        if phase in {"Discovering sibling Packages", "Resolving related packages"}:
+            return ImportProgressStage.RESOLVING_PACKAGES
+        if phase == "Importing FBX":
+            return ImportProgressStage.IMPORTING_FBX
+        if phase == "Reconstructing Prefab":
+            return ImportProgressStage.BUILDING_HIERARCHY
+        if phase == "Building Materials and Textures":
+            return ImportProgressStage.CREATING_VISUALS
+        if phase == "Resolving dependencies":
+            return ImportProgressStage.RESOLVING_DEPENDENCIES
+        if phase in {"Import complete", "Finalizing import"}:
+            return ImportProgressStage.FINALIZING
+        return ImportProgressStage.READING_PACKAGE
 
     def _begin_progress(self, context) -> None:
         if not self._progress_active:
-            context.window_manager.progress_begin(0.0, 1.0)
+            self._progress_context = context
+            global _ACTIVE_PROGRESS_MONITOR
+            if getattr(self, "group_child", False) and _ACTIVE_PROGRESS_MONITOR is not None:
+                self._progress_monitor = _ACTIVE_PROGRESS_MONITOR
+                self._progress_owner = False
+            else:
+                self._progress_monitor = ImportProgressMonitor(
+                    sink=_BlenderProgressSink(context),
+                    logger=print,
+                )
+                self._progress_owner = True
+                _ACTIVE_PROGRESS_MONITOR = self._progress_monitor
             self._progress_active = True
+            if self._progress_owner:
+                self._progress_monitor.start()
 
     def _end_progress(self, context) -> None:
         if self._progress_active:
-            context.window_manager.progress_end()
+            global _ACTIVE_PROGRESS_MONITOR
+            if self._progress_owner and self._progress_monitor is not None:
+                if self._progress_monitor.state.status == ImportProgressStatus.WORKING:
+                    self._progress_monitor.sink.clear() if self._progress_monitor.sink else None
+                if _ACTIVE_PROGRESS_MONITOR is self._progress_monitor:
+                    _ACTIVE_PROGRESS_MONITOR = None
             self._progress_active = False
+            self._progress_monitor = None
+            self._progress_owner = False
+            self._progress_context = None
 
     def _cleanup_prepared(self, remove: bool) -> None:
         extraction_dir = self._extraction_dir
@@ -301,6 +404,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             shutil.rmtree(extraction_dir, ignore_errors=True)
 
     def _finish_performance(self, context) -> None:
+        if self._progress_owner and self._progress_monitor is not None:
+            if self._prepare_state == "FINISHED":
+                self._progress_monitor.complete()
+            elif self._prepare_state == "ERROR":
+                self._progress_monitor.fail(getattr(self, "_progress_failure_message", "Import failed"))
         self._end_progress(context)
         if self._performance is None:
             return
@@ -321,13 +429,37 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         existing_package_reader: UnityPackageReader | None,
         existing_package_index: PackageIndex | None,
         cancel_event: Event,
-        events: SimpleQueue[str] | None,
+        events: SimpleQueue[object] | None,
     ) -> _PreparedImport:
         timings: dict[str, float] = {}
 
-        def phase(message: str) -> None:
+        def phase(
+            message: str,
+            *,
+            stage: str | None = None,
+            current_item: str | None = None,
+            current_index: int | None = None,
+            current_total: int | None = None,
+            blocking_operation: bool = False,
+        ) -> None:
             if events is not None:
-                events.put(message)
+                events.put({
+                    "message": message,
+                    "stage": stage,
+                    "current_item": current_item,
+                    "current_index": current_index,
+                    "current_total": current_total,
+                    "blocking_operation": blocking_operation,
+                })
+
+        def candidate_progress(index: int, total: int, item: Path) -> None:
+            phase(
+                "Analyzing Prefab candidates",
+                stage=ImportProgressStage.ANALYZING_PREFABS,
+                current_item=item.name,
+                current_index=index,
+                current_total=total,
+            )
 
         def timed(name: str, function, *args, **kwargs):
             started = perf_counter()
@@ -352,7 +484,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     existing_asset_db,
                     self._manual_provider_paths,
                 )
-                candidate_analyses = timed("prefab_candidate_analysis_parse", analyzer.analyze)
+                candidate_analyses = timed(
+                    "prefab_candidate_analysis_parse",
+                    analyzer.analyze,
+                    candidate_progress,
+                )
                 candidate_selection = analyzer.select(candidate_analyses)
             return _PreparedImport(
                 package_key,
@@ -418,7 +554,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     asset_db,
                     self._manual_provider_paths,
                 )
-                candidate_analyses = timed("prefab_candidate_analysis_parse", analyzer.analyze)
+                candidate_analyses = timed(
+                    "prefab_candidate_analysis_parse",
+                    analyzer.analyze,
+                    candidate_progress,
+                )
                 candidate_selection = analyzer.select(candidate_analyses)
         except Exception:
             shutil.rmtree(extraction_dir, ignore_errors=True)
@@ -501,6 +641,13 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 self.filepath,
                 selected_asset_paths=selected_paths,
                 extra_package_paths=extra_paths,
+                progress=lambda index, total, item: self._set_phase(
+                    context,
+                    "Resolving related packages",
+                    current_item=item.name,
+                    current_index=index,
+                    current_total=total,
+                ),
             )
             discovery = self._sibling_discovery
             print(
@@ -537,6 +684,17 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             selected_asset_paths=selected_paths,
             extra_package_paths=extra_paths,
             provenance_by_path=self._provider_provenance,
+            progress=(
+                (lambda index, total, item: self._set_phase(
+                    self._progress_context,
+                    "Resolving related packages",
+                    current_item=item.name,
+                    current_index=index,
+                    current_total=total,
+                ))
+                if self._progress_context is not None
+                else None
+            ),
         )
         self._sibling_import_together = self._sibling_discovery.visual_status == "COMPLETE"
 
@@ -653,21 +811,22 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._prepare_future = None
 
     def _drain_prepare_events(self, context) -> None:
-        progress = {
-            "Checking Package identity": 0.05,
-            "Indexing UnityPackage in archive order": 0.10,
-            "Extracting dependency candidates": 0.16,
-            "Building Asset Database": 0.20,
-            "Scanning meta files": 0.25,
-            "Scanning FBX": 0.28,
-            "Scanning Prefabs": 0.30,
-        }
         while True:
             try:
-                message = self._prepare_events.get_nowait()
+                event = self._prepare_events.get_nowait()
             except Exception:
                 return
-            self._set_phase(context, message, progress.get(message, 0.10))
+            if isinstance(event, str):
+                self._set_phase(context, event)
+                continue
+            self._set_phase(
+                context,
+                event.get("message", "Working"),
+                current_item=event.get("current_item"),
+                current_index=event.get("current_index"),
+                current_total=event.get("current_total"),
+                blocking_operation=bool(event.get("blocking_operation", False)),
+            )
 
     def _complete_async_prepare(self, context):
         self._drain_prepare_events(context)
@@ -684,6 +843,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             self._modal_registered = False
             self._set_prepare_state("CANCELLED" if self._prepare_cancel.is_set() else "ERROR")
             self._cleanup_prepared(remove=True)
+            self._progress_failure_message = str(exc)
             self._finish_performance(context)
             if not self._prepare_cancel.is_set():
                 self.report({"ERROR"}, str(exc))
@@ -795,6 +955,14 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._finish_performance(context)
 
     def modal(self, context, event):
+        if (
+            event.type == "TIMER"
+            and self._progress_monitor is not None
+            and self._progress_monitor.state.status == ImportProgressStatus.WORKING
+        ):
+            # Keep elapsed time and the current stage visible while the
+            # background preparation timer is waiting for new work events.
+            self._progress_monitor.heartbeat()
         if event.type == "ESC" and self._prepare_state in {"PREPARING", "PREPARED", "IMPORTING"}:
             self.cancel(context)
             return {"CANCELLED"}
@@ -830,6 +998,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             return self._run_import(context)
         except Exception as exc:
             self._set_prepare_state("ERROR")
+            self._progress_failure_message = str(exc)
             self.report({"ERROR"}, str(exc))
             print(f"[UnityPackage Importer] Import preparation failed: {exc}")
             self._cleanup_prepared(remove=True)
@@ -1017,8 +1186,23 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             imported_objects = []
             if fbx_paths:
                 self._set_phase(context, "Importing FBX", 0.55)
+
+                def fbx_progress(path: Path, index: int, total: int, blocking: bool) -> None:
+                    self._set_phase(
+                        context,
+                        "Importing FBX",
+                        current_item=path.name,
+                        current_index=index,
+                        current_total=total,
+                        blocking_operation=blocking,
+                    )
+
                 imported_objects = self._performance.measure(
-                    "fbx_import", import_fbx_files, fbx_paths, package_key.source_package_id
+                    "fbx_import",
+                    import_fbx_files,
+                    fbx_paths,
+                    package_key.source_package_id,
+                    fbx_progress,
                 )
                 if not imported_objects:
                     raise UnityPackageError("FBX import produced no Blender objects")
@@ -1052,6 +1236,13 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     material_library.values(), asset_db=asset_db,
                     material_library=material_library, scene=context.scene,
                 )
+                if material_library:
+                    self._set_phase(
+                        context,
+                        "Building Materials and Textures",
+                        current_index=len(material_library),
+                        current_total=len(material_library),
+                    )
                 # Provider-only packages still need their non-canonical image
                 # datablocks available for preserve-only dependency status.
                 # They are not connected to Principled sockets, but loading
@@ -1065,7 +1256,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             prefab_root = None
             prefab_object_map = {}
             if prefab is not None and self.apply_prefab_transforms:
-                self._set_phase(context, "Reconstructing Prefab", 0.90)
+                self._set_phase(
+                    context,
+                    "Reconstructing Prefab",
+                    current_item=prefab_unity_path or prefab.path.name,
+                )
                 prefab_root, prefab_object_map = self._performance.measure(
                     "prefab_reconstruct",
                     build_prefab_hierarchy,
@@ -1194,6 +1389,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     self.report({"WARNING"}, f"Sibling discovery {discovery.status}; Import Together was not auto-selected")
             # Group children are synchronous; only resolve the primary after
             # every selected provider has created its materials and images.
+            self._set_phase(context, "Resolving dependencies")
             dependency_counts = resolve_after_import(scene)
             package_kind = "MIXED_PACKAGE" if fbx_paths and (material_library or supported_asset_count > len(fbx_paths)) else "GEOMETRY_PACKAGE" if fbx_paths else "ASSET_PROVIDER_PACKAGE"
             current_registry = load_scene_registry(scene)
@@ -1215,7 +1411,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     print(f"[UnityPackage Importer] {error}")
                 self.report({"WARNING"}, f"Imported with {len(extraction.errors)} extraction warning(s); see console")
             self.report({"INFO"}, f"Imported {len(fbx_paths)} FBX file(s)")
-            self._set_phase(context, "Import complete", 1.0)
+            self._set_phase(context, "Finalizing import")
+            self._set_phase(context, "Import complete")
             self._set_prepare_state("FINISHED")
             self._modal_registered = False
             self._cleanup_prepared(remove=not self.keep_extracted)
@@ -1223,6 +1420,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             return {"FINISHED"}
         except Exception as exc:
             self._set_prepare_state("ERROR")
+            self._progress_failure_message = str(exc)
             self._modal_registered = False
             self.report({"ERROR"}, str(exc))
             print(f"[UnityPackage Importer] Import failed: {exc}")
