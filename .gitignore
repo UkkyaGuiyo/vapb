@@ -21,6 +21,15 @@ Temp/
 test_output/
 artifacts/
 
+# Unity Semantic Oracle generated project state
+tools/unity_semantic_oracle/Library/
+tools/unity_semantic_oracle/UserSettings/
+tools/unity_semantic_oracle/Temp/
+tools/unity_semantic_oracle/Logs/
+tools/unity_semantic_oracle/obj/
+tools/unity_semantic_oracle/ProjectSettings/*
+!tools/unity_semantic_oracle/ProjectSettings/ProjectVersion.txt
+
 # Local credential/config files
 .env
 .env.*

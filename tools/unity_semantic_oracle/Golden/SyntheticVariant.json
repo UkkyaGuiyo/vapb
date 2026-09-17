@@ -1,0 +1,303 @@
+{
+    "schemaVersion": "0.1",
+    "oracleVersion": "0.1-prefabinstance-probe",
+    "unityVersion": "2022.3.62f3",
+    "runId": "20260917T154738Z",
+    "inputAssetPath": "Assets/SyntheticVariant.prefab",
+    "inputAssetGuid": "08aa988e2240d604e90ee5842503420e",
+    "prefabs": [
+        {
+            "assetPath": "Assets/SyntheticVariant.prefab",
+            "guid": "08aa988e2240d604e90ee5842503420e",
+            "objects": [
+                {
+                    "name": "SyntheticVariant",
+                    "type": "UnityEngine.Transform",
+                    "hierarchyPath": "SyntheticVariant",
+                    "guid": "",
+                    "localFileID": "",
+                    "globalObjectId": "GlobalObjectId_V1-2-00000000000000000000000000000000-6333057037997843104-1930629837",
+                    "meshName": "",
+                    "meshGuid": "",
+                    "meshLocalFileID": "",
+                    "sourceAssetPath": "Assets/SyntheticVariant.prefab",
+                    "sourceGuid": "08aa988e2240d604e90ee5842503420e",
+                    "sourceLocalFileID": "6333057037997843104",
+                    "sourceType": "UnityEngine.Transform",
+                    "originalSourceAssetPath": "Assets/SyntheticVariant.prefab",
+                    "originalSourceGuid": "08aa988e2240d604e90ee5842503420e",
+                    "originalSourceLocalFileID": "6333057037997843104",
+                    "originalSourceType": "UnityEngine.Transform",
+                    "materials": []
+                },
+                {
+                    "name": "SyntheticModel",
+                    "type": "UnityEngine.Transform",
+                    "hierarchyPath": "SyntheticVariant/SyntheticModel",
+                    "guid": "",
+                    "localFileID": "",
+                    "globalObjectId": "GlobalObjectId_V1-2-00000000000000000000000000000000-4847471034713790243-1930629837",
+                    "meshName": "",
+                    "meshGuid": "",
+                    "meshLocalFileID": "",
+                    "sourceAssetPath": "Assets/SyntheticVariant.prefab",
+                    "sourceGuid": "08aa988e2240d604e90ee5842503420e",
+                    "sourceLocalFileID": "4847471034713790243",
+                    "sourceType": "UnityEngine.Transform",
+                    "originalSourceAssetPath": "Assets/SyntheticModel.fbx",
+                    "originalSourceGuid": "cf3446e0d1a6fd04f88f6bbdb43a518e",
+                    "originalSourceLocalFileID": "-8679921383154817045",
+                    "originalSourceType": "UnityEngine.Transform",
+                    "materials": []
+                },
+                {
+                    "name": "SyntheticModel",
+                    "type": "UnityEngine.MeshFilter",
+                    "hierarchyPath": "SyntheticVariant/SyntheticModel",
+                    "guid": "",
+                    "localFileID": "",
+                    "globalObjectId": "GlobalObjectId_V1-2-00000000000000000000000000000000-8424676535617935494-1930629837",
+                    "meshName": "SyntheticBody",
+                    "meshGuid": "cf3446e0d1a6fd04f88f6bbdb43a518e",
+                    "meshLocalFileID": "2830588232433113539",
+                    "sourceAssetPath": "Assets/SyntheticVariant.prefab",
+                    "sourceGuid": "08aa988e2240d604e90ee5842503420e",
+                    "sourceLocalFileID": "8424676535617935494",
+                    "sourceType": "UnityEngine.MeshFilter",
+                    "originalSourceAssetPath": "Assets/SyntheticModel.fbx",
+                    "originalSourceGuid": "cf3446e0d1a6fd04f88f6bbdb43a518e",
+                    "originalSourceLocalFileID": "-5754084199372789682",
+                    "originalSourceType": "UnityEngine.MeshFilter",
+                    "materials": []
+                },
+                {
+                    "name": "SyntheticModel",
+                    "type": "UnityEngine.MeshRenderer",
+                    "hierarchyPath": "SyntheticVariant/SyntheticModel",
+                    "guid": "",
+                    "localFileID": "",
+                    "globalObjectId": "GlobalObjectId_V1-2-00000000000000000000000000000000-5984863778439933004-1930629837",
+                    "meshName": "",
+                    "meshGuid": "",
+                    "meshLocalFileID": "",
+                    "sourceAssetPath": "Assets/SyntheticVariant.prefab",
+                    "sourceGuid": "08aa988e2240d604e90ee5842503420e",
+                    "sourceLocalFileID": "5984863778439933004",
+                    "sourceType": "UnityEngine.MeshRenderer",
+                    "originalSourceAssetPath": "Assets/SyntheticModel.fbx",
+                    "originalSourceGuid": "cf3446e0d1a6fd04f88f6bbdb43a518e",
+                    "originalSourceLocalFileID": "-7511558181221131132",
+                    "originalSourceType": "UnityEngine.MeshRenderer",
+                    "materials": [
+                        {
+                            "slot": 0,
+                            "name": "SyntheticSurfaceB",
+                            "guid": "bbb9b1a97f43e1446858ce731ad017fb",
+                            "localFileID": "2100000"
+                        }
+                    ]
+                }
+            ],
+            "propertyModifications": [
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalPosition.x",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalPosition.y",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalPosition.z",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalRotation.w",
+                    "value": "1",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalRotation.x",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalRotation.y",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalRotation.z",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalEulerAnglesHint.x",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalEulerAnglesHint.y",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "6333057037997843104",
+                        "resolvedType": "UnityEngine.Transform",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "SyntheticVariant",
+                        "hierarchyPath": "SyntheticVariant/SyntheticVariant"
+                    },
+                    "propertyPath": "m_LocalEulerAnglesHint.z",
+                    "value": "0",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                },
+                {
+                    "target": {
+                        "guid": "08aa988e2240d604e90ee5842503420e",
+                        "localFileID": "8142791464502872122",
+                        "resolvedType": "UnityEngine.GameObject",
+                        "resolvedName": "SyntheticVariant",
+                        "owningGameObject": "",
+                        "hierarchyPath": ""
+                    },
+                    "propertyPath": "m_Name",
+                    "value": "SyntheticVariant",
+                    "objectReference": {
+                        "guid": "",
+                        "localFileID": "",
+                        "type": ""
+                    },
+                    "resolutionStatus": "RESOLVED_BY_PREFAB_API"
+                }
+            ]
+        }
+    ]
+}
