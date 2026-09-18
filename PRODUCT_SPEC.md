@@ -43,6 +43,18 @@ Textureは元Assetを直接編集する前提とする。Addonは`Face_copy.png`
 
 Materialの表示はBlender上の近似でよい。ただしUnity Asset identity、Renderer slot binding、Material GUID、Texture GUIDの追跡を優先する。「見た目が似ているMaterial」より、元Unity Rendererの参照関係を正本とする。
 
+## Shader Preview v0.1
+
+Material preview is a best-effort Blender representation, not a Unity shader
+runtime. `ShaderPreviewIR` keeps material/shader identity, provider status,
+preview mode, confidence, supported texture roles, and unsupported features
+separate from Blender node construction. `SEMANTIC_PREVIEW` is used for a
+built-in or locally indexed shader provider; `GENERIC_FALLBACK_PREVIEW` keeps
+explicit common properties such as base color and normal textures useful when
+an external provider is missing. A normal texture is never substituted for a
+missing base-color texture. Unsupported shader-specific behavior is recorded
+in material metadata and does not abort import.
+
 ## Identity Policy
 
 ## Prefab Candidate Analyzer / Automatic Selection

@@ -48,7 +48,7 @@ Final Prefab
 | Material Mapping | `unity/material_mapping.py` | PARTIAL | GUID優先、Path・一意Name fallback、externalObjects解析 |
 | Identity Layer | 各`unity/*`と`blender/*`のcustom properties | PARTIAL | GUID/path/fileIDの一部保持。複数Package merge・rename追跡は未完成 |
 | Blender Import Layer | `blender/fbx_importer.py` | IMPLEMENTED | Blender標準FBX importerでArmature、Weight、Shape Key等を取り込み |
-| Material Builder | `blender/material_builder.py` | PARTIAL | Principled BSDF近似、Shader profile、Material/Texture metadata保存 |
+| Material Builder | `blender/material_builder.py`, `unity/shader_preview.py` | PARTIAL | ShaderPreviewIRを経由したPrincipled BSDF近似、provider status/identity/unsupported metadata保存 |
 | Texture Loader | `blender/texture_loader.py` | PARTIAL | 画像読込、GUID/path/meta property保存、pack option |
 | Hierarchy Builder | `blender/hierarchy_builder.py` | PARTIAL | Prefab parent/transform復元、Prefab rootとfileID保存 |
 | Import Operator | `operators/import_unitypackage.py` | IMPLEMENTED | File Browser、async prepare、Prefab handoff、main-thread import、cleanup |
@@ -78,6 +78,18 @@ Final Prefab
 - Materials: `unity_source_material`, `unity_material_guid`, `unity_material_path`, `unity_material_name`, `unity_shader_guid`, `unity_shader_name`, normalized properties
 - Images: `unity_source_path`, `unity_guid`, `unity_asset_path`, import metadata
 - Export manifest: object path、material GUID/path/name、binding slot、manifest schema
+
+## Shader Preview Boundary
+
+`unity/shader_preview.py` is the boundary between parsed Unity material data
+and Blender node construction. It preserves Unity identity independently from
+visual approximation and exposes two modes: semantic preview for supported
+built-in/local providers and generic fallback preview for missing or opaque
+providers. The current conservative role set is base color, normal, emission,
+metallic, roughness, and explicit alpha evidence. Provider absence, unknown
+texture properties, keyword variants, and shader-specific features are
+recorded as metadata; they are not silently guessed and do not make import
+fail.
 - Package scene: source package path、extracted root、FBX count、selected prefab path
 
 ### Gaps

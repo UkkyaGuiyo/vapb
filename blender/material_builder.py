@@ -13,6 +13,7 @@ from ..unity.material_model import NormalizedMaterial, UnityMaterialData, UnityT
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import PrefabData, ref_file_id, ref_guid
 from ..unity.profiles.base import normalize_material
+from ..unity.shader_preview import ShaderPreviewIR, build_shader_preview_ir
 from .texture_loader import load_texture_by_guid
 from .dependency_resolver import capture_dependency
 
@@ -103,22 +104,28 @@ def _texture_node(nodes, links, material_name: str, label: str, ref: UnityTextur
     return tex
 
 
-def _set_surface_mode(material, normalized: NormalizedMaterial) -> None:
-    if normalized.alpha_mode not in {"blend", "cutout"}:
+def _set_surface_mode(material, preview: ShaderPreviewIR) -> None:
+    if preview.alpha_mode not in {"blend", "cutout"}:
         return
     if hasattr(material, "surface_render_method"):
         try:
-            material.surface_render_method = "BLENDED" if normalized.alpha_mode == "blend" else "DITHERED"
+            material.surface_render_method = "BLENDED" if preview.alpha_mode == "blend" else "DITHERED"
         except (AttributeError, TypeError, RuntimeError):
             pass
     elif hasattr(material, "blend_method"):
         try:
-            material.blend_method = "BLEND" if normalized.alpha_mode == "blend" else "CLIP"
+            material.blend_method = "BLEND" if preview.alpha_mode == "blend" else "CLIP"
         except (AttributeError, TypeError, RuntimeError):
             pass
 
 
-def _save_metadata(material, data: UnityMaterialData, normalized: NormalizedMaterial, source_package_id: str = "") -> None:
+def _save_metadata(
+    material,
+    data: UnityMaterialData,
+    normalized: NormalizedMaterial,
+    preview: ShaderPreviewIR,
+    source_package_id: str = "",
+) -> None:
     material["unity_source_material"] = str(data.path)
     material["unity_material_guid"] = data.guid
     material["unity_material_path"] = data.unity_path
@@ -129,6 +136,10 @@ def _save_metadata(material, data: UnityMaterialData, normalized: NormalizedMate
     material["unity_shader_name"] = normalized.shader_name or data.shader_name
     material["unity_shader_family"] = normalized.family
     material["unity_shader_variant"] = str(normalized.extras.get("variant", ""))
+    material["unity_preview_mode"] = preview.mode
+    material["unity_preview_confidence"] = preview.confidence
+    material["unity_shader_provider_status"] = preview.provider_status
+    material["unity_preview_unsupported_features"] = json.dumps(list(preview.unsupported_features), ensure_ascii=False)
     material["unity_props"] = json.dumps(
         {
             "floats": data.floats,
@@ -155,25 +166,26 @@ def build_material(
     timing=None,
 ):
     normalized = normalize_material(data)
+    preview = build_shader_preview_ir(data, normalized, asset_db)
     source_package_id = getattr(asset_db, "source_package_id", "")
     material = _existing_material(data, source_package_id)
     material.use_nodes = True
-    material.diffuse_color = normalized.base_color
-    material.use_backface_culling = normalized.cull_backface
-    _set_surface_mode(material, normalized)
-    _save_metadata(material, data, normalized, source_package_id)
+    material.diffuse_color = preview.base_color
+    material.use_backface_culling = preview.cull_backface
+    _set_surface_mode(material, preview)
+    _save_metadata(material, data, normalized, preview, source_package_id)
 
     nodes = material.node_tree.nodes
     links = material.node_tree.links
     output = _material_output(nodes)
     bsdf = _principled_node(nodes, output)
     links.new(bsdf.outputs.get("BSDF"), output.inputs.get("Surface"))
-    _set_input(bsdf, "Base Color", normalized.base_color)
-    _set_input(bsdf, "Metallic", max(0.0, min(1.0, normalized.metallic)))
-    _set_input(bsdf, "Roughness", max(0.0, min(1.0, normalized.roughness)))
-    _set_input(bsdf, "Alpha", normalized.base_color[3] if normalized.alpha_mode != "opaque" else 1.0)
-    _set_input(bsdf, "Emission Color", normalized.emission_color)
-    _set_input(bsdf, "Emission Strength", normalized.emission_strength)
+    _set_input(bsdf, "Base Color", preview.base_color)
+    _set_input(bsdf, "Metallic", max(0.0, min(1.0, preview.metallic)))
+    _set_input(bsdf, "Roughness", max(0.0, min(1.0, preview.roughness)))
+    _set_input(bsdf, "Alpha", preview.base_color[3] if preview.alpha_mode != "opaque" else 1.0)
+    _set_input(bsdf, "Emission Color", preview.emission_color)
+    _set_input(bsdf, "Emission Strength", preview.emission_strength)
 
     if not use_textures:
         return material
@@ -183,28 +195,28 @@ def build_material(
         "texture_load",
         load_texture_by_guid,
         asset_db,
-        normalized.base_color_tex.guid if normalized.base_color_tex else None,
+        preview.base_color_tex.guid if preview.base_color_tex else None,
         pack=pack_textures,
     )
-    if base_image and normalized.base_color_tex:
-        tex = _texture_node(nodes, links, data.name, "Base Color", normalized.base_color_tex, base_image)
+    if base_image and preview.base_color_tex:
+        tex = _texture_node(nodes, links, data.name, "Base Color", preview.base_color_tex, base_image)
         mix = nodes.get(f"Unity Base Color Mix {data.name}") or nodes.new("ShaderNodeMixRGB")
         mix.name = mix.label = f"Unity Base Color Mix {data.name}"
         mix.blend_type = "MULTIPLY"
         _set_input(mix, "Fac", 1.0)
-        _set_input(mix, "Color1", normalized.base_color)
+        _set_input(mix, "Color1", preview.base_color)
         links.new(tex.outputs.get("Color"), mix.inputs.get("Color2"))
         links.new(mix.outputs.get("Color"), _input(bsdf, "Base Color"))
         alpha_socket = _input(bsdf, "Alpha")
         if alpha_socket is not None:
-            if normalized.alpha_mode == "cutout":
+            if preview.alpha_mode == "cutout":
                 alpha = nodes.get(f"Unity Alpha Cutout {data.name}") or nodes.new("ShaderNodeMath")
                 alpha.name = alpha.label = f"Unity Alpha Cutout {data.name}"
                 alpha.operation = "GREATER_THAN"
-                _set_input(alpha, 1, normalized.alpha_cutoff)
+                _set_input(alpha, 1, preview.alpha_cutoff)
                 links.new(tex.outputs.get("Alpha"), alpha.inputs[0])
                 links.new(alpha.outputs[0], alpha_socket)
-            elif normalized.alpha_mode == "blend":
+            elif preview.alpha_mode == "blend":
                 links.new(tex.outputs.get("Alpha"), alpha_socket)
 
     normal_image = _measure(
@@ -212,14 +224,14 @@ def build_material(
         "texture_load",
         load_texture_by_guid,
         asset_db,
-        normalized.normal_tex.guid if normalized.normal_tex else None,
+        preview.normal_tex.guid if preview.normal_tex else None,
         pack=pack_textures,
     )
-    if normal_image and normalized.normal_tex and _input(bsdf, "Normal"):
-        tex = _texture_node(nodes, links, data.name, "Normal", normalized.normal_tex, normal_image)
+    if normal_image and preview.normal_tex and _input(bsdf, "Normal"):
+        tex = _texture_node(nodes, links, data.name, "Normal", preview.normal_tex, normal_image)
         normal = nodes.get(f"Unity Normal Map {data.name}") or nodes.new("ShaderNodeNormalMap")
         normal.name = normal.label = f"Unity Normal Map {data.name}"
-        _set_input(normal, "Strength", normalized.normal_strength)
+        _set_input(normal, "Strength", preview.normal_strength)
         links.new(tex.outputs.get("Color"), _input(normal, "Color"))
         links.new(normal.outputs.get("Normal"), _input(bsdf, "Normal"))
 
@@ -228,17 +240,17 @@ def build_material(
         "texture_load",
         load_texture_by_guid,
         asset_db,
-        normalized.emission_tex.guid if normalized.emission_tex else None,
+        preview.emission_tex.guid if preview.emission_tex else None,
         pack=pack_textures,
     )
-    if emission_image and normalized.emission_tex and _input(bsdf, "Emission Color"):
-        tex = _texture_node(nodes, links, data.name, "Emission", normalized.emission_tex, emission_image)
-        if normalized.emission_color != (0.0, 0.0, 0.0, 1.0):
+    if emission_image and preview.emission_tex and _input(bsdf, "Emission Color"):
+        tex = _texture_node(nodes, links, data.name, "Emission", preview.emission_tex, emission_image)
+        if preview.emission_color != (0.0, 0.0, 0.0, 1.0):
             mix = nodes.get(f"Unity Emission Mix {data.name}") or nodes.new("ShaderNodeMixRGB")
             mix.name = mix.label = f"Unity Emission Mix {data.name}"
             mix.blend_type = "MULTIPLY"
             _set_input(mix, "Fac", 1.0)
-            _set_input(mix, "Color1", normalized.emission_color)
+            _set_input(mix, "Color1", preview.emission_color)
             links.new(tex.outputs.get("Color"), mix.inputs.get("Color2"))
             links.new(mix.outputs.get("Color"), _input(bsdf, "Emission Color"))
         else:
@@ -249,11 +261,11 @@ def build_material(
         "texture_load",
         load_texture_by_guid,
         asset_db,
-        normalized.metallic_tex.guid if normalized.metallic_tex else None,
+        preview.metallic_tex.guid if preview.metallic_tex else None,
         pack=pack_textures,
     )
-    if metallic_image and normalized.metallic_tex:
-        tex = _texture_node(nodes, links, data.name, "Metallic", normalized.metallic_tex, metallic_image)
+    if metallic_image and preview.metallic_tex:
+        tex = _texture_node(nodes, links, data.name, "Metallic", preview.metallic_tex, metallic_image)
         if _input(bsdf, "Metallic"):
             links.new(tex.outputs.get("Color"), _input(bsdf, "Metallic"))
         if _input(bsdf, "Roughness"):

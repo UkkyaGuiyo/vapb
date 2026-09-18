@@ -80,6 +80,7 @@ def main() -> None:
         package_path = temp_path / "avatar.unitypackage"
         fbx_guid = "a" * 32
         texture_guid = "b" * 32
+        normal_guid = "f" * 32
         material_guid = "c" * 32
         duplicate_material_guid = "e" * 32
         png_bytes = base64.b64decode(
@@ -99,6 +100,8 @@ Material:
     m_TexEnvs:
     - _MainTex:
         m_Texture: {{fileID: 2800000, guid: {texture_guid}, type: 3}}
+    - _BumpMap:
+        m_Texture: {{fileID: 2800000, guid: {normal_guid}, type: 3}}
 """.encode("utf-8")
         duplicate_material_bytes = f"""%YAML 1.1
 --- !u!21 &2100000
@@ -148,6 +151,7 @@ SkinnedMeshRenderer:
             records = [
                 (fbx_guid, "Assets/Avatar.fbx", fbx_path.read_bytes()),
                 (texture_guid, "Assets/Avatar.png", png_bytes),
+                (normal_guid, "Assets/Avatar_Normal.png", png_bytes),
                 (material_guid, "Assets/Material.mat", material_bytes),
                 (duplicate_material_guid, "Assets/Other/Material.mat", duplicate_material_bytes),
                 ("d" * 32, "Assets/Avatar.prefab", prefab_bytes),
@@ -203,6 +207,10 @@ SkinnedMeshRenderer:
             "unity_shader_name",
             "unity_shader_family",
             "unity_normalized",
+            "unity_preview_mode",
+            "unity_preview_confidence",
+            "unity_shader_provider_status",
+            "unity_preview_unsupported_features",
         ):
             assert assigned.get(key) is not None, f"Material metadata missing: {key}"
         texture_nodes = [node for node in assigned.node_tree.nodes if node.type == "TEX_IMAGE" and node.image]
@@ -212,6 +220,11 @@ SkinnedMeshRenderer:
         vector_input = texture_nodes[0].inputs.get("Vector")
         assert vector_input and vector_input.is_linked, "Texture Vector input is not linked"
         assert vector_input.links[0].from_node.type == "TEX_COORD", "Texture Vector is not fed by UV coordinates"
+        normal_nodes = [node for node in assigned.node_tree.nodes if node.type == "NORMAL_MAP"]
+        assert normal_nodes, "Normal Map node was not built"
+        normal_links = normal_nodes[0].inputs.get("Color").links
+        assert normal_links and normal_links[0].from_node.type == "TEX_IMAGE", "Normal texture is not bound through Normal Map"
+        assert normal_links[0].from_node.image.get("unity_guid") == normal_guid, "Normal texture role was not preserved"
         output_node = next(node for node in assigned.node_tree.nodes if node.type == "OUTPUT_MATERIAL")
         surface_input = output_node.inputs.get("Surface")
         assert surface_input and surface_input.is_linked, "Material Output Surface is not linked"
