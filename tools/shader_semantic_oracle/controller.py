@@ -39,25 +39,8 @@ def run_unity(unity: Path, project: Path, method: str, environment: dict[str, st
 
 
 def run_session(unity: Path, project: Path, package: Path, state_path: Path, result_path: Path, render_path: Path, logs: Path, minimum_assets: int, import_timeout: int, probe_timeout: int) -> dict:
-    state = {"package": str(package), "minimumAssets": minimum_assets, "status": "NEW", "events": []}
-    _write(state_path, state)
-    import_env = {
-        "UNITY_SHADER_ORACLE_PHASE": "import",
-        "UNITY_SHADER_ORACLE_PACKAGE": str(package),
-        "UNITY_SHADER_ORACLE_STATE": str(state_path),
-        "UNITY_SHADER_ORACLE_MIN_ASSETS": str(minimum_assets),
-    }
-    code, timeout = run_unity(unity, project, "ShaderSemanticOracle.LifecycleProbe.Batch", import_env, logs / "import.log", import_timeout)
-    state = _read(state_path)
-    if timeout:
-        state["status"] = "FAILED"
-        state["failureCategory"] = timeout
-        _write(state_path, state)
-        return state
+    state = run_import_phase(unity, project, package, state_path, logs / "import.log", minimum_assets, import_timeout)
     if state.get("status") != "IMPORT_STABLE":
-        state["status"] = "FAILED"
-        state["failureCategory"] = state.get("failureCategory") or FailureCategory.ASSET_DISCOVERY_TIMEOUT.value
-        _write(state_path, state)
         return state
     probe_env = {
         "UNITY_SHADER_ORACLE_PHASE": "probe",
@@ -77,11 +60,53 @@ def run_session(unity: Path, project: Path, package: Path, state_path: Path, res
     return state
 
 
+def run_import_phase(unity: Path, project: Path, package: Path, state_path: Path, log: Path, minimum_assets: int, timeout: int, packages: list[Path] | None = None) -> dict:
+    selected = packages or [package]
+    state = {"package": str(selected[0]), "minimumAssets": minimum_assets, "packagesExpected": len(selected), "packagesCompleted": 0, "status": "NEW", "events": []}
+    _write(state_path, state)
+    import_env = {
+        "UNITY_SHADER_ORACLE_PHASE": "import",
+        "UNITY_SHADER_ORACLE_PACKAGE": str(package),
+        "UNITY_SHADER_ORACLE_PACKAGES": ";".join(str(item) for item in selected),
+        "UNITY_SHADER_ORACLE_STATE": str(state_path),
+        "UNITY_SHADER_ORACLE_MIN_ASSETS": str(minimum_assets),
+    }
+    code, timeout_category = run_unity(unity, project, "ShaderSemanticOracle.LifecycleProbe.Batch", import_env, log, timeout)
+    state = _read(state_path)
+    if timeout_category:
+        state["status"] = "FAILED"
+        state["failureCategory"] = timeout_category
+        _write(state_path, state)
+        return state
+    if state.get("status") != "IMPORT_STABLE":
+        state["status"] = "FAILED"
+        state["failureCategory"] = state.get("failureCategory") or FailureCategory.ASSET_DISCOVERY_TIMEOUT.value
+        _write(state_path, state)
+        return state
+    return state
+
+
+def run_behavior_phase(unity: Path, project: Path, state_path: Path, result_path: Path, render_directory: Path, log: Path, timeout: int = 180) -> dict:
+    environment = {
+        "UNITY_SHADER_ORACLE_PHASE": "behavior",
+        "UNITY_SHADER_ORACLE_STATE": str(state_path),
+        "UNITY_SHADER_ORACLE_RESULT": str(result_path),
+        "UNITY_SHADER_ORACLE_RENDER_DIRECTORY": str(render_directory),
+    }
+    code, timeout_category = run_unity(unity, project, "ShaderSemanticOracle.BehaviorProbe.Batch", environment, log, timeout)
+    state = _read(state_path)
+    if timeout_category:
+        state["status"] = "FAILED"
+        state["failureCategory"] = timeout_category
+    return state
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--unity", type=Path, required=True)
     parser.add_argument("--project", type=Path, required=True)
     parser.add_argument("--package", type=Path, required=True)
+    parser.add_argument("--packages", type=Path, nargs="*")
     parser.add_argument("--state", type=Path, required=True)
     parser.add_argument("--result", type=Path, required=True)
     parser.add_argument("--render", type=Path, required=True)
@@ -89,8 +114,16 @@ def main() -> None:
     parser.add_argument("--minimum-assets", type=int, default=1)
     parser.add_argument("--import-timeout", type=int, default=180)
     parser.add_argument("--probe-timeout", type=int, default=120)
+    parser.add_argument("--behavior-only", action="store_true")
+    parser.add_argument("--import-only", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(run_session(args.unity, args.project, args.package, args.state, args.result, args.render, args.logs, args.minimum_assets, args.import_timeout, args.probe_timeout), ensure_ascii=False))
+    if args.import_only:
+        state = run_import_phase(args.unity, args.project, args.package, args.state, args.logs / "import.log", args.minimum_assets, args.import_timeout, args.packages or None)
+    elif args.behavior_only:
+        state = run_behavior_phase(args.unity, args.project, args.state, args.result, args.render.parent, args.logs / "behavior.log", args.probe_timeout)
+    else:
+        state = run_session(args.unity, args.project, args.package, args.state, args.result, args.render, args.logs, args.minimum_assets, args.import_timeout, args.probe_timeout)
+    print(json.dumps(state, ensure_ascii=False))
 
 
 if __name__ == "__main__":

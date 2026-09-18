@@ -10,6 +10,8 @@ namespace ShaderSemanticOracle
     [Serializable] public sealed class DurableProbeState
     {
         public string package;
+        public int packagesExpected;
+        public int packagesCompleted;
         public int minimumAssets;
         public string status = "NEW";
         public string classification;
@@ -43,6 +45,7 @@ namespace ShaderSemanticOracle
     {
         private static string phase;
         private static string package;
+        private static string[] packages;
         private static string statePath;
         private static string resultPath;
         private static string renderPath;
@@ -66,11 +69,14 @@ namespace ShaderSemanticOracle
             installed = true;
             phase = Environment.GetEnvironmentVariable("UNITY_SHADER_ORACLE_PHASE");
             package = Environment.GetEnvironmentVariable("UNITY_SHADER_ORACLE_PACKAGE");
+            var packageList = Environment.GetEnvironmentVariable("UNITY_SHADER_ORACLE_PACKAGES");
+            packages = string.IsNullOrEmpty(packageList) ? new[] { package } : packageList.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
             statePath = Environment.GetEnvironmentVariable("UNITY_SHADER_ORACLE_STATE");
             resultPath = Environment.GetEnvironmentVariable("UNITY_SHADER_ORACLE_RESULT");
             renderPath = Environment.GetEnvironmentVariable("UNITY_SHADER_ORACLE_RENDER_OUTPUT");
             if (string.IsNullOrEmpty(phase) || string.IsNullOrEmpty(statePath)) throw new InvalidOperationException("Lifecycle environment is incomplete.");
             state = LoadState();
+            if (state.packagesExpected == 0) state.packagesExpected = packages.Length;
             state.events.Add("process_start:" + DateTime.UtcNow.ToString("O"));
             SaveState();
             AssemblyReloadEvents.beforeAssemblyReload += BeforeReload;
@@ -94,18 +100,18 @@ namespace ShaderSemanticOracle
                 state.status = "IMPORT_REQUESTED";
                 state.events.Add("import_requested:" + DateTime.UtcNow.ToString("O"));
                 SaveState();
-                if (string.IsNullOrEmpty(package)) Fail("IMPORT_PROCESS_TIMEOUT");
-                else AssetDatabase.ImportPackage(package, false);
+                if (packages.Length == 0 || string.IsNullOrEmpty(packages[0])) Fail("IMPORT_PROCESS_TIMEOUT");
+                else ImportNextPackage();
                 return;
             }
             state.compiling = EditorApplication.isCompiling;
             state.assetsObserved = AssetDatabase.FindAssets("t:Material").Length;
-            if (state.compiling || state.assetsObserved < state.minimumAssets) stableFrames = 0;
+            if (state.compiling || state.packagesCompleted < state.packagesExpected || state.assetsObserved < state.minimumAssets) stableFrames = 0;
             else stableFrames++;
             state.stableFrames = stableFrames;
             if (state.compiling) state.status = "COMPILATION_PENDING";
             else if (state.assetsObserved > 0) state.status = "ASSETS_OBSERVED";
-            if (state.assetsObserved >= state.minimumAssets && !state.compiling && stableFrames >= 3)
+            if (state.packagesCompleted >= state.packagesExpected && state.assetsObserved >= state.minimumAssets && !state.compiling && stableFrames >= 3)
             {
                 state.status = "IMPORT_STABLE";
                 state.classification = state.callbackReceived ? "CALLBACK_AND_ASSETS_STABLE" : "IMPORT_CALLBACK_MISSING_BUT_ASSETS_PRESENT";
@@ -198,7 +204,7 @@ namespace ShaderSemanticOracle
         private static DurableProbeState LoadState()
         {
             if (File.Exists(statePath)) return JsonUtility.FromJson<DurableProbeState>(File.ReadAllText(statePath));
-            return new DurableProbeState { package = package, minimumAssets = int.Parse(Environment.GetEnvironmentVariable("UNITY_SHADER_ORACLE_MIN_ASSETS") ?? "1") };
+            return new DurableProbeState { package = package, packagesExpected = packages.Length, minimumAssets = int.Parse(Environment.GetEnvironmentVariable("UNITY_SHADER_ORACLE_MIN_ASSETS") ?? "1") };
         }
 
         private static void SaveState()
@@ -207,7 +213,22 @@ namespace ShaderSemanticOracle
             File.WriteAllText(Path.GetFullPath(statePath), JsonUtility.ToJson(state, true));
         }
 
-        private static void PackageCompleted(string packageName) { state.callbackReceived = true; state.events.Add("callback_received:" + DateTime.UtcNow.ToString("O")); SaveState(); }
+        private static void ImportNextPackage()
+        {
+            if (state.packagesCompleted >= packages.Length) return;
+            state.events.Add("package_import_requested:" + state.packagesCompleted + ":" + DateTime.UtcNow.ToString("O"));
+            SaveState();
+            AssetDatabase.ImportPackage(packages[state.packagesCompleted], false);
+        }
+
+        private static void PackageCompleted(string packageName)
+        {
+            state.callbackReceived = true;
+            state.packagesCompleted++;
+            state.events.Add("callback_received:" + packageName + ":" + DateTime.UtcNow.ToString("O"));
+            SaveState();
+            if (state.packagesCompleted < packages.Length) ImportNextPackage();
+        }
         private static void PackageCancelled(string packageName) { Fail("IMPORT_CALLBACK_TIMEOUT"); }
         private static void PackageFailed(string packageName, string message) { Fail("IMPORT_CALLBACK_TIMEOUT"); }
         private static void BeforeReload() { state.events.Add("assembly_reload_before:" + DateTime.UtcNow.ToString("O")); SaveState(); }
