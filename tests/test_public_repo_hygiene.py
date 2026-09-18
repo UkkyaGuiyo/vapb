@@ -14,6 +14,9 @@ TEXT_SUFFIXES = {
     ".bat", ".cmd", ".sh", ".ini", ".cfg", ".log", ".csv", ".cs",
 }
 FORBIDDEN_BINARY_SUFFIXES = {".unitypackage", ".fbx", ".blend", ".psd", ".tga"}
+ALLOWED_SYNTHETIC_FIXTURES = {
+    Path("tools/unity_semantic_oracle/Assets/SyntheticModel.fbx"),
+}
 LOCAL_PATH_PATTERNS = (
     re.compile(r"[A-Za-z]:" + re.escape("\\") + "Users" + re.escape("\\") + r"[^\\\r\n\"'`]+"),
     re.compile(re.escape("/") + "Users" + re.escape("/") + r"[^/\r\n\"'`]+"),
@@ -45,6 +48,7 @@ class PublicRepositoryHygieneTests(unittest.TestCase):
             str(path.relative_to(ROOT))
             for path in tracked_files()
             if path.suffix.lower() in FORBIDDEN_BINARY_SUFFIXES
+            and path.relative_to(ROOT).as_posix() not in {item.as_posix() for item in ALLOWED_SYNTHETIC_FIXTURES}
         ]
         self.assertEqual(offenders, [])
 

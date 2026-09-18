@@ -22,6 +22,7 @@ namespace ShaderSemanticOracle
         public string assetPath;
         public string shaderName;
         public string shaderGuid;
+        public bool shaderSupported;
         public int propertyCount;
         public List<PrimitiveObservation> primitives = new List<PrimitiveObservation>();
     }
@@ -31,6 +32,10 @@ namespace ShaderSemanticOracle
         public string schemaVersion = "0.1";
         public string accessMethod = "Unity public Material/Shader/Camera/RenderTexture APIs";
         public int renderCount;
+        public int candidateMaterialCount;
+        public int validShaderMaterialCount;
+        public int quarantinedMaterialCount;
+        public List<string> quarantineReasons = new List<string>();
         public List<BehaviorMaterialObservation> materials = new List<BehaviorMaterialObservation>();
     }
 
@@ -64,10 +69,20 @@ namespace ShaderSemanticOracle
             if (state.status != "IMPORT_STABLE") { state.status = "FAILED"; state.failureCategory = "ASSET_DISCOVERY_TIMEOUT"; File.WriteAllText(statePath, JsonUtility.ToJson(state, true)); EditorApplication.Exit(0); return; }
             var report = new BehaviorProbeReport();
             var paths = AssetDatabase.FindAssets("t:Material").Select(AssetDatabase.GUIDToAssetPath).Where(p => !p.StartsWith("Assets/Synthetic", StringComparison.OrdinalIgnoreCase)).OrderBy(p => p, StringComparer.Ordinal).Take(16).ToArray();
+            report.candidateMaterialCount = paths.Length;
             foreach (var path in paths)
             {
                 var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-                if (material != null) ProbeMaterial(material, path, report);
+                if (material == null) { report.quarantinedMaterialCount++; report.quarantineReasons.Add(path + ":MATERIAL_LOAD_FAILED"); continue; }
+                var shader = material.shader;
+                if (shader == null || shader.name == "Hidden/InternalErrorShader" || !shader.isSupported)
+                {
+                    report.quarantinedMaterialCount++;
+                    report.quarantineReasons.Add(path + (shader != null && !shader.isSupported ? ":UNSUPPORTED_SHADER" : ":DEPENDENCY_BLOCKED"));
+                    continue;
+                }
+                report.validShaderMaterialCount++;
+                ProbeMaterial(material, path, report);
             }
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outputPath)));
             File.WriteAllText(Path.GetFullPath(outputPath), JsonUtility.ToJson(report, true));
@@ -80,7 +95,7 @@ namespace ShaderSemanticOracle
         private static void ProbeMaterial(Material source, string path, BehaviorProbeReport report)
         {
             var shader = source.shader;
-            var observation = new BehaviorMaterialObservation { assetPath = path, shaderName = shader == null ? null : shader.name, propertyCount = shader == null ? 0 : shader.GetPropertyCount() };
+            var observation = new BehaviorMaterialObservation { assetPath = path, shaderName = shader == null ? null : shader.name, shaderSupported = shader != null && shader.isSupported, propertyCount = shader == null ? 0 : shader.GetPropertyCount() };
             if (shader == null) { report.materials.Add(observation); return; }
             long fileId;
             AssetDatabase.TryGetGUIDAndLocalFileIdentifier(shader, out observation.shaderGuid, out fileId);
