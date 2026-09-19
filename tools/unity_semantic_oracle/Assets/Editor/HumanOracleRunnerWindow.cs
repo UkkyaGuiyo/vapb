@@ -41,6 +41,9 @@ namespace UnitySemanticOracle
         public string outputPath;
         public string error;
         public string[] completedPackages;
+        public string[] requestedPackages;
+        public string prefabFilter;
+        public string lastFailedPackage;
     }
 
     // This is intentionally human-started. Codex must not launch/control the
@@ -75,6 +78,7 @@ namespace UnitySemanticOracle
         private string currentPhase { get { return durableState.currentPhase ?? "IDLE"; } set { durableState.currentPhase = value; } }
         private int retryCount { get { return durableState.retryCount; } set { durableState.retryCount = value; } }
         private string lastError { get { return durableState.lastError; } set { durableState.lastError = value; } }
+        private string lastFailedPackage { get { return durableState.lastFailedPackage; } set { durableState.lastFailedPackage = value; } }
         private string lastStackTracePath { get { return durableState.lastStackTracePath; } set { durableState.lastStackTracePath = value; } }
         private string lastMessage { get { return durableState.lastMessage ?? "Idle"; } set { durableState.lastMessage = value; } }
         private string runId { get { return durableState.runId; } set { durableState.runId = value; } }
@@ -184,7 +188,7 @@ namespace UnitySemanticOracle
             return timestamp.ToString("O") + " (" + Math.Max(0, (int)(DateTime.UtcNow - timestamp).TotalSeconds) + " sec ago)";
         }
 
-        private void StartRun(bool resume)
+        private void StartRun(bool resume, bool statePrepared = false)
         {
             if (string.IsNullOrWhiteSpace(outputPath) || string.IsNullOrWhiteSpace(checkpointPath))
                 throw new InvalidOperationException("Select an external output folder first.");
@@ -197,16 +201,16 @@ namespace UnitySemanticOracle
                     return;
                 }
             }
-            LoadCompletedPackages();
-            if (resume && string.Equals(runState, "COMPLETE", StringComparison.OrdinalIgnoreCase))
+            if (!statePrepared) LoadCompletedPackages();
+            if (resume && !statePrepared && (string.Equals(runState, "COMPLETE", StringComparison.OrdinalIgnoreCase) || string.Equals(runState, "RUN_COMPLETE", StringComparison.OrdinalIgnoreCase) || string.Equals(durableState.state, "COMPLETE", StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException("This checkpoint is already COMPLETE.");
             if (string.IsNullOrEmpty(runId)) runId = Guid.NewGuid().ToString("N");
-            var requested = DiscoverRequestedPackages();
+            var requested = DiscoverRequestedPackages(resume);
             pendingPackages.Clear();
             foreach (var package in requested)
             {
                 var key = CanonicalPackageKey(package);
-                if (!completedPackages.Contains(key)) pendingPackages.Add(package);
+                if (!completedPackages.Contains(key) && !failedPackages.Contains(key) && !skippedPackages.Contains(key)) pendingPackages.Add(package);
             }
             if (pendingPackages.Count == 0)
             {
@@ -219,7 +223,7 @@ namespace UnitySemanticOracle
             currentPackageIndex = completedPackages.Count + failedPackages.Count + skippedPackages.Count;
             pendingPackageCursor = 0;
             if (!resume || runStartedAtUtc == default(DateTime)) runStartedAtUtc = DateTime.UtcNow;
-            packageStartedAtUtc = runStartedAtUtc;
+            if (!resume || packageStartedAtUtc == default(DateTime)) packageStartedAtUtc = runStartedAtUtc;
             packageCompletedAtUtc = null;
             lastHeartbeatAtUtc = DateTime.UtcNow;
             lastProgressAtUtc = DateTime.UtcNow;
@@ -336,7 +340,10 @@ namespace UnitySemanticOracle
                 schemaVersion = "0.2",
                 outputPath = Path.GetFullPath(outputPath),
                 error = error,
-                completedPackages = new System.Collections.Generic.List<string>(completedPackages).ToArray()
+                completedPackages = new System.Collections.Generic.List<string>(completedPackages).ToArray(),
+                requestedPackages = packageList,
+                prefabFilter = prefabFilter,
+                lastFailedPackage = durableState.lastFailedPackage
             };
             durableState = checkpoint;
             File.WriteAllText(checkpointPath, JsonUtility.ToJson(checkpoint, true));
@@ -345,6 +352,8 @@ namespace UnitySemanticOracle
         private void LoadCompletedPackages()
         {
             completedPackages.Clear();
+            failedPackages.Clear();
+            skippedPackages.Clear();
             if (!File.Exists(checkpointPath)) return;
             var previous = JsonUtility.FromJson<HumanOracleCheckpoint>(File.ReadAllText(checkpointPath));
             if (previous == null) return;
@@ -353,6 +362,10 @@ namespace UnitySemanticOracle
             runState = string.IsNullOrEmpty(previous.runState) ? previous.state : previous.runState;
             corpusRoot = previous.corpusRoot;
             if (string.IsNullOrEmpty(outputPath)) outputPath = previous.outputPath;
+            if (previous.requestedPackages != null && previous.requestedPackages.Length > 0)
+                packagePaths = string.Join(";", previous.requestedPackages);
+            if (previous.prefabFilter != null) prefabFilter = previous.prefabFilter;
+            durableState.lastFailedPackage = previous.lastFailedPackage;
             currentPhase = string.IsNullOrEmpty(previous.currentPhase) ? "WAITING_FOR_IMPORT" : previous.currentPhase;
             currentPackage = previous.currentPackage;
             currentPackageIndex = previous.currentPackageIndex;
@@ -361,24 +374,25 @@ namespace UnitySemanticOracle
             lastError = previous.lastError;
             lastStackTracePath = previous.lastStackTracePath;
             lastMessage = previous.lastMessage;
-            if (string.IsNullOrEmpty(previous.observationVersion) && previous.completedPackages != null && previous.completedPackages.Length > 0)
+            var reobservationRequired = string.IsNullOrEmpty(previous.observationVersion) && previous.completedPackages != null && previous.completedPackages.Length > 0;
+            if (reobservationRequired)
             {
                 completedPackages.Clear();
+                failedPackages.Clear();
+                skippedPackages.Clear();
                 runState = "REOBSERVATION_REQUIRED";
                 lastMessage = "Observation schema changed; previous package results require re-observation.";
             }
-            if (!string.IsNullOrEmpty(previous.runStartedAtUtc)) DateTime.TryParse(previous.runStartedAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out runStartedAtUtc);
-            if (!string.IsNullOrEmpty(previous.packageStartedAtUtc)) DateTime.TryParse(previous.packageStartedAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out packageStartedAtUtc);
-            if (!string.IsNullOrEmpty(previous.lastHeartbeatAtUtc)) DateTime.TryParse(previous.lastHeartbeatAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out lastHeartbeatAtUtc);
-            if (!string.IsNullOrEmpty(previous.lastProgressAtUtc)) DateTime.TryParse(previous.lastProgressAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out lastProgressAtUtc);
             if (previous.completedPackages == null) return;
-            foreach (var package in previous.completedPackages) completedPackages.Add(CanonicalPackageKey(package));
-            if (previous.failedPackages != null) foreach (var package in previous.failedPackages) failedPackages.Add(CanonicalPackageKey(package));
-            if (previous.skippedPackages != null) foreach (var package in previous.skippedPackages) skippedPackages.Add(CanonicalPackageKey(package));
+            if (!reobservationRequired) foreach (var package in previous.completedPackages) completedPackages.Add(CanonicalPackageKey(package));
+            if (!reobservationRequired && previous.failedPackages != null) foreach (var package in previous.failedPackages) failedPackages.Add(CanonicalPackageKey(package));
+            if (!reobservationRequired && previous.skippedPackages != null) foreach (var package in previous.skippedPackages) skippedPackages.Add(CanonicalPackageKey(package));
         }
 
-        private string[] DiscoverRequestedPackages()
+        private string[] DiscoverRequestedPackages(bool resumeFromCheckpoint = false)
         {
+            if (resumeFromCheckpoint && packageList != null && packageList.Length > 0)
+                return packageList.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
             var packages = new System.Collections.Generic.List<string>();
             if (!string.IsNullOrWhiteSpace(corpusRoot) && Directory.Exists(corpusRoot))
             {
@@ -387,6 +401,7 @@ namespace UnitySemanticOracle
                     .OrderBy(path => CanonicalPackageKey(path), StringComparer.OrdinalIgnoreCase));
             }
             packages.AddRange((packagePaths ?? "").Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+            if (packages.Count == 0 && packageList != null) packages.AddRange(packageList);
             return packages.Select(Path.GetFullPath).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         }
 
@@ -409,8 +424,8 @@ namespace UnitySemanticOracle
         private static void NotifyPackageCompleted(string packageName)
         {
             if (active == null) return;
-            if (active.currentPackageIndex < active.pendingPackages.Count)
-                active.completedPackages.Add(CanonicalPackageKey(active.pendingPackages[active.currentPackageIndex]));
+            if (active.pendingPackageCursor < active.pendingPackages.Count)
+                active.completedPackages.Add(CanonicalPackageKey(active.pendingPackages[active.pendingPackageCursor]));
             active.pendingPackageCursor++;
             active.currentPackageIndex++;
             active.packageCompletedAtUtc = DateTime.UtcNow;
@@ -441,6 +456,7 @@ namespace UnitySemanticOracle
                 SemanticOracle.RetryCurrentPackageImport();
                 return;
             }
+            active.lastFailedPackage = active.currentPackage;
             active.failedPackages.Add(active.currentPackage == null ? "unknown" : CanonicalPackageKey(active.currentPackage));
             active.pendingPackageCursor++;
             active.currentPackageIndex++;
@@ -458,10 +474,15 @@ namespace UnitySemanticOracle
 
         private void RetryCurrentPackage()
         {
-            if (running || string.IsNullOrEmpty(checkpointPath)) return;
+            if (running || string.IsNullOrEmpty(checkpointPath) || (string.IsNullOrEmpty(currentPackage) && string.IsNullOrEmpty(lastFailedPackage))) return;
+            var retryPackage = string.IsNullOrEmpty(lastFailedPackage) ? currentPackage : lastFailedPackage;
             retryCount = 0;
-            failedPackages.Remove(CanonicalPackageKey(currentPackage ?? ""));
-            StartRun(true);
+            failedPackages.Remove(CanonicalPackageKey(retryPackage ?? ""));
+            durableState.failedPackages = new System.Collections.Generic.List<string>(failedPackages).ToArray();
+            durableState.currentPackage = retryPackage;
+            durableState.lastFailedPackage = null;
+            packageStartedAtUtc = DateTime.UtcNow;
+            StartRun(true, true);
         }
 
         private void SkipCurrentPackage()

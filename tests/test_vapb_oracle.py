@@ -134,6 +134,13 @@ class VapbOracleTests(unittest.TestCase):
         self.assertIn("Assets", source)
         self.assertIn("verified", source)
 
+    def test_runner_has_no_property_as_out_argument(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
+        for property_name in ("runStartedAtUtc", "packageStartedAtUtc", "lastHeartbeatAtUtc", "lastProgressAtUtc"):
+            self.assertNotIn("out " + property_name, source)
+        self.assertIn("out result", source)
+
     def test_watchdog_distinguishes_waiting_stalled_and_running(self):
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=True), "WAITING_FOR_UNITY")
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=False), "STALLED")
