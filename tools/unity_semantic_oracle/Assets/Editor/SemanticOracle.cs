@@ -84,12 +84,41 @@ namespace UnitySemanticOracle
         public string type;
     }
 
+    [Serializable] public sealed class OracleEnvelope
+    {
+        public string schemaVersion = "0.2";
+        public string runId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
+        public string unityVersion = Application.unityVersion;
+        public string accessMethod = "unity_2022_3_human_editor";
+        public string caseId = "human-run";
+        public string checkpoint = "COMPLETE";
+        public OracleRun observed;
+        public OracleDerived derived = new OracleDerived();
+        public List<string> limitations = new List<string>();
+    }
+
+    [Serializable] public sealed class OracleDerived
+    {
+        public int prefabCount;
+        public int objectCount;
+        public int materialSlotCount;
+    }
+
     public static class SemanticOracle
     {
         private static string[] pendingPackages;
         private static int pendingPackageIndex;
         private static string pendingPrefabFilter;
         private static string pendingOutput;
+        public static Action<string> PackageCompletedCallback;
+        public static Action<string> PackageFailedCallback;
+
+        public static void DetachPackageCallbacks()
+        {
+            AssetDatabase.importPackageCompleted -= OnImportPackageCompleted;
+            AssetDatabase.importPackageCancelled -= OnImportPackageCancelled;
+            AssetDatabase.importPackageFailed -= OnImportPackageFailed;
+        }
 
         [MenuItem("Tools/Semantic Oracle/Probe Selected Prefab")]
         public static void ProbeSelectedPrefab()
@@ -108,7 +137,8 @@ namespace UnitySemanticOracle
             if (string.IsNullOrEmpty(input)) throw new InvalidOperationException("UNITY_ORACLE_INPUT is required.");
             if (string.IsNullOrEmpty(output)) output = Path.Combine("Library", "semantic-oracle.json");
             WriteProbe(input, output);
-            EditorApplication.Exit(0);
+            if (Environment.GetEnvironmentVariable("UNITY_ORACLE_NO_EXIT") != "1")
+                EditorApplication.Exit(0);
         }
 
         public static void BatchImportAndProbe()
@@ -159,12 +189,24 @@ namespace UnitySemanticOracle
             AssetDatabase.importPackageCompleted -= OnImportPackageCompleted;
             AssetDatabase.importPackageCancelled -= OnImportPackageCancelled;
             AssetDatabase.importPackageFailed -= OnImportPackageFailed;
-            EditorApplication.Exit(0);
+            if (Environment.GetEnvironmentVariable("UNITY_ORACLE_NO_EXIT") != "1")
+                EditorApplication.Exit(0);
         }
 
-        private static void OnImportPackageCompleted(string packageName) { ImportNextPackageOrProbe(); }
-        private static void OnImportPackageCancelled(string packageName) { throw new InvalidOperationException("Unity package import cancelled: " + packageName); }
-        private static void OnImportPackageFailed(string packageName, string errorMessage) { throw new InvalidOperationException("Unity package import failed: " + packageName + " - " + errorMessage); }
+        private static void OnImportPackageCompleted(string packageName)
+        {
+            PackageCompletedCallback?.Invoke(packageName);
+            ImportNextPackageOrProbe();
+        }
+        private static void OnImportPackageCancelled(string packageName)
+        {
+            PackageFailedCallback?.Invoke("Unity package import cancelled: " + packageName);
+        }
+
+        private static void OnImportPackageFailed(string packageName, string errorMessage)
+        {
+            PackageFailedCallback?.Invoke("Unity package import failed: " + packageName + " - " + errorMessage);
+        }
 
         private static void WriteProbe(string path, string output)
         {
@@ -186,7 +228,18 @@ namespace UnitySemanticOracle
                 run.prefabs.Add(prefab);
             }
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output)));
-            File.WriteAllText(output, JsonUtility.ToJson(run, true));
+            if (Environment.GetEnvironmentVariable("UNITY_ORACLE_SCHEMA") == "0.2")
+            {
+                var envelope = new OracleEnvelope { observed = run };
+                envelope.derived.prefabCount = run.prefabs.Count;
+                envelope.derived.objectCount = run.prefabs.Sum(item => item.objects.Count);
+                envelope.derived.materialSlotCount = run.prefabs.Sum(item => item.objects.Sum(obj => obj.materials.Count));
+                File.WriteAllText(output, JsonUtility.ToJson(envelope, true));
+            }
+            else
+            {
+                File.WriteAllText(output, JsonUtility.ToJson(run, true));
+            }
             Debug.Log("Semantic Oracle wrote " + Path.GetFullPath(output));
         }
 

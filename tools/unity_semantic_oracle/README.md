@@ -4,6 +4,12 @@ Development-only Unity 2022.3.62f3 probe. It uses public Unity Editor APIs to
 emit observed Prefab, Renderer, mesh, material, GlobalObjectId, and property
 modification data as JSON. It is not included in the Blender add-on runtime.
 
+Current compliant route: a human opens the Unity Editor and starts
+`Tools/VAPB/Unity Semantic Oracle (Human Runner)`. The output and checkpoint
+must be outside the Unity project. Codex reads results after the human run;
+Codex does not launch or control this Editor. Historical CLI examples below
+are `LEGACY_REVALIDATION_REQUIRED`, not current evidence.
+
 Batch usage:
 
 ```text
@@ -15,13 +21,13 @@ The JSON deliberately encodes Unity local file IDs as decimal strings.
 ## Access and scope
 
 This probe is development-only and is not imported by the Blender add-on. It
-uses the Unity 2022.3 Editor CLI and documented public Editor APIs only:
+uses documented public Unity Editor APIs only:
 `AssetDatabase`, `PrefabUtility`, `GlobalObjectId`,
 `TryGetGUIDAndLocalFileIdentifier`, `Renderer`, `MeshFilter`,
 `SkinnedMeshRenderer`, `Material`, and `Shader`. `AssetDatabase.ImportPackage`
-completion events are awaited before probing a package group. UnityMCP was not
-installed or used because the official CLI and public Editor scripting API were
-sufficient.
+completion events are awaited before probing a package group. Unity 6 requires
+official Unity MCP; no such connector is available in the current Codex tool
+set, so no unofficial fallback is used.
 
 `BatchImportAndProbe` accepts a semicolon-separated `<PRIVATE_WORKSPACE>_PACKAGES`
 list and an optional `<PRIVATE_WORKSPACE>_PREFAB_FILTER`. Real package probing must
