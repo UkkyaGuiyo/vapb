@@ -52,6 +52,7 @@ class PrefabCandidateAnalysis:
     resolved_visual_guids: set[str] = field(default_factory=set)
     unresolved_visual_guids: set[str] = field(default_factory=set)
     ambiguous_visual_guids: set[str] = field(default_factory=set)
+    nested_prefab_guids: set[str] = field(default_factory=set)
     provider_packages: set[Path] = field(default_factory=set)
     reasons: list[str] = field(default_factory=list)
 
@@ -61,6 +62,42 @@ class PrefabSelection:
     mode: str
     token: str | None
     reason: str
+
+
+@dataclass(frozen=True)
+class CompositionMember:
+    """One editable visual member of a package composition."""
+
+    member_id: str
+    guid: str
+    unity_path: str
+    display_name: str
+    classification: str
+    referenced_representation_ids: frozenset[str]
+    required_visual_guids: frozenset[str]
+    unresolved_visual_guids: frozenset[str]
+    ambiguous_visual_guids: frozenset[str]
+
+
+@dataclass(frozen=True)
+class Representation:
+    """A reusable visual source, imported once and realized by members."""
+
+    asset_guid: str
+    member_ids: frozenset[str]
+
+
+@dataclass(frozen=True)
+class PackageCompositionPlan:
+    members: tuple[CompositionMember, ...]
+    helpers: tuple[PrefabCandidateAnalysis, ...]
+    representations: tuple[Representation, ...]
+    required_visual_guids: frozenset[str]
+    unresolved_visual_guids: frozenset[str]
+    ambiguous_visual_guids: frozenset[str]
+    conflicting_visual_guids: frozenset[str]
+    chooser_required: bool
+    chooser_reason: str = ""
 
 
 class PackageArchiveCache:
@@ -171,7 +208,7 @@ class PrefabCandidateAnalyzer:
         fbx: set[str] = set()
         materials: set[str] = set()
         slots = 0
-        for document in prefab.renderer_documents():
+        for document in prefab.renderer_documents() + prefab.mesh_filter_documents():
             mesh = document.data.get("m_Mesh")
             if isinstance(mesh, dict) and mesh.get("guid"):
                 fbx.add(str(mesh["guid"]).lower())
@@ -192,6 +229,8 @@ class PrefabCandidateAnalyzer:
             renderer_count >= 2 or len(prefab.game_objects) >= 2 or len(prefab.transforms) >= 2
         ):
             return "AVATAR_LIKE"
+        if skinned_count > 0:
+            return "SKINNED_ADDON"
         if renderer_count <= 2 and len(prefab.game_objects) <= 8:
             return "PROP_LIKE"
         if renderer_count >= 2 and len(prefab.transforms) >= 2:
@@ -250,6 +289,10 @@ class PrefabCandidateAnalyzer:
                 queue.extend(sorted(self._material_texture_guids(source, guid) - visited))
             elif suffix == ".fbx":
                 queue.extend(sorted(self._fbx_external_guids(source, guid) - visited))
+            elif suffix == ".prefab":
+                payload = self.cache.read_asset(source, guid)
+                text = payload.decode("utf-8", "replace")
+                queue.extend(sorted(set(re.findall(r"m_SourcePrefab:.*?guid:\s*([0-9a-fA-F]{32})", text, re.DOTALL)) - visited))
         return required, resolved, unresolved, ambiguous, providers
 
     def analyze(
@@ -264,7 +307,21 @@ class PrefabCandidateAnalyzer:
                 skinned = sum(document.class_id == SKINNED_MESH_RENDERER for document in renderers)
                 mesh_renderers = sum(document.class_id == MESH_RENDERER for document in renderers)
                 fbx, materials, slots = self._prefab_refs(prefab)
-                required, resolved, unresolved, ambiguous, providers = self._closure(fbx | materials)
+                nested = (
+                    prefab.referenced_nested_prefab_guids()
+                    if hasattr(prefab, "referenced_nested_prefab_guids")
+                    else set()
+                )
+                required, resolved, unresolved, ambiguous, providers = self._closure(fbx | materials | nested)
+                cache = getattr(self, "cache", None)
+                if cache is not None:
+                    for resolved_guid in resolved:
+                        if any(
+                            (record := source.index.records.get(resolved_guid)) is not None
+                            and Path(record.unity_path).suffix.lower() == ".fbx"
+                            for source in cache.sources
+                        ):
+                            fbx.add(resolved_guid)
                 if ambiguous:
                     status = "AMBIGUOUS"
                 elif unresolved:
@@ -274,6 +331,8 @@ class PrefabCandidateAnalyzer:
                 else:
                     status = "NONE"
                 kind = self._kind(prefab, len(renderers), skinned)
+                if not renderers and nested:
+                    kind = "NESTED_COMPOSITE"
                 reasons = [f"{kind}", f"{status}"]
                 if not renderers:
                     reasons.append("NO_RENDERERS")
@@ -302,6 +361,7 @@ class PrefabCandidateAnalyzer:
                     resolved_visual_guids=resolved,
                     unresolved_visual_guids=unresolved,
                     ambiguous_visual_guids=ambiguous,
+                    nested_prefab_guids=nested,
                     provider_packages=providers,
                     reasons=reasons,
                 ))
@@ -332,10 +392,95 @@ class PrefabCandidateAnalyzer:
             return PrefabSelection("USER_CHOICE_REQUIRED", None, "NO_UNIQUE_COMPLETE_AVATAR_CANDIDATE")
         return PrefabSelection("NO_SUPPORTED_PREFAB", None, "NO_SUPPORTED_PREFAB")
 
+    @staticmethod
+    def compose(analyses: Iterable[PrefabCandidateAnalysis]) -> PackageCompositionPlan:
+        """Build a deterministic package-level plan without selecting one prefab.
+
+        Classification is structural metadata from the candidate analysis. It
+        never uses filenames, archive order, or product-specific identifiers.
+        """
+        items = sorted(
+            list(analyses),
+            key=lambda item: (item.guid or item.unity_path.casefold(), item.unity_path.casefold()),
+        )
+        classification_map = {
+            "AVATAR_LIKE": "BODY_VARIANT",
+            "SKINNED_ADDON": "SKINNED_ADDON",
+            "RIGID_ATTACHMENT": "RIGID_ATTACHMENT",
+            "STANDALONE_VISUAL": "STANDALONE_VISUAL",
+            "NESTED_COMPOSITE": "NESTED_COMPOSITE",
+            "HELPER": "HELPER",
+            "PROVIDER_ONLY": "PROVIDER_ONLY",
+        }
+        members: list[CompositionMember] = []
+        helpers: list[PrefabCandidateAnalysis] = []
+        representation_members: dict[str, set[str]] = {}
+        required: set[str] = set()
+        unresolved: set[str] = set()
+        ambiguous: set[str] = set()
+        identity_kinds: dict[str, set[str]] = {}
+        for item in items:
+            if item.renderer_count <= 0:
+                helpers.append(item)
+                continue
+            classification = classification_map.get(item.candidate_kind)
+            if classification is None:
+                classification = "GENERIC_SKINNED_MEMBER" if item.skinned_renderer_count else "RIGID_ATTACHMENT"
+            member_id = item.guid or item.unity_path.replace("\\", "/")
+            refs = frozenset(
+                str(guid).lower()
+                for guid in (set(item.referenced_fbx_guids) - set(item.referenced_material_guids))
+                if guid
+            )
+            identity = item.guid or item.unity_path.replace("\\", "/")
+            identity_kinds.setdefault(identity, set()).add(item.candidate_kind)
+            members.append(CompositionMember(
+                member_id=identity,
+                guid=item.guid,
+                unity_path=item.unity_path,
+                display_name=item.display_name,
+                classification=classification,
+                referenced_representation_ids=refs,
+                required_visual_guids=frozenset(item.required_visual_guids),
+                unresolved_visual_guids=frozenset(item.unresolved_visual_guids),
+                ambiguous_visual_guids=frozenset(item.ambiguous_visual_guids),
+            ))
+            for asset_guid in refs:
+                representation_members.setdefault(asset_guid, set()).add(member_id)
+            required.update(item.required_visual_guids)
+            unresolved.update(item.unresolved_visual_guids)
+            ambiguous.update(item.ambiguous_visual_guids)
+        representations = tuple(
+            Representation(asset_guid=guid, member_ids=frozenset(representation_members[guid]))
+            for guid in sorted(representation_members)
+        )
+        conflicting = {
+            identity for identity, kinds in identity_kinds.items()
+            if len(kinds) > 1
+        }
+        return PackageCompositionPlan(
+            members=tuple(members),
+            helpers=tuple(helpers),
+            representations=representations,
+            required_visual_guids=frozenset(required),
+            unresolved_visual_guids=frozenset(unresolved),
+            ambiguous_visual_guids=frozenset(ambiguous),
+            conflicting_visual_guids=frozenset(conflicting),
+            chooser_required=bool(ambiguous or conflicting),
+            chooser_reason=(
+                "AMBIGUOUS_PROVIDER" if ambiguous
+                else "CONFLICTING_INTERPRETATION" if conflicting
+                else ""
+            ),
+        )
+
 
 __all__ = [
     "PackageArchiveCache",
     "PrefabCandidateAnalysis",
     "PrefabCandidateAnalyzer",
     "PrefabSelection",
+    "CompositionMember",
+    "Representation",
+    "PackageCompositionPlan",
 ]

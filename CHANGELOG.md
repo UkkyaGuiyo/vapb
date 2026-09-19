@@ -2,6 +2,7 @@
 
 ## 0.4.0 candidate - 2026-09-17
 
+- Added a large centered, non-modal 3D View loading overlay with Japanese wait guidance, factual stage/item/elapsed diagnostics, and a native-FBX temporary-unresponsive warning; existing bottom status progress remains secondary.
 - Added a shared Import Progress Monitor with factual foreground stages, elapsed time, current item/count, structured transitions, and terminal status cleanup.
 - Added explicit pre-FBX blocking feedback and safe grouped-child progress ownership; child provider imports cannot clear the parent session.
 - Added IPM-001..015 unit coverage and synthetic foreground transition verification.

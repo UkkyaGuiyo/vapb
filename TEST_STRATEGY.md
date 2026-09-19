@@ -268,3 +268,8 @@ Blender E2E captures the transition history and asserts a shared session
 reaches `COMPLETE` without stale status. Real-package verification remains
 local-only and supplies its package path through an environment variable or
 command-line argument.
+
+The centered overlay adds focused coverage for `SpaceView3D` handler lifecycle,
+redraw requests, dominant loading copy, factual stage/item/elapsed diagnostics,
+native-FBX blocking warning copy, and removal on terminal cleanup. No modal
+interaction is used.

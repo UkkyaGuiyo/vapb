@@ -18,7 +18,7 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 2. `.unitypackage` を選択する。
 
 または、Windows Explorerから`.unitypackage`をBlenderの3D Viewportへドラッグ＆ドロップできます。Drag & DropはFile > Importと同じ`import_scene.unitypackage`経路へ渡されます。Top-level importでは同一フォルダのSibling Discoveryも自動実行され、事前にcheckboxを有効化する必要はありません。GUIDが一意に連鎖する`COMPLETE`ではForeground UIにImport Together / Import Selected Only / Cancelを表示し、Backgroundでは決定論的にImport Togetherします。`PARTIAL`でもForeground UIで明示的にImport Togetherを選択できますが、既定値はPrimary Onlyです。`AMBIGUOUS`は安全のため自動選択しません。
-3. 複数のPrefabがある場合、既定の **Automatic (Recommended)** はRenderer構造とvisual dependency closureをmetadata-firstで解析します。完全なAvatar候補が一意なら自動選択し、完全なAvatar候補が複数、またはProviderが曖昧なら候補Chooserを表示します。AutomaticはPrefab配列順・ファイル名・archive順を選択根拠にしません。
+3. 複数のPrefabがある場合、既定の **Automatic (Recommended)** はPackage全体をRenderer構造とvisual dependency closureでmetadata-first解析します。互換するBody variant、衣装、アクセサリーは一つに絞らず、編集可能なComposition memberとして同時に取り込みます。同じFBX/skeleton representationは一度だけ読み込み、共有データとして再利用します。視覚を持たないhelperはidentity・anchor関係のメタデータだけを保持します。Providerが曖昧、または同一identityの構造解釈が競合する場合だけ候補Chooserを表示します。AutomaticはPrefab配列順・ファイル名・archive順を選択根拠にしません。詳細は`docs/PACKAGE_COMPOSITION.md`を参照してください。
 4. **Reconstruct Prefab** または **Import Raw FBX** と各オプションを確認して実行する。
 
 ### BlenderからUnityへ戻す
@@ -45,7 +45,7 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 - Foreground importはStatus Barに、実際のstage名、既知のcurrent/total、current item、経過時間を表示します。Prefab候補とprovider走査は実際に処理した件数だけを表示し、未知の所要時間を偽のパーセントで補間しません。
 - Native FBX importの直前には`Importing FBX`と`Blender may temporarily stop responding during this step.`を表示します。FBXのようなBlender APIのblocking operation中はUI再描画が一時停止することがありますが、進捗stateと構造化ログは保持されます。成功・失敗時はStatus Barを消去します。
 - キャンセル、エラー、Prefab選択の中断では準備済みの一時展開先を後始末します。`Keep Extracted Files` を有効にして正常完了した場合だけ、テクスチャの外部パス維持のため展開先を保持します。
-- Prefab Candidate Analyzerは、Prefabごとに`AVATAR_LIKE` / `PROP_LIKE` / `EMPTY_OR_UNSUPPORTED`を構造から分類し、Material→TextureとFBX externalObjectsを含むvisual closureを候補単位で判定します。候補解析中にFBXまたはTexture payloadを読み込まず、同一Packageのindexとtextual Material readを共有します。
+- Prefab Candidate Analyzerは、Prefabごとに構造分類し、Material→TextureとFBX externalObjectsを含むvisual closureをComposition単位で判定します。候補解析中にFBXまたはTexture payloadを読み込まず、同一Packageのindexとtextual Material readを共有します。明示的なPrefab指定時だけ単一member相当へ絞り込みます。
 
 ## 対応範囲
 
@@ -112,6 +112,8 @@ Texture properties use one canonical role classifier for initial material build 
 Sibling discovery is metadata-first and bounded. It reads pathname, `.meta`, selected prefab/material text, and FBX external-object metadata, while texture and FBX payload bytes remain unread during planning. It starts in the selected package folder and expands only to the immediate bundle parent and one-level child folders when visual GUIDs remain unresolved. `visual_status` is independent from nonvisual Unity dependency state; ambiguous providers are never auto-selected.
 
 When visual dependencies remain unresolved, the foreground flow opens `Missing Visual Dependencies`. A user may locate one UnityPackage or an explicitly granted folder; candidates are accepted only when their manifest GUIDs cover unresolved visual references. Zero-coverage packages are rejected, ambiguous folder results are not auto-selected, and accepted providers trigger the same resolver/late-binding path as automatic discovery. `Continue With Missing Assets` preserves unresolved records while importing everything already resolved.
+
+During a foreground import from the 3D View, a large centered `LOADING` overlay appears above the viewport. It keeps the existing bottom status bar as secondary diagnostics, shows the current stage/item and elapsed time when known, and changes its copy before native FBX work so users know to wait while Blender may temporarily stop responding. The overlay is non-modal, has no cancel control, and is removed on both successful and failed terminal cleanup.
 
 Select an imported image in the Image Editor and open the `Unity Texture` sidebar. It displays Unity Asset Path, Unity GUID, working file path, file existence, and dirty state. `Save to Unity Source` writes Blender edits to that same existing file; `Reload from Disk` refreshes the same Image datablock after an external editor change; `Reload Changed Unity Textures` performs a manual mtime scan.
 

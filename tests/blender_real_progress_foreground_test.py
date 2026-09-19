@@ -106,6 +106,13 @@ def main() -> None:
                 assert required.issubset(set(stages)), stages
                 assert stages[-1] == module.ImportProgressStage.COMPLETE, stages
                 assert module._ACTIVE_PROGRESS_MONITOR is None
+                overlay = monitor.sink.overlay
+                assert overlay is not None
+                assert overlay.install_count >= 1, overlay.debug_events
+                assert overlay.draw_callback_count > 0, overlay.debug_events
+                assert overlay.last_draw_time is not None, overlay.debug_events
+                assert overlay.gpu_draw_count > 0, overlay.debug_events
+                assert overlay.removed_count == 1, overlay.debug_events
                 print(
                     "REAL_FOREGROUND_PROGRESS_OK "
                     + json.dumps(
@@ -120,6 +127,10 @@ def main() -> None:
                             "blocking_events": sum(
                                 1 for item in monitor.history if item["blocking_operation"]
                             ),
+                            "overlay_install_count": overlay.install_count,
+                            "overlay_draw_callback_count": overlay.draw_callback_count,
+                            "overlay_gpu_draw_count": overlay.gpu_draw_count,
+                            "overlay_removed_count": overlay.removed_count,
                         },
                         sort_keys=True,
                     ),

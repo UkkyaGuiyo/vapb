@@ -45,11 +45,11 @@ Materialの表示はBlender上の近似でよい。ただしUnity Asset identity
 
 ## Identity Policy
 
-## Prefab Candidate Analyzer / Automatic Selection
+## Prefab Candidate Analyzer / Automatic Package Composition
 
-複数Prefabを含むPackageでは、既定の`AUTO`を「最初のPrefab」への別名として扱わない。各候補をRenderer構造、SkinnedMeshRenderer、GameObject/Transform規模、PrefabからのFBX/Material参照、Material→TextureおよびFBX externalObjectsのvisual closureで解析する。候補分類は`AVATAR_LIKE`、`PROP_LIKE`、`EMPTY_OR_UNSUPPORTED`、`UNKNOWN`とし、候補名・ファイル名・archive順・任意の重み付きスコアを選択根拠にしない。
+複数Prefabを含むPackageでは、既定の`AUTO`を単一Prefabの別名として扱わない。各候補をRenderer構造、SkinnedMeshRenderer、GameObject/Transform規模、PrefabからのFBX/Material参照、Material→TextureおよびFBX externalObjectsのvisual closureで解析し、PackageCompositionPlanへまとめる。互換するBody variant、衣装、アクセサリーは全て編集可能memberとして保持し、同一FBX/skeleton representationは一度だけ読み込む。視覚を持たないhelperはidentity・nested relationship・anchorに必要なメタデータだけを保持する。候補名・ファイル名・archive順・任意の重み付きスコアを選択根拠にしない。
 
-visual closureが完全なAvatar候補が一意ならAutomaticで選択する。完全なAvatar候補が複数、Providerが曖昧、または安全に一意化できない場合はChooserを表示し、Backgroundでは決定論的エラーとして停止する。明示的な`PREFAB_N`は後方互換として候補解析を迂回してその候補を使う。候補解析はmetadata-firstで、FBX/Texture payloadは読み込まない。
+Automaticは互換する複数memberを一つに絞らない。Providerが曖昧、または同一identityの構造解釈が競合する場合だけChooserを表示し、Backgroundでは決定論的エラーとして停止する。明示的な`PREFAB_N`は後方互換として単一memberを指定する。候補解析はmetadata-firstで、FBX/Texture payloadは読み込まない。
 
 名前だけでidentityを決定しない。最低限、次の情報を保持・拡張対象とする。
 
@@ -143,6 +143,14 @@ blocking and tells the user that Blender may temporarily stop responding.
 Grouped provider imports share the parent session and cannot clear it early.
 Terminal success or failure clears the foreground status text while preserving
 the final state and structured console transition log for diagnostics.
+
+Foreground imports also show a large centered 3D View overlay with the primary
+copy `LOADING / UnityPackageを読み込んでいます / お待ちください`. The overlay
+is a lightweight non-modal draw handler with a semi-transparent dark panel;
+stage, bounded current item/count, and elapsed seconds remain secondary. During
+native FBX import it changes to model-loading copy and explicitly warns that
+Blender may temporarily stop responding. It never offers a cancel button or
+requires a click, and is removed on both success and failure.
 
 ### Automatic Sibling Package Discovery
 

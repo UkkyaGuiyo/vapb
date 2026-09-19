@@ -118,6 +118,15 @@ class PrefabData:
                             guids.add(guid.lower())
         return guids
 
+    def referenced_nested_prefab_guids(self) -> set[str]:
+        guids: set[str] = set()
+        for document in self.documents:
+            if document.class_id != 1001:
+                continue
+            for guid in re.findall(r"m_SourcePrefab:.*?guid:\s*([0-9a-fA-F]{32})", document.raw, re.DOTALL):
+                guids.add(guid.lower())
+        return guids
+
 
 def parse_prefab(path: Path) -> PrefabData:
     text = Path(path).read_text(encoding="utf-8-sig", errors="replace")

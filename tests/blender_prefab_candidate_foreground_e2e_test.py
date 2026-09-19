@@ -88,6 +88,12 @@ GameObject:
                 assert stages[-1] == module.ImportProgressStage.COMPLETE, stages
                 assert module._ACTIVE_PROGRESS_MONITOR is None
                 assert state["monitor"].sink.started is False
+                overlay = state["monitor"].sink.overlay
+                assert overlay is not None
+                assert overlay.draw_callback_count > 0, overlay.debug_events
+                assert overlay.last_draw_time is not None, overlay.debug_events
+                assert overlay.gpu_draw_count > 0, overlay.debug_events
+                assert overlay.removed_count == 1, overlay.debug_events
                 print("PCA_FOREGROUND_AUTOMATIC_OK", state, flush=True)
                 module.UNITYPACKAGE_OT_import_prefab.invoke = original_prefab_invoke
                 module.ImportProgressMonitor = original_monitor

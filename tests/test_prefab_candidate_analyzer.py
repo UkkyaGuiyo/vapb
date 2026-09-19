@@ -201,6 +201,110 @@ class PrefabCandidateAnalyzerTests(unittest.TestCase):
         second = PrefabCandidateAnalyzer.select(items)
         self.assertEqual(first, second)
 
+    def test_pcm_001_composes_variants_outfits_and_accessory_without_chooser(self):
+        body_a = _candidate("BODY_A", "AVATAR_LIKE", "COMPLETE")
+        body_a.guid = "1" * 32
+        body_a.referenced_fbx_guids = {"a" * 32}
+        body_b = _candidate("BODY_B", "AVATAR_LIKE", "COMPLETE")
+        body_b.guid = "2" * 32
+        body_b.referenced_fbx_guids = {"a" * 32}
+        outfit = _candidate("OUTFIT", "SKINNED_ADDON", "COMPLETE")
+        outfit.guid = "3" * 32
+        outfit.referenced_fbx_guids = {"b" * 32}
+        accessory = _candidate("ACCESSORY", "RIGID_ATTACHMENT", "COMPLETE")
+        accessory.guid = "4" * 32
+        accessory.referenced_fbx_guids = {"c" * 32}
+        plan = PrefabCandidateAnalyzer.compose([body_b, accessory, outfit, body_a])
+        self.assertFalse(plan.chooser_required)
+        self.assertEqual(["BODY_A", "BODY_B", "OUTFIT", "ACCESSORY"], [member.display_name for member in plan.members])
+        self.assertEqual({"a" * 32, "b" * 32, "c" * 32}, {item.asset_guid for item in plan.representations})
+
+    def test_pcm_004_shared_fbx_has_one_representation_and_stable_plan(self):
+        first = _candidate("FIRST", "AVATAR_LIKE", "COMPLETE")
+        first.guid = "1" * 32; first.referenced_fbx_guids = {"a" * 32}
+        second = _candidate("SECOND", "SKINNED_ADDON", "COMPLETE")
+        second.guid = "2" * 32; second.referenced_fbx_guids = {"a" * 32}
+        first_plan = PrefabCandidateAnalyzer.compose([first, second])
+        second_plan = PrefabCandidateAnalyzer.compose([second, first])
+        self.assertEqual(first_plan, second_plan)
+        self.assertEqual(1, len(first_plan.representations))
+        self.assertEqual({"1" * 32, "2" * 32}, first_plan.representations[0].member_ids)
+
+    def test_pcm_007_helper_is_preserved_but_does_not_force_chooser(self):
+        helper = _candidate("HELPER", "EMPTY_OR_UNSUPPORTED", "NONE", renderers=0)
+        helper.guid = "9" * 32
+        body = _candidate("BODY", "AVATAR_LIKE", "COMPLETE")
+        body.guid = "1" * 32; body.referenced_fbx_guids = {"a" * 32}
+        plan = PrefabCandidateAnalyzer.compose([helper, body])
+        self.assertFalse(plan.chooser_required)
+        self.assertEqual("HELPER", plan.helpers[0].display_name)
+        self.assertEqual(["BODY"], [member.display_name for member in plan.members])
+
+    def test_pcm_007_nested_renderer_free_prefab_is_helper_metadata_not_member(self):
+        helper = _candidate("NESTED_HELPER", "NESTED_COMPOSITE", "COMPLETE", renderers=0)
+        helper.guid = "8" * 32
+        helper.nested_prefab_guids = {"7" * 32}
+        body = _candidate("BODY", "AVATAR_LIKE", "COMPLETE")
+        body.guid = "1" * 32
+        plan = PrefabCandidateAnalyzer.compose([helper, body])
+        self.assertEqual(("NESTED_HELPER",), tuple(item.display_name for item in plan.helpers))
+        self.assertEqual(("BODY",), tuple(item.display_name for item in plan.members))
+
+    def test_pcm_007_duplicate_provider_is_the_real_chooser_condition(self):
+        first = _candidate("BODY_A", "AVATAR_LIKE", "AMBIGUOUS")
+        first.guid = "1" * 32
+        first.referenced_fbx_guids = {"a" * 32}
+        first.ambiguous_visual_guids = {"a" * 32}
+        second = _candidate("BODY_B", "AVATAR_LIKE", "AMBIGUOUS")
+        second.guid = "2" * 32
+        second.referenced_fbx_guids = {"a" * 32}
+        second.ambiguous_visual_guids = {"a" * 32}
+        plan = PrefabCandidateAnalyzer.compose([first, second])
+        self.assertTrue(plan.chooser_required)
+        self.assertEqual("AMBIGUOUS_PROVIDER", plan.chooser_reason)
+
+    def test_pcm_008_actual_package_fixture_keeps_all_visual_members_and_deduplicates_fbx(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            fbx = "a" * 32
+            material = "b" * 32
+            records = []
+            prefab_paths = []
+            for index, name in enumerate(("Body", "Outfit", "Accessory"), start=1):
+                guid = str(index) * 32
+                payload = _prefab(fbx, material, name, skinned=name != "Accessory")
+                records.append((guid, f"Assets/{name}.prefab", payload))
+            records.extend([(fbx, "Assets/Shared.fbx", b"FBX"), (material, "Assets/Shared.mat", _material("c" * 32))])
+            primary = root / "Composition.unitypackage"
+            _package(primary, records)
+            extract = root / "extract"
+            for index, name in enumerate(("Body", "Outfit", "Accessory"), start=1):
+                path = extract / "Assets" / f"{name}.prefab"
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(_prefab(fbx, material, name, skinned=name != "Accessory"))
+                prefab_paths.append(path)
+            analyzer = PrefabCandidateAnalyzer(
+                primary, UnityPackageReader(primary).build_index(), extract, prefab_paths
+            )
+            plan = analyzer.compose(analyzer.analyze())
+            self.assertFalse(plan.chooser_required)
+            self.assertEqual(3, len(plan.members))
+            self.assertEqual((fbx,), tuple(item.asset_guid for item in plan.representations))
+            self.assertNotIn(material, {item.asset_guid for item in plan.representations})
+
+    def test_pcm_008_composition_has_no_product_or_archive_order_rule(self):
+        source = (Path(__file__).parents[1] / "unity" / "prefab_candidate_analyzer.py").read_text(encoding="utf-8")
+        self.assertNotIn("CaseA", source)
+        self.assertNotIn("SampleAvatarB", source)
+        self.assertNotIn("archive_order", source)
+
+    def test_pcm_009_conflicting_interpretation_requires_chooser(self):
+        first = _candidate("SAME", "AVATAR_LIKE", "COMPLETE")
+        second = _candidate("SAME", "PROP_LIKE", "COMPLETE")
+        plan = PrefabCandidateAnalyzer.compose([first, second])
+        self.assertTrue(plan.chooser_required)
+        self.assertEqual("CONFLICTING_INTERPRETATION", plan.chooser_reason)
+
 
 if __name__ == "__main__":
     unittest.main(argv=["prefab-candidate-analyzer"], exit=False)

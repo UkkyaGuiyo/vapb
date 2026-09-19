@@ -25,6 +25,7 @@ from ..blender.material_builder import apply_materials_by_name, apply_prefab_mat
 from ..blender.texture_loader import load_textures_from_database
 from ..blender.dependency_resolver import capture_material_texture_dependencies, load_dependency_registry, resolve_after_import
 from ..blender.performance import PerformanceTimer
+from ..blender.progress_overlay import ImportProgressOverlay
 from ..ui.import_panel import draw_import_options
 from ..unity.asset_database import AssetDatabase
 from ..unity.package_identity import PackageIdentity
@@ -33,6 +34,7 @@ from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab
 from ..unity.prefab_candidate_analyzer import (
+    PackageCompositionPlan,
     PrefabCandidateAnalysis,
     PrefabCandidateAnalyzer,
     PrefabSelection,
@@ -78,6 +80,7 @@ class _PreparedImport:
     reused: bool = False
     candidate_analyses: list[PrefabCandidateAnalysis] = field(default_factory=list)
     candidate_selection: PrefabSelection | None = None
+    composition_plan: PackageCompositionPlan | None = None
 
 
 @dataclass
@@ -105,6 +108,11 @@ class _BlenderProgressSink:
     def __init__(self, context):
         self.context = context
         self.started = False
+        self.overlay = None
+        if not getattr(bpy.app, "background", False):
+            candidate = ImportProgressOverlay(context)
+            if candidate.area is not None:
+                self.overlay = candidate
 
     def update(self, state) -> None:
         window_manager = getattr(self.context, "window_manager", None)
@@ -115,6 +123,11 @@ class _BlenderProgressSink:
             # The only percentage-like value is the factual stage index.  No
             # fractional progress is invented for an unknown-duration stage.
             window_manager.progress_update(state.stage_index)
+        if self.overlay is not None:
+            if self.overlay.active:
+                self.overlay.update(state)
+            else:
+                self.overlay.start(state)
         workspace = getattr(self.context, "workspace", None)
         status_text_set = getattr(workspace, "status_text_set", None)
         if callable(status_text_set):
@@ -132,6 +145,8 @@ class _BlenderProgressSink:
         status_text_set = getattr(workspace, "status_text_set", None)
         if callable(status_text_set):
             status_text_set(None)
+        if self.overlay is not None:
+            self.overlay.finish()
 
 
 def _discard_prepared_session(session_id: str, context=None) -> None:
@@ -300,6 +315,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._provider_provenance: dict[str, str] = {}
         self._candidate_analyses: list[PrefabCandidateAnalysis] = []
         self._candidate_selection: PrefabSelection | None = None
+        self._composition_plan: PackageCompositionPlan | None = None
 
     def _ui_log(self, message: str) -> None:
         print(f"[UI] {message}")
@@ -490,6 +506,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     candidate_progress,
                 )
                 candidate_selection = analyzer.select(candidate_analyses)
+                composition_plan = analyzer.compose(candidate_analyses)
+            else:
+                composition_plan = None
             return _PreparedImport(
                 package_key,
                 existing_extraction_dir,
@@ -503,6 +522,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 reused=True,
                 candidate_analyses=candidate_analyses,
                 candidate_selection=candidate_selection,
+                composition_plan=composition_plan,
             )
 
         extraction_dir = Path(tempfile.mkdtemp(prefix="unitypackage_blender_importer_"))
@@ -560,6 +580,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     candidate_progress,
                 )
                 candidate_selection = analyzer.select(candidate_analyses)
+                composition_plan = analyzer.compose(candidate_analyses)
+            else:
+                composition_plan = None
         except Exception:
             shutil.rmtree(extraction_dir, ignore_errors=True)
             raise
@@ -581,6 +604,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             False,
             candidate_analyses,
             candidate_selection,
+            composition_plan,
         )
 
     def _apply_prepared(self, context, prepared: _PreparedImport) -> None:
@@ -590,11 +614,13 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             self._prepared_package_key = prepared.package_key
             self._candidate_analyses = list(prepared.candidate_analyses or [])
             self._candidate_selection = prepared.candidate_selection
+            self._composition_plan = prepared.composition_plan
             if (
                 self._selected_prefab_choice is None
                 and self.prefab_choice == "AUTO"
                 and self._candidate_selection
                 and self._candidate_selection.mode == "AUTO_SELECTED"
+                and self._composition_plan is None
             ):
                 self._selected_prefab_choice = self._candidate_selection.token
             self._set_prepare_state("PREPARED")
@@ -612,31 +638,31 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._package_index = prepared.package_index
         self._candidate_analyses = list(prepared.candidate_analyses or [])
         self._candidate_selection = prepared.candidate_selection
+        self._composition_plan = prepared.composition_plan
         if (
             self._selected_prefab_choice is None
             and self.prefab_choice == "AUTO"
             and self._candidate_selection
             and self._candidate_selection.mode == "AUTO_SELECTED"
+            and self._composition_plan is None
         ):
             self._selected_prefab_choice = self._candidate_selection.token
         defer_discovery = (
             not getattr(bpy.app, "background", False)
             and self.import_mode == "RECONSTRUCT"
-            and len(self._prefab_paths) > 1
-            and (
-                self._candidate_selection is None
-                or self._candidate_selection.mode == "USER_CHOICE_REQUIRED"
-            )
+            and self._composition_plan is not None
+            and self._composition_plan.chooser_required
             and self._selected_prefab_choice is None
         )
         if not getattr(self, "group_child", False) and Path(self.filepath).is_file() and not defer_discovery:
             self._set_phase(context, "Discovering sibling Packages", 0.32)
-            selected_candidate = next(
-                (item for item in self._candidate_analyses if item.token == self._selected_prefab_choice),
-                None,
-            )
-            selected_paths = {selected_candidate.unity_path} if selected_candidate else set()
-            extra_paths = set(selected_candidate.provider_packages) if selected_candidate else set()
+            selected_candidate = next((item for item in self._candidate_analyses if item.token == self._selected_prefab_choice), None)
+            if (self._selected_prefab_choice or self.prefab_choice) == "AUTO" and self._composition_plan is not None:
+                selected_paths = {item.unity_path for item in self._candidate_analyses if item.renderer_count > 0}
+                extra_paths = set().union(*(item.provider_packages for item in self._candidate_analyses if item.renderer_count > 0))
+            else:
+                selected_paths = {selected_candidate.unity_path} if selected_candidate else set()
+                extra_paths = set(selected_candidate.provider_packages) if selected_candidate else set()
             self._sibling_discovery = discover_siblings(
                 self.filepath,
                 selected_asset_paths=selected_paths,
@@ -665,20 +691,25 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         """Run bounded discovery after foreground Prefab selection."""
         if getattr(self, "group_child", False) or not Path(self.filepath).is_file():
             return
-        selected = self._selected_prefab(self._prefab_paths)
         selected_paths: set[str] = set()
-        if selected is not None and self._extraction_dir is not None:
-            try:
-                selected_paths.add(selected.relative_to(self._extraction_dir).as_posix())
-            except ValueError:
-                pass
+        if (self._selected_prefab_choice or self.prefab_choice) == "AUTO" and self._composition_plan is not None:
+            selected_paths.update(item.unity_path for item in self._candidate_analyses if item.renderer_count > 0)
+        else:
+            selected = self._selected_prefab(self._prefab_paths)
+            if selected is not None and self._extraction_dir is not None:
+                try:
+                    selected_paths.add(selected.relative_to(self._extraction_dir).as_posix())
+                except ValueError:
+                    pass
         selected_candidate = next(
             (item for item in self._candidate_analyses if item.token == self._selected_prefab_choice),
             None,
         )
         extra_paths = {Path(path) for path in self._manual_provider_paths}
-        if selected_candidate:
+        if selected_candidate and (self._selected_prefab_choice or self.prefab_choice) != "AUTO":
             extra_paths.update(selected_candidate.provider_packages)
+        elif self._composition_plan is not None:
+            extra_paths.update(path for item in self._candidate_analyses for path in item.provider_packages)
         self._sibling_discovery = discover_siblings(
             self.filepath,
             selected_asset_paths=selected_paths,
@@ -875,10 +906,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         )
         show_dialog = (
             self.import_mode == "RECONSTRUCT"
-            and len(self._prefab_paths) > 1
             and (
-                self._candidate_selection is None
-                or self._candidate_selection.mode == "USER_CHOICE_REQUIRED"
+                (self._composition_plan is not None and self._composition_plan.chooser_required)
+                or (self._composition_plan is None and len(self._prefab_paths) > 1)
             )
             and self._selected_prefab_choice is None
         )
@@ -1009,7 +1039,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._set_prepare_state("IMPORTING")
         return self._perform_import(context)
 
-    def _collect_selective_guids(self, prefab, planning_db: AssetDatabase) -> set[str]:
+    def _collect_selective_guids(self, prefabs, planning_db: AssetDatabase) -> set[str]:
         """Resolve the selected import's FBX, material, texture, and sidecar GUIDs."""
         index = self._package_index
         if index is None:
@@ -1025,20 +1055,23 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         wanted: set[str] = set()
         fbx_guids: set[str] = set()
         material_guids: set[str] = set()
-        if prefab is not None:
-            selected_guid = planning_db.guid_for_path(prefab.path)
-            if selected_guid:
-                wanted.add(selected_guid.lower())
-            for guid in prefab.referenced_fbx_guids():
-                entry = planning_db.find_guid(guid)
-                if entry is None:
-                    continue
-                suffix = entry.path.suffix.lower()
-                if suffix == ".fbx":
-                    fbx_guids.add(entry.guid.lower())
-                elif suffix == ".mat":
-                    material_guids.add(entry.guid.lower())
-        if self.import_mode == "RAW_FBX" or not fbx_guids:
+        if prefabs is not None:
+            if not isinstance(prefabs, (list, tuple, set)):
+                prefabs = [prefabs]
+            for prefab in prefabs:
+                selected_guid = planning_db.guid_for_path(prefab.path)
+                if selected_guid:
+                    wanted.add(selected_guid.lower())
+                for guid in prefab.referenced_fbx_guids():
+                    entry = planning_db.find_guid(guid)
+                    if entry is None:
+                        continue
+                    suffix = entry.path.suffix.lower()
+                    if suffix == ".fbx":
+                        fbx_guids.add(entry.guid.lower())
+                    elif suffix == ".mat":
+                        material_guids.add(entry.guid.lower())
+        if self.import_mode == "RAW_FBX" or (not fbx_guids and not prefabs):
             fbx_guids = records_with_suffix(".fbx")
         wanted.update(fbx_guids)
 
@@ -1088,13 +1121,13 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self,
         context,
         planning_db: AssetDatabase,
-        planning_prefab,
+        planning_prefabs,
     ) -> tuple[Any, AssetDatabase, list[Path], list[Path]]:
         reader = self._package_reader
         index = self._package_index
         if reader is None or index is None:
             raise UnityPackageError("Package dependency index is unavailable")
-        wanted = self._collect_selective_guids(planning_prefab, planning_db)
+        wanted = self._collect_selective_guids(planning_prefabs, planning_db)
         final_dir = Path(tempfile.mkdtemp(prefix="unitypackage_blender_importer_selected_"))
         previous_timings = dict(reader.last_timings)
         try:
@@ -1147,41 +1180,55 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             if package_key is None:
                 raise UnityPackageError("Package identity is unavailable")
 
-            planning_prefab = None
+            planning_prefabs = []
+            planning_unity_paths: list[str] = []
             selected_planning_path = None
-            selected_unity_path = None
-            prefab_unity_path = ""
+            effective_prefab_choice = self._selected_prefab_choice or self.prefab_choice
+            if (
+                effective_prefab_choice == "AUTO"
+                and self._composition_plan is not None
+                and self._composition_plan.chooser_required
+            ):
+                raise UnityPackageError(
+                    "Automatic composition requires an explicit choice: "
+                    f"{self._composition_plan.chooser_reason or 'ambiguous composition'}"
+                )
             if self.import_mode == "RECONSTRUCT" and prefab_paths:
-                selected_planning_path = self._selected_prefab(prefab_paths)
-                if selected_planning_path:
-                    selected_unity_path = (
-                        selected_planning_path.relative_to(extraction_dir).as_posix()
-                    )
+                if effective_prefab_choice == "AUTO" and self._composition_plan is not None:
+                    selected_paths = {
+                        item.unity_path for item in self._candidate_analyses
+                        if item.renderer_count > 0
+                    }
+                    planning_paths = [
+                        path for path in prefab_paths
+                        if path.relative_to(extraction_dir).as_posix() in selected_paths
+                    ]
+                else:
+                    selected_planning_path = self._selected_prefab(prefab_paths)
+                    planning_paths = [selected_planning_path] if selected_planning_path else []
+                for planning_path in planning_paths:
                     try:
-                        self._set_phase(context, "Parsing Prefab", 0.35)
-                        planning_prefab = self._performance.measure(
-                            "prefab_parse", parse_prefab, selected_planning_path
-                        )
+                        self._set_phase(context, "Parsing Prefab", 0.35, current_item=planning_path.name)
+                        planning_prefabs.append(self._performance.measure("prefab_parse", parse_prefab, planning_path))
+                        planning_unity_paths.append(planning_path.relative_to(extraction_dir).as_posix())
                     except (OSError, UnicodeError, ValueError) as exc:
-                        self.report({"WARNING"}, f"Prefab parse failed; importing all FBX: {exc}")
-                        planning_prefab = None
+                        self.report({"WARNING"}, f"Prefab parse failed; skipping {planning_path.name}: {exc}")
 
             extraction, asset_db, fbx_paths, prefab_paths = self._extract_selected_dependencies(
                 context,
                 asset_db,
-                planning_prefab,
+                planning_prefabs,
             )
             extraction_dir = self._extraction_dir
-            if planning_prefab is not None and selected_planning_path is not None:
-                final_entry = asset_db.find_path(selected_unity_path or "")
+            prefabs = []
+            for planning_prefab, planning_unity_path in zip(planning_prefabs, planning_unity_paths):
+                final_entry = asset_db.find_path(planning_unity_path)
                 if final_entry is not None and final_entry.path.is_file():
-                    prefab_unity_path = final_entry.unity_path
-                    prefab = self._performance.measure("prefab_parse", parse_prefab, final_entry.path)
+                    prefabs.append((self._performance.measure("prefab_parse", parse_prefab, final_entry.path), final_entry.unity_path))
                 else:
-                    prefab = None
-                    self.report({"WARNING"}, "Selected Prefab was not included in dependency extraction")
-            else:
-                prefab = None
+                    self.report({"WARNING"}, f"Prefab was not included in dependency extraction: {planning_prefab.path.name}")
+            prefab = prefabs[0][0] if prefabs else None
+            prefab_unity_path = prefabs[0][1] if prefabs else ""
 
             imported_objects = []
             if fbx_paths:
@@ -1253,41 +1300,103 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         pack=not self.keep_extracted,
                     )
                 capture_material_texture_dependencies(context.scene, material_library.values())
-            prefab_root = None
-            prefab_object_map = {}
-            if prefab is not None and self.apply_prefab_transforms:
-                self._set_phase(
-                    context,
-                    "Reconstructing Prefab",
-                    current_item=prefab_unity_path or prefab.path.name,
-                )
-                prefab_root, prefab_object_map = self._performance.measure(
-                    "prefab_reconstruct",
-                    build_prefab_hierarchy,
-                    prefab,
-                    imported_objects,
-                    package_key.source_package_id,
-                    prefab_unity_path,
-                )
-                if self.use_materials:
-                    self._performance.measure(
-                        "material_mapping",
-                        apply_prefab_materials,
+            prefab_roots = []
+            prefab_object_maps = []
+            if prefabs and self.apply_prefab_transforms:
+                package_label = package_key.package_name or "UnityPackage"
+                package_collection = bpy.data.collections.new(f"VAPB Import — {package_label}")
+                context.scene.collection.children.link(package_collection)
+                members_collection = bpy.data.collections.new("Members")
+                shared_collection = bpy.data.collections.new("Shared")
+                package_collection.children.link(members_collection)
+                package_collection.children.link(shared_collection)
+                representation_paths: dict[str, list[Any]] = {}
+                for obj in imported_objects:
+                    representation_paths.setdefault(str(obj.get("unity_asset_path", "")), []).append(obj)
+                realized_representation_ids: set[str] = set()
+                for prefab, prefab_unity_path in prefabs:
+                    self._set_phase(context, "Reconstructing Prefab", current_item=prefab_unity_path or prefab.path.name)
+                    member_collection = bpy.data.collections.new(prefab.display_name)
+                    members_collection.children.link(member_collection)
+                    member_objects = []
+                    member_object_map = {}
+                    for guid in sorted(prefab.referenced_fbx_guids()):
+                        entry = asset_db.find_guid(guid)
+                        if entry is None:
+                            continue
+                        candidates = representation_paths.get(entry.unity_path, [])
+                        copy_representation = entry.unity_path in realized_representation_ids
+                        copy_data_for_override = bool(prefab.modification_materials())
+                        for source_object in candidates:
+                            if copy_representation:
+                                member_object = source_object.copy()
+                                if (
+                                    copy_data_for_override
+                                    and getattr(source_object, "type", "") == "MESH"
+                                    and getattr(source_object, "data", None) is not None
+                                ):
+                                    member_object.data = source_object.data.copy()
+                                context.scene.collection.objects.link(member_object)
+                                member_object_map[source_object] = member_object
+                            else:
+                                member_object = source_object
+                                if source_object.name not in shared_collection.objects:
+                                    shared_collection.objects.link(source_object)
+                            if member_object.name not in member_collection.objects:
+                                member_collection.objects.link(member_object)
+                            member_objects.append(member_object)
+                        if copy_representation:
+                            for source_object, member_object in member_object_map.items():
+                                if source_object.parent in member_object_map:
+                                    member_object.parent = member_object_map[source_object.parent]
+                                for modifier in member_object.modifiers:
+                                    if getattr(modifier, "object", None) in member_object_map:
+                                        modifier.object = member_object_map[modifier.object]
+                        realized_representation_ids.add(entry.unity_path)
+                    prefab_root, prefab_object_map = self._performance.measure(
+                        "prefab_reconstruct",
+                        build_prefab_hierarchy,
                         prefab,
-                        prefab_object_map,
-                        asset_db,
-                        material_library,
-                        context.scene,
+                        member_objects,
+                        package_key.source_package_id,
+                        prefab_unity_path,
+                        member_collection,
                     )
-                    self._performance.measure(
-                        "material_mapping",
-                        apply_prefab_modification_materials,
-                        prefab,
-                        imported_objects,
-                        asset_db,
-                        material_library,
-                        context.scene,
+                    prefab_roots.append(prefab_root)
+                    prefab_object_maps.append(prefab_object_map)
+                    member_analysis = next(
+                        (item for item in self._candidate_analyses if item.unity_path == prefab_unity_path),
+                        None,
                     )
+                    member_id = member_analysis.guid if member_analysis else prefab_unity_path
+                    composition_member = next(
+                        (item for item in self._composition_plan.members
+                         if item.unity_path == prefab_unity_path),
+                        None,
+                    ) if self._composition_plan else None
+                    classification = (
+                        composition_member.classification
+                        if composition_member is not None
+                        else (member_analysis.candidate_kind if member_analysis else "UNKNOWN_EDITABLE")
+                    )
+                    member_collection["unity_composition_member_id"] = member_id
+                    member_collection["unity_composition_classification"] = classification
+                    prefab_root["unity_composition_member_id"] = member_id
+                    prefab_root["unity_composition_classification"] = classification
+                    for member_object in prefab_object_map.values():
+                        member_object["unity_composition_member_id"] = member_id
+                        member_object["unity_composition_classification"] = classification
+                    if self.use_materials:
+                        self._performance.measure(
+                            "material_mapping", apply_prefab_materials,
+                            prefab, prefab_object_map, asset_db, material_library, context.scene,
+                        )
+                        self._performance.measure(
+                            "material_mapping", apply_prefab_modification_materials,
+                            prefab, member_objects, asset_db, material_library, context.scene,
+                        )
+            prefab_root = prefab_roots[0] if prefab_roots else None
+            prefab_object_map = prefab_object_maps[0] if prefab_object_maps else {}
 
             scene = context.scene
             supported_asset_count = len(fbx_paths) + len(prefab_paths) + len(material_library)
@@ -1323,12 +1432,52 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             scene["unitypackage_extracted_root"] = str(extraction_dir)
             scene["unitypackage_fbx_count"] = len(fbx_paths)
             scene["unitypackage_prefab"] = str(prefab.path) if prefab else ""
+            if not getattr(self, "group_child", False) and self._composition_plan is not None:
+                automatic_composition = (self._selected_prefab_choice or self.prefab_choice) == "AUTO"
+                composition_members = (
+                    self._composition_plan.members
+                    if automatic_composition
+                    else tuple(item for item in self._composition_plan.members if item.unity_path == prefab_unity_path)
+                )
+                composition_member_ids = {item.member_id for item in composition_members}
+                scene["unitypackage_composition"] = json.dumps({
+                    "mode": "AUTOMATIC_COMPOSITION" if automatic_composition else "EXPLICIT_SINGLE_MEMBER",
+                    "members": [
+                        {
+                            "member_id": member.member_id,
+                            "unity_asset_path": member.unity_path,
+                            "classification": member.classification,
+                            "representation_ids": sorted(member.referenced_representation_ids),
+                        }
+                        for member in composition_members
+                    ],
+                    "helpers": [
+                        {
+                            "guid": item.guid,
+                            "unity_asset_path": item.unity_path,
+                            "display_name": item.display_name,
+                            "candidate_kind": item.candidate_kind,
+                            "nested_prefab_guids": sorted(item.nested_prefab_guids),
+                            "reasons": list(item.reasons),
+                        }
+                        for item in self._composition_plan.helpers
+                    ] if automatic_composition else [],
+                    "representations": [
+                        {"asset_guid": item.asset_guid, "member_ids": sorted(item.member_ids)}
+                        for item in self._composition_plan.representations
+                        if automatic_composition or item.member_ids & composition_member_ids
+                    ],
+                    "chooser_required": self._composition_plan.chooser_required,
+                    "chooser_reason": self._composition_plan.chooser_reason,
+                    "conflicting_visual_guids": sorted(self._composition_plan.conflicting_visual_guids),
+                }, sort_keys=True)
             scene["unitypackage_import_sequence"] = [
                 package["source_package_id"] for package in package_registry.packages.values()
             ]
-            object_registry_items = list(imported_objects) + list(prefab_object_map.values())
-            if prefab_root is not None:
-                object_registry_items.append(prefab_root)
+            object_registry_items = list(imported_objects)
+            for object_map in prefab_object_maps:
+                object_registry_items.extend(object_map.values())
+            object_registry_items.extend(prefab_roots)
             register_datablocks(scene, object_registry_items, package_key.source_package_id, "Object")
             register_datablocks(scene, material_library.values(), package_key.source_package_id, "Material")
             register_datablocks(
@@ -1473,7 +1622,13 @@ class UNITYPACKAGE_OT_import_prefab(bpy.types.Operator):
         if session is None:
             return
         selected = session.operator._candidate_selection
-        if selected is not None:
+        composition = session.operator._composition_plan
+        if composition is not None and not composition.chooser_required:
+            self.layout.label(text=(
+                f"Automatic composition: {len(composition.members)} editable member(s), "
+                f"{len(composition.representations)} shared representation(s)"
+            ))
+        elif selected is not None:
             self.layout.label(text=f"Automatic result: {selected.reason}")
         for candidate in session.operator._candidate_analyses:
             row = self.layout.row()

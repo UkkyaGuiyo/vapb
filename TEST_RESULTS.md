@@ -1,9 +1,15 @@
 # Current 0.3.0 Baseline Test Results
 
+## 0.4.0 candidate Centered Import Loading Overlay (2026-09-17)
+
+- Overlay unit coverage: 8 tests PASS for draw-handler registration, 3D View area fallback from non-3D contexts, RNA-area pointer matching, redraw on state updates, dominant Japanese loading copy, FBX blocking warning copy, sink lifecycle, and stale-handler cleanup.
+- Blender 5.2.1 foreground synthetic E2E: `PCA_FOREGROUND_AUTOMATIC_OK`; actual draw callback count and timestamp were nonzero, GPU drawing was reached, and the handler was removed after COMPLETE.
+- Real local foreground diagnostic: draw callback, valid `VIEW_3D` `WINDOW` region, GPU drawing, and handler removal were observed. The attempted real SAMPLE_AVATAR_B run stopped at an existing unrelated `NO_SUPPORTED_PREFAB` ambiguity after sibling discovery; this is not counted as a successful SAMPLE_AVATAR_B import.
+
 ## 0.4.0 candidate Import Progress Monitor (2026-09-17)
 
 - IPM-001..015: PASS. The Blender-independent state model covers IDLE → WORKING → COMPLETE/FAILED, factual current/total, grouped-child ownership, unknown-duration indeterminate state, heartbeat refresh, and pre/post native FBX blocking callbacks.
-- Python discovery after the new focused coverage: 135 tests PASS. `python -m compileall -q .`: PASS.
+- Python discovery after the new focused coverage: 143 tests PASS. `python -m compileall -q .`: PASS.
 - Foreground synthetic Blender E2E: `PCA_FOREGROUND_AUTOMATIC_OK`; the captured history includes package read, Prefab analysis, related-package resolution, FBX, visuals, hierarchy, resolver, finalization, and COMPLETE. Prefab chooser invocation remained 0 and no active monitor remained.
 - Real local foreground verification: `REAL_FOREGROUND_PROGRESS_OK`; the local SAMPLE_AVATAR_B package was supplied only through the runtime argument, producing 15 reconstructed Prefab meshes, 71 node materials, 57 Base Color links, one blocking-FBX interval, elapsed 111.85 seconds, with 400 recorded progress snapshots including timer heartbeats. The resolved related-package action was selected as Import Together by the local harness; proprietary assets remain outside the repository.
 - Real local explicit chooser/import control: `REAL_MULTI_PACKAGE_IDENTITY_OK`, 38 object records, one package identity, `PREFAB_1`; no production asset or path was committed.

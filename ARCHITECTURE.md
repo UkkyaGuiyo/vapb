@@ -108,6 +108,14 @@ marked `blocking_operation` before `bpy.ops.import_scene.fbx` and cleared in a
 `finally` path. A grouped child borrows the active parent monitor and never
 terminates or clears it.
 
+`blender/progress_overlay.py` adapts the same snapshots to one non-modal
+`SpaceView3D.draw_handler_add` handler for the foreground 3D View. The sink
+keeps the handler and the WindowManager/status-bar display in one lifecycle;
+each snapshot tags the captured 3D View for redraw, and terminal `clear()`
+removes the handler before releasing the optional Japanese font. No worker
+thread touches Blender drawing APIs, and no confirmation popup or cancel
+control is introduced.
+
 ## Package-Scoped Identity (0.4.0 candidate)
 
 - `PackageIdentity`の内容SHA-256を`source_package_id = sha256:<64hex>`として、Packageのファイル名やパスから独立したnamespaceにする。

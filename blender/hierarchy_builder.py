@@ -38,13 +38,15 @@ def build_prefab_hierarchy(
     imported_objects: Iterable[bpy.types.Object],
     source_package_id: str = "",
     source_prefab_unity_path: str = "",
+    target_collection=None,
 ):
     imported = list(imported_objects)
     bpy.context.view_layer.update()
     native_world = {obj: obj.matrix_world.copy() for obj in imported}
     native_parent = {obj: obj.parent for obj in imported}
+    collection = target_collection or bpy.context.scene.collection
     root = bpy.data.objects.new(prefab.display_name, None)
-    bpy.context.scene.collection.objects.link(root)
+    collection.objects.link(root)
     root.empty_display_size = 0.03
     root["unity_source_prefab"] = str(prefab.path)
     if source_prefab_unity_path:
@@ -149,7 +151,7 @@ def build_prefab_hierarchy(
             obj = game_object_map.get(game_object_id)
             if obj is None:
                 obj = bpy.data.objects.new(game_object.name, None)
-                bpy.context.scene.collection.objects.link(obj)
+                collection.objects.link(obj)
                 obj.empty_display_size = 0.02
                 game_object_map[game_object_id] = obj
         # Unity fileIDs are identifiers, not numeric values for Blender.

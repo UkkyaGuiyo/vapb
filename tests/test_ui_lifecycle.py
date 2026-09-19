@@ -131,6 +131,7 @@ class FakeContext:
         self.window_manager = FakeWindowManager()
         self.window = object()
         self.scene = SimpleNamespace()
+        self.area = SimpleNamespace(type="VIEW_3D", tag_redraw=Mock())
 
 
 def _prepared():
