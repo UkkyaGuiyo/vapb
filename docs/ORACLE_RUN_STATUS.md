@@ -2,6 +2,8 @@
 
 Status at 2026-09-19: `PREPARED_WAITING_FOR_HUMAN_RUN`.
 
+Dedicated Unity project: `LOCAL_PATH_REQUIRES_CONFIGURATION`.
+
 Completed in this branch:
 
 - public schema 0.2 with observed/derived separation;
