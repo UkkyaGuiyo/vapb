@@ -48,3 +48,20 @@ parse YAML or inspect Unity internals to fill that gap.
 Compliance: no Unity binary decompilation, private/internal implementation
 copying, reflection, or reverse-engineering is used. Commercial assets are
 private local diagnostics only and are not committed.
+
+## Canonical source and deployment
+
+Authored Editor sources live in `tools/unity_semantic_oracle/Assets/Editor`.
+The dedicated Unity project copy is managed at
+`LOCAL_PATH_REQUIRES_CONFIGURATION`.
+
+Synchronize and verify without launching Unity:
+
+```text
+[private command or output omitted; narrative finding retained]
+```
+
+Only the three managed `.cs` files are copied. The command reports SHA-256
+values, uses an atomic replacement, is idempotent, and exits non-zero when
+verification fails. Repository HEAD alone is not evidence that deployed Unity
+files are current.

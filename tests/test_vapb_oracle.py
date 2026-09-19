@@ -125,6 +125,15 @@ class VapbOracleTests(unittest.TestCase):
         self.assertIn("durableState = checkpoint;", source)
         self.assertNotRegex(source, r"private\s+(?:string|int)\s+(?:currentPackage|currentPackageIndex|runState|currentPhase|retryCount|lastError|lastHeartbeatAtUtc|lastProgressAtUtc)\s*;")
 
+    def test_unity_deployment_sync_is_explicit_and_managed(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "sync_unity_oracle_project.py").read_text(encoding="utf-8")
+        self.assertIn("MANAGED_RELATIVE", source)
+        self.assertIn("--check", source)
+        self.assertIn("os.replace", source)
+        self.assertIn("Assets", source)
+        self.assertIn("verified", source)
+
     def test_watchdog_distinguishes_waiting_stalled_and_running(self):
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=True), "WAITING_FOR_UNITY")
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=False), "STALLED")
