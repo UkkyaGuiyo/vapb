@@ -91,7 +91,8 @@ def analyze_observation(canonical: dict[str, Any]) -> dict[str, Any]:
     for prefab_id in prefab_ids:
         features = _prefab_features(prefab_id, entities, edges)
         signatures[prefab_id] = _signature(features)
-        skeleton[prefab_id] = {"algorithmVersion": "skeleton-v1", "status": "OBSERVED_OR_UNKNOWN", "digest": _digest({"animatorCount": features["animatorCount"], "boneReferenceCount": features["boneReferenceCount"], "rootBoneCount": features["rootBoneCount"], "humanAvatarCount": features["humanAvatarCount"]})}
+        skeleton_values = {"animatorCount": features["animatorCount"], "boneReferenceCount": features["boneReferenceCount"], "rootBoneCount": features["rootBoneCount"], "humanAvatarCount": features["humanAvatarCount"]}
+        skeleton[prefab_id] = {"algorithmVersion": "skeleton-v1", "status": "OBSERVED", "digest": _digest(skeleton_values)}
         meshes[prefab_id] = {"algorithmVersion": "mesh-v1", "status": "STRUCTURAL_ONLY", "digest": _digest({"skinnedMeshRendererCount": features["skinnedMeshRendererCount"], "uniqueMeshCount": features["uniqueMeshCount"], "blendShapeCount": features["blendShapeCount"]})}
     # Public analysis keys are positional only within a sorted structural class;
     # they never expose source path, name, GUID, or input order.
@@ -126,6 +127,7 @@ def analyze_observation(canonical: dict[str, Any]) -> dict[str, Any]:
         "prefabSignatures": signatures,
         "skeletonSignatures": skeleton,
         "meshSignatures": meshes,
+        "packageSignature": {"algorithmVersion": "package-v1", "status": "DERIVED", "digest": _digest(sorted(value["digest"] for value in signatures.values()))},
         "signatureSources": signature_sources,
         "clusters": clusters,
         "candidateComparison": {"classification": classification, "candidateCount": distinct, "automaticSelection": False},
