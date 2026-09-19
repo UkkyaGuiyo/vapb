@@ -18,4 +18,12 @@ The baseline manifest is schema 2, targets Unity `2022.3.62f3`, excludes `Librar
 
 The Human Runner displays `CLEAN`, `DIRTY`, `UNKNOWN`, or `VERIFYING`. Isolated observation is blocked unless the external manifest matches the current authored project and the managed deployment is synchronized. A mismatch is `BASELINE_DIRTY` / `ISOLATION_FAILED`; the runner does not continue to another package.
 
+An isolated package result is provisional while imported assets remain in the
+disposable project. Output-file creation does not finalize the run. The Runner
+records `PENDING_CLEANUP`, then requires Unity to be quiescent and the external
+cleanup to produce a clean baseline for three update ticks, followed by a final
+baseline verification. Only then is `RUN_COMPLETE` written and the adjacent
+`.finalization.json` marker records `isolationVerified: true`. This prevents a
+stale pre-run `CLEAN` value from being reported as a post-run clean result.
+
 This cleanup does not delete `Library` and does not delete private historical merged-corpus evidence.

@@ -16,9 +16,21 @@ from tools.vapb_oracle.schema import (
     validate_envelope,
 )
 from tools.unity_semantic_oracle.clean_unity_oracle_project import build_cleanup_plan, apply_cleanup, check_clean
+from tools.unity_semantic_oracle.quiescence import CleanupGate
 
 
 class VapbOracleTests(unittest.TestCase):
+    def test_isolated_run_cannot_finalize_before_stable_cleanup(self):
+        gate = CleanupGate(required_ticks=3)
+        gate.observe_output()
+        self.assertEqual(gate.state, "WAITING_FOR_CLEANUP")
+        self.assertFalse(gate.tick(compiling=False, updating=False, clean=False))
+        self.assertFalse(gate.tick(compiling=True, updating=False, clean=True))
+        self.assertFalse(gate.tick(compiling=False, updating=False, clean=True))
+        self.assertFalse(gate.tick(compiling=False, updating=False, clean=True))
+        self.assertTrue(gate.tick(compiling=False, updating=False, clean=True))
+        self.assertEqual(gate.state, "RUN_COMPLETE")
+
     def test_envelope_separates_observed_and_derived(self):
         envelope = build_envelope(
             run_id="run-synthetic",
@@ -219,6 +231,15 @@ class VapbOracleTests(unittest.TestCase):
                   "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
         for token in ("baselineManifestPath", "baselineStatus", "VerifyBaselineStatus", "BASELINE_DIRTY", "Isolation ready", "UNITY_ORACLE_BASELINE_MANIFEST"):
             self.assertIn(token, source)
+
+    def test_runner_completion_requires_cleanup_finalization(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
+        self.assertIn('runState = "WAITING_FOR_CLEANUP"', source)
+        self.assertIn('WriteCheckpoint("PENDING_CLEANUP"', source)
+        self.assertIn("baselineStableTicks < 3", source)
+        self.assertIn("WriteFinalizationMarker", source)
+        self.assertIn('Environment.SetEnvironmentVariable("UNITY_ORACLE_ISOLATION_VERIFIED", "0")', source)
 
     def test_cleanup_tool_is_allowlist_and_root_guarded(self):
         source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /

@@ -48,6 +48,12 @@ namespace UnitySemanticOracle
         public string baselineManifestPath;
         public string baselineStatus;
         public int unexpectedAssetCount;
+        public string cleanupStartedAtUtc;
+        public string cleanupCompletedAtUtc;
+        public string stabilityReachedAtUtc;
+        public string baselineVerifiedAtUtc;
+        public string packageFinalizedAtUtc;
+        public int baselineStableTicks;
     }
 
     [Serializable] public sealed class BaselineManifestFile
@@ -113,6 +119,13 @@ namespace UnitySemanticOracle
         private DateTime? packageCompletedAtUtc { get { return ParseNullableUtc(durableState.packageCompletedAtUtc); } set { durableState.packageCompletedAtUtc = value.HasValue ? FormatUtc(value.Value) : null; } }
         private DateTime lastHeartbeatAtUtc { get { return ParseUtc(durableState.lastHeartbeatAtUtc); } set { durableState.lastHeartbeatAtUtc = FormatUtc(value); } }
         private DateTime lastProgressAtUtc { get { return ParseUtc(durableState.lastProgressAtUtc); } set { durableState.lastProgressAtUtc = FormatUtc(value); } }
+        private DateTime cleanupStartedAtUtc { get { return ParseUtc(durableState.cleanupStartedAtUtc); } set { durableState.cleanupStartedAtUtc = FormatUtc(value); } }
+        private DateTime cleanupCompletedAtUtc { get { return ParseUtc(durableState.cleanupCompletedAtUtc); } set { durableState.cleanupCompletedAtUtc = FormatUtc(value); } }
+        private DateTime stabilityReachedAtUtc { get { return ParseUtc(durableState.stabilityReachedAtUtc); } set { durableState.stabilityReachedAtUtc = FormatUtc(value); } }
+        private DateTime baselineVerifiedAtUtc { get { return ParseUtc(durableState.baselineVerifiedAtUtc); } set { durableState.baselineVerifiedAtUtc = FormatUtc(value); } }
+        private DateTime packageFinalizedAtUtc { get { return ParseUtc(durableState.packageFinalizedAtUtc); } set { durableState.packageFinalizedAtUtc = FormatUtc(value); } }
+        private int baselineStableTicks { get { return durableState.baselineStableTicks; } set { durableState.baselineStableTicks = value; } }
+        private bool finalizationPending;
 
         private static string FormatUtc(DateTime value) { return value == default(DateTime) ? null : value.ToString("O"); }
         private static DateTime ParseUtc(string value) { DateTime result; return DateTime.TryParse(value, null, System.Globalization.DateTimeStyles.RoundtripKind, out result) ? result : default(DateTime); }
@@ -123,7 +136,10 @@ namespace UnitySemanticOracle
             if (string.IsNullOrEmpty(checkpointPath))
                 checkpointPath = SessionState.GetString("VAPB_ORACLE_CHECKPOINT_PATH", "");
             if (!string.IsNullOrEmpty(checkpointPath) && File.Exists(checkpointPath))
+            {
                 LoadCompletedPackages();
+                EditorApplication.delayCall += ReconcileTerminalState;
+            }
         }
 
         [MenuItem("Tools/VAPB/Unity Semantic Oracle (Human Runner)")]
@@ -334,6 +350,13 @@ namespace UnitySemanticOracle
             if (!resume || runStartedAtUtc == default(DateTime)) runStartedAtUtc = DateTime.UtcNow;
             if (!resume || packageStartedAtUtc == default(DateTime)) packageStartedAtUtc = runStartedAtUtc;
             packageCompletedAtUtc = null;
+            cleanupStartedAtUtc = default(DateTime);
+            cleanupCompletedAtUtc = default(DateTime);
+            stabilityReachedAtUtc = default(DateTime);
+            baselineVerifiedAtUtc = default(DateTime);
+            packageFinalizedAtUtc = default(DateTime);
+            baselineStableTicks = 0;
+            finalizationPending = false;
             lastHeartbeatAtUtc = DateTime.UtcNow;
             lastProgressAtUtc = DateTime.UtcNow;
             runState = "RUNNING";
@@ -358,7 +381,10 @@ namespace UnitySemanticOracle
             Environment.SetEnvironmentVariable("UNITY_ORACLE_BASELINE_MANIFEST", baselineManifestPath ?? "");
             Environment.SetEnvironmentVariable("UNITY_ORACLE_BASELINE_ID", baselineId ?? "");
             Environment.SetEnvironmentVariable("UNITY_ORACLE_BASELINE_HASH", baselineHash ?? "");
-            Environment.SetEnvironmentVariable("UNITY_ORACLE_ISOLATION_VERIFIED", (!mergedCorpusMode && baselineStatus == "CLEAN") ? "1" : "0");
+            // A pre-run clean baseline proves only that the disposable project was
+            // ready. The package import itself makes the project dirty. Isolation
+            // is therefore attested only after external cleanup and finalization.
+            Environment.SetEnvironmentVariable("UNITY_ORACLE_ISOLATION_VERIFIED", "0");
             running = true;
             active = this;
             SemanticOracle.PackageCompletedCallback = NotifyPackageCompleted;
@@ -397,12 +423,78 @@ namespace UnitySemanticOracle
                 SemanticOracle.PackageFailedCallback = null;
                 var finished = DateTime.UtcNow;
                 packageCompletedAtUtc = packageCompletedAtUtc ?? finished;
-                runState = "RUN_COMPLETE";
-                currentPhase = "RUN_COMPLETE";
-                lastMessage = "Corpus observation complete.";
-                WriteCheckpoint("COMPLETE", null, finished);
+                cleanupStartedAtUtc = finished;
+                baselineStableTicks = 0;
+                finalizationPending = true;
+                runState = "WAITING_FOR_CLEANUP";
+                currentPhase = "CLEANUP_REQUIRED";
+                lastMessage = "Import evidence is ready. Close Unity, run external cleanup, reopen Unity, then verify the clean baseline.";
+                WriteCheckpoint("PENDING_CLEANUP", null);
                 Repaint();
             }
+        }
+
+        private void ReconcileTerminalState()
+        {
+            if (mergedCorpusMode || string.IsNullOrEmpty(outputPath) || !File.Exists(outputPath)) return;
+            if (!string.Equals(runState, "COMPLETE", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(runState, "RUN_COMPLETE", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(runState, "WAITING_FOR_CLEANUP", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(runState, "PENDING_CLEANUP", StringComparison.OrdinalIgnoreCase)) return;
+            finalizationPending = true;
+            runState = "WAITING_FOR_CLEANUP";
+            currentPhase = "CLEANUP_REQUIRED";
+            lastMessage = "Waiting for external cleanup and a stable clean baseline.";
+            baselineStableTicks = 0;
+            EditorApplication.update -= FinalizeAfterCleanup;
+            EditorApplication.update += FinalizeAfterCleanup;
+            WriteCheckpoint("PENDING_CLEANUP", lastError);
+        }
+
+        private void FinalizeAfterCleanup()
+        {
+            if (!finalizationPending || mergedCorpusMode) return;
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+            {
+                baselineStableTicks = 0;
+                return;
+            }
+            VerifyBaselineStatus();
+            if (baselineStatus != "CLEAN")
+            {
+                baselineStableTicks = 0;
+                return;
+            }
+            cleanupCompletedAtUtc = cleanupCompletedAtUtc == default(DateTime) ? DateTime.UtcNow : cleanupCompletedAtUtc;
+            baselineStableTicks++;
+            if (baselineStableTicks < 3) return;
+            VerifyBaselineStatus();
+            if (baselineStatus != "CLEAN") { baselineStableTicks = 0; return; }
+            var now = DateTime.UtcNow;
+            stabilityReachedAtUtc = now;
+            baselineVerifiedAtUtc = now;
+            packageFinalizedAtUtc = now;
+            finalizationPending = false;
+            runState = "RUN_COMPLETE";
+            currentPhase = "RUN_COMPLETE";
+            lastMessage = "Corpus observation complete; cleanup and stable baseline verification passed.";
+            EditorApplication.update -= FinalizeAfterCleanup;
+            WriteFinalizationMarker(now);
+            WriteCheckpoint("COMPLETE", null, now);
+            Repaint();
+        }
+
+        private void WriteFinalizationMarker(DateTime finalizedAtUtc)
+        {
+            var marker = Path.GetFullPath(outputPath) + ".finalization.json";
+            var text = "{\n" +
+                "  \"runId\": \"" + (runId ?? "") + "\",\n" +
+                "  \"isolationVerified\": true,\n" +
+                "  \"baselineId\": \"" + (baselineId ?? "") + "\",\n" +
+                "  \"baselineHash\": \"" + (baselineHash ?? "") + "\",\n" +
+                "  \"finalizedAtUtc\": \"" + finalizedAtUtc.ToString("O") + "\"\n" +
+                "}\n";
+            File.WriteAllText(marker, text);
         }
 
         private void Heartbeat()
@@ -461,7 +553,13 @@ namespace UnitySemanticOracle
                 observationContext = mergedCorpusMode ? "MERGED_CORPUS" : "ISOLATED_PACKAGE",
                 baselineManifestPath = baselineManifestPath,
                 baselineStatus = baselineStatus,
-                unexpectedAssetCount = unexpectedAssetCount
+                unexpectedAssetCount = unexpectedAssetCount,
+                cleanupStartedAtUtc = cleanupStartedAtUtc == default(DateTime) ? null : cleanupStartedAtUtc.ToString("O"),
+                cleanupCompletedAtUtc = cleanupCompletedAtUtc == default(DateTime) ? null : cleanupCompletedAtUtc.ToString("O"),
+                stabilityReachedAtUtc = stabilityReachedAtUtc == default(DateTime) ? null : stabilityReachedAtUtc.ToString("O"),
+                baselineVerifiedAtUtc = baselineVerifiedAtUtc == default(DateTime) ? null : baselineVerifiedAtUtc.ToString("O"),
+                packageFinalizedAtUtc = packageFinalizedAtUtc == default(DateTime) ? null : packageFinalizedAtUtc.ToString("O"),
+                baselineStableTicks = baselineStableTicks
             };
             durableState = checkpoint;
             File.WriteAllText(checkpointPath, JsonUtility.ToJson(checkpoint, true));
@@ -487,6 +585,7 @@ namespace UnitySemanticOracle
             baselineManifestPath = previous.baselineManifestPath;
             baselineStatus = string.IsNullOrEmpty(previous.baselineStatus) ? "UNKNOWN" : previous.baselineStatus;
             unexpectedAssetCount = previous.unexpectedAssetCount;
+            finalizationPending = string.Equals(previous.runState, "WAITING_FOR_CLEANUP", StringComparison.OrdinalIgnoreCase) || string.Equals(previous.runState, "PENDING_CLEANUP", StringComparison.OrdinalIgnoreCase);
             durableState.lastFailedPackage = previous.lastFailedPackage;
             currentPhase = string.IsNullOrEmpty(previous.currentPhase) ? "WAITING_FOR_IMPORT" : previous.currentPhase;
             currentPackage = previous.currentPackage;
