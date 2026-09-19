@@ -1,5 +1,6 @@
 import json
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -17,9 +18,185 @@ from tools.vapb_oracle.schema import (
 )
 from tools.unity_semantic_oracle.clean_unity_oracle_project import build_cleanup_plan, apply_cleanup, check_clean
 from tools.unity_semantic_oracle.quiescence import CleanupGate
+from tools.unity_semantic_oracle.worker_protocol import WorkerRequest, WorkerResult, atomic_json_write, request_from_dict, result_from_dict, validate_request, write_once_json
+from tools.unity_semantic_oracle.supervisor_harness import SupervisorHarness
+from tools.unity_semantic_oracle.worker_template import check as check_template, prepare as prepare_template
 
 
 class VapbOracleTests(unittest.TestCase):
+    def _harness(self, root):
+        source = root / "template-source"
+        destination = root / "template"
+        manifest = root / "template-manifest.json"
+        (source / "Packages").mkdir(parents=True)
+        (source / "ProjectSettings").mkdir(parents=True)
+        (source / "Packages" / "manifest.json").write_text("{}", encoding="utf-8")
+        (source / "ProjectSettings" / "ProjectVersion.txt").write_text("m_EditorVersion: 2022.3.62f3\n", encoding="utf-8")
+        prepare_template(source, destination, manifest)
+        harness = SupervisorHarness(root / "scratch", destination, manifest)
+        harness.confirm_human_run()
+        return harness
+
+    def test_worker_protocol_identity_and_atomic_result_validation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / "same basename.unitypackage"
+            package.write_bytes(b"synthetic-package")
+            harness = self._harness(root)
+            request, attempt = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            self.assertEqual(validate_request(request.to_dict()), [])
+            atomic_json_write(attempt.workspace / "worker-status.json", {"state": "IMPORTING"})
+            observation = attempt.workspace / "observation.json"
+            observation.write_text("{}", encoding="utf-8")
+            result = WorkerResult(request.run_id, request.worker_id, request.package_index, request.package_sha256, request.template_id, request.template_hash, request.unity_version, "ISOLATED_PACKAGE", "COMPLETE", str(observation), attempt_id=request.attempt_id, nonce=request.nonce, isolation_verified=True)
+            write_once_json(attempt.workspace / "worker-result.json", result.__dict__)
+            harness.accept_result_file(request, attempt.workspace / "worker-result.json")
+            self.assertEqual(harness.package_states[1], "COMPLETE")
+            self.assertEqual(json.loads((attempt.workspace / "worker-status.json").read_text(encoding="utf-8"))["state"], "IMPORTING")
+
+    def test_worker_retry_always_allocates_fresh_attempt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); package = root / "p.unitypackage"; package.write_bytes(b"p")
+            harness = self._harness(root)
+            first, attempt = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            harness.quarantine(attempt)
+            second, _ = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            self.assertNotEqual(first.worker_id, second.worker_id)
+            self.assertTrue(harness.fresh_retry(1))
+
+    def test_worker_protocol_rejects_malformed_identity_and_escaped_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); package = root / "p.unitypackage"; package.write_bytes(b"p")
+            harness = self._harness(root)
+            request, attempt = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            self.assertTrue(validate_request({**request.to_dict(), "package_index": True, "run_id": "../escape", "package_sha256": "x"}))
+            observation = root / "outside.json"; observation.write_text("{}", encoding="utf-8")
+            result = WorkerResult(request.run_id, request.worker_id, request.package_index, request.package_sha256, request.template_id, request.template_hash, request.unity_version, "ISOLATED_PACKAGE", "COMPLETE", str(observation), attempt_id=request.attempt_id, nonce=request.nonce, isolation_verified=True)
+            with self.assertRaises(ValueError): harness.accept_result(request, result)
+
+    def test_supervisor_binds_result_to_original_request_identity(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); package = root / "p.unitypackage"; package.write_bytes(b"p")
+            harness = self._harness(root)
+            request, attempt = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            forged = WorkerRequest(request.run_id, "other-worker", request.package_index,
+                                   request.package_path, request.package_sha256,
+                                   request.template_id, request.template_hash,
+                                   request.unity_version, request.output_directory,
+                                   attempt_id=request.attempt_id, nonce="other-nonce")
+            result = WorkerResult(request.run_id, forged.worker_id, 1,
+                                  request.package_sha256, request.template_id,
+                                  request.template_hash, request.unity_version,
+                                  "ISOLATED_PACKAGE", "COMPLETE",
+                                  str(attempt.workspace / "observation.json"),
+                                  attempt_id=request.attempt_id, nonce="other-nonce",
+                                  isolation_verified=True)
+            (attempt.workspace / "observation.json").write_text("{}", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "REQUEST_IDENTITY_MISMATCH"):
+                harness.accept_result(forged, result)
+
+    def test_protocol_rejects_unknown_camel_case_fields(self):
+        value = {
+            "run_id": "run", "worker_id": "worker", "package_index": 1,
+            "package_path": "package.unitypackage", "package_sha256": "a" * 64,
+            "template_id": "template", "template_hash": "b" * 64,
+            "unity_version": "2022.3.62f3", "output_directory": str(Path.cwd()),
+            "attempt_id": "attempt", "nonce": "nonce", "protocol_version": "1",
+            "runId": "wrong",
+        }
+        self.assertIn("REQUEST_UNKNOWN_FIELD:runId", validate_request(value))
+
+    def test_worker_protocol_rejects_partial_json(self):
+        from tools.unity_semantic_oracle.worker_protocol import read_json
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "partial.json"; path.write_text('{"state":', encoding="utf-8")
+            with self.assertRaises(ValueError): read_json(path)
+
+    def test_worker_protocol_rejects_non_text_paths_and_result_fields(self):
+        request = {
+            "run_id": "run", "worker_id": "worker", "package_index": 1,
+            "package_path": 12, "package_sha256": "a" * 64,
+            "template_id": "template", "template_hash": "b" * 64,
+            "unity_version": "2022.3.62f3", "output_directory": 99,
+            "attempt_id": "attempt", "nonce": "nonce", "protocol_version": "1",
+        }
+        with self.assertRaisesRegex(ValueError, "REQUEST_TEXT_INVALID:package_path"):
+            request_from_dict(request)
+        result = {
+            "run_id": "run", "worker_id": "worker", "package_index": 1,
+            "package_sha256": "a" * 64, "template_id": "template",
+            "template_hash": "b" * 64, "unity_version": "2022.3.62f3",
+            "observation_context": "ISOLATED_PACKAGE", "state": "COMPLETE",
+            "observation_path": 7, "protocol_version": "1",
+            "attempt_id": "attempt", "nonce": "nonce",
+            "isolation_verified": True,
+        }
+        with self.assertRaisesRegex(ValueError, "RESULT_TEXT_INVALID:observation_path"):
+            result_from_dict(result)
+
+    def test_terminal_result_is_write_once(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "result.json"
+            write_once_json(path, {"state": "COMPLETE"})
+            with self.assertRaises(FileExistsError): write_once_json(path, {"state": "FAILED"})
+
+    def test_terminal_result_has_one_winner_under_concurrent_writers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "result.json"
+            barrier = threading.Barrier(2)
+            outcomes = []
+
+            def write(value):
+                barrier.wait()
+                try:
+                    write_once_json(path, {"state": value})
+                    outcomes.append("won")
+                except FileExistsError:
+                    outcomes.append("lost")
+
+            threads = [threading.Thread(target=write, args=(state,)) for state in ("COMPLETE", "FAILED")]
+            for thread in threads: thread.start()
+            for thread in threads: thread.join()
+            self.assertEqual(sorted(outcomes), ["lost", "won"])
+
+    def test_worker_template_hash_detects_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); source = root / "source"; destination = root / "template"; manifest = root / "template.json"
+            (source / "Packages").mkdir(parents=True); (source / "ProjectSettings").mkdir()
+            (source / "Packages" / "manifest.json").write_text("{}", encoding="utf-8")
+            (source / "ProjectSettings" / "ProjectVersion.txt").write_text("m_EditorVersion: 2022.3.62f3\n", encoding="utf-8")
+            prepare_template(source, destination, manifest)
+            self.assertEqual(check_template(destination, manifest), [])
+            (destination / "Packages" / "manifest.json").write_text("{\"drift\":true}", encoding="utf-8")
+            self.assertTrue(check_template(destination, manifest))
+
+    def test_worker_template_rejects_wrong_unity_version_before_copy(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); source = root / "source"; destination = root / "template"; manifest = root / "template.json"
+            (source / "ProjectSettings").mkdir(parents=True)
+            (source / "ProjectSettings" / "ProjectVersion.txt").write_text("m_EditorVersion: 2022.3.99f1\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "TEMPLATE_UNITY_VERSION_MISMATCH"):
+                prepare_template(source, destination, manifest)
+            self.assertFalse(destination.exists())
+
+    def test_worker_template_rejects_distribution_payload(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); source = root / "source"; destination = root / "template"; manifest = root / "template.json"
+            (source / "ProjectSettings").mkdir(parents=True)
+            (source / "ProjectSettings" / "ProjectVersion.txt").write_text("m_EditorVersion: 2022.3.62f3\n", encoding="utf-8")
+            (source / "payload.blend").write_bytes(b"private")
+            with self.assertRaisesRegex(ValueError, "TEMPLATE_FORBIDDEN_PAYLOAD"):
+                prepare_template(source, destination, manifest)
+
+    def test_supervisor_requires_human_run_confirmation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            harness = self._harness(root)
+            harness.human_run_confirmed = False
+            package = root / "package.unitypackage"; package.write_bytes(b"synthetic")
+            with self.assertRaisesRegex(RuntimeError, "HUMAN_CONFIRMATION_REQUIRED"):
+                harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+
     def test_isolated_run_cannot_finalize_before_stable_cleanup(self):
         gate = CleanupGate(required_ticks=3)
         gate.observe_output()
@@ -277,6 +454,117 @@ class VapbOracleTests(unittest.TestCase):
         self.assertTrue(policy.can_retry("pkg"))
         policy.record("pkg")
         self.assertFalse(policy.can_retry("pkg"))
+
+    def test_supervisor_processes_23_packages_in_any_order_with_one_fresh_worker_each(self):
+        from tools.unity_semantic_oracle.supervisor_harness import SupervisorHarness
+        from tools.unity_semantic_oracle.worker_protocol import WorkerResult
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            packages = []
+            for index in range(1, 24):
+                package = root / f"package-{index:02d}.unitypackage"
+                package.write_bytes(f"synthetic-package-{index}".encode("ascii"))
+                packages.append(package)
+            harness = self._harness(root)
+            for package_index in reversed(range(1, 24)):
+                request, attempt = harness.allocate(package_index, packages[package_index - 1], "vapb-worker-template-v1", harness.template_hash)
+                with self.assertRaisesRegex(RuntimeError, "PACKAGE_ATTEMPT_ALREADY_ACTIVE"):
+                    harness.allocate(package_index, packages[package_index - 1], "vapb-worker-template-v1", harness.template_hash)
+                observation = attempt.workspace / "observation.json"
+                observation.write_text("{}", encoding="utf-8")
+                harness.accept_result(request, WorkerResult(
+                    request.run_id, request.worker_id, request.package_index,
+                    request.package_sha256, request.template_id, request.template_hash,
+                    request.unity_version, "ISOLATED_PACKAGE", "COMPLETE",
+                    str(observation), attempt_id=request.attempt_id,
+                    nonce=request.nonce, isolation_verified=True,
+                ))
+                harness.dispose(attempt)
+            self.assertEqual(len(harness.attempts), 23)
+            self.assertEqual(set(harness.package_states.values()), {"COMPLETE"})
+            self.assertEqual(len({item.worker_id for item in harness.attempts}), 23)
+
+    def test_supervisor_allows_only_one_active_worker_across_packages(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); package_a = root / "a.unitypackage"; package_b = root / "b.unitypackage"
+            package_a.write_bytes(b"a"); package_b.write_bytes(b"b")
+            harness = self._harness(root)
+            harness.allocate(1, package_a, "vapb-worker-template-v1", harness.template_hash)
+            with self.assertRaisesRegex(RuntimeError, "WORKER_ALREADY_ACTIVE"):
+                harness.allocate(2, package_b, "vapb-worker-template-v1", harness.template_hash)
+
+    def test_quarantine_rejects_late_result_and_retry_uses_fresh_workspace(self):
+        from tools.unity_semantic_oracle.supervisor_harness import SupervisorHarness
+        from tools.unity_semantic_oracle.worker_protocol import WorkerResult
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            package = root / "package.unitypackage"
+            package.write_bytes(b"synthetic")
+            harness = self._harness(root)
+            request, attempt = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            harness.quarantine(attempt, "CRASHED")
+            retry_request, retry_attempt = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            observation = retry_attempt.workspace / "observation.json"
+            observation.write_text("{}", encoding="utf-8")
+            late = WorkerResult(
+                request.run_id, request.worker_id, request.package_index,
+                request.package_sha256, request.template_id, request.template_hash,
+                request.unity_version, "ISOLATED_PACKAGE", "COMPLETE",
+                str(observation), attempt_id=request.attempt_id,
+                nonce=request.nonce, isolation_verified=True,
+            )
+            with self.assertRaisesRegex(ValueError, "STALE_OR_QUARANTINED_ATTEMPT"):
+                harness.accept_result(request, late)
+            self.assertNotEqual(attempt.workspace, retry_attempt.workspace)
+            self.assertEqual(retry_request.attempt_id, retry_attempt.attempt_id)
+
+    def test_late_quarantine_cannot_remove_new_retry_from_active_set(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); package = root / "package.unitypackage"; package.write_bytes(b"synthetic")
+            harness = self._harness(root)
+            _, first = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            harness.quarantine(first, "CRASHED")
+            _, second = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            with self.assertRaisesRegex(ValueError, "STALE_OR_QUARANTINED_ATTEMPT"):
+                harness.quarantine(first, "TIMED_OUT")
+            self.assertEqual(harness.active_attempts[1], second.attempt_id)
+
+    def test_quarantine_rejects_invalid_state_without_mutating_attempt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); package = root / "package.unitypackage"; package.write_bytes(b"synthetic")
+            harness = self._harness(root)
+            _, attempt = harness.allocate(1, package, "vapb-worker-template-v1", harness.template_hash)
+            with self.assertRaisesRegex(ValueError, "INVALID_QUARANTINE_STATE"):
+                harness.quarantine(attempt, "COMPLETE")
+            self.assertEqual(attempt.state, "CREATED")
+
+    def test_worker_result_rejects_symlinked_observation_path(self):
+        from tools.unity_semantic_oracle.worker_protocol import WorkerResult
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            output = root / "output"
+            output.mkdir()
+            outside = root / "outside.json"
+            outside.write_text("{}", encoding="utf-8")
+            link = output / "link.json"
+            try:
+                link.symlink_to(outside)
+            except (OSError, NotImplementedError):
+                self.skipTest("symlink creation is unavailable")
+            request = WorkerRequest(
+                "run", "worker", 1, str(root / "package.unitypackage"), "c" * 64,
+                "template", "d" * 64, "2022.3.62f3", str(output),
+                attempt_id="attempt", nonce="nonce",
+            )
+            result = WorkerResult(
+                "run", "worker", 1, "c" * 64, "template", "d" * 64,
+                "2022.3.62f3", "ISOLATED_PACKAGE", "COMPLETE", str(link),
+                attempt_id="attempt", nonce="nonce", isolation_verified=True,
+            )
+            self.assertIn("OBSERVATION_PATH_ESCAPE", result.validate_against(request))
 
 
 if __name__ == "__main__":

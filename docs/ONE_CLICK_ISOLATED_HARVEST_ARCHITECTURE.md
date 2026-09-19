@@ -13,6 +13,22 @@ level isolation using documented Unity APIs.
 The current in-process `PENDING_CLEANUP` flow remains fail-closed migration
 behavior. It is not authoritative multi-package isolation.
 
+## Compliance Gate 0
+
+Automatic worker launch is conditionally accepted. It may occur only after a
+human manually starts the Supervisor Unity Editor and explicitly presses Run.
+Codex, Luna, and Sol never launch or control Unity. The authored Supervisor may
+start a configured, exact Unity `2022.3.62f3` worker using normal `-projectPath`
+and `-logFile` arguments. It must not use `-batchmode`, `-nographics`,
+`-executeMethod`, GUI automation, or focus-based control. Unity APIs used by the
+worker remain documented public APIs. Worker launch, retry, disposal, and
+package Editor-code execution must be shown in the human approval UI.
+
+The current repository implements the public protocol/template/harness
+prototype and retains the legacy in-process path. The actual Supervisor-side
+Unity process launcher remains behind the next Gate 1 implementation and must
+not be inferred from the protocol tests.
+
 ## Rejected alternatives
 
 - Deleting imported paths cannot restore overwritten files, `.meta` identities,
@@ -91,6 +107,11 @@ run start, package start, import start/completion, probe start/completion,
 cleanup start/completion, stability, baseline verification, finalization, and
 run completion. Durations state their scope and are not reconstructed from an
 unrelated later transition.
+
+The prototype protocol is implemented in
+`tools/unity_semantic_oracle/worker_protocol.py`, template preparation/checking
+in `worker_template.py`, and non-Unity Supervisor lifecycle tests in
+`supervisor_harness.py`. These modules never launch Unity.
 
 ## Human intervention
 
