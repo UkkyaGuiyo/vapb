@@ -22,6 +22,7 @@ if bpy is not None:
     from .blender.roundtrip_export import ROUNDTRIP_EXPORT_CLASSES, menu_func_export
     from .operators.texture_editing import TEXTURE_EDITING_CLASSES
     from .ui.texture_panel import TEXTURE_PANEL_CLASSES
+    from .ui.physics_preview_panel import PHYSICS_PREVIEW_CLASSES, register_properties, unregister_properties
 
     def register():
         for cls in PREFERENCES_CLASSES:
@@ -32,12 +33,18 @@ if bpy is not None:
             bpy.utils.register_class(cls)
         for cls in TEXTURE_EDITING_CLASSES + TEXTURE_PANEL_CLASSES:
             bpy.utils.register_class(cls)
+        for cls in PHYSICS_PREVIEW_CLASSES:
+            bpy.utils.register_class(cls)
+        register_properties()
         for cls in UNITYPACKAGE_FILE_HANDLER_CLASSES:
             bpy.utils.register_class(cls)
         bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
         bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
     def unregister():
+        unregister_properties()
+        for cls in reversed(PHYSICS_PREVIEW_CLASSES):
+            bpy.utils.unregister_class(cls)
         bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
         for cls in reversed(TEXTURE_EDITING_CLASSES + TEXTURE_PANEL_CLASSES):
             bpy.utils.unregister_class(cls)

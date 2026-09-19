@@ -103,6 +103,8 @@ GUIDが見つからない場合はPathへ進み、Pathも失敗した場合だ�
 
 PhysBoneの完全再現・Unityへの自動restore、Contact、Animator Controller、Expressions、Modular Avatar、NDMF、lilToon/Poiyomiの完全再現、AudioLink、Unity Constraint、MonoBehaviour/C#実行、Prefab Variantの完全互換は対象外です。PhysBone/Colliderのserialized source captureと限定的な近似preview prototypeは保存データを書き換えずに提供します。
 
+Imported scenes expose the approximate preview at `3D View → N → VAPB → Physics Preview`. Enable/Disable and Reset use only identity-matched chains and run from a Blender main-thread timer; unmatched chains are skipped and reported.
+
 ## Editable Texture Workflow
 
 ## Visual Dependency Discovery
