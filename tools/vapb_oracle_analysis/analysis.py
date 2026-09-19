@@ -5,6 +5,8 @@ import json
 from collections import Counter, defaultdict
 from typing import Any
 
+from tools.vapb_oracle.observation_context import context_of, require_isolated
+
 
 def _digest(value: Any) -> str:
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
@@ -80,7 +82,9 @@ def _texture_graph(entities: dict[str, dict[str, Any]], edges: list[dict[str, An
     return {"roleCounts": dict(sorted(properties.items())), "resolvedRoleCounts": dict(sorted(resolved.items())), "unknownRoleCount": properties.get("OTHER", 0) + properties.get("UNKNOWN_PROPERTY", 0)}
 
 
-def analyze_observation(canonical: dict[str, Any]) -> dict[str, Any]:
+def analyze_observation(canonical: dict[str, Any], *, require_isolated_context: bool = False) -> dict[str, Any]:
+    if require_isolated_context:
+        require_isolated(canonical)
     entities = _entities(canonical)
     edges = canonical["observed"].get("edges", [])
     anomalies = _all_anomalies(canonical)
@@ -120,8 +124,13 @@ def analyze_observation(canonical: dict[str, Any]) -> dict[str, Any]:
         experiments.append({"code": "COMPARE_CANDIDATE_SEMANTICS", "status": "PROPOSED", "reason": "structural evidence is not sufficient for automatic selection"})
     for anomaly in anomalies:
         experiments.append({"code": "RECHECK_" + str(anomaly.get("code", "UNKNOWN")), "status": "PROPOSED"})
+    context = context_of(canonical)
+    provenance = canonical.get("provenance", {}).get("packageProvenance", {})
+    isolated_attested = context.value == "ISOLATED_PACKAGE" and provenance.get("isolationVerified") is True and all(provenance.get(field) for field in ("baselineId", "baselineHash", "packageSha256"))
     return {
         "analysisVersion": "1",
+        "observationContext": context.value,
+        "contaminationStatus": "VALID_FOR_ISOLATED" if isolated_attested else "ISOLATION_UNVERIFIED" if context.value == "ISOLATED_PACKAGE" else "CONTAMINATED_CONTEXT" if context.value in {"MERGED_CORPUS", "CONTROLLED_COLLISION"} else "UNKNOWN_CONTEXT",
         "inputProvenance": canonical.get("provenance", {}),
         "coverage": canonical.get("coverage", {}),
         "prefabSignatures": signatures,

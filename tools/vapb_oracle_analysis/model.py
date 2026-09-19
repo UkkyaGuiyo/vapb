@@ -91,10 +91,13 @@ def adapt_observation(raw: dict[str, Any], *, raw_sha256: str, source_label: str
                 anomalies.append({"code": "PROPERTY_REFERENCE_UNRESOLVED", "severity": "WARNING", "entity": prefab_id, "evidence": {"status": modification.get("resolutionStatus")}})
     if not observed.get("prefabs"):
         coverage["unknown"].append("prefab_observation")
+    for collision in raw.get("collisionEvents", []):
+        if isinstance(collision, dict):
+            anomalies.append({"code": collision.get("code", "UNKNOWN_COLLISION"), "severity": "WARNING", "entity": None, "evidence": {"evidence": collision.get("evidence")}})
     return {
         "canonicalVersion": "1",
         "producer": {"sourceSchema": source_schema, "unityVersion": raw.get("unityVersion", observed.get("unityVersion")), "accessMethod": raw.get("accessMethod", "UNKNOWN")},
-        "provenance": {"rawSha256": raw_sha256, "sourceLabel": source_label, "runId": raw.get("runId", observed.get("runId"))},
+        "provenance": {"rawSha256": raw_sha256, "sourceLabel": source_label, "runId": raw.get("runId", observed.get("runId")), "observationContext": raw.get("observationContext", "UNKNOWN"), "packageProvenance": dict(raw.get("packageProvenance", {}), collisionEvents=raw.get("collisionEvents", []))},
         "coverage": coverage,
         "observed": {"entities": entities, "edges": edges, "anomalies": list(observed.get("anomalies", []))},
         "derived": {"adapterAnomalies": anomalies},

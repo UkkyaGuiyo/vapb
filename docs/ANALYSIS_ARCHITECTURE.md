@@ -4,6 +4,8 @@ The analysis suite is a read-only pipeline: immutable raw JSON vault, versioned 
 
 The suite does not select a production prefab automatically. Ambiguous or structurally distinct candidates remain explicit user-choice outcomes.
 
+Every observation carries an explicit context: `ISOLATED_PACKAGE`, `MERGED_CORPUS`, `CONTROLLED_COLLISION`, `ROUNDTRIP`, or `UNKNOWN`. Isolated-required analyses must reject merged or unattested input.
+
 ## Commands
 
 `python -m vapb_oracle_analysis ingest INPUT --vault VAULT`

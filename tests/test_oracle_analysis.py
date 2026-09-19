@@ -11,6 +11,8 @@ from tools.vapb_oracle_analysis.report import public_report
 from tools.vapb_oracle_analysis.legacy import legacy_assertions
 from tools.vapb_oracle_analysis.version import compare_versions
 from tools.vapb_oracle_analysis.roundtrip import roundtrip_diff
+from tools.vapb_oracle.observation_context import require_isolated
+from tools.unity_semantic_oracle.baseline_manifest import manifest
 
 
 def fixture():
@@ -89,6 +91,35 @@ class OracleAnalysisTests(unittest.TestCase):
         self.assertEqual(roundtrip_diff({"globalObjectId": "a"}, {"globalObjectId": "b"})["status"], "NOT_COMPARABLE")
         self.assertEqual(roundtrip_diff({"globalObjectId": "a"}, {"globalObjectId": "b"}, {"a": "b"})["status"], "EXPECTED_CHANGE")
         self.assertEqual(legacy_assertions(result)[0]["status"], "UNRESOLVED")
+
+    def test_merged_context_is_not_valid_isolated_evidence(self):
+        raw = fixture(); raw["observationContext"] = "MERGED_CORPUS"
+        canonical = adapt_observation(raw, raw_sha256="hash", source_label="merged.json")
+        with self.assertRaises(ValueError): require_isolated(canonical)
+        result = analyze_observation(canonical)
+        self.assertEqual(result["contaminationStatus"], "CONTAMINATED_CONTEXT")
+
+    def test_isolated_context_can_be_required(self):
+        raw = fixture(); raw["observationContext"] = "ISOLATED_PACKAGE"; raw["packageProvenance"] = {"isolationVerified": True, "baselineId": "baseline", "baselineHash": "a" * 64, "packageSha256": "b" * 64}
+        canonical = adapt_observation(raw, raw_sha256="hash", source_label="isolated.json")
+        require_isolated(canonical)
+
+    def test_isolated_context_requires_attested_baseline_and_package_hash(self):
+        raw = fixture(); raw["observationContext"] = "ISOLATED_PACKAGE"; raw["packageProvenance"] = {"isolationVerified": True}
+        canonical = adapt_observation(raw, raw_sha256="hash", source_label="isolated.json")
+        with self.assertRaises(ValueError): require_isolated(canonical)
+
+    def test_isolated_context_rejects_invalid_hashes_and_collisions(self):
+        raw = fixture(); raw["observationContext"] = "ISOLATED_PACKAGE"; raw["packageProvenance"] = {"isolationVerified": True, "baselineId": "baseline", "baselineHash": "z" * 64, "packageSha256": "z" * 64}; raw["collisionEvents"] = [{"code": "PATH_COLLISION"}]
+        canonical = adapt_observation(raw, raw_sha256="hash", source_label="isolated.json")
+        with self.assertRaises(ValueError): require_isolated(canonical)
+
+    def test_baseline_manifest_does_not_include_its_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "project"; root.mkdir()
+            (root / "ProjectSettings").mkdir()
+            (root / "ProjectSettings" / "ProjectVersion.txt").write_text("2022.3", encoding="utf-8")
+            self.assertNotIn("baseline.json", {item["path"] for item in manifest(root, exclude_paths={root / "baseline.json"})["files"]})
 
 
 if __name__ == "__main__":

@@ -44,6 +44,7 @@ namespace UnitySemanticOracle
         public string[] requestedPackages;
         public string prefabFilter;
         public string lastFailedPackage;
+        public string observationContext;
     }
 
     // This is intentionally human-started. Codex must not launch/control the
@@ -57,6 +58,7 @@ namespace UnitySemanticOracle
         private string outputPath = "";
         private string checkpointPath = "";
         private bool running;
+        private bool mergedCorpusMode;
         private readonly System.Collections.Generic.HashSet<string> completedPackages = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly System.Collections.Generic.List<string> pendingPackages = new System.Collections.Generic.List<string>();
         private int pendingPackageCursor;
@@ -128,6 +130,7 @@ namespace UnitySemanticOracle
             if (GUILayout.Button("Refresh package preview")) RefreshPackagePreview();
             EditorGUILayout.HelpBox(packagePreview, MessageType.None);
             prefabFilter = EditorGUILayout.TextField("Prefab filter (optional)", prefabFilter);
+            mergedCorpusMode = EditorGUILayout.Toggle("Merged corpus (non-isolated research)", mergedCorpusMode);
             outputPath = EditorGUILayout.TextField("External JSON output", outputPath);
             checkpointPath = EditorGUILayout.TextField("External checkpoint", checkpointPath);
             using (new EditorGUI.DisabledScope(running))
@@ -202,10 +205,16 @@ namespace UnitySemanticOracle
                 }
             }
             if (!statePrepared) LoadCompletedPackages();
+            if (resume && string.Equals(runState, "ISOLATION_FAILED", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("Isolated observation was interrupted by a Unity domain reload; discard the disposable project and start a fresh observation.");
+            if (mergedCorpusMode && resume && completedPackages.Count > 0)
+                throw new InvalidOperationException("Merged corpus resume is not authoritative; start a fresh merged observation.");
             if (resume && !statePrepared && (string.Equals(runState, "COMPLETE", StringComparison.OrdinalIgnoreCase) || string.Equals(runState, "RUN_COMPLETE", StringComparison.OrdinalIgnoreCase) || string.Equals(durableState.state, "COMPLETE", StringComparison.OrdinalIgnoreCase)))
                 throw new InvalidOperationException("This checkpoint is already COMPLETE.");
             if (string.IsNullOrEmpty(runId)) runId = Guid.NewGuid().ToString("N");
             var requested = DiscoverRequestedPackages(resume);
+            if (requested.Length > 1 && !mergedCorpusMode)
+                throw new InvalidOperationException("Isolated mode accepts exactly one UnityPackage. Enable merged corpus mode only for an explicit collision experiment.");
             pendingPackages.Clear();
             foreach (var package in requested)
             {
@@ -240,6 +249,7 @@ namespace UnitySemanticOracle
             WriteCheckpoint("RUNNING", null);
             Environment.SetEnvironmentVariable("UNITY_ORACLE_PACKAGES", packagePaths ?? "");
             Environment.SetEnvironmentVariable("UNITY_ORACLE_PREFAB_FILTER", prefabFilter ?? "");
+            Environment.SetEnvironmentVariable("UNITY_ORACLE_OBSERVATION_CONTEXT", mergedCorpusMode ? "MERGED_CORPUS" : "ISOLATED_PACKAGE");
             Environment.SetEnvironmentVariable("UNITY_ORACLE_OUTPUT", outputPath);
             Environment.SetEnvironmentVariable("UNITY_ORACLE_EXTERNAL_PROJECT", "1");
             Environment.SetEnvironmentVariable("UNITY_ORACLE_NO_EXIT", "1");
@@ -343,7 +353,8 @@ namespace UnitySemanticOracle
                 completedPackages = new System.Collections.Generic.List<string>(completedPackages).ToArray(),
                 requestedPackages = packageList,
                 prefabFilter = prefabFilter,
-                lastFailedPackage = durableState.lastFailedPackage
+                lastFailedPackage = durableState.lastFailedPackage,
+                observationContext = mergedCorpusMode ? "MERGED_CORPUS" : "ISOLATED_PACKAGE"
             };
             durableState = checkpoint;
             File.WriteAllText(checkpointPath, JsonUtility.ToJson(checkpoint, true));
@@ -365,6 +376,7 @@ namespace UnitySemanticOracle
             if (previous.requestedPackages != null && previous.requestedPackages.Length > 0)
                 packagePaths = string.Join(";", previous.requestedPackages);
             if (previous.prefabFilter != null) prefabFilter = previous.prefabFilter;
+            mergedCorpusMode = string.Equals(previous.observationContext, "MERGED_CORPUS", StringComparison.OrdinalIgnoreCase);
             durableState.lastFailedPackage = previous.lastFailedPackage;
             currentPhase = string.IsNullOrEmpty(previous.currentPhase) ? "WAITING_FOR_IMPORT" : previous.currentPhase;
             currentPackage = previous.currentPackage;
@@ -374,6 +386,13 @@ namespace UnitySemanticOracle
             lastError = previous.lastError;
             lastStackTracePath = previous.lastStackTracePath;
             lastMessage = previous.lastMessage;
+            if (string.Equals(previous.observationContext, "ISOLATED_PACKAGE", StringComparison.OrdinalIgnoreCase) &&
+                (string.Equals(runState, "RUNNING", StringComparison.OrdinalIgnoreCase) || string.Equals(runState, "WAITING_FOR_UNITY", StringComparison.OrdinalIgnoreCase) || string.Equals(runState, "STALLED", StringComparison.OrdinalIgnoreCase)))
+            {
+                runState = "ISOLATION_FAILED";
+                lastError = "ISOLATION_FAILED: Unity domain reload interrupted isolated package observation; evidence is not authoritative.";
+                lastMessage = "Discard the disposable Unity project and start a fresh isolated observation.";
+            }
             var reobservationRequired = string.IsNullOrEmpty(previous.observationVersion) && previous.completedPackages != null && previous.completedPackages.Length > 0;
             if (reobservationRequired)
             {
@@ -454,6 +473,20 @@ namespace UnitySemanticOracle
                 active.packageStartedAtUtc = DateTime.UtcNow;
                 active.WriteCheckpoint("RUNNING", error);
                 SemanticOracle.RetryCurrentPackageImport();
+                return;
+            }
+            if (!active.mergedCorpusMode)
+            {
+                active.running = false;
+                active.runState = "ISOLATION_FAILED";
+                active.currentPhase = "ISOLATION_FAILED";
+                active.lastMessage = "Isolated import failed; discard the disposable project before retrying.";
+                active.lastProgressAtUtc = DateTime.UtcNow;
+                active.WriteCheckpoint("FAILED", error);
+                EditorApplication.update -= active.Poll;
+                SemanticOracle.DetachPackageCallbacks();
+                SemanticOracle.PackageCompletedCallback = null;
+                SemanticOracle.PackageFailedCallback = null;
                 return;
             }
             active.lastFailedPackage = active.currentPackage;

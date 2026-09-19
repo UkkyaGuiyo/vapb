@@ -6,13 +6,15 @@ from typing import Any
 
 
 def public_report(analysis: dict[str, Any]) -> dict[str, Any]:
-    allowed_anomalies = {"IDENTITY_COLLISION", "MAT_SLOT_EMPTY", "MAT_TEXTURE_REFERENCE_UNRESOLVED", "PROPERTY_REFERENCE_UNRESOLVED"}
+    allowed_anomalies = {"IDENTITY_COLLISION", "MAT_SLOT_EMPTY", "MAT_TEXTURE_REFERENCE_UNRESOLVED", "PROPERTY_REFERENCE_UNRESOLVED", "PATH_COLLISION", "GUID_REASSIGNED", "ASSET_OVERWRITE", "REFERENCE_REBOUND", "UNKNOWN_COLLISION"}
     allowed_experiments = {"COMPARE_CANDIDATE_SEMANTICS", "TRACE_UNRESOLVED_DEPENDENCY", "REQUEST_EXPLICIT_PREFAB_CHOICE"}
     deps = {}
     for item in analysis.get("dependencies", []):
         key = (item.get("kind"), item.get("status")); deps["%s:%s" % key] = deps.get("%s:%s" % key, 0) + 1
     return {
         "analysisVersion": analysis.get("analysisVersion"),
+        "observationContext": analysis.get("observationContext", "UNKNOWN"),
+        "contaminationStatus": analysis.get("contaminationStatus", "UNKNOWN_CONTEXT"),
         "coverage": {"supported": list(analysis.get("coverage", {}).get("supported", [])), "unknown": list(analysis.get("coverage", {}).get("unknown", [])), "unsupported": list(analysis.get("coverage", {}).get("unsupported", []))},
         "candidateComparison": {"classification": analysis.get("candidateComparison", {}).get("classification"), "candidateCount": analysis.get("candidateComparison", {}).get("candidateCount"), "automaticSelection": False},
         "clusterCount": len(analysis.get("clusters", [])),

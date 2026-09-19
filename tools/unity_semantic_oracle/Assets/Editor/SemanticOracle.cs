@@ -132,6 +132,41 @@ namespace UnitySemanticOracle
         public OracleRun observed;
         public OracleDerived derived = new OracleDerived();
         public List<string> limitations = new List<string>();
+        public string observationContext = "UNKNOWN";
+        public PackageProvenance packageProvenance = new PackageProvenance();
+        public List<CollisionEventRecord> collisionEvents = new List<CollisionEventRecord>();
+    }
+
+    [Serializable] public sealed class PackageProvenance
+    {
+        public string canonicalPath;
+        public string packageSha256;
+        public int sequenceIndex;
+        public int packagesPreviouslyPresent;
+        public string baselineId;
+        public string baselineHash;
+        public bool isolationVerified;
+        public string isolationFailureReason;
+        public string importStartedAtUtc;
+        public string importCompletedAtUtc;
+        public string probeStartedAtUtc;
+        public string probeCompletedAtUtc;
+    }
+
+    [Serializable] public sealed class BaselineManifestHeader
+    {
+        public string baselineHash;
+    }
+
+    [Serializable] public sealed class CollisionEventRecord
+    {
+        public int packageSequenceIndex;
+        public string packagePath;
+        public string code;
+        public string assetPath;
+        public string previousGuid;
+        public string currentGuid;
+        public string evidence;
     }
 
     [Serializable] public sealed class OracleDerived
@@ -147,6 +182,15 @@ namespace UnitySemanticOracle
         private static int pendingPackageIndex;
         private static string pendingPrefabFilter;
         private static string pendingOutput;
+        private static string pendingObservationContext;
+        private static string[] pendingImportedItems = new string[0];
+        private static Dictionary<string, string> preImportPathGuids = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static List<CollisionEventRecord> pendingCollisionEvents = new List<CollisionEventRecord>();
+        private static DateTime pendingImportStartedAtUtc;
+        private static DateTime pendingProbeStartedAtUtc;
+        private static bool pendingPackageCompleted;
+        private static bool pendingItemsCompleted;
+        private static bool isolatedProbeScheduled;
         public static Action<string> PackageCompletedCallback;
         public static Action<string> PackageFailedCallback;
 
@@ -155,6 +199,7 @@ namespace UnitySemanticOracle
             AssetDatabase.importPackageCompleted -= OnImportPackageCompleted;
             AssetDatabase.importPackageCancelled -= OnImportPackageCancelled;
             AssetDatabase.importPackageFailed -= OnImportPackageFailed;
+            AssetDatabase.onImportPackageItemsCompleted -= OnImportPackageItemsCompleted;
         }
 
         public static void RetryCurrentPackageImport()
@@ -166,6 +211,8 @@ namespace UnitySemanticOracle
 
         public static void ContinueAfterPackageFailure()
         {
+            if (pendingObservationContext == "ISOLATED_PACKAGE")
+                throw new InvalidOperationException("ISOLATION_FAILED: isolated package failure requires disposable project replacement.");
             ImportNextPackageOrProbe();
         }
 
@@ -200,6 +247,21 @@ namespace UnitySemanticOracle
             pendingPrefabFilter = Environment.GetEnvironmentVariable("UNITY_ORACLE_PREFAB_FILTER");
             pendingOutput = Environment.GetEnvironmentVariable("UNITY_ORACLE_OUTPUT");
             if (string.IsNullOrEmpty(pendingOutput)) pendingOutput = Path.Combine("Library", "semantic-oracle.json");
+            pendingObservationContext = Environment.GetEnvironmentVariable("UNITY_ORACLE_OBSERVATION_CONTEXT");
+            if (string.IsNullOrEmpty(pendingObservationContext)) pendingObservationContext = "UNKNOWN";
+            if (pendingPackages.Length == 0)
+                throw new InvalidOperationException("At least one package is required for package probing.");
+            if (pendingPackages.Length == 1 && pendingObservationContext == "UNKNOWN")
+                throw new InvalidOperationException("Package observation requires an explicit observation context.");
+            if (pendingPackages.Length > 1 && pendingObservationContext != "MERGED_CORPUS" && pendingObservationContext != "CONTROLLED_COLLISION")
+                throw new InvalidOperationException("Multiple-package observation requires explicit MERGED_CORPUS or CONTROLLED_COLLISION context.");
+            pendingImportedItems = new string[0];
+            pendingCollisionEvents = new List<CollisionEventRecord>();
+            pendingImportStartedAtUtc = DateTime.UtcNow;
+            pendingPackageCompleted = false;
+            pendingItemsCompleted = false;
+            isolatedProbeScheduled = false;
+            preImportPathGuids = SnapshotAssetGuids();
             if (pendingPackages.Length > 0)
             {
                 if (Environment.GetEnvironmentVariable("UNITY_ORACLE_EXTERNAL_PROJECT") != "1")
@@ -212,6 +274,7 @@ namespace UnitySemanticOracle
             AssetDatabase.importPackageCompleted += OnImportPackageCompleted;
             AssetDatabase.importPackageCancelled += OnImportPackageCancelled;
             AssetDatabase.importPackageFailed += OnImportPackageFailed;
+            AssetDatabase.onImportPackageItemsCompleted += OnImportPackageItemsCompleted;
             ImportNextPackageOrProbe();
         }
 
@@ -219,7 +282,11 @@ namespace UnitySemanticOracle
         {
             if (pendingPackageIndex < pendingPackages.Length)
             {
+                pendingPackageCompleted = false;
+                pendingItemsCompleted = false;
                 var package = pendingPackages[pendingPackageIndex++];
+                preImportPathGuids = SnapshotAssetGuids();
+                pendingImportStartedAtUtc = DateTime.UtcNow;
                 Debug.Log("Semantic Oracle importing package " + package);
                 AssetDatabase.ImportPackage(package, false);
                 return;
@@ -235,17 +302,62 @@ namespace UnitySemanticOracle
             var output = Environment.GetEnvironmentVariable("UNITY_ORACLE_OUTPUT");
             if (string.IsNullOrEmpty(output)) output = pendingOutput;
             WriteProbes(paths, output);
+            PackageCompletedCallback?.Invoke(pendingPackages[pendingPackages.Length - 1]);
             AssetDatabase.importPackageCompleted -= OnImportPackageCompleted;
             AssetDatabase.importPackageCancelled -= OnImportPackageCancelled;
             AssetDatabase.importPackageFailed -= OnImportPackageFailed;
+            AssetDatabase.onImportPackageItemsCompleted -= OnImportPackageItemsCompleted;
             if (Environment.GetEnvironmentVariable("UNITY_ORACLE_NO_EXIT") != "1")
                 EditorApplication.Exit(0);
         }
 
         private static void OnImportPackageCompleted(string packageName)
         {
-            PackageCompletedCallback?.Invoke(packageName);
+            pendingPackageCompleted = true;
+            if (pendingPackages.Length == 1 && pendingObservationContext == "ISOLATED_PACKAGE")
+            {
+                ScheduleIsolatedProbeIfReady();
+                return;
+            }
+            ScheduleMergedAdvanceIfReady(packageName);
+        }
+
+        private static void OnImportPackageItemsCompleted(string[] importedItems)
+        {
+            pendingImportedItems = importedItems ?? new string[0];
+            pendingItemsCompleted = true;
+            foreach (var path in pendingImportedItems)
+            {
+                string previousGuid;
+                if (!preImportPathGuids.TryGetValue(path, out previousGuid)) continue;
+                var currentGuid = AssetDatabase.AssetPathToGUID(path);
+                pendingCollisionEvents.Add(new CollisionEventRecord {
+                    packageSequenceIndex = Math.Max(0, pendingPackageIndex - 1),
+                    packagePath = pendingPackages != null && pendingPackages.Length > 0 ? pendingPackages[Math.Max(0, pendingPackageIndex - 1)] : null,
+                    code = previousGuid == currentGuid ? "PATH_COLLISION" : "GUID_REASSIGNED",
+                    assetPath = path,
+                    previousGuid = previousGuid,
+                    currentGuid = currentGuid,
+                    evidence = "public AssetDatabase path/GUID comparison"
+                });
+            }
+            ScheduleIsolatedProbeIfReady();
+            ScheduleMergedAdvanceIfReady(null);
+        }
+
+        private static void ScheduleMergedAdvanceIfReady(string packageName)
+        {
+            if (pendingObservationContext == "ISOLATED_PACKAGE" || !pendingPackageCompleted || !pendingItemsCompleted) return;
+            if (pendingPackageIndex < pendingPackages.Length)
+                PackageCompletedCallback?.Invoke(packageName ?? pendingPackages[pendingPackageIndex - 1]);
             ImportNextPackageOrProbe();
+        }
+
+        private static void ScheduleIsolatedProbeIfReady()
+        {
+            if (!pendingPackageCompleted || pendingImportedItems.Length == 0 || isolatedProbeScheduled) return;
+            isolatedProbeScheduled = true;
+            EditorApplication.delayCall += ProbeImportedPackageAndFinish;
         }
         private static void OnImportPackageCancelled(string packageName)
         {
@@ -255,6 +367,83 @@ namespace UnitySemanticOracle
         private static void OnImportPackageFailed(string packageName, string errorMessage)
         {
             PackageFailedCallback?.Invoke("Unity package import failed: " + packageName + " - " + errorMessage);
+        }
+
+        private static void ProbeImportedPackageAndFinish()
+        {
+            isolatedProbeScheduled = false;
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var filter = pendingPrefabFilter;
+            var importedPrefabs = pendingImportedItems
+                .Where(path => path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
+                .Where(path => string.IsNullOrEmpty(filter) || path.IndexOf(filter, StringComparison.OrdinalIgnoreCase) >= 0)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToArray();
+            if (importedPrefabs.Length == 0)
+                throw new InvalidOperationException("No imported Prefab items were available for isolated package probing.");
+            pendingProbeStartedAtUtc = DateTime.UtcNow;
+            WriteProbes(importedPrefabs, pendingOutput);
+            PackageCompletedCallback?.Invoke(pendingPackages[0]);
+            DetachPackageCallbacks();
+            if (Environment.GetEnvironmentVariable("UNITY_ORACLE_NO_EXIT") != "1")
+                EditorApplication.Exit(0);
+        }
+
+        private static Dictionary<string, string> SnapshotAssetGuids()
+        {
+            var snapshot = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var guid in AssetDatabase.FindAssets(""))
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (!string.IsNullOrEmpty(path)) snapshot[path] = guid;
+            }
+            return snapshot;
+        }
+
+        private static string PackageSha256(string path)
+        {
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+            using (var sha = System.Security.Cryptography.SHA256.Create())
+            using (var stream = File.OpenRead(path))
+                return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+        }
+
+        private static bool VerifyBaselineAttestation(out string failureReason)
+        {
+            failureReason = null;
+            if (Environment.GetEnvironmentVariable("UNITY_ORACLE_ISOLATION_VERIFIED") != "1")
+            {
+                failureReason = "UNITY_ORACLE_ISOLATION_VERIFIED was not set to 1.";
+                return false;
+            }
+            var manifestPath = Environment.GetEnvironmentVariable("UNITY_ORACLE_BASELINE_MANIFEST");
+            var expectedHash = Environment.GetEnvironmentVariable("UNITY_ORACLE_BASELINE_HASH");
+            if (string.IsNullOrEmpty(manifestPath) || !File.Exists(manifestPath))
+            {
+                failureReason = "External baseline manifest is missing.";
+                return false;
+            }
+            if (string.IsNullOrEmpty(expectedHash) || !expectedHash.Equals(expectedHash.ToLowerInvariant(), StringComparison.Ordinal) || expectedHash.Length != 64)
+            {
+                failureReason = "Baseline hash is not a lowercase SHA-256 value.";
+                return false;
+            }
+            try
+            {
+                var header = JsonUtility.FromJson<BaselineManifestHeader>(File.ReadAllText(manifestPath));
+                if (header == null || !string.Equals(header.baselineHash, expectedHash, StringComparison.Ordinal))
+                {
+                    failureReason = "External baseline manifest hash does not match UNITY_ORACLE_BASELINE_HASH.";
+                    return false;
+                }
+                return true;
+            }
+            catch (Exception exception)
+            {
+                failureReason = "External baseline manifest could not be read: " + exception.Message;
+                return false;
+            }
         }
 
         private static void WriteProbe(string path, string output)
@@ -280,27 +469,66 @@ namespace UnitySemanticOracle
             if (Environment.GetEnvironmentVariable("UNITY_ORACLE_SCHEMA") == "0.2")
             {
                 var envelope = new OracleEnvelope { observed = run };
+                envelope.observationContext = pendingObservationContext ?? "UNKNOWN";
+                string baselineFailureReason;
+                var baselineVerified = VerifyBaselineAttestation(out baselineFailureReason);
+                envelope.packageProvenance = new PackageProvenance {
+                    canonicalPath = pendingPackages != null && pendingPackages.Length == 1 ? pendingPackages[0] : string.Join(";", pendingPackages ?? new string[0]),
+                    packageSha256 = pendingPackages != null && pendingPackages.Length == 1 ? PackageSha256(pendingPackages[0]) : null,
+                    sequenceIndex = Math.Max(0, pendingPackageIndex - 1),
+                    packagesPreviouslyPresent = pendingObservationContext != "ISOLATED_PACKAGE" ? Math.Max(0, pendingPackageIndex - 1) : 0,
+                    baselineId = Environment.GetEnvironmentVariable("UNITY_ORACLE_BASELINE_ID"),
+                    baselineHash = Environment.GetEnvironmentVariable("UNITY_ORACLE_BASELINE_HASH"),
+                    isolationVerified = baselineVerified,
+                    isolationFailureReason = baselineVerified ? Environment.GetEnvironmentVariable("UNITY_ORACLE_ISOLATION_FAILURE_REASON") : baselineFailureReason,
+                    importStartedAtUtc = pendingImportStartedAtUtc.ToString("O"),
+                    importCompletedAtUtc = DateTime.UtcNow.ToString("O"),
+                    probeStartedAtUtc = (pendingProbeStartedAtUtc == default(DateTime) ? DateTime.UtcNow : pendingProbeStartedAtUtc).ToString("O"),
+                    probeCompletedAtUtc = DateTime.UtcNow.ToString("O")
+                };
+                envelope.collisionEvents = new List<CollisionEventRecord>(pendingCollisionEvents);
+                if (envelope.observationContext == "MERGED_CORPUS")
+                    envelope.limitations.Add("MERGED_CORPUS: not valid as isolated package evidence.");
+                if (envelope.observationContext == "ISOLATED_PACKAGE" && !envelope.packageProvenance.isolationVerified)
+                    envelope.limitations.Add("ISOLATION_UNVERIFIED: dedicated fresh-project baseline was not attested.");
                 envelope.derived.prefabCount = run.prefabs.Count;
                 envelope.derived.objectCount = run.prefabs.Sum(item => item.objects.Count);
                 envelope.derived.materialSlotCount = run.prefabs.Sum(item => item.objects.Sum(obj => obj.materials.Count));
-                File.WriteAllText(output, JsonUtility.ToJson(envelope, true));
+                WriteTextAtomically(output, JsonUtility.ToJson(envelope, true));
             }
             else
             {
-                File.WriteAllText(output, JsonUtility.ToJson(run, true));
+                WriteTextAtomically(output, JsonUtility.ToJson(run, true));
             }
             Debug.Log("Semantic Oracle wrote " + Path.GetFullPath(output));
+        }
+
+        private static void WriteTextAtomically(string output, string content)
+        {
+            var fullPath = Path.GetFullPath(output);
+            if (File.Exists(fullPath)) throw new InvalidOperationException("IMMUTABLE_OUTPUT_ALREADY_EXISTS: " + fullPath);
+            var temporary = fullPath + ".tmp";
+            try
+            {
+                File.WriteAllText(temporary, content);
+                File.Move(temporary, fullPath);
+            }
+            finally
+            {
+                if (File.Exists(temporary)) File.Delete(temporary);
+            }
         }
 
         private static void ProbePrefab(PrefabRecord prefab, string path)
         {
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (asset == null) throw new InvalidOperationException("Prefab asset could not be loaded: " + path);
-            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-            var root = PrefabUtility.InstantiatePrefab(asset) as GameObject;
-            if (root == null) throw new InvalidOperationException("Prefab asset could not be instantiated: " + path);
+            var scene = EditorSceneManager.NewPreviewScene();
+            GameObject root = null;
             try
             {
+                root = PrefabUtility.InstantiatePrefab(asset, scene) as GameObject;
+                if (root == null) throw new InvalidOperationException("Prefab asset could not be instantiated: " + path);
                 var seenModifications = new HashSet<string>();
                 foreach (var component in root.GetComponentsInChildren<Component>(true))
                 {
@@ -317,8 +545,14 @@ namespace UnitySemanticOracle
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(root);
-                EditorSceneManager.CloseScene(scene, true);
+                try
+                {
+                    if (root != null) UnityEngine.Object.DestroyImmediate(root);
+                }
+                finally
+                {
+                    if (scene.IsValid()) EditorSceneManager.ClosePreviewScene(scene);
+                }
             }
         }
 

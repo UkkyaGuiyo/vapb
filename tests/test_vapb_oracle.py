@@ -141,6 +141,46 @@ class VapbOracleTests(unittest.TestCase):
             self.assertNotIn("out " + property_name, source)
         self.assertIn("out result", source)
 
+    def test_baseline_manifest_excludes_library_and_detects_drift(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "baseline_manifest.py").read_text(encoding="utf-8")
+        self.assertIn('"Library"', source)
+        self.assertIn("BASELINE_DRIFT", source)
+        self.assertIn("BASELINE_ADDED", source)
+
+    def test_oracle_isolation_and_scene_cleanup_contract(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "Assets" / "Editor" / "SemanticOracle.cs").read_text(encoding="utf-8")
+        self.assertIn("UNITY_ORACLE_OBSERVATION_CONTEXT", source)
+        self.assertIn("onImportPackageItemsCompleted", source)
+        self.assertIn("ProbeImportedPackageAndFinish", source)
+        self.assertIn("NewPreviewScene", source)
+        self.assertIn("ClosePreviewScene", source)
+        self.assertIn("GUID_REASSIGNED", source)
+        self.assertNotIn("NewSceneMode.Single", source)
+        self.assertIn("WriteTextAtomically", source)
+        self.assertIn("pendingProbeStartedAtUtc", source)
+        self.assertIn("packageSequenceIndex", source)
+        self.assertIn("pendingPackages.Length == 0", source)
+        self.assertIn("PackageCompletedCallback?.Invoke(pendingPackages[0])", source)
+        self.assertIn("IMMUTABLE_OUTPUT_ALREADY_EXISTS", source)
+
+    def test_runner_fails_closed_after_isolated_domain_reload(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
+        self.assertIn('runState = "ISOLATION_FAILED"', source)
+        self.assertIn("discard the disposable project", source)
+        self.assertIn('resume && string.Equals(runState, "ISOLATION_FAILED"', source)
+        self.assertIn("pendingItemsCompleted", (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" / "Assets" / "Editor" / "SemanticOracle.cs").read_text(encoding="utf-8"))
+        self.assertIn("VerifyBaselineAttestation", (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" / "Assets" / "Editor" / "SemanticOracle.cs").read_text(encoding="utf-8"))
+        self.assertIn("mergedCorpusMode && resume", source)
+        self.assertIn("ISOLATION_FAILED", source)
+
+    def test_analysis_cli_defaults_to_isolated_evidence(self):
+        source = (Path(__file__).parents[1] / "tools" / "vapb_oracle_analysis" / "cli.py").read_text(encoding="utf-8")
+        self.assertIn("allow-contaminated", source)
+        self.assertIn("not args.allow_contaminated", source)
+
     def test_watchdog_distinguishes_waiting_stalled_and_running(self):
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=True), "WAITING_FOR_UNITY")
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=False), "STALLED")
