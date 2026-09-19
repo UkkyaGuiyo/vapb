@@ -1,6 +1,8 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,6 +12,23 @@ namespace UnitySemanticOracle
     public sealed class HumanOracleCheckpoint
     {
         public string state;
+        public string runState;
+        public string runnerVersion = "0.3";
+        public string observationVersion = "0.3";
+        public string corpusRoot;
+        public string[] packageList;
+        public string[] failedPackages;
+        public string[] skippedPackages;
+        public string currentPackage;
+        public int currentPackageIndex;
+        public int totalPackages;
+        public string currentPhase;
+        public string lastHeartbeatAtUtc;
+        public string lastProgressAtUtc;
+        public string lastMessage;
+        public int retryCount;
+        public string lastError;
+        public string lastStackTracePath;
         public string startedAtUtc;
         public string completedAtUtc;
         public string runStartedAtUtc;
@@ -38,11 +57,33 @@ namespace UnitySemanticOracle
         private readonly System.Collections.Generic.HashSet<string> completedPackages = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly System.Collections.Generic.List<string> pendingPackages = new System.Collections.Generic.List<string>();
         private int currentPackageIndex;
+        private int pendingPackageCursor;
         private DateTime runStartedAtUtc;
         private DateTime packageStartedAtUtc;
         private DateTime? packageCompletedAtUtc;
         private string runId;
+        private string runState = "IDLE";
+        private string currentPhase = "IDLE";
+        private string lastMessage = "Idle";
+        private DateTime lastHeartbeatAtUtc;
+        private DateTime lastProgressAtUtc;
+        private DateTime lastCheckpointWriteAtUtc;
+        private int retryCount;
+        private string lastError;
+        private string lastStackTracePath;
+        private readonly System.Collections.Generic.HashSet<string> failedPackages = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly System.Collections.Generic.HashSet<string> skippedPackages = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private string[] packageList = new string[0];
+        private double stallThresholdSeconds = 120d;
         private static HumanOracleRunnerWindow active;
+
+        private void OnEnable()
+        {
+            if (string.IsNullOrEmpty(checkpointPath))
+                checkpointPath = SessionState.GetString("VAPB_ORACLE_CHECKPOINT_PATH", "");
+            if (!string.IsNullOrEmpty(checkpointPath) && File.Exists(checkpointPath))
+                LoadCompletedPackages();
+        }
 
         [MenuItem("Tools/VAPB/Unity Semantic Oracle (Human Runner)")]
         public static void Open()
@@ -85,16 +126,58 @@ namespace UnitySemanticOracle
                         checkpointPath = Path.Combine(folder, "checkpoint.json");
                     }
                 }
-                if (GUILayout.Button("Run observation")) StartRun();
+                if (GUILayout.Button("Run observation")) StartRun(false);
+                if (GUILayout.Button("Resume run")) StartRun(true);
+            if (GUILayout.Button("Retry current package")) RetryCurrentPackage();
+            if (GUILayout.Button("Skip current package")) SkipCurrentPackage();
+            if (GUILayout.Button("Abort safely")) AbortSafely();
+            if (GUILayout.Button("Open checkpoint")) RevealPath(checkpointPath);
+            if (GUILayout.Button("Open output folder")) RevealPath(Path.GetDirectoryName(outputPath));
+            if (GUILayout.Button("Open error log folder")) RevealPath(Path.Combine(Path.GetDirectoryName(checkpointPath) ?? "", "errors"));
             }
-            if (running) EditorGUILayout.HelpBox("RUNNING — leave this Editor open until checkpoint is COMPLETE or FAILED.", MessageType.Warning);
+            DrawStatus();
         }
 
-        private void StartRun()
+        private void DrawStatus()
+        {
+            var completed = completedPackages.Count;
+            var failed = failedPackages.Count;
+            var skipped = skippedPackages.Count;
+            var remaining = Math.Max(0, packageList.Length - completed - failed - skipped);
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Overall state", runState);
+            EditorGUILayout.LabelField("Progress", completed + " / " + packageList.Length + " complete; " + remaining + " remaining");
+            EditorGUILayout.LabelField("Current package", string.IsNullOrEmpty(currentPackage) ? "-" : Path.GetFileName(currentPackage));
+            EditorGUILayout.LabelField("Current phase", currentPhase);
+            EditorGUILayout.LabelField("Completed / Failed / Skipped", completed + " / " + failed + " / " + skipped);
+            EditorGUILayout.LabelField("Retry count", retryCount.ToString());
+            EditorGUILayout.LabelField("Run elapsed", FormatElapsed(runStartedAtUtc));
+            EditorGUILayout.LabelField("Current package elapsed", FormatElapsed(packageStartedAtUtc));
+            EditorGUILayout.LabelField("Last heartbeat", AgeText(lastHeartbeatAtUtc));
+            EditorGUILayout.LabelField("Last progress", AgeText(lastProgressAtUtc));
+            EditorGUILayout.LabelField("Last message", lastMessage);
+            if (!string.IsNullOrEmpty(lastError)) EditorGUILayout.HelpBox(lastError, MessageType.Error);
+            if (!string.IsNullOrEmpty(lastStackTracePath)) EditorGUILayout.LabelField("Error log", lastStackTracePath);
+        }
+
+        private static string FormatElapsed(DateTime started)
+        {
+            if (started == default(DateTime)) return "-";
+            var elapsed = DateTime.UtcNow - started;
+            return Math.Max(0, (int)elapsed.TotalHours).ToString("00") + ":" + elapsed.Minutes.ToString("00") + ":" + elapsed.Seconds.ToString("00");
+        }
+
+        private static string AgeText(DateTime timestamp)
+        {
+            if (timestamp == default(DateTime)) return "-";
+            return timestamp.ToString("O") + " (" + Math.Max(0, (int)(DateTime.UtcNow - timestamp).TotalSeconds) + " sec ago)";
+        }
+
+        private void StartRun(bool resume)
         {
             if (string.IsNullOrWhiteSpace(outputPath) || string.IsNullOrWhiteSpace(checkpointPath))
                 throw new InvalidOperationException("Select an external output folder first.");
-            if (File.Exists(checkpointPath) && File.Exists(outputPath))
+            if (File.Exists(checkpointPath) && File.Exists(outputPath) && !resume)
             {
                 var previous = JsonUtility.FromJson<HumanOracleCheckpoint>(File.ReadAllText(checkpointPath));
                 if (previous != null && previous.state == "COMPLETE")
@@ -104,6 +187,8 @@ namespace UnitySemanticOracle
                 }
             }
             LoadCompletedPackages();
+            if (resume && string.Equals(runState, "COMPLETE", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("This checkpoint is already COMPLETE.");
             if (string.IsNullOrEmpty(runId)) runId = Guid.NewGuid().ToString("N");
             var requested = DiscoverRequestedPackages();
             pendingPackages.Clear();
@@ -119,15 +204,23 @@ namespace UnitySemanticOracle
                 throw new InvalidOperationException("No pending UnityPackages were selected.");
             }
             packagePaths = string.Join(";", pendingPackages.ToArray());
-            currentPackageIndex = 0;
-            runStartedAtUtc = DateTime.UtcNow;
+            packageList = requested;
+            currentPackageIndex = completedPackages.Count + failedPackages.Count + skippedPackages.Count;
+            pendingPackageCursor = 0;
+            if (!resume || runStartedAtUtc == default(DateTime)) runStartedAtUtc = DateTime.UtcNow;
             packageStartedAtUtc = runStartedAtUtc;
             packageCompletedAtUtc = null;
+            lastHeartbeatAtUtc = DateTime.UtcNow;
+            lastProgressAtUtc = DateTime.UtcNow;
+            runState = "RUNNING";
+            currentPhase = "IMPORT_REQUESTED";
+            lastMessage = resume ? "Resuming from durable checkpoint." : "Run started.";
             var projectRoot = Directory.GetParent(Application.dataPath).FullName.TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
             var fullOutput = Path.GetFullPath(outputPath);
             if (fullOutput.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Output must be outside the Unity project.");
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(checkpointPath)));
+            SessionState.SetString("VAPB_ORACLE_CHECKPOINT_PATH", checkpointPath);
             if (File.Exists(outputPath)) File.Delete(outputPath);
             WriteCheckpoint("RUNNING", null);
             Environment.SetEnvironmentVariable("UNITY_ORACLE_PACKAGES", packagePaths ?? "");
@@ -144,6 +237,9 @@ namespace UnitySemanticOracle
             EditorApplication.update += Poll;
             try
             {
+                currentPhase = "WAITING_FOR_IMPORT";
+                currentPackage = pendingPackages.Count == 0 ? null : pendingPackages[0];
+                WriteCheckpoint("RUNNING", null);
                 SemanticOracle.BatchImportAndProbe();
             }
             catch (Exception exception)
@@ -152,6 +248,9 @@ namespace UnitySemanticOracle
                 EditorApplication.update -= Poll;
                 SemanticOracle.PackageCompletedCallback = null;
                 SemanticOracle.PackageFailedCallback = null;
+                runState = "RUN_FATAL";
+                currentPhase = "RUN_FATAL";
+                lastError = exception.Message;
                 WriteCheckpoint("FAILED", exception.Message);
                 throw;
             }
@@ -160,6 +259,7 @@ namespace UnitySemanticOracle
         private void Poll()
         {
             if (!running) return;
+            Heartbeat();
             if (File.Exists(outputPath) && File.GetLastWriteTimeUtc(outputPath) >= runStartedAtUtc)
             {
                 running = false;
@@ -168,9 +268,29 @@ namespace UnitySemanticOracle
                 SemanticOracle.PackageFailedCallback = null;
                 var finished = DateTime.UtcNow;
                 packageCompletedAtUtc = packageCompletedAtUtc ?? finished;
+                runState = "RUN_COMPLETE";
+                currentPhase = "RUN_COMPLETE";
+                lastMessage = "Corpus observation complete.";
                 WriteCheckpoint("COMPLETE", null, finished);
                 Repaint();
             }
+        }
+
+        private void Heartbeat()
+        {
+            var now = DateTime.UtcNow;
+            lastHeartbeatAtUtc = now;
+            var waitingForUnity = EditorApplication.isCompiling || EditorApplication.isUpdating;
+            var noProgress = lastProgressAtUtc != default(DateTime) && (now - lastProgressAtUtc).TotalSeconds >= stallThresholdSeconds;
+            runState = waitingForUnity ? "WAITING_FOR_UNITY" : (noProgress ? "STALLED" : "RUNNING");
+            if (waitingForUnity) lastMessage = "Unity is compiling or updating the AssetDatabase.";
+            else if (noProgress) lastMessage = "No semantic progress observed; inspect or resume explicitly.";
+            if ((now - lastCheckpointWriteAtUtc).TotalSeconds >= 5d || noProgress)
+            {
+                lastCheckpointWriteAtUtc = now;
+                WriteCheckpoint("RUNNING", lastError);
+            }
+            Repaint();
         }
 
         private void WriteCheckpoint(string state, string error, DateTime? completedAt = null)
@@ -179,6 +299,21 @@ namespace UnitySemanticOracle
             var runStart = runStartedAtUtc == default(DateTime) ? now : runStartedAtUtc;
             var checkpoint = new HumanOracleCheckpoint {
                 state = state,
+                runState = runState,
+                corpusRoot = corpusRoot,
+                packageList = packageList,
+                failedPackages = new System.Collections.Generic.List<string>(failedPackages).ToArray(),
+                skippedPackages = new System.Collections.Generic.List<string>(skippedPackages).ToArray(),
+                currentPackage = currentPackage,
+                currentPackageIndex = currentPackageIndex,
+                totalPackages = packageList.Length,
+                currentPhase = currentPhase,
+                lastHeartbeatAtUtc = lastHeartbeatAtUtc == default(DateTime) ? null : lastHeartbeatAtUtc.ToString("O"),
+                lastProgressAtUtc = lastProgressAtUtc == default(DateTime) ? null : lastProgressAtUtc.ToString("O"),
+                lastMessage = lastMessage,
+                retryCount = retryCount,
+                lastError = lastError,
+                lastStackTracePath = lastStackTracePath,
                 startedAtUtc = runStart.ToString("O"),
                 completedAtUtc = state == "COMPLETE" ? now.ToString("O") : null,
                 runStartedAtUtc = runStart.ToString("O"),
@@ -202,8 +337,31 @@ namespace UnitySemanticOracle
             var previous = JsonUtility.FromJson<HumanOracleCheckpoint>(File.ReadAllText(checkpointPath));
             if (previous == null) return;
             runId = previous.runId;
+            runState = string.IsNullOrEmpty(previous.runState) ? previous.state : previous.runState;
+            corpusRoot = previous.corpusRoot;
+            if (string.IsNullOrEmpty(outputPath)) outputPath = previous.outputPath;
+            currentPhase = string.IsNullOrEmpty(previous.currentPhase) ? "WAITING_FOR_IMPORT" : previous.currentPhase;
+            currentPackage = previous.currentPackage;
+            currentPackageIndex = previous.currentPackageIndex;
+            packageList = previous.packageList ?? packageList;
+            retryCount = previous.retryCount;
+            lastError = previous.lastError;
+            lastStackTracePath = previous.lastStackTracePath;
+            lastMessage = previous.lastMessage;
+            if (string.IsNullOrEmpty(previous.observationVersion) && previous.completedPackages != null && previous.completedPackages.Length > 0)
+            {
+                completedPackages.Clear();
+                runState = "REOBSERVATION_REQUIRED";
+                lastMessage = "Observation schema changed; previous package results require re-observation.";
+            }
+            if (!string.IsNullOrEmpty(previous.runStartedAtUtc)) DateTime.TryParse(previous.runStartedAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out runStartedAtUtc);
+            if (!string.IsNullOrEmpty(previous.packageStartedAtUtc)) DateTime.TryParse(previous.packageStartedAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out packageStartedAtUtc);
+            if (!string.IsNullOrEmpty(previous.lastHeartbeatAtUtc)) DateTime.TryParse(previous.lastHeartbeatAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out lastHeartbeatAtUtc);
+            if (!string.IsNullOrEmpty(previous.lastProgressAtUtc)) DateTime.TryParse(previous.lastProgressAtUtc, null, System.Globalization.DateTimeStyles.RoundtripKind, out lastProgressAtUtc);
             if (previous.completedPackages == null) return;
             foreach (var package in previous.completedPackages) completedPackages.Add(CanonicalPackageKey(package));
+            if (previous.failedPackages != null) foreach (var package in previous.failedPackages) failedPackages.Add(CanonicalPackageKey(package));
+            if (previous.skippedPackages != null) foreach (var package in previous.skippedPackages) skippedPackages.Add(CanonicalPackageKey(package));
         }
 
         private string[] DiscoverRequestedPackages()
@@ -240,22 +398,115 @@ namespace UnitySemanticOracle
             if (active == null) return;
             if (active.currentPackageIndex < active.pendingPackages.Count)
                 active.completedPackages.Add(CanonicalPackageKey(active.pendingPackages[active.currentPackageIndex]));
+            active.pendingPackageCursor++;
             active.currentPackageIndex++;
             active.packageCompletedAtUtc = DateTime.UtcNow;
+            active.lastProgressAtUtc = active.packageCompletedAtUtc.Value;
+            active.retryCount = 0;
+            active.currentPhase = "PACKAGE_COMPLETE";
+            active.lastMessage = "Package completed; continuing to the next package.";
+            active.currentPackage = active.pendingPackageCursor < active.pendingPackages.Count
+                ? active.pendingPackages[active.pendingPackageCursor]
+                : null;
             active.packageStartedAtUtc = DateTime.UtcNow;
+            active.currentPhase = active.currentPackage == null ? "WRITING_OUTPUT" : "IMPORT_REQUESTED";
             active.WriteCheckpoint("RUNNING", null);
         }
 
         private static void NotifyPackageFailed(string error)
         {
             if (active == null) return;
-            active.running = false;
-            EditorApplication.update -= active.Poll;
+            active.lastError = error;
+            active.WriteFailureLog(error);
+            if (active.retryCount < 1)
+            {
+                active.retryCount++;
+                active.currentPhase = "IMPORT_REQUESTED";
+                active.lastMessage = "Package failed; retrying once.";
+                active.packageStartedAtUtc = DateTime.UtcNow;
+                active.WriteCheckpoint("RUNNING", error);
+                SemanticOracle.RetryCurrentPackageImport();
+                return;
+            }
+            active.failedPackages.Add(active.currentPackage == null ? "unknown" : CanonicalPackageKey(active.currentPackage));
+            active.pendingPackageCursor++;
+            active.currentPackageIndex++;
+            active.currentPackage = active.pendingPackageCursor < active.pendingPackages.Count
+                ? active.pendingPackages[active.pendingPackageCursor]
+                : null;
+            active.packageStartedAtUtc = DateTime.UtcNow;
+            active.runState = "PACKAGE_FAILED";
+            active.currentPhase = "PACKAGE_FAILED";
+            active.lastMessage = "Package failed after bounded retry; continuing.";
+            active.lastProgressAtUtc = DateTime.UtcNow;
+            active.WriteCheckpoint("RUNNING", error);
+            SemanticOracle.ContinueAfterPackageFailure();
+        }
+
+        private void RetryCurrentPackage()
+        {
+            if (running || string.IsNullOrEmpty(checkpointPath)) return;
+            retryCount = 0;
+            failedPackages.Remove(CanonicalPackageKey(currentPackage ?? ""));
+            StartRun(true);
+        }
+
+        private void SkipCurrentPackage()
+        {
+            if (running || string.IsNullOrEmpty(currentPackage)) return;
+            skippedPackages.Add(CanonicalPackageKey(currentPackage));
+            pendingPackageCursor++;
+            currentPackageIndex++;
+            currentPackage = pendingPackageCursor < pendingPackages.Count ? pendingPackages[pendingPackageCursor] : null;
+            packageStartedAtUtc = DateTime.UtcNow;
+            currentPhase = "PACKAGE_FAILED";
+            lastMessage = "Current package skipped by human.";
+            WriteCheckpoint("RUNNING", "Skipped by human.");
+            SemanticOracle.ContinueAfterPackageFailure();
+        }
+
+        private void AbortSafely()
+        {
+            if (!running) return;
+            running = false;
+            runState = "ABORTED";
+            currentPhase = "ABORTED";
+            lastMessage = "Abort requested; checkpoint written.";
+            EditorApplication.update -= Poll;
             SemanticOracle.DetachPackageCallbacks();
             SemanticOracle.PackageCompletedCallback = null;
             SemanticOracle.PackageFailedCallback = null;
-            active.WriteCheckpoint("FAILED", error);
-            active.Repaint();
+            WriteCheckpoint("ABORTED", "Aborted by human.");
+            Repaint();
+        }
+
+        private static void RevealPath(string path)
+        {
+            if (!string.IsNullOrEmpty(path) && (File.Exists(path) || Directory.Exists(path)))
+                EditorUtility.RevealInFinder(path);
+        }
+
+        private void WriteFailureLog(string error)
+        {
+            try
+            {
+                var root = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(checkpointPath)), "errors");
+                using (var sha = SHA256.Create())
+                {
+                    var key = currentPackage ?? "unknown";
+                    var hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(key))).Replace("-", "").ToLowerInvariant();
+                    var directory = Path.Combine(root, hash);
+                    Directory.CreateDirectory(directory);
+                    lastStackTracePath = Path.Combine(directory, "stacktrace.txt");
+                    File.WriteAllText(lastStackTracePath, error ?? "unknown error");
+                    File.WriteAllText(Path.Combine(directory, "error.json"), "{\n  \"phase\": \"" + currentPhase + "\",\n  \"retryCount\": " + retryCount + "\n}");
+                }
+            }
+            catch (Exception exception)
+            {
+                lastError = "RUN_FATAL: cannot write error log: " + exception.Message;
+                runState = "RUN_FATAL";
+            }
         }
 
         private void OnDisable()
@@ -264,6 +515,24 @@ namespace UnitySemanticOracle
             if (active == this) active = null;
             SemanticOracle.PackageCompletedCallback = null;
             SemanticOracle.PackageFailedCallback = null;
+        }
+    }
+
+    [InitializeOnLoad]
+    internal static class HumanOracleDomainReloadRecovery
+    {
+        static HumanOracleDomainReloadRecovery()
+        {
+            EditorApplication.delayCall += InspectDurableState;
+        }
+
+        private static void InspectDurableState()
+        {
+            var checkpoint = SessionState.GetString("VAPB_ORACLE_CHECKPOINT_PATH", "");
+            if (string.IsNullOrEmpty(checkpoint) || !File.Exists(checkpoint)) return;
+            var text = File.ReadAllText(checkpoint);
+            if (text.IndexOf("\"state\": \"RUNNING\"", StringComparison.OrdinalIgnoreCase) >= 0)
+                Debug.Log("VAPB Oracle durable RUNNING checkpoint detected after domain reload. Human Resume is required.");
         }
     }
 }

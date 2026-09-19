@@ -157,6 +157,18 @@ namespace UnitySemanticOracle
             AssetDatabase.importPackageFailed -= OnImportPackageFailed;
         }
 
+        public static void RetryCurrentPackageImport()
+        {
+            if (pendingPackageIndex <= 0 || pendingPackageIndex > pendingPackages.Length)
+                throw new InvalidOperationException("No current package is available for retry.");
+            AssetDatabase.ImportPackage(pendingPackages[pendingPackageIndex - 1], false);
+        }
+
+        public static void ContinueAfterPackageFailure()
+        {
+            ImportNextPackageOrProbe();
+        }
+
         [MenuItem("Tools/Semantic Oracle/Probe Selected Prefab")]
         public static void ProbeSelectedPrefab()
         {

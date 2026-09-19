@@ -29,3 +29,5 @@ commit the generated JSON.
 The next runner version additionally supports recursive corpus-folder discovery,
 deterministic package preview, canonical full-path resume keys, explicit
 RUNNING/COMPLETE/FAILED timing fields, and stale-output rejection.
+
+The full-corpus stall audit is documented in `FULL_CORPUS_STALL_AUDIT.md`.

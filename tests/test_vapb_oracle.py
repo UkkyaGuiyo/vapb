@@ -7,6 +7,7 @@ from tools.vapb_oracle.checkpoint import CheckpointStore, RunState
 from tools.vapb_oracle.diff import semantic_diff
 from tools.vapb_oracle.corpus import holdout_groups
 from tools.vapb_oracle.runner_plan import canonical_package_key, discover_packages
+from tools.vapb_oracle.runner_state import classify_status, RetryPolicy
 from tools.vapb_oracle.schema import (
     build_envelope,
     public_safe_summary,
@@ -110,6 +111,21 @@ class VapbOracleTests(unittest.TestCase):
         self.assertIn("PackageFailedCallback", source)
         self.assertIn("CanonicalPackageKey", source)
         self.assertIn("runStartedAtUtc", source)
+        self.assertIn("WAITING_FOR_UNITY", source)
+        self.assertIn("STALLED", source)
+        self.assertIn("Open error log folder", source)
+        self.assertIn("Abort safely", source)
+
+    def test_watchdog_distinguishes_waiting_stalled_and_running(self):
+        self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=True), "WAITING_FOR_UNITY")
+        self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=False), "STALLED")
+        self.assertEqual(classify_status(heartbeat_age=2, progress_age=20, unity_busy=False), "RUNNING")
+
+    def test_retry_policy_is_bounded(self):
+        policy = RetryPolicy(max_retries=1)
+        self.assertTrue(policy.can_retry("pkg"))
+        policy.record("pkg")
+        self.assertFalse(policy.can_retry("pkg"))
 
 
 if __name__ == "__main__":
