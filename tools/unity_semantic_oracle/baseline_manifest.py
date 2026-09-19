@@ -5,6 +5,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -22,17 +24,37 @@ def _files(project_root: Path, exclude_paths: set[Path] | None = None):
 
 
 def manifest(project_root: Path, exclude_paths: set[Path] | None = None) -> dict:
+    project_root = project_root.resolve()
     entries = []
     for relative in _files(project_root, exclude_paths):
         digest = hashlib.sha256((project_root / relative).read_bytes()).hexdigest()
         entries.append({"path": relative.as_posix(), "sha256": digest, "bytes": (project_root / relative).stat().st_size})
+    directories = []
+    for path in sorted(project_root.rglob("*")):
+        if path.is_dir() and not any(part in EXCLUDED for part in path.relative_to(project_root).parts):
+            directories.append(path.relative_to(project_root).as_posix())
     payload = json.dumps(entries, sort_keys=True, separators=(",", ":")).encode()
-    return {"manifestVersion": "1", "projectRootLabel": "private-local", "baselineHash": hashlib.sha256(payload).hexdigest(), "files": entries}
+    protected = [item["path"] for item in entries if item["path"].startswith("Assets/Editor/VAPB/") or item["path"] in {"Assets/Editor/VAPB.meta", "Assets/Editor.meta", "Assets.meta"}]
+    return {
+        "manifestVersion": "2",
+        "baselineId": uuid.uuid5(uuid.NAMESPACE_URL, hashlib.sha256(payload).hexdigest()).hex,
+        "createdAtUtc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "projectRootLabel": "private-local",
+        "projectRootIdentity": hashlib.sha256(str(project_root).lower().encode("utf-8")).hexdigest(),
+        "unityTargetVersion": "2022.3.62f3",
+        "baselineHash": hashlib.sha256(payload).hexdigest(),
+        "files": entries,
+        "directories": directories,
+        "protectedFiles": protected,
+        "unexpectedAssetCount": 0,
+    }
 
 
 def verify(project_root: Path, expected: dict) -> list[str]:
     actual = manifest(project_root)
     errors = []
+    if actual["projectRootIdentity"] != expected.get("projectRootIdentity"): errors.append("BASELINE_ROOT_MISMATCH: project root identity differs")
+    if expected.get("manifestVersion") != "2": errors.append("BASELINE_SCHEMA_MISMATCH: expected manifestVersion 2")
     if actual["baselineHash"] != expected.get("baselineHash"):
         errors.append("BASELINE_DRIFT: manifest hash differs")
     expected_files = {item["path"]: item for item in expected.get("files", [])}
@@ -41,6 +63,9 @@ def verify(project_root: Path, expected: dict) -> list[str]:
     for path in sorted(set(actual_files) - set(expected_files)): errors.append(f"BASELINE_ADDED: {path}")
     for path in sorted(set(expected_files) & set(actual_files)):
         if expected_files[path]["sha256"] != actual_files[path]["sha256"]: errors.append(f"BASELINE_CHANGED: {path}")
+        if expected_files[path].get("bytes") != actual_files[path].get("bytes"): errors.append(f"BASELINE_SIZE_CHANGED: {path}")
+    if expected.get("unityTargetVersion") != "2022.3.62f3": errors.append("BASELINE_SCHEMA_MISMATCH: Unity target version")
+    if expected.get("unexpectedAssetCount") != 0: errors.append("BASELINE_DIRTY: manifest records unexpected assets")
     return errors
 
 

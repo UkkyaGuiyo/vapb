@@ -45,6 +45,25 @@ namespace UnitySemanticOracle
         public string prefabFilter;
         public string lastFailedPackage;
         public string observationContext;
+        public string baselineManifestPath;
+        public string baselineStatus;
+        public int unexpectedAssetCount;
+    }
+
+    [Serializable] public sealed class BaselineManifestFile
+    {
+        public string path;
+        public string sha256;
+    }
+
+    [Serializable] public sealed class BaselineManifestData
+    {
+        public string manifestVersion;
+        public string baselineId;
+        public string baselineHash;
+        public string projectRootIdentity;
+        public string unityTargetVersion;
+        public BaselineManifestFile[] files;
     }
 
     // This is intentionally human-started. Codex must not launch/control the
@@ -59,6 +78,11 @@ namespace UnitySemanticOracle
         private string checkpointPath = "";
         private bool running;
         private bool mergedCorpusMode;
+        private string baselineManifestPath = "";
+        private string baselineStatus = "UNKNOWN";
+        private string baselineId = "";
+        private string baselineHash = "";
+        private int unexpectedAssetCount;
         private readonly System.Collections.Generic.HashSet<string> completedPackages = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly System.Collections.Generic.List<string> pendingPackages = new System.Collections.Generic.List<string>();
         private int pendingPackageCursor;
@@ -131,6 +155,12 @@ namespace UnitySemanticOracle
             EditorGUILayout.HelpBox(packagePreview, MessageType.None);
             prefabFilter = EditorGUILayout.TextField("Prefab filter (optional)", prefabFilter);
             mergedCorpusMode = EditorGUILayout.Toggle("Merged corpus (non-isolated research)", mergedCorpusMode);
+            baselineManifestPath = EditorGUILayout.TextField("Baseline manifest (external)", baselineManifestPath);
+            if (GUILayout.Button("Verify baseline")) VerifyBaselineStatus();
+            EditorGUILayout.LabelField("Baseline", baselineStatus);
+            EditorGUILayout.LabelField("Baseline ID", string.IsNullOrEmpty(baselineId) ? "-" : baselineId);
+            EditorGUILayout.LabelField("Unexpected Assets", unexpectedAssetCount.ToString());
+            EditorGUILayout.LabelField("Isolation ready", (!mergedCorpusMode && baselineStatus == "CLEAN") || mergedCorpusMode ? "YES" : "NO");
             outputPath = EditorGUILayout.TextField("External JSON output", outputPath);
             checkpointPath = EditorGUILayout.TextField("External checkpoint", checkpointPath);
             using (new EditorGUI.DisabledScope(running))
@@ -191,6 +221,70 @@ namespace UnitySemanticOracle
             return timestamp.ToString("O") + " (" + Math.Max(0, (int)(DateTime.UtcNow - timestamp).TotalSeconds) + " sec ago)";
         }
 
+        private static string RelativeProjectPath(string root, string path)
+        {
+            var normalizedRoot = root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            if (!path.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase)) return null;
+            return path.Substring(normalizedRoot.Length).Replace('\\', '/');
+        }
+
+        private static bool IsBaselineExcluded(string relative)
+        {
+            var parts = relative.Split('/');
+            return parts.Any(part => part == "Library" || part == "Temp" || part == "Obj" || part == "Logs" || part == "UserSettings");
+        }
+
+        private static string Sha256File(string path)
+        {
+            using (var sha = SHA256.Create())
+            using (var stream = File.OpenRead(path))
+                return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+        }
+
+        private void VerifyBaselineStatus()
+        {
+            baselineStatus = "VERIFYING";
+            baselineId = "";
+            baselineHash = "";
+            unexpectedAssetCount = 0;
+            try
+            {
+                if (string.IsNullOrEmpty(baselineManifestPath) || !File.Exists(baselineManifestPath)) throw new InvalidOperationException("Baseline manifest is missing.");
+                var data = JsonUtility.FromJson<BaselineManifestData>(File.ReadAllText(baselineManifestPath));
+                if (data == null || data.manifestVersion != "2" || data.unityTargetVersion != "2022.3.62f3" || string.IsNullOrEmpty(data.baselineId) || string.IsNullOrEmpty(data.baselineHash) || data.baselineHash.Length != 64 || data.files == null)
+                    throw new InvalidOperationException("Baseline manifest schema or target version is invalid.");
+                var expected = data.files.ToDictionary(item => item.path, item => item.sha256, StringComparer.OrdinalIgnoreCase);
+                var root = Directory.GetParent(Application.dataPath).FullName;
+                using (var rootSha = SHA256.Create())
+                {
+                    var rootIdentity = BitConverter.ToString(rootSha.ComputeHash(Encoding.UTF8.GetBytes(root.ToLowerInvariant()))).Replace("-", "").ToLowerInvariant();
+                    if (!string.Equals(data.projectRootIdentity, rootIdentity, StringComparison.OrdinalIgnoreCase)) throw new InvalidOperationException("Baseline project root identity differs.");
+                }
+                var actual = new System.Collections.Generic.Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var file in Directory.GetFiles(root, "*", SearchOption.AllDirectories))
+                {
+                    var relative = RelativeProjectPath(root, file);
+                    if (string.IsNullOrEmpty(relative) || IsBaselineExcluded(relative)) continue;
+                    actual[relative] = Sha256File(file);
+                }
+                var errors = expected.Keys.Except(actual.Keys, StringComparer.OrdinalIgnoreCase).ToList();
+                errors.AddRange(actual.Keys.Except(expected.Keys, StringComparer.OrdinalIgnoreCase));
+                errors.AddRange(expected.Keys.Where(path => actual.ContainsKey(path) && !string.Equals(expected[path], actual[path], StringComparison.OrdinalIgnoreCase)));
+                unexpectedAssetCount = actual.Keys.Count(path => path.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) && !expected.ContainsKey(path));
+                if (unexpectedAssetCount > 0) throw new InvalidOperationException("Unexpected non-Oracle Assets detected.");
+                if (errors.Count > 0) throw new InvalidOperationException("Baseline file drift detected.");
+                baselineId = data.baselineId;
+                baselineHash = data.baselineHash.ToLowerInvariant();
+                baselineStatus = "CLEAN";
+            }
+            catch (Exception exception)
+            {
+                baselineStatus = "DIRTY";
+                lastError = "BASELINE_DIRTY: " + exception.Message;
+            }
+            Repaint();
+        }
+
         private void StartRun(bool resume, bool statePrepared = false)
         {
             if (string.IsNullOrWhiteSpace(outputPath) || string.IsNullOrWhiteSpace(checkpointPath))
@@ -205,6 +299,12 @@ namespace UnitySemanticOracle
                 }
             }
             if (!statePrepared) LoadCompletedPackages();
+            if (!mergedCorpusMode)
+            {
+                VerifyBaselineStatus();
+                if (baselineStatus != "CLEAN")
+                    throw new InvalidOperationException("BASELINE_DIRTY: Unexpected non-Oracle assets detected. Isolated observation is blocked.");
+            }
             if (resume && string.Equals(runState, "ISOLATION_FAILED", StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Isolated observation was interrupted by a Unity domain reload; discard the disposable project and start a fresh observation.");
             if (mergedCorpusMode && resume && completedPackages.Count > 0)
@@ -255,6 +355,10 @@ namespace UnitySemanticOracle
             Environment.SetEnvironmentVariable("UNITY_ORACLE_NO_EXIT", "1");
             Environment.SetEnvironmentVariable("UNITY_ORACLE_SCHEMA", "0.2");
             Environment.SetEnvironmentVariable("UNITY_ORACLE_RUN_ID", runId);
+            Environment.SetEnvironmentVariable("UNITY_ORACLE_BASELINE_MANIFEST", baselineManifestPath ?? "");
+            Environment.SetEnvironmentVariable("UNITY_ORACLE_BASELINE_ID", baselineId ?? "");
+            Environment.SetEnvironmentVariable("UNITY_ORACLE_BASELINE_HASH", baselineHash ?? "");
+            Environment.SetEnvironmentVariable("UNITY_ORACLE_ISOLATION_VERIFIED", (!mergedCorpusMode && baselineStatus == "CLEAN") ? "1" : "0");
             running = true;
             active = this;
             SemanticOracle.PackageCompletedCallback = NotifyPackageCompleted;
@@ -354,7 +458,10 @@ namespace UnitySemanticOracle
                 requestedPackages = packageList,
                 prefabFilter = prefabFilter,
                 lastFailedPackage = durableState.lastFailedPackage,
-                observationContext = mergedCorpusMode ? "MERGED_CORPUS" : "ISOLATED_PACKAGE"
+                observationContext = mergedCorpusMode ? "MERGED_CORPUS" : "ISOLATED_PACKAGE",
+                baselineManifestPath = baselineManifestPath,
+                baselineStatus = baselineStatus,
+                unexpectedAssetCount = unexpectedAssetCount
             };
             durableState = checkpoint;
             File.WriteAllText(checkpointPath, JsonUtility.ToJson(checkpoint, true));
@@ -377,6 +484,9 @@ namespace UnitySemanticOracle
                 packagePaths = string.Join(";", previous.requestedPackages);
             if (previous.prefabFilter != null) prefabFilter = previous.prefabFilter;
             mergedCorpusMode = string.Equals(previous.observationContext, "MERGED_CORPUS", StringComparison.OrdinalIgnoreCase);
+            baselineManifestPath = previous.baselineManifestPath;
+            baselineStatus = string.IsNullOrEmpty(previous.baselineStatus) ? "UNKNOWN" : previous.baselineStatus;
+            unexpectedAssetCount = previous.unexpectedAssetCount;
             durableState.lastFailedPackage = previous.lastFailedPackage;
             currentPhase = string.IsNullOrEmpty(previous.currentPhase) ? "WAITING_FOR_IMPORT" : previous.currentPhase;
             currentPackage = previous.currentPackage;

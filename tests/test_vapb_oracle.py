@@ -2,6 +2,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.vapb_oracle.checkpoint import CheckpointStore, RunState
 from tools.vapb_oracle.diff import semantic_diff
@@ -14,6 +15,7 @@ from tools.vapb_oracle.schema import (
     validate_derived_counts,
     validate_envelope,
 )
+from tools.unity_semantic_oracle.clean_unity_oracle_project import build_cleanup_plan, apply_cleanup, check_clean
 
 
 class VapbOracleTests(unittest.TestCase):
@@ -180,6 +182,55 @@ class VapbOracleTests(unittest.TestCase):
         source = (Path(__file__).parents[1] / "tools" / "vapb_oracle_analysis" / "cli.py").read_text(encoding="utf-8")
         self.assertIn("allow-contaminated", source)
         self.assertIn("not args.allow_contaminated", source)
+
+    def test_cleanup_allowlist_removes_unexpected_unicode_assets_only(self):
+        repo = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for relative in ("Assets/Editor/VAPB", "Packages", "ProjectSettings"):
+                (root / relative).mkdir(parents=True, exist_ok=True)
+            for name in ("HumanOracleRunnerWindow.cs", "SemanticOracle.cs", "SyntheticFixture.cs"):
+                (root / "Assets/Editor/VAPB" / name).write_text((repo / "tools/unity_semantic_oracle/Assets/Editor" / name).read_text(encoding="utf-8"), encoding="utf-8")
+            (root / "Assets/RepresentativeAvatar-Test" / "nested").mkdir(parents=True)
+            (root / "Assets/RepresentativeAvatar-Test" / "nested" / "asset.txt").write_text("private", encoding="utf-8")
+            (root / "Packages/manifest.json").write_text("{}", encoding="utf-8")
+            plan = build_cleanup_plan(root, repo)
+            self.assertIn(Path("Assets/RepresentativeAvatar-Test/nested/asset.txt"), plan.unexpected_files)
+            with patch("tools.unity_semantic_oracle.clean_unity_oracle_project.active_unity_use", return_value="NO"):
+                apply_cleanup(plan)
+            self.assertFalse((root / "Assets/RepresentativeAvatar-Test").exists())
+            self.assertTrue((root / "Assets/Editor/VAPB/SemanticOracle.cs").exists())
+            self.assertTrue((root / "Packages/manifest.json").exists())
+            self.assertEqual(check_clean(build_cleanup_plan(root, repo)), [])
+
+    def test_cleanup_dry_plan_has_no_side_effect(self):
+        repo = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); (root / "Assets/Editor/VAPB").mkdir(parents=True)
+            for name in ("HumanOracleRunnerWindow.cs", "SemanticOracle.cs", "SyntheticFixture.cs"):
+                (root / "Assets/Editor/VAPB" / name).write_text("managed", encoding="utf-8")
+            unexpected = root / "Assets/UnexpectedImportedAsset"; unexpected.mkdir(); (unexpected / "x").write_text("x", encoding="utf-8")
+            plan = build_cleanup_plan(root, repo)
+            self.assertTrue(unexpected.exists())
+            self.assertGreater(plan.unexpected_count, 0)
+
+    def test_runner_blocks_isolated_mode_without_clean_baseline(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
+        for token in ("baselineManifestPath", "baselineStatus", "VerifyBaselineStatus", "BASELINE_DIRTY", "Isolation ready", "UNITY_ORACLE_BASELINE_MANIFEST"):
+            self.assertIn(token, source)
+
+    def test_cleanup_tool_is_allowlist_and_root_guarded(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "clean_unity_oracle_project.py").read_text(encoding="utf-8")
+        for token in ("--dry-run", "--apply", "--check", "PATH_ESCAPE", "CLEANUP_BLOCKED_REPARSE_POINT", "UNITY_PROJECT_ACTIVE_", "Packages", "ProjectSettings"):
+            self.assertIn(token, source)
+
+    def test_baseline_manifest_requires_schema_two_and_root_identity(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" / "baseline_manifest.py").read_text(encoding="utf-8")
+        self.assertIn('"manifestVersion": "2"', source)
+        self.assertIn("projectRootIdentity", source)
+        self.assertIn("BASELINE_SCHEMA_MISMATCH", source)
 
     def test_watchdog_distinguishes_waiting_stalled_and_running(self):
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=True), "WAITING_FOR_UNITY")
