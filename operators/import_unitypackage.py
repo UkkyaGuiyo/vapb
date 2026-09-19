@@ -33,6 +33,7 @@ from ..unity.package_reader import PackageIndex, UnityPackageError, UnityPackage
 from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab
+from ..unity.physbone_parser import extract_physbone_snapshot
 from ..unity.prefab_candidate_analyzer import (
     PackageCompositionPlan,
     PrefabCandidateAnalysis,
@@ -1362,6 +1363,14 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         prefab_unity_path,
                         member_collection,
                     )
+                    physics_snapshot = extract_physbone_snapshot(prefab)
+                    prefab_root["unity_physbone_source_schema"] = 1
+                    prefab_root["unity_physbone_source_authority"] = "UNITY_SERIALIZED_MONOBEHAVIOUR"
+                    prefab_root["unity_physbone_source_json"] = json.dumps(
+                        physics_snapshot.to_dict(), ensure_ascii=False, sort_keys=True
+                    )
+                    prefab_root["unity_physbone_component_count"] = len(physics_snapshot.physbones)
+                    prefab_root["unity_physbone_collider_count"] = len(physics_snapshot.colliders)
                     prefab_roots.append(prefab_root)
                     prefab_object_maps.append(prefab_object_map)
                     member_analysis = next(

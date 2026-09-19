@@ -69,6 +69,12 @@ Unity固有情報は次の3分類で扱う。
 
 「保存できる」と「安全に自動復元できる」は分離する。各項目は`CAPTURE_SUPPORTED`、`RESTORE_SUPPORTED`、`PARTIAL`、`DEPENDENCY_REQUIRED`、`UNSUPPORTED`の状態を持ち、曖昧な対象や不足依存を黙って代替しない。
 
+### PhysBone capture boundary
+
+現在のimporterは、Prefab内のPhysBone/Collider形MonoBehaviourについて、Unityのserialized payload、script identity、owner GameObject、root Transform/fileID、階層パス、参照Collider fileIDをPrefab rootのsource snapshotとして保存する。これはUnity serialized dataをsource of truthとして保持するためのcaptureであり、Blender側のpreview stateや近似solverの結果は保存データを変更しない。
+
+Blender側のsecondary-motion previewは、固定長chainを対象にした近似solver prototypeの範囲に限る。Unityへ戻すexportやPhysBone componentの完全再構築、未知フィールドの意味解釈は未実装であり、将来のexporterはsource snapshotだけを読み、preview stateを出力してはならない。
+
 優先度は次の通りとする。
 
 - Tier 1: Avatar Descriptor、Lip Sync、Viseme、Jaw、Eye Look、Eyelid/Blink、View Position、Playable Layers、Expressions

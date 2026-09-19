@@ -51,6 +51,8 @@ Final Prefab
 | Material Builder | `blender/material_builder.py` | PARTIAL | Principled BSDF近似、Shader profile、Material/Texture metadata保存 |
 | Texture Loader | `blender/texture_loader.py` | PARTIAL | 画像読込、GUID/path/meta property保存、pack option |
 | Hierarchy Builder | `blender/hierarchy_builder.py` | PARTIAL | Prefab parent/transform復元、Prefab rootとfileID保存 |
+| PhysBone Capture | `unity/physbone_parser.py` + Prefab root custom properties | PARTIAL | PhysBone/Collider形MonoBehaviourのserialized source snapshotを保存。Unity runtime再現ではない |
+| PhysBone Preview | `blender/physbone_preview.py` | PARTIAL | Blender RNAに依存しない固定長chainの近似solver prototype。自動viewport接続は未実装 |
 | Import Operator | `operators/import_unitypackage.py` | IMPLEMENTED | File Browser、async prepare、Prefab handoff、main-thread import、cleanup |
 | Bridge Exporter | `blender/roundtrip_export.py`, `blender/roundtrip_manifest.py` | PARTIAL | FBX + materialmap sidecar出力。UnityPackage再梱包ではない |
 | Unity Finalizer | `unity_editor/Editor/UnityPackageBlenderMaterialRestore.cs` | PARTIAL | Unity側で既存`.mat`をGUID/Path/一意Name順にFBXへremap。Final Prefab生成ではない |
@@ -127,7 +129,7 @@ control is introduced.
 
 ## Explicitly Not Implemented
 
-UnityPackageの再梱包、Unity Finalizerの自動実行、完全なShader互換、PhysBone preview、複数Packageの自動mergeは現行実装では提供しない。
+UnityPackageの再梱包、Unity Finalizerの自動実行、完全なShader互換、PhysBoneの完全再現・自動restore、複数Packageの自動mergeは現行実装では提供しない。PhysBone/Colliderのsource captureと限定的な近似preview prototypeは提供するが、preview結果をUnity sourceへ書き戻さない。
 
 ## Maximum Recoverable Unity State (MRUS) Architecture
 
