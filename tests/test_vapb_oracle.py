@@ -6,7 +6,13 @@ from pathlib import Path
 from tools.vapb_oracle.checkpoint import CheckpointStore, RunState
 from tools.vapb_oracle.diff import semantic_diff
 from tools.vapb_oracle.corpus import holdout_groups
-from tools.vapb_oracle.schema import build_envelope, public_safe_summary, validate_envelope
+from tools.vapb_oracle.runner_plan import canonical_package_key, discover_packages
+from tools.vapb_oracle.schema import (
+    build_envelope,
+    public_safe_summary,
+    validate_derived_counts,
+    validate_envelope,
+)
 
 
 class VapbOracleTests(unittest.TestCase):
@@ -70,6 +76,40 @@ class VapbOracleTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(first["holdoutGroups"], ["g3"])
         self.assertFalse(set(first["trainGroups"]) & set(first["holdoutGroups"]))
+
+    def test_package_key_preserves_distinct_paths_and_extensions(self):
+        self.assertNotEqual(canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"), canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"))
+        self.assertNotEqual(canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"), canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"))
+        self.assertEqual(canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"), canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"))
+        self.assertEqual(canonical_package_key("LOCAL_PATH_REQUIRES_CONFIGURATION"), canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"))
+        self.assertNotEqual(canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"), canonical_package_key(r"LOCAL_PATH_REQUIRES_CONFIGURATION"))
+
+    def test_folder_discovery_is_recursive_filtered_and_sorted(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "b" ).mkdir()
+            (root / "a" ).mkdir()
+            (root / "b" / "two.UNITYPACKAGE").write_text("", encoding="utf-8")
+            (root / "a" / "one.unitypackage").write_text("", encoding="utf-8")
+            (root / "a" / "ignore.zip").write_text("", encoding="utf-8")
+            result = discover_packages(root)
+            self.assertEqual([p.name for p in result], ["one.unitypackage", "two.UNITYPACKAGE"])
+
+    def test_derived_counts_are_recomputed_from_observed_records(self):
+        envelope = {
+            "observed": {"prefabs": [{"objects": [{"materials": [{}, {}]}]}]},
+            "derived": {"prefabCount": 1, "objectCount": 1, "materialSlotCount": 2},
+        }
+        self.assertEqual(validate_derived_counts(envelope), [])
+
+    def test_human_runner_contract_covers_folder_resume_and_failure_paths(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
+        self.assertIn("Select corpus folder", source)
+        self.assertIn("File.Delete(outputPath)", source)
+        self.assertIn("PackageFailedCallback", source)
+        self.assertIn("CanonicalPackageKey", source)
+        self.assertIn("runStartedAtUtc", source)
 
 
 if __name__ == "__main__":

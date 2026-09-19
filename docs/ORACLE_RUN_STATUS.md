@@ -1,6 +1,6 @@
 # Oracle Run Status
 
-Status at 2026-09-19: `PREPARED_WAITING_FOR_HUMAN_RUN`.
+Status at 2026-09-19: `FIRST_SMOKE_AUDITED_NEXT_CORPUS_PENDING`.
 
 Dedicated Unity project: `LOCAL_PATH_REQUIRES_CONFIGURATION`.
 
@@ -22,5 +22,10 @@ Not claimed:
 - Blender production fix or release artifact.
 
 Next human action: in Unity 2022.3 open `Tools/VAPB/Unity Semantic Oracle
-(Human Runner)`, choose an external output directory, provide the local test
-inputs, and press `Run observation`. Do not commit the generated JSON.
+(Human Runner)`, select the private corpus folder, choose an external output
+directory, review the package preview, and press `Run observation`. Do not
+commit the generated JSON.
+
+The next runner version additionally supports recursive corpus-folder discovery,
+deterministic package preview, canonical full-path resume keys, explicit
+RUNNING/COMPLETE/FAILED timing fields, and stale-output rejection.

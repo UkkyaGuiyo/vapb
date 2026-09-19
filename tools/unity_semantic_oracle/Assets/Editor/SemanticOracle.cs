@@ -26,6 +26,26 @@ namespace UnitySemanticOracle
         public string guid;
         public List<ObjectRecord> objects = new List<ObjectRecord>();
         public List<ModificationRecord> propertyModifications = new List<ModificationRecord>();
+        public StructuralSummary structuralSummary = new StructuralSummary();
+    }
+
+    [Serializable] public sealed class StructuralSummary
+    {
+        public int objectCount;
+        public int transformCount;
+        public int animatorCount;
+        public int avatarCount;
+        public int validAvatarCount;
+        public int humanAvatarCount;
+        public int skinnedMeshRendererCount;
+        public int meshRendererCount;
+        public int uniqueMeshCount;
+        public int materialSlotCount;
+        public int blendShapeCount;
+        public int boneReferenceCount;
+        public int rootBoneCount;
+        public int sourceModelIdentityCount;
+        public int originalSourceIdentityCount;
     }
 
     [Serializable] public sealed class ObjectRecord
@@ -47,6 +67,12 @@ namespace UnitySemanticOracle
         public string originalSourceGuid;
         public string originalSourceLocalFileID;
         public string originalSourceType;
+        public int blendShapeCount;
+        public int boneCount;
+        public bool hasRootBone;
+        public bool hasAvatar;
+        public bool avatarIsHuman;
+        public bool avatarIsValid;
         public List<MaterialRecord> materials = new List<MaterialRecord>();
     }
 
@@ -56,6 +82,17 @@ namespace UnitySemanticOracle
         public string name;
         public string guid;
         public string localFileID;
+        public string shaderName;
+        public List<TexturePropertyRecord> textureProperties = new List<TexturePropertyRecord>();
+    }
+
+    [Serializable] public sealed class TexturePropertyRecord
+    {
+        public string propertyName;
+        public string textureName;
+        public string guid;
+        public string localFileID;
+        public bool resolved;
     }
 
     [Serializable] public sealed class ModificationRecord
@@ -87,7 +124,7 @@ namespace UnitySemanticOracle
     [Serializable] public sealed class OracleEnvelope
     {
         public string schemaVersion = "0.2";
-        public string runId = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
+        public string runId = Environment.GetEnvironmentVariable("UNITY_ORACLE_RUN_ID") ?? DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
         public string unityVersion = Application.unityVersion;
         public string accessMethod = "unity_2022_3_human_editor";
         public string caseId = "human-run";
@@ -264,6 +301,7 @@ namespace UnitySemanticOracle
                         if (seenModifications.Add(key)) prefab.propertyModifications.Add(ReadModification(mod, root));
                     }
                 }
+                prefab.structuralSummary = BuildStructuralSummary(prefab);
             }
             finally
             {
@@ -289,25 +327,83 @@ namespace UnitySemanticOracle
             var renderer = component as Renderer;
             var meshFilter = component as MeshFilter;
             var skinned = component as SkinnedMeshRenderer;
+            var animator = component as Animator;
+            if (animator != null)
+            {
+                record.hasAvatar = animator.avatar != null;
+                record.avatarIsHuman = animator.avatar != null && animator.avatar.isHuman;
+                record.avatarIsValid = animator.avatar != null && animator.avatar.isValid;
+            }
             var mesh = meshFilter != null ? meshFilter.sharedMesh : (skinned != null ? skinned.sharedMesh : null);
             if (mesh != null) {
                 record.meshName = mesh.name;
                 AssetDatabase.TryGetGUIDAndLocalFileIdentifier(mesh, out record.meshGuid, out fileId);
                 record.meshLocalFileID = fileId.ToString();
+                record.blendShapeCount = mesh.blendShapeCount;
+            }
+            if (skinned != null)
+            {
+                record.boneCount = skinned.bones == null ? 0 : skinned.bones.Length;
+                record.hasRootBone = skinned.rootBone != null;
             }
             if (renderer != null) {
                 var materials = renderer.sharedMaterials;
                 for (var i = 0; i < materials.Length; i++) {
                     var material = materials[i];
                     var materialRecord = new MaterialRecord { slot = i, name = material == null ? null : material.name };
-                    if (material != null) {
+                if (material != null) {
                         AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material, out materialRecord.guid, out fileId);
                         materialRecord.localFileID = fileId.ToString();
+                        materialRecord.shaderName = material.shader == null ? null : material.shader.name;
+                        foreach (var propertyName in material.GetTexturePropertyNames())
+                        {
+                            var texture = material.GetTexture(propertyName);
+                            var property = new TexturePropertyRecord { propertyName = propertyName, resolved = texture != null };
+                            if (texture != null)
+                            {
+                                property.textureName = texture.name;
+                                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(texture, out property.guid, out fileId);
+                                property.localFileID = fileId.ToString();
+                            }
+                            materialRecord.textureProperties.Add(property);
+                        }
                     }
                     record.materials.Add(materialRecord);
                 }
             }
             prefab.objects.Add(record);
+        }
+
+        private static StructuralSummary BuildStructuralSummary(PrefabRecord prefab)
+        {
+            var summary = new StructuralSummary { objectCount = prefab.objects.Count };
+            var meshes = new HashSet<string>();
+            var sources = new HashSet<string>();
+            var originalSources = new HashSet<string>();
+            foreach (var record in prefab.objects)
+            {
+                if (record.type == typeof(Transform).FullName) summary.transformCount++;
+                if (record.type == typeof(Animator).FullName)
+                {
+                    summary.animatorCount++;
+                    if (record.hasAvatar) summary.avatarCount++;
+                    if (record.avatarIsValid) summary.validAvatarCount++;
+                    if (record.avatarIsHuman) summary.humanAvatarCount++;
+                }
+                if (record.type == typeof(SkinnedMeshRenderer).FullName) summary.skinnedMeshRendererCount++;
+                if (record.type == typeof(MeshRenderer).FullName) summary.meshRendererCount++;
+                if (!string.IsNullOrEmpty(record.meshGuid)) meshes.Add(record.meshGuid + ":" + record.meshLocalFileID);
+                if (!string.IsNullOrEmpty(record.sourceGuid)) sources.Add(record.sourceGuid + ":" + record.sourceLocalFileID);
+                if (!string.IsNullOrEmpty(record.originalSourceGuid)) originalSources.Add(record.originalSourceGuid + ":" + record.originalSourceLocalFileID);
+                summary.materialSlotCount += record.materials.Count;
+                summary.blendShapeCount += record.blendShapeCount;
+                summary.boneReferenceCount += record.boneCount;
+                if (record.hasRootBone) summary.rootBoneCount++;
+            }
+            summary.uniqueMeshCount = meshes.Count;
+            summary.sourceModelIdentityCount = sources.Count;
+            summary.originalSourceIdentityCount = originalSources.Count;
+            return summary;
         }
 
         private static void AddSourceIdentity(ObjectRecord record, UnityEngine.Object source, bool original)

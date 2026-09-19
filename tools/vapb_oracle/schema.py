@@ -70,3 +70,24 @@ def public_safe_summary(envelope: dict[str, Any]) -> dict[str, Any]:
         "derived": copy.deepcopy(envelope.get("derived", {})),
         "limitations": list(envelope.get("limitations", [])),
     }
+
+
+def validate_derived_counts(envelope: dict[str, Any]) -> list[str]:
+    """Cross-check the compact counts against observed prefab records."""
+    prefabs = envelope.get("observed", {}).get("prefabs", [])
+    object_count = sum(len(prefab.get("objects", [])) for prefab in prefabs)
+    material_count = sum(
+        len(obj.get("materials", []))
+        for prefab in prefabs
+        for obj in prefab.get("objects", [])
+    )
+    expected = {
+        "prefabCount": len(prefabs),
+        "objectCount": object_count,
+        "materialSlotCount": material_count,
+    }
+    return [
+        f"derived mismatch: {key} expected {value} got {envelope.get('derived', {}).get(key)}"
+        for key, value in expected.items()
+        if envelope.get("derived", {}).get(key) != value
+    ]
