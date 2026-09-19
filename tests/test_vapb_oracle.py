@@ -116,6 +116,15 @@ class VapbOracleTests(unittest.TestCase):
         self.assertIn("Open error log folder", source)
         self.assertIn("Abort safely", source)
 
+    def test_human_runner_uses_durable_state_for_ui_and_actions(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
+        self.assertIn("private HumanOracleCheckpoint durableState", source)
+        self.assertIn("private string currentPackage { get { return durableState.currentPackage; }", source)
+        self.assertIn("durableState = previous;", source)
+        self.assertIn("durableState = checkpoint;", source)
+        self.assertNotRegex(source, r"private\s+(?:string|int)\s+(?:currentPackage|currentPackageIndex|runState|currentPhase|retryCount|lastError|lastHeartbeatAtUtc|lastProgressAtUtc)\s*;")
+
     def test_watchdog_distinguishes_waiting_stalled_and_running(self):
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=True), "WAITING_FOR_UNITY")
         self.assertEqual(classify_status(heartbeat_age=2, progress_age=200, unity_busy=False), "STALLED")

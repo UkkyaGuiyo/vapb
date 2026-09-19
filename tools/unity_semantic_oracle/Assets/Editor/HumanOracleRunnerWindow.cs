@@ -56,26 +56,37 @@ namespace UnitySemanticOracle
         private bool running;
         private readonly System.Collections.Generic.HashSet<string> completedPackages = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly System.Collections.Generic.List<string> pendingPackages = new System.Collections.Generic.List<string>();
-        private int currentPackageIndex;
         private int pendingPackageCursor;
-        private DateTime runStartedAtUtc;
-        private DateTime packageStartedAtUtc;
-        private DateTime? packageCompletedAtUtc;
-        private string runId;
-        private string runState = "IDLE";
-        private string currentPhase = "IDLE";
-        private string lastMessage = "Idle";
-        private DateTime lastHeartbeatAtUtc;
-        private DateTime lastProgressAtUtc;
         private DateTime lastCheckpointWriteAtUtc;
-        private int retryCount;
-        private string lastError;
-        private string lastStackTracePath;
         private readonly System.Collections.Generic.HashSet<string> failedPackages = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly System.Collections.Generic.HashSet<string> skippedPackages = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private string[] packageList = new string[0];
         private double stallThresholdSeconds = 120d;
         private static HumanOracleRunnerWindow active;
+        // Durable checkpoint is the single source of truth for runner state.
+        // UI actions below use these properties, never a parallel transient copy.
+        private HumanOracleCheckpoint durableState = new HumanOracleCheckpoint {
+            state = "IDLE", runState = "IDLE", currentPhase = "IDLE", lastMessage = "Idle"
+        };
+
+        private string currentPackage { get { return durableState.currentPackage; } set { durableState.currentPackage = value; } }
+        private int currentPackageIndex { get { return durableState.currentPackageIndex; } set { durableState.currentPackageIndex = value; } }
+        private string runState { get { return string.IsNullOrEmpty(durableState.runState) ? durableState.state : durableState.runState; } set { durableState.runState = value; } }
+        private string currentPhase { get { return durableState.currentPhase ?? "IDLE"; } set { durableState.currentPhase = value; } }
+        private int retryCount { get { return durableState.retryCount; } set { durableState.retryCount = value; } }
+        private string lastError { get { return durableState.lastError; } set { durableState.lastError = value; } }
+        private string lastStackTracePath { get { return durableState.lastStackTracePath; } set { durableState.lastStackTracePath = value; } }
+        private string lastMessage { get { return durableState.lastMessage ?? "Idle"; } set { durableState.lastMessage = value; } }
+        private string runId { get { return durableState.runId; } set { durableState.runId = value; } }
+        private DateTime runStartedAtUtc { get { return ParseUtc(durableState.runStartedAtUtc); } set { durableState.runStartedAtUtc = FormatUtc(value); } }
+        private DateTime packageStartedAtUtc { get { return ParseUtc(durableState.packageStartedAtUtc); } set { durableState.packageStartedAtUtc = FormatUtc(value); } }
+        private DateTime? packageCompletedAtUtc { get { return ParseNullableUtc(durableState.packageCompletedAtUtc); } set { durableState.packageCompletedAtUtc = value.HasValue ? FormatUtc(value.Value) : null; } }
+        private DateTime lastHeartbeatAtUtc { get { return ParseUtc(durableState.lastHeartbeatAtUtc); } set { durableState.lastHeartbeatAtUtc = FormatUtc(value); } }
+        private DateTime lastProgressAtUtc { get { return ParseUtc(durableState.lastProgressAtUtc); } set { durableState.lastProgressAtUtc = FormatUtc(value); } }
+
+        private static string FormatUtc(DateTime value) { return value == default(DateTime) ? null : value.ToString("O"); }
+        private static DateTime ParseUtc(string value) { DateTime result; return DateTime.TryParse(value, null, System.Globalization.DateTimeStyles.RoundtripKind, out result) ? result : default(DateTime); }
+        private static DateTime? ParseNullableUtc(string value) { var parsed = ParseUtc(value); return parsed == default(DateTime) ? (DateTime?)null : parsed; }
 
         private void OnEnable()
         {
@@ -327,6 +338,7 @@ namespace UnitySemanticOracle
                 error = error,
                 completedPackages = new System.Collections.Generic.List<string>(completedPackages).ToArray()
             };
+            durableState = checkpoint;
             File.WriteAllText(checkpointPath, JsonUtility.ToJson(checkpoint, true));
         }
 
@@ -336,6 +348,7 @@ namespace UnitySemanticOracle
             if (!File.Exists(checkpointPath)) return;
             var previous = JsonUtility.FromJson<HumanOracleCheckpoint>(File.ReadAllText(checkpointPath));
             if (previous == null) return;
+            durableState = previous;
             runId = previous.runId;
             runState = string.IsNullOrEmpty(previous.runState) ? previous.state : previous.runState;
             corpusRoot = previous.corpusRoot;
