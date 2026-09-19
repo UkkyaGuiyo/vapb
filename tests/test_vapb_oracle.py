@@ -121,7 +121,7 @@ class VapbOracleTests(unittest.TestCase):
         source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
                   "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
         self.assertIn("Select corpus folder", source)
-        self.assertIn("File.Delete(outputPath)", source)
+        self.assertIn("CreateNewRunFiles", source)
         self.assertIn("PackageFailedCallback", source)
         self.assertIn("CanonicalPackageKey", source)
         self.assertIn("runStartedAtUtc", source)
@@ -240,6 +240,20 @@ class VapbOracleTests(unittest.TestCase):
         self.assertIn("baselineStableTicks < 3", source)
         self.assertIn("WriteFinalizationMarker", source)
         self.assertIn('Environment.SetEnvironmentVariable("UNITY_ORACLE_ISOLATION_VERIFIED", "0")', source)
+
+    def test_runner_scroll_and_output_pointer_contract(self):
+        source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /
+                  "Assets" / "Editor" / "HumanOracleRunnerWindow.cs").read_text(encoding="utf-8")
+        self.assertIn("EditorGUILayout.BeginScrollView", source)
+        self.assertIn("EditorGUILayout.EndScrollView", source)
+        self.assertIn("active-run.json", source)
+        self.assertIn("checkpoint_" + '" + stem + "' + ".json", source)
+        self.assertIn("unity-semantic-oracle_", source)
+        self.assertIn("EditorPrefs.SetString(OutputDirectoryPref", source)
+        self.assertIn("WriteTextAtomically", source)
+        self.assertIn("ACTIVE_RUN_MISMATCH", source)
+        self.assertIn("packageTimings", source)
+        self.assertIn("runTimestamp", source)
 
     def test_cleanup_tool_is_allowlist_and_root_guarded(self):
         source = (Path(__file__).parents[1] / "tools" / "unity_semantic_oracle" /

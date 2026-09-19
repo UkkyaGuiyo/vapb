@@ -187,12 +187,17 @@ namespace UnitySemanticOracle
         private static Dictionary<string, string> preImportPathGuids = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private static List<CollisionEventRecord> pendingCollisionEvents = new List<CollisionEventRecord>();
         private static DateTime pendingImportStartedAtUtc;
+        private static DateTime pendingImportCompletedAtUtc;
         private static DateTime pendingProbeStartedAtUtc;
+        private static DateTime pendingProbeCompletedAtUtc;
         private static bool pendingPackageCompleted;
         private static bool pendingItemsCompleted;
         private static bool isolatedProbeScheduled;
         public static Action<string> PackageCompletedCallback;
         public static Action<string> PackageFailedCallback;
+        public static Action ImportCompletedCallback;
+        public static Action ProbeStartedCallback;
+        public static Action ProbeCompletedCallback;
 
         public static void DetachPackageCallbacks()
         {
@@ -258,6 +263,9 @@ namespace UnitySemanticOracle
             pendingImportedItems = new string[0];
             pendingCollisionEvents = new List<CollisionEventRecord>();
             pendingImportStartedAtUtc = DateTime.UtcNow;
+            pendingImportCompletedAtUtc = default(DateTime);
+            pendingProbeStartedAtUtc = default(DateTime);
+            pendingProbeCompletedAtUtc = default(DateTime);
             pendingPackageCompleted = false;
             pendingItemsCompleted = false;
             isolatedProbeScheduled = false;
@@ -314,6 +322,8 @@ namespace UnitySemanticOracle
         private static void OnImportPackageCompleted(string packageName)
         {
             pendingPackageCompleted = true;
+            pendingImportCompletedAtUtc = DateTime.UtcNow;
+            ImportCompletedCallback?.Invoke();
             if (pendingPackages.Length == 1 && pendingObservationContext == "ISOLATED_PACKAGE")
             {
                 ScheduleIsolatedProbeIfReady();
@@ -372,6 +382,8 @@ namespace UnitySemanticOracle
         private static void ProbeImportedPackageAndFinish()
         {
             isolatedProbeScheduled = false;
+            pendingProbeStartedAtUtc = DateTime.UtcNow;
+            ProbeStartedCallback?.Invoke();
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             var filter = pendingPrefabFilter;
             var importedPrefabs = pendingImportedItems
@@ -382,8 +394,9 @@ namespace UnitySemanticOracle
                 .ToArray();
             if (importedPrefabs.Length == 0)
                 throw new InvalidOperationException("No imported Prefab items were available for isolated package probing.");
-            pendingProbeStartedAtUtc = DateTime.UtcNow;
+            pendingProbeCompletedAtUtc = DateTime.UtcNow;
             WriteProbes(importedPrefabs, pendingOutput);
+            ProbeCompletedCallback?.Invoke();
             PackageCompletedCallback?.Invoke(pendingPackages[0]);
             DetachPackageCallbacks();
             if (Environment.GetEnvironmentVariable("UNITY_ORACLE_NO_EXIT") != "1")
@@ -482,9 +495,9 @@ namespace UnitySemanticOracle
                     isolationVerified = baselineVerified,
                     isolationFailureReason = baselineVerified ? Environment.GetEnvironmentVariable("UNITY_ORACLE_ISOLATION_FAILURE_REASON") : baselineFailureReason,
                     importStartedAtUtc = pendingImportStartedAtUtc.ToString("O"),
-                    importCompletedAtUtc = DateTime.UtcNow.ToString("O"),
-                    probeStartedAtUtc = (pendingProbeStartedAtUtc == default(DateTime) ? DateTime.UtcNow : pendingProbeStartedAtUtc).ToString("O"),
-                    probeCompletedAtUtc = DateTime.UtcNow.ToString("O")
+                    importCompletedAtUtc = (pendingImportCompletedAtUtc == default(DateTime) ? (DateTime?)null : pendingImportCompletedAtUtc)?.ToString("O"),
+                    probeStartedAtUtc = (pendingProbeStartedAtUtc == default(DateTime) ? (DateTime?)null : pendingProbeStartedAtUtc)?.ToString("O"),
+                    probeCompletedAtUtc = (pendingProbeCompletedAtUtc == default(DateTime) ? (DateTime?)null : pendingProbeCompletedAtUtc)?.ToString("O")
                 };
                 envelope.collisionEvents = new List<CollisionEventRecord>(pendingCollisionEvents);
                 if (envelope.observationContext == "MERGED_CORPUS")
