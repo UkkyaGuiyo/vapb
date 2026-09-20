@@ -59,7 +59,11 @@ class PhysicsPreviewController:
         self.running = False
         self.scene: Any = None
         self.chains: list[PreviewChain] = []
+        self.exact_count = 0
+        self.strong_count = 0
+        self.ambiguous = 0
         self.unmatched = 0
+        self._detected_count = 0
         self.last_error = ""
         self._last_time = 0.0
         self._in_update = False
@@ -67,7 +71,7 @@ class PhysicsPreviewController:
 
     @property
     def detected_count(self) -> int:
-        return len(self.chains) + self.unmatched
+        return self._detected_count
 
     @property
     def matched_count(self) -> int:
@@ -88,6 +92,10 @@ class PhysicsPreviewController:
         self.scene = scene
         try:
             self.chains = list(self.discover(scene))
+            self._detected_count = int(scene.get("vapb_physbone_detected", len(self.chains))) if hasattr(scene, "get") else len(self.chains)
+            self.exact_count = int(scene.get("vapb_physbone_exact", 0)) if hasattr(scene, "get") else 0
+            self.strong_count = int(scene.get("vapb_physbone_strong", 0)) if hasattr(scene, "get") else 0
+            self.ambiguous = int(scene.get("vapb_physbone_ambiguous", 0)) if hasattr(scene, "get") else 0
             self.unmatched = int(scene.get("vapb_physbone_unmatched", 0)) if hasattr(scene, "get") else 0
             for chain in self.chains:
                 chain.state = chain.adapter.create_state(self.solver)
@@ -213,11 +221,15 @@ def discover_blender_chains(scene: Any) -> list[PreviewChain]:
         return []
     result: list[PreviewChain] = []
     detected = 0
+    exact_count = 0
+    strong_count = 0
+    ambiguous_count = 0
     for root in scene.objects:
         if not root.get("unity_physbone_source_json"):
             continue
         physbones, colliders = _snapshot_records(root)
         source_package_id = str(root.get("unity_source_package_id", ""))
+        source_asset_path = str(root.get("unity_asset_path", "")).replace("\\", "/")
         try:
             identities = json.loads(root.get("unity_prefab_bone_identities", "{}"))
         except (TypeError, ValueError):
@@ -225,39 +237,59 @@ def discover_blender_chains(scene: Any) -> list[PreviewChain]:
         for record in physbones:
             detected += 1
             identity = identities.get(str(record.get("root_game_object_file_id", "")))
-            if not identity or not identity.get("bone_name"):
-                continue
-            candidates = []
+            root_id = str(record.get("root_game_object_file_id", ""))
+            identity_name = identity.get("bone_name") if isinstance(identity, dict) else None
+            exact_candidates = []
+            strong_candidates = []
             for armature in scene.objects:
                 if armature.type != "ARMATURE":
                     continue
                 if source_package_id and str(armature.get("unity_source_package_id", "")) != source_package_id:
                     continue
-                data_bone = armature.data.bones.get(identity["bone_name"])
-                pose_bone = armature.pose.bones.get(identity["bone_name"])
-                if (
-                    data_bone is not None
-                    and pose_bone is not None
-                    and str(data_bone.get("unity_prefab_file_id", ""))
-                    == str(record.get("root_game_object_file_id", ""))
-                ):
-                    candidates.append((armature, pose_bone))
-            if len(candidates) != 1:
+                armature_asset_path = str(armature.get("unity_asset_path", "")).replace("\\", "/")
+                if source_asset_path and armature_asset_path != source_asset_path:
+                    continue
+                data_bones = list(armature.data.bones)
+                if identity_name:
+                    data_bones = [bone for bone in data_bones if bone.name == identity_name]
+                for data_bone in data_bones:
+                    pose_bone = armature.pose.bones.get(data_bone.name)
+                    if pose_bone is None:
+                        continue
+                    if root_id and str(data_bone.get("unity_prefab_file_id", "")) == root_id:
+                        exact_candidates.append((armature, pose_bone))
+                    elif identity_name and source_package_id and source_asset_path and data_bone.name == identity_name:
+                        strong_candidates.append((armature, pose_bone))
+            if len(exact_candidates) > 1:
+                ambiguous_count += 1
                 continue
-            armature, root_bone = candidates[0]
-            chain = [root_bone]
-            current = root_bone
-            while True:
-                children = list(current.children)
-                if len(children) != 1:
-                    break
-                current = children[0]
-                chain.append(current)
+            if len(exact_candidates) == 1:
+                armature, root_bone = exact_candidates[0]
+                confidence = "EXACT"
+                exact_count += 1
+            elif len(strong_candidates) == 1:
+                armature, root_bone = strong_candidates[0]
+                confidence = "STRONGLY_SUPPORTED"
+                strong_count += 1
+            else:
+                if len(strong_candidates) > 1:
+                    ambiguous_count += 1
+                continue
+            def longest_path(bone):
+                children = list(bone.children)
+                if not children:
+                    return [bone]
+                return [bone] + max((longest_path(child) for child in children), key=len)
+
+            chain = longest_path(root_bone)
             if len(chain) < 2:
                 continue
             collider_count = len(record.get("collider_file_ids", ()))
-            result.append(PreviewChain(_PoseBoneAdapter(armature, chain), root_bone.name, len(chain), collider_count))
-    scene["vapb_physbone_unmatched"] = max(0, detected - len(result))
+            result.append(PreviewChain(_PoseBoneAdapter(armature, chain), root_bone.name, len(chain), collider_count, confidence))
+    scene["vapb_physbone_exact"] = exact_count
+    scene["vapb_physbone_strong"] = strong_count
+    scene["vapb_physbone_ambiguous"] = ambiguous_count
+    scene["vapb_physbone_unmatched"] = max(0, detected - exact_count - strong_count - ambiguous_count)
     scene["vapb_physbone_detected"] = detected
     return result
 

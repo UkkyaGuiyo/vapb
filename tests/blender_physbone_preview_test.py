@@ -45,6 +45,7 @@ def main() -> None:
         bpy.ops.object.mode_set(mode="OBJECT")
         arm_data.bones["BoneA"]["unity_prefab_file_id"] = "100"
         armature["unity_source_package_id"] = "pkg-a"
+        armature["unity_asset_path"] = "Assets/Synthetic.prefab"
         other = armature.copy()
         other.data = armature.data.copy()
         other.name = "OtherPackageArmature"
@@ -54,6 +55,7 @@ def main() -> None:
         root = bpy.data.objects.new("SyntheticPrefabRoot", None)
         bpy.context.scene.collection.objects.link(root)
         root["unity_source_package_id"] = "pkg-a"
+        root["unity_asset_path"] = "Assets/Synthetic.prefab"
         root["unity_physbone_source_json"] = json.dumps({
             "schema_version": 1,
             "physbones": [{

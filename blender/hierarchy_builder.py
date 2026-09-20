@@ -80,6 +80,19 @@ def build_prefab_hierarchy(
         transform = transform_by_go.get(game_object_id)
         return transform_to_game_object.get(transform.parent_id) if transform else None
 
+    def source_hierarchy_path(game_object_id):
+        names = []
+        current = game_object_id
+        visited = set()
+        while current is not None and current not in visited:
+            visited.add(current)
+            game_object = prefab.game_objects.get(current)
+            if game_object is not None:
+                names.append(game_object.name)
+            current = parent_go(current)
+        names.reverse()
+        return "/".join(names)
+
     # Bones already exist inside the native armature. Collapse only a unique,
     # structurally matching bone hierarchy in that specific model instance.
     bone_candidates = {}
@@ -162,6 +175,11 @@ def build_prefab_hierarchy(
             obj["unity_asset_path"] = str(source_prefab_unity_path).replace("\\", "/")
         if source_package_id:
             obj["unity_source_package_id"] = source_package_id
+        semantic_source = source_package_id or "UNSCOPED"
+        semantic_path = str(source_prefab_unity_path).replace("\\", "/")
+        obj["_vapb_semantic_id"] = f"v1:{semantic_source}:{semantic_path}:{game_object_id}"
+        obj["_vapb_source_local_file_id"] = str(game_object_id)
+        obj["_vapb_source_hierarchy_path"] = source_hierarchy_path(game_object_id)
     root["unity_prefab_bone_identities"] = json.dumps(bone_identities, sort_keys=True)
     # Mapped FBX TRS may include genuine instance overrides, but without a
     # source/default comparison they cannot be separated from model-import

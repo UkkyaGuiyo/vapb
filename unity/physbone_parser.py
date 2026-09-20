@@ -34,6 +34,8 @@ class PhysBoneSource:
     component_file_id: str
     owner_game_object_file_id: str
     root_transform_file_id: str
+    root_transform_reference_file_id: str
+    root_transform_explicit: bool
     root_game_object_file_id: str
     root_hierarchy_path: str
     script_guid: str
@@ -139,6 +141,8 @@ def extract_physbone_snapshot(prefab: PrefabData) -> PhysBoneSnapshot:
                 component_file_id=str(document.file_id),
                 owner_game_object_file_id=str(owner),
                 root_transform_file_id=root_transform_id,
+                root_transform_reference_file_id=str(root_transform or 0),
+                root_transform_explicit=bool(root_transform),
                 root_game_object_file_id=root_go_id,
                 root_hierarchy_path=root_path,
                 script_guid=script_guid,

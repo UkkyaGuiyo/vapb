@@ -75,6 +75,8 @@ Final Prefab
 
 ## Identity Layer
 
+Mapped Blender objects and Bones also receive `_vapb_semantic_id`, `_vapb_source_local_file_id`, and `_vapb_source_hierarchy_path`. The semantic ID combines normalized source package, source prefab path, and Unity GameObject fileID; displayed Blender bone names are not the primary reference. Runtime PhysBone matching stages package identity plus source prefab path and exact provenance first, then a unique composite fallback, while ambiguous candidates remain inactive.
+
 ### Currently Stored
 
 - Objects: `unity_source_fbx`, `unity_source_prefab`, `unity_prefab_file_id`

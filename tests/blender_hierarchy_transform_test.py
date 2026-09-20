@@ -76,6 +76,9 @@ def main():
             assert sum(o.type == 'EMPTY' for o in bpy.data.objects) == 2  # TR-005
             assert set(json.loads(root['unity_prefab_bone_identities'])) == {'4','5'}
             assert rig.data.bones['Hips']['unity_prefab_file_id'] == '4'
+            assert rig.data.bones['Hips']['_vapb_source_local_file_id'] == '4'
+            assert rig.data.bones['Hips']['_vapb_source_hierarchy_path'] == 'ScenePlacement/Rig/Hips'
+            assert rig.data.bones['Hips']['_vapb_semantic_id'].startswith('v1:synthetic-model:Assets/Scene.prefab:4')
             assert body['unity_prefab_file_id'] == '3'
             assert body['unity_source_package_id'] == 'synthetic-model'
             for o in imported:

@@ -55,6 +55,8 @@ class PhysBoneParserTests(unittest.TestCase):
         self.assertEqual(1, len(snapshot.colliders))
         bone = snapshot.physbones[0]
         self.assertEqual("1001", bone.owner_game_object_file_id)
+        self.assertEqual("0", bone.root_transform_reference_file_id)
+        self.assertFalse(bone.root_transform_explicit)
         self.assertEqual(0.3, bone.parameters["spring"])
         self.assertEqual(("4001",), bone.collider_file_ids)
         self.assertIn("customFutureField: 42", bone.raw_payload)
@@ -71,6 +73,20 @@ class PhysBoneParserTests(unittest.TestCase):
             snapshot = extract_physbone_snapshot(parse_prefab(path))
         self.assertEqual((), snapshot.physbones)
         self.assertEqual((), snapshot.colliders)
+
+    def test_explicit_root_transform_is_distinguished_from_null_owner_root(self):
+        explicit_fixture = FIXTURE.replace("&3001", "&3002", 1).replace(
+            "rootTransform: {fileID: 0}", "rootTransform: {fileID: 2001}", 1
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "explicit.prefab"
+            path.write_text(explicit_fixture, encoding="utf-8")
+            snapshot = extract_physbone_snapshot(parse_prefab(path))
+        self.assertEqual(1, len(snapshot.physbones))
+        self.assertEqual("2001", snapshot.physbones[0].root_transform_file_id)
+        self.assertEqual("2001", snapshot.physbones[0].root_transform_reference_file_id)
+        self.assertTrue(snapshot.physbones[0].root_transform_explicit)
+        self.assertEqual("1001", snapshot.physbones[0].root_game_object_file_id)
 
 
 if __name__ == "__main__":
