@@ -81,7 +81,7 @@ def _manifest(path: Path, accounting: dict[str, int] | None = None) -> list[Pack
     accounting = accounting if accounting is not None else {}
     diagnostic_add("sibling_manifest_scans")
     groups: dict[str, dict[str, tarfile.TarInfo]] = {}
-    with tarfile.open(path, "r:*") as archive:
+    with tarfile.open(Path(path).resolve(), "r:*") as archive:
         for member in archive:
             diagnostic_add("sibling_archive_members_seen")
             parts = member.name.replace("\\", "/").split("/")
@@ -125,6 +125,27 @@ def _read_asset(path: Path, guid: str, extension: str, accounting: dict[str, int
     accounting["metadata_text_bytes_read"] = accounting.get("metadata_text_bytes_read", 0) + len(payload)
     accounting[f"{extension.lstrip('.').lower()}_text_reads"] = accounting.get(f"{extension.lstrip('.').lower()}_text_reads", 0) + 1
     return payload
+
+
+def _probe_guids(path: Path, wanted: set[str], accounting: dict[str, int]) -> set[str]:
+    """Find exact GUID membership without pathname parsing or asset reads."""
+    wanted = {str(guid).lower() for guid in wanted if guid}
+    found: set[str] = set()
+    if not wanted:
+        return found
+    if not Path(path).is_file():
+        # Test doubles and legacy callers may provide a virtual candidate path
+        # whose manifest provider is already responsible for the read.
+        accounting["membership_probe_fallbacks"] = accounting.get("membership_probe_fallbacks", 0) + 1
+        return wanted
+    accounting["membership_probes"] = accounting.get("membership_probes", 0) + 1
+    with tarfile.open(Path(path).resolve(), "r:*") as archive:
+        for member in archive:
+            parts = member.name.replace("\\", "/").split("/")
+            if len(parts) == 2 and parts[0].lower() in wanted and parts[1] in {"asset", "pathname", "asset.meta"}:
+                found.add(parts[0].lower())
+    accounting["membership_probe_hits"] = accounting.get("membership_probe_hits", 0) + len(found)
+    return found
 
 
 def _visual_guids_from_text(extension: str, payload: bytes) -> set[str]:
@@ -244,6 +265,8 @@ def discover_siblings(
     extra_package_paths: set[Path] | None = None,
     provenance_by_path: dict[str, str] | None = None,
     prebuilt_indexes: dict[Path, object] | None = None,
+    required_visual_guids: set[str] | None = None,
+    ambiguous_visual_guids: set[str] | None = None,
     progress: Callable[[int, int, Path], None] | None = None,
 ) -> SiblingDiscoveryResult:
     del max_depth
@@ -258,12 +281,17 @@ def discover_siblings(
     else:
         root_manifest = _manifest(root_path, accounting)
     selected = {str(path).replace("\\", "/") for path in (selected_asset_paths or set())}
-    relevant = [entry for entry in root_manifest if not selected or entry.asset_path in selected]
-    selected_guids = {entry.guid for entry in relevant if entry.extension == ".prefab"}
-    required = _visual_requirements_for_guids(root_path, root_manifest, selected_guids, accounting)
+    if required_visual_guids is not None:
+        required = {str(guid).lower() for guid in required_visual_guids if guid}
+        accounting["handoff_requirement_seeds"] = len(required)
+    else:
+        relevant = [entry for entry in root_manifest if not selected or entry.asset_path in selected]
+        selected_guids = {entry.guid for entry in relevant if entry.extension == ".prefab"}
+        required = _visual_requirements_for_guids(root_path, root_manifest, selected_guids, accounting)
     # A selected Prefab may reference its own FBX as a visual dependency. Local
     # assets are already available and must never become sibling-missing GUIDs.
-    required -= {entry.guid for entry in root_manifest}
+    if required_visual_guids is None:
+        required -= {entry.guid for entry in root_manifest}
     if not required:
         return SiblingDiscoveryResult(str(root_path), [], set(), set(), [], "NONE", "NONE", manifest_entries=len(root_manifest), accounting=accounting)
     sibling_paths = _candidate_paths(root_path, required, extra_paths=extra_package_paths)
@@ -273,7 +301,7 @@ def discover_siblings(
     unresolved = set(required)
     selected_paths = {root_path}
     candidates: list[SiblingPackageCandidate] = []
-    ambiguous: set[str] = set()
+    ambiguous: set[str] = {str(guid).lower() for guid in (ambiguous_visual_guids or set())} & required
     provenance_by_path = provenance_by_path or {}
     expanded = False
     changed = True
@@ -290,6 +318,11 @@ def discover_siblings(
                     diagnostic_add("sibling_manifest_cache_hits")
                     accounting["manifest_cache_hits"] = accounting.get("manifest_cache_hits", 0) + 1
                 else:
+                    if not _probe_guids(path, unresolved, accounting):
+                        accounting["unrelated_candidates_skipped"] = accounting.get("unrelated_candidates_skipped", 0) + 1
+                        provided[path] = set()
+                        diagnostic_add("sibling_candidates_scanned")
+                        continue
                     manifests[path] = _manifest(path, accounting)
             diagnostic_add("sibling_candidates_scanned")
             if progress is not None:
@@ -314,7 +347,7 @@ def discover_siblings(
             if path in selected_paths:
                 continue
             eligible = {guid for guid, paths in providers.items() if path in paths}
-            matched = (unresolved & provided.get(path, set()) & eligible) - ambiguous_now
+            matched = (unresolved & provided.get(path, set()) & eligible) - ambiguous_now - ambiguous
             if not matched:
                 continue
             candidate = SiblingPackageCandidate(

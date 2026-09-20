@@ -160,6 +160,58 @@ SkinnedMeshRenderer:
             self.assertEqual(result.visual_status, "COMPLETE")
             self.assertEqual([Path(item.path).name for item in result.packages], [provider.name])
 
+    def test_requirement_handoff_skips_primary_prefab_reparse(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_guid = "a" * 32
+            primary = root / "primary.unitypackage"
+            provider = root / "provider.unitypackage"
+            _package(primary, [("b" * 32, "Assets/Avatar.prefab", _visual_prefab(material_guid))])
+            _package(provider, [(material_guid, "Assets/Avatar.mat", "")])
+            module = __import__("unitypackage_blender_importer.unity.sibling_discovery", fromlist=["_visual_requirements_for_guids"])
+            original = module._visual_requirements_for_guids
+            def reject_primary(path, *args, **kwargs):
+                if Path(path).resolve() == primary.resolve():
+                    raise AssertionError("primary reparsed")
+                return original(path, *args, **kwargs)
+            with patch("unitypackage_blender_importer.unity.sibling_discovery._visual_requirements_for_guids", side_effect=reject_primary):
+                result = discover_siblings(primary, required_visual_guids={material_guid})
+            self.assertEqual("COMPLETE", result.visual_status)
+            self.assertEqual([provider.name], [Path(item.path).name for item in result.packages])
+
+    def test_unrelated_candidate_uses_membership_probe_before_manifest(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "case"
+            root.mkdir()
+            required = "a" * 32
+            primary = root / "primary.unitypackage"
+            unrelated = root / "unrelated.unitypackage"
+            _package(primary, [("b" * 32, "Assets/Avatar.prefab", _visual_prefab(required))])
+            _package(unrelated, [("c" * 32, "Assets/Other.mat", "")])
+            with patch("unitypackage_blender_importer.unity.sibling_discovery._manifest", wraps=__import__("unitypackage_blender_importer.unity.sibling_discovery", fromlist=["_manifest"])._manifest) as manifest:
+                result = discover_siblings(primary, required_visual_guids={required})
+            self.assertEqual("NONE", result.visual_status)
+            self.assertEqual(1, manifest.call_count)
+            self.assertGreaterEqual(result.accounting["membership_probes"], 1)
+
+    def test_handoff_preserves_ambiguous_primary_external_guid(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp) / "case"
+            root.mkdir()
+            guid = "a" * 32
+            primary = root / "primary.unitypackage"
+            provider = root / "provider.unitypackage"
+            _package(primary, [(guid, "Assets/Local.mat", "")])
+            _package(provider, [(guid, "Assets/External.mat", "")])
+            result = discover_siblings(
+                primary,
+                required_visual_guids={guid},
+                ambiguous_visual_guids={guid},
+            )
+            self.assertEqual("AMBIGUOUS", result.visual_status)
+            self.assertEqual([], result.packages)
+            self.assertIn(guid, result.ambiguous_visual_guids)
+
     def test_manual_package_coverage_reports_zero_partial_and_complete(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

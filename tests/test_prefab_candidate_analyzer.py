@@ -89,6 +89,30 @@ def _candidate(token: str, kind: str, status: str, *, renderers: int = 1) -> Pre
 
 
 class PrefabCandidateAnalyzerTests(unittest.TestCase):
+    def test_pca_016_unrelated_external_package_is_not_fully_indexed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            analyzer, _item = self._analyze(root, provider=False)
+            unrelated = root / "Unrelated.unitypackage"
+            _package(unrelated, [("d" * 32, "Assets/Other.mat", _material("e" * 32))])
+            analyzer.extra_package_paths.add(unrelated.resolve())
+            analyzer._load_external_sources({"f" * 32})
+            self.assertNotIn(unrelated.resolve(), analyzer.cache._sources)
+
+    def test_pca_017_textual_frontier_is_read_with_one_archive_open(self):
+        with tempfile.TemporaryDirectory() as temp:
+            analyzer, item = self._analyze(Path(temp), provider=True)
+            self.assertIn("c" * 32, item.required_visual_guids)
+            self.assertEqual(1, analyzer.cache.asset_read_counts[(Path(temp) / "Provider.unitypackage").resolve(), "b" * 32])
+            self.assertEqual(1, analyzer.cache.batch_archive_open_counts[(Path(temp) / "Provider.unitypackage").resolve()])
+
+    def test_pca_018_second_pass_reuses_static_prefab_facts_and_closure(self):
+        with tempfile.TemporaryDirectory() as temp:
+            analyzer, _item = self._analyze(Path(temp), provider=True)
+            self.assertGreaterEqual(analyzer.static_fact_cache_hits, 1)
+            analyzer._closure({"a" * 32, "b" * 32})
+            analyzer._closure({"a" * 32, "b" * 32})
+            self.assertGreaterEqual(analyzer.closure_cache_hits, 1)
     def test_pca_001_avatar_is_structurally_classified(self):
         item = _candidate("PREFAB_0", "AVATAR_LIKE", "COMPLETE")
         self.assertEqual("AVATAR_LIKE", item.candidate_kind)

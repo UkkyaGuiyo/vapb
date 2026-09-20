@@ -5,12 +5,14 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 from ..unity.identity import AssetIdentity, SceneIdentityRegistry
+from .performance import diagnostic_add
 
 
 SCENE_IDENTITY_REGISTRY = "unitypackage_identity_registry"
 
 
 def load_scene_registry(scene: Any) -> SceneIdentityRegistry:
+    diagnostic_add("identity_registry_loads")
     try:
         payload = scene.get(SCENE_IDENTITY_REGISTRY, "")
     except AttributeError:
@@ -24,6 +26,9 @@ def load_scene_registry(scene: Any) -> SceneIdentityRegistry:
 
 
 def save_scene_registry(scene: Any, registry: SceneIdentityRegistry) -> None:
+    diagnostic_add("identity_registry_writes")
+    diagnostic_add("identity_registry_packages", len(registry.packages))
+    diagnostic_add("identity_registry_assets", len(registry.assets))
     scene[SCENE_IDENTITY_REGISTRY] = registry.to_json()
 
 
@@ -41,7 +46,10 @@ def register_datablocks(
     asset_type: str,
 ) -> SceneIdentityRegistry:
     registry = load_scene_registry(scene)
-    for datablock in datablocks:
+    diagnostic_add("identity_datablock_batches")
+    items = list(datablocks)
+    diagnostic_add("identity_datablocks_registered", len(items))
+    for datablock in items:
         source_path = datablock.get("unity_source_prefab", datablock.get("unity_source_fbx", ""))
         identity = AssetIdentity(
             source_package_id,

@@ -673,19 +673,26 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         )
         if not getattr(self, "group_child", False) and Path(self.filepath).is_file() and not defer_discovery:
             self._set_phase(context, "Discovering sibling Packages", 0.32)
-            selected_candidate = next((item for item in self._candidate_analyses if item.token == self._selected_prefab_choice), None)
+            effective_candidate_token = self._selected_prefab_choice or self.prefab_choice
+            selected_candidate = next((item for item in self._candidate_analyses if item.token == effective_candidate_token), None)
             if (self._selected_prefab_choice or self.prefab_choice) == "AUTO" and self._composition_plan is not None:
                 selected_paths = {item.unity_path for item in self._candidate_analyses if item.renderer_count > 0}
                 extra_paths = set().union(*(item.provider_packages for item in self._candidate_analyses if item.renderer_count > 0))
+                required_visual_guids = set().union(*(item.required_visual_guids for item in self._candidate_analyses if item.renderer_count > 0))
             else:
                 selected_paths = {selected_candidate.unity_path} if selected_candidate else set()
                 extra_paths = set(selected_candidate.provider_packages) if selected_candidate else set()
+                required_visual_guids = set(selected_candidate.required_visual_guids) if selected_candidate else set()
+            ambiguous_visual_guids = set().union(*(item.ambiguous_visual_guids for item in self._candidate_analyses if item.renderer_count > 0))
+            required_visual_guids = (required_visual_guids - set(self._package_index.records)) | ambiguous_visual_guids
             self._sibling_discovery = self._performance.measure(
                 "sibling_discovery",
                 discover_siblings,
                 self.filepath,
                 selected_asset_paths=selected_paths,
                 extra_package_paths=extra_paths,
+                required_visual_guids=required_visual_guids,
+                ambiguous_visual_guids=ambiguous_visual_guids,
                 prebuilt_indexes={source.path: source.index for source in self._candidate_archive_cache.sources} if self._candidate_archive_cache is not None else None,
                 progress=lambda index, total, item: self._set_phase(
                     context,
@@ -714,6 +721,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         selected_paths: set[str] = set()
         if (self._selected_prefab_choice or self.prefab_choice) == "AUTO" and self._composition_plan is not None:
             selected_paths.update(item.unity_path for item in self._candidate_analyses if item.renderer_count > 0)
+            required_visual_guids = set().union(*(item.required_visual_guids for item in self._candidate_analyses if item.renderer_count > 0))
         else:
             selected = self._selected_prefab(self._prefab_paths)
             if selected is not None and self._extraction_dir is not None:
@@ -721,6 +729,13 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     selected_paths.add(selected.relative_to(self._extraction_dir).as_posix())
                 except ValueError:
                     pass
+            selected_candidate_for_requirements = next(
+                (item for item in self._candidate_analyses if item.token == (self._selected_prefab_choice or self.prefab_choice)),
+                None,
+            )
+            required_visual_guids = set(selected_candidate_for_requirements.required_visual_guids) if selected_candidate_for_requirements else set()
+        ambiguous_visual_guids = set().union(*(item.ambiguous_visual_guids for item in self._candidate_analyses if item.renderer_count > 0))
+        required_visual_guids = (required_visual_guids - set(self._package_index.records)) | ambiguous_visual_guids
         selected_candidate = next(
             (item for item in self._candidate_analyses if item.token == self._selected_prefab_choice),
             None,
@@ -736,6 +751,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             self.filepath,
             selected_asset_paths=selected_paths,
             extra_package_paths=extra_paths,
+            required_visual_guids=required_visual_guids,
+            ambiguous_visual_guids=ambiguous_visual_guids,
             provenance_by_path=self._provider_provenance,
             prebuilt_indexes={source.path: source.index for source in self._candidate_archive_cache.sources} if self._candidate_archive_cache is not None else None,
             progress=(
@@ -1094,6 +1111,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         fbx_guids.add(entry.guid.lower())
                     elif suffix == ".mat":
                         material_guids.add(entry.guid.lower())
+        diagnostic_add("selected_prefab_count", len(prefabs) if isinstance(prefabs, (list, tuple, set)) else (1 if prefabs is not None else 0))
+        diagnostic_add("selected_fbx_guids", len(fbx_guids))
         if self.import_mode == "RAW_FBX" or (not fbx_guids and not prefabs):
             fbx_guids = records_with_suffix(".fbx")
         wanted.update(fbx_guids)
@@ -1308,7 +1327,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             material_library = {}
             if self.use_materials:
                 self._set_phase(context, "Building Materials and Textures", 0.75)
-                material_library = build_material_library(
+                material_library = self._performance.measure(
+                    "material_build",
+                    build_material_library,
                     asset_db,
                     pack_textures=not self.keep_extracted,
                     use_textures=self.use_textures,
@@ -1335,9 +1356,15 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         "texture_load", load_textures_from_database, asset_db,
                         pack=not self.keep_extracted,
                     )
-                capture_material_texture_dependencies(context.scene, material_library.values())
+                self._performance.measure(
+                    "dependency_capture",
+                    capture_material_texture_dependencies,
+                    context.scene,
+                    material_library.values(),
+                )
             prefab_roots = []
             prefab_object_maps = []
+            composition_started = perf_counter()
             if prefabs and self.apply_prefab_transforms:
                 package_label = package_key.package_name or "UnityPackage"
                 package_collection = bpy.data.collections.new(f"VAPB Import — {package_label}")
@@ -1398,7 +1425,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         prefab_unity_path,
                         member_collection,
                     )
-                    physics_snapshot = extract_physbone_snapshot(prefab)
+                    physics_snapshot = self._performance.measure("physbone_snapshot", extract_physbone_snapshot, prefab)
                     prefab_root["unity_physbone_source_schema"] = 1
                     prefab_root["unity_physbone_source_authority"] = "UNITY_SERIALIZED_MONOBEHAVIOUR"
                     prefab_root["unity_physbone_source_json"] = json.dumps(
@@ -1439,10 +1466,12 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             "material_mapping", apply_prefab_modification_materials,
                             prefab, member_objects, asset_db, material_library, context.scene,
                         )
+            self._performance.add("package_composition", perf_counter() - composition_started)
             prefab_root = prefab_roots[0] if prefab_roots else None
             prefab_object_map = prefab_object_maps[0] if prefab_object_maps else {}
 
             scene = context.scene
+            scene_metadata_started = perf_counter()
             supported_asset_count = len(fbx_paths) + len(prefab_paths) + len(material_library)
             supported_asset_count += sum(1 for image in bpy.data.images if image.get("unity_source_package_id") == package_key.source_package_id)
             if supported_asset_count == 0:
@@ -1604,6 +1633,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     print(f"[UnityPackage Importer] {error}")
                 self.report({"WARNING"}, f"Imported with {len(extraction.errors)} extraction warning(s); see console")
             self.report({"INFO"}, f"Imported {len(fbx_paths)} FBX file(s)")
+            self._performance.add("scene_metadata", perf_counter() - scene_metadata_started)
             self._set_phase(context, "Finalizing import")
             self._set_phase(context, "Import complete")
             self._set_prepare_state("FINISHED")

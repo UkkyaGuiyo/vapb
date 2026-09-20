@@ -8,6 +8,7 @@ from typing import Any, Iterable
 import bpy  # type: ignore
 
 from ..unity.texture_roles import TextureRole, canonical_texture_properties, classify_texture_property
+from .performance import diagnostic_add
 
 
 SCENE_DEPENDENCY_REGISTRY = "unitypackage_dependency_registry"
@@ -20,6 +21,7 @@ UNSUPPORTED = "UNSUPPORTED"
 
 
 def load_dependency_registry(scene: Any) -> dict[str, Any]:
+    diagnostic_add("dependency_registry_loads")
     try:
         raw = scene.get(SCENE_DEPENDENCY_REGISTRY, "")
         return json.loads(str(raw)) if raw else {"schema_version": 1, "dependencies": []}
@@ -28,6 +30,8 @@ def load_dependency_registry(scene: Any) -> dict[str, Any]:
 
 
 def save_dependency_registry(scene: Any, registry: dict[str, Any]) -> None:
+    diagnostic_add("dependency_registry_writes")
+    diagnostic_add("dependency_registry_records", len(registry.get("dependencies", [])))
     scene[SCENE_DEPENDENCY_REGISTRY] = json.dumps(registry, ensure_ascii=False, sort_keys=True)
 
 
@@ -40,6 +44,7 @@ def _record_key(record: dict[str, Any]) -> tuple[Any, ...]:
 
 
 def capture_dependency(scene: Any, record: dict[str, Any]) -> dict[str, Any]:
+    diagnostic_add("dependency_capture_records")
     registry = load_dependency_registry(scene)
     dependencies = registry.setdefault("dependencies", [])
     key = _record_key(record)
@@ -268,6 +273,7 @@ def resolve_after_import(scene: Any) -> dict[str, int]:
 
 
 def capture_material_texture_dependencies(scene: Any, materials: Iterable[Any]) -> None:
+    diagnostic_add("dependency_capture_material_batches")
     for material in materials:
         try:
             props = json.loads(str(material.get("unity_props", "{}")))

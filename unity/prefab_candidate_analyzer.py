@@ -104,18 +104,36 @@ class PackageCompositionPlan:
 class PackageArchiveCache:
     """Index and textual payload cache shared by all candidate analyses."""
 
-    def __init__(self, primary_path: Path, primary_index: PackageIndex):
+    def __init__(self, primary_path: Path, primary_index: PackageIndex, primary_extraction_root: Path | None = None):
         self.primary_path = Path(primary_path).resolve()
+        self.primary_extraction_root = Path(primary_extraction_root).resolve() if primary_extraction_root else None
         self._sources: dict[Path, PackageSource] = {
             self.primary_path: PackageSource(self.primary_path, primary_index, True)
         }
         self.index_build_counts: dict[Path, int] = {self.primary_path: 0}
         self.asset_read_counts: dict[tuple[Path, str], int] = {}
         self._text_cache: dict[tuple[Path, str], bytes] = {}
+        self.batch_archive_open_counts: dict[Path, int] = {}
         self._providers_by_guid: dict[str, list[PackageSource]] = {}
         for source in self._sources.values():
             for guid in source.index.records:
                 self._providers_by_guid.setdefault(guid, []).append(source)
+
+    def probe_guids(self, path: Path, wanted_guids: set[str]) -> set[str]:
+        wanted = {str(guid).lower() for guid in wanted_guids if guid}
+        if not wanted:
+            return set()
+        found: set[str] = set()
+        with tarfile.open(Path(path).resolve(), "r:*") as archive:
+            diagnostic_add("candidate_provider_probes")
+            for member in archive:
+                parts = member.name.replace("\\", "/").split("/")
+                if len(parts) == 2 and parts[1] in {"asset", "pathname", "asset.meta"}:
+                    guid = parts[0].lower()
+                    if guid in wanted:
+                        found.add(guid)
+        diagnostic_add("candidate_provider_probe_hits", len(found))
+        return found
 
     def source(self, path: Path) -> PackageSource:
         path = Path(path).resolve()
@@ -135,23 +153,57 @@ class PackageArchiveCache:
         return tuple(self._sources.values())
 
     def read_asset(self, source: PackageSource, guid: str) -> bytes:
-        key = (source.path, str(guid).lower())
-        if key in self._text_cache:
-            diagnostic_add("candidate_asset_cache_hits")
-            return self._text_cache[key]
-        record = source.index.records.get(key[1])
-        if record is None or not record.has_asset:
-            return b""
-        with tarfile.open(source.path, "r:*") as archive:
-            diagnostic_add("candidate_asset_archive_opens")
-            member = archive.getmember(f"{record.guid}/asset")
-            handle = archive.extractfile(member)
-            payload = handle.read() if handle is not None else b""
-        self._text_cache[key] = payload
-        self.asset_read_counts[key] = self.asset_read_counts.get(key, 0) + 1
-        diagnostic_add("candidate_asset_reads")
-        diagnostic_add("candidate_asset_bytes_read", len(payload))
-        return payload
+        return self.read_assets(source, {guid}).get(str(guid).lower(), b"")
+
+    def read_assets(self, source: PackageSource, guids: set[str]) -> dict[str, bytes]:
+        wanted = {str(guid).lower() for guid in guids if guid}
+        result: dict[str, bytes] = {}
+        missing: set[str] = set()
+        for guid in wanted:
+            key = (source.path, guid)
+            if key in self._text_cache:
+                result[guid] = self._text_cache[key]
+                diagnostic_add("candidate_asset_cache_hits")
+            else:
+                missing.add(guid)
+        if not missing:
+            return result
+        records = {guid: source.index.records.get(guid) for guid in missing}
+        textual = {
+            guid for guid, record in records.items()
+            if record is not None and record.has_asset and Path(record.unity_path).suffix.lower() in {".prefab", ".mat"}
+        }
+        if source.primary and self.primary_extraction_root is not None:
+            for guid in textual:
+                record = records[guid]
+                candidate = self.primary_extraction_root / Path(record.unity_path)
+                if candidate.is_file():
+                    result[guid] = candidate.read_bytes()
+                    self._text_cache[(source.path, guid)] = result[guid]
+                    self.asset_read_counts[(source.path, guid)] = self.asset_read_counts.get((source.path, guid), 0) + 1
+                    diagnostic_add("candidate_extracted_asset_reads")
+                    diagnostic_add("candidate_asset_reads")
+                    diagnostic_add("candidate_asset_bytes_read", len(result[guid]))
+            textual -= set(result)
+        if textual:
+            with tarfile.open(source.path, "r:*") as archive:
+                diagnostic_add("candidate_asset_archive_opens")
+                self.batch_archive_open_counts[source.path] = self.batch_archive_open_counts.get(source.path, 0) + 1
+                for member in archive:
+                    parts = member.name.replace("\\", "/").split("/")
+                    if len(parts) != 2 or parts[1] != "asset" or parts[0].lower() not in textual or not member.isfile():
+                        continue
+                    handle = archive.extractfile(member)
+                    payload = handle.read() if handle is not None else b""
+                    guid = parts[0].lower()
+                    result[guid] = payload
+                    self._text_cache[(source.path, guid)] = payload
+                    self.asset_read_counts[(source.path, guid)] = self.asset_read_counts.get((source.path, guid), 0) + 1
+                    diagnostic_add("candidate_asset_reads")
+                    diagnostic_add("candidate_asset_bytes_read", len(payload))
+                    if len(result) >= len(textual):
+                        break
+        return result
 
 
 class PrefabCandidateAnalyzer:
@@ -169,10 +221,14 @@ class PrefabCandidateAnalyzer:
         self.package_path = Path(package_path).resolve()
         self.extraction_root = Path(extraction_root)
         self.asset_db = asset_db
-        self.cache = PackageArchiveCache(self.package_path, package_index)
+        self.cache = PackageArchiveCache(self.package_path, package_index, self.extraction_root)
         self.extra_package_paths = {Path(path).resolve() for path in extra_package_paths}
         self.prefab_paths = list(prefab_paths)
         self.parsed_prefabs: dict[str, PrefabData] = {}
+        self._static_facts: dict[str, tuple[PrefabData, int, int, int, set[str], set[str], int, set[str], str]] = {}
+        self.static_fact_cache_hits = 0
+        self._closure_cache: dict[tuple[frozenset[str], tuple[Path, ...]], tuple[set[str], set[str], set[str], set[str], set[Path]]] = {}
+        self.closure_cache_hits = 0
 
     def _parse_prefab_once(self, path: Path) -> PrefabData:
         key = str(Path(path).resolve())
@@ -205,8 +261,11 @@ class PrefabCandidateAnalyzer:
         candidates.discard(self.package_path)
         return sorted(path for path in candidates if path.is_file())
 
-    def _load_external_sources(self) -> None:
+    def _load_external_sources(self, wanted_guids: set[str] | None = None) -> None:
         for path in self._candidate_package_paths():
+            if wanted_guids and not self.cache.probe_guids(path, wanted_guids):
+                diagnostic_add("candidate_unrelated_packages_skipped")
+                continue
             self.cache.source(path)
 
     def _primary_record(self, path: Path) -> tuple[str, PackageRecord | None]:
@@ -282,6 +341,13 @@ class PrefabCandidateAnalyzer:
         return {value.lower() for value in parse_external_objects(record.meta_bytes.decode("utf-8", "replace")).values()}
 
     def _closure(self, direct: set[str]) -> tuple[set[str], set[str], set[str], set[str], set[Path]]:
+        key = (frozenset(str(guid).lower() for guid in direct if guid), tuple(sorted(source.path for source in self.cache.sources)))
+        cached = self._closure_cache.get(key)
+        if cached is not None:
+            self.closure_cache_hits += 1
+            diagnostic_add("candidate_closure_cache_hits")
+            return tuple(set(item) for item in cached)  # type: ignore[return-value]
+        diagnostic_add("candidate_closure_cache_misses")
         required: set[str] = set()
         resolved: set[str] = set()
         unresolved: set[str] = set()
@@ -290,6 +356,17 @@ class PrefabCandidateAnalyzer:
         queue = list(sorted(guid.lower() for guid in direct if guid))
         visited: set[str] = set()
         while queue:
+            frontier = set(queue)
+            queue.clear()
+            by_source: dict[Path, set[str]] = {}
+            for frontier_guid in frontier:
+                matches = self._providers(frontier_guid)
+                if len(matches) == 1:
+                    by_source.setdefault(matches[0].path, set()).add(frontier_guid)
+            for source_path, source_guids in by_source.items():
+                source = self.cache.source(source_path)
+                self.cache.read_assets(source, source_guids)
+            queue.extend(sorted(frontier))
             guid = queue.pop(0)
             if guid in visited:
                 continue
@@ -318,27 +395,42 @@ class PrefabCandidateAnalyzer:
                 payload = self.cache.read_asset(source, guid)
                 text = payload.decode("utf-8", "replace")
                 queue.extend(sorted(set(re.findall(r"m_SourcePrefab:.*?guid:\s*([0-9a-fA-F]{32})", text, re.DOTALL)) - visited))
-        return required, resolved, unresolved, ambiguous, providers
+        result = required, resolved, unresolved, ambiguous, providers
+        self._closure_cache[key] = tuple(set(item) for item in result)  # type: ignore[assignment]
+        return result
 
     def analyze(
         self,
         progress: Callable[[int, int, Path], None] | None = None,
     ) -> list[PrefabCandidateAnalysis]:
+        if not hasattr(self, "_static_facts"):
+            self._static_facts = {}
+        if not hasattr(self, "_closure_cache"):
+            self._closure_cache = {}
+        if not hasattr(self, "static_fact_cache_hits"):
+            self.static_fact_cache_hits = 0
+        if not hasattr(self, "closure_cache_hits"):
+            self.closure_cache_hits = 0
         def analyze_once() -> list[PrefabCandidateAnalysis]:
             diagnostic_add("candidate_analysis_passes")
             diagnostic_add("candidate_prefabs_analyzed", len(self.prefab_paths))
             result: list[PrefabCandidateAnalysis] = []
             for index, path in enumerate(self.prefab_paths):
                 prefab = self._parse_prefab_once(path)
-                renderers = prefab.renderer_documents()
-                skinned = sum(document.class_id == SKINNED_MESH_RENDERER for document in renderers)
-                mesh_renderers = sum(document.class_id == MESH_RENDERER for document in renderers)
-                fbx, materials, slots = self._prefab_refs(prefab)
-                nested = (
-                    prefab.referenced_nested_prefab_guids()
-                    if hasattr(prefab, "referenced_nested_prefab_guids")
-                    else set()
-                )
+                static = self._static_facts.get(str(Path(path).resolve()))
+                if static is None:
+                    renderers = prefab.renderer_documents()
+                    skinned = sum(document.class_id == SKINNED_MESH_RENDERER for document in renderers)
+                    mesh_renderers = sum(document.class_id == MESH_RENDERER for document in renderers)
+                    fbx, materials, slots = self._prefab_refs(prefab)
+                    nested = prefab.referenced_nested_prefab_guids() if hasattr(prefab, "referenced_nested_prefab_guids") else set()
+                    kind = self._kind(prefab, len(renderers), skinned)
+                    self._static_facts[str(Path(path).resolve())] = (prefab, len(renderers), skinned, mesh_renderers, set(fbx), set(materials), slots, set(nested), kind)
+                else:
+                    self.static_fact_cache_hits += 1
+                    diagnostic_add("candidate_static_fact_cache_hits")
+                    prefab, renderer_count, skinned, mesh_renderers, fbx, materials, slots, nested, kind = static
+                    renderers = prefab.renderer_documents()
                 required, resolved, unresolved, ambiguous, providers = self._closure(fbx | materials | nested)
                 cache = getattr(self, "cache", None)
                 if cache is not None:
@@ -357,7 +449,6 @@ class PrefabCandidateAnalyzer:
                     status = "COMPLETE"
                 else:
                     status = "NONE"
-                kind = self._kind(prefab, len(renderers), skinned)
                 if not renderers and nested:
                     kind = "NESTED_COMPOSITE"
                 reasons = [f"{kind}", f"{status}"]
@@ -398,7 +489,8 @@ class PrefabCandidateAnalyzer:
 
         result = analyze_once()
         if any(item.unresolved_visual_guids for item in result):
-            self._load_external_sources()
+            wanted = set().union(*(item.unresolved_visual_guids | item.ambiguous_visual_guids for item in result))
+            self._load_external_sources(wanted)
             result = analyze_once()
         return result
 
