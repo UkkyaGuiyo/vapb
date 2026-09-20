@@ -12,6 +12,8 @@ import tempfile
 from time import perf_counter
 from typing import Callable, Dict, Optional
 
+from ..blender.performance import diagnostic_add
+
 
 class UnityPackageError(Exception):
     """Raised when a package cannot be safely interpreted."""
@@ -142,6 +144,7 @@ class UnityPackageReader:
         """Scan archive order once and cache only small dependency metadata."""
         if not self.package_path.is_file():
             raise UnityPackageError(f"Package does not exist: {self.package_path}")
+        diagnostic_add("package_index_builds")
         mutable: dict[str, dict[str, object]] = {}
         self.last_timings = {}
         open_started = perf_counter()
@@ -153,6 +156,7 @@ class UnityPackageReader:
         scan_started = perf_counter()
         with archive:
             for member in archive:
+                diagnostic_add("archive_members_seen")
                 parts = PurePosixPath(member.name.replace("\\", "/")).parts
                 if len(parts) != 2:
                     continue
@@ -256,9 +260,13 @@ class UnityPackageReader:
                             state.pathname = unity_path
                             state.target = safe_relative_path(output_dir, unity_path)
                         elif entry == "asset":
+                            diagnostic_add("extracted_asset_members")
+                            diagnostic_add("extracted_payload_bytes", int(member.size))
                             state.asset_spool = spool_root / f"{guid}.asset"
                             self._copy_member_stream(archive, member, state.asset_spool)
                         else:
+                            diagnostic_add("extracted_meta_members")
+                            diagnostic_add("extracted_meta_bytes", int(member.size))
                             if member.size <= _SMALL_ENTRY_CACHE_LIMIT:
                                 state.meta_bytes = self._read_small_member(archive, member)
                             else:

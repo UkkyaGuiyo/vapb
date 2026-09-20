@@ -8,6 +8,7 @@ import re
 from typing import Any, Optional
 
 from .yaml_parser import UnityYAMLDocument, parse_unity_yaml
+from ..blender.performance import diagnostic_add
 
 
 GAME_OBJECT = 1
@@ -129,6 +130,7 @@ class PrefabData:
 
 
 def parse_prefab(path: Path) -> PrefabData:
+    diagnostic_add("prefab_parse_calls")
     text = Path(path).read_text(encoding="utf-8-sig", errors="replace")
     documents = parse_unity_yaml(text)
     game_objects: dict[int, PrefabGameObject] = {}

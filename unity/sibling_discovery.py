@@ -11,6 +11,7 @@ from typing import Callable
 from .material_mapping import parse_external_objects
 from .package_identity import PackageIdentity
 from .yaml_parser import parse_unity_yaml
+from ..blender.performance import diagnostic_add
 
 
 TEXTUAL_EXTENSIONS = {".prefab", ".mat"}
@@ -58,12 +59,31 @@ class SiblingDiscoveryResult:
     resolution_provenance: dict[str, str] = field(default_factory=dict)
 
 
+def _manifest_from_index(index) -> list[PackageManifestEntry]:
+    return [
+        PackageManifestEntry(
+            guid=guid,
+            asset_path=record.unity_path,
+            extension=Path(record.unity_path).suffix.casefold(),
+            has_asset=record.has_asset,
+            has_meta=record.has_meta,
+            asset_size=record.asset_size,
+            meta_size=record.meta_size,
+            meta_bytes=record.meta_bytes or b"",
+        )
+        for guid, record in index.records.items()
+        if Path(record.unity_path).suffix.casefold() in TEXTUAL_EXTENSIONS | TEXTURE_EXTENSIONS | {".fbx"}
+    ]
+
+
 def _manifest(path: Path, accounting: dict[str, int] | None = None) -> list[PackageManifestEntry]:
     """Read pathname and FBX metadata only; never read an asset member."""
     accounting = accounting if accounting is not None else {}
+    diagnostic_add("sibling_manifest_scans")
     groups: dict[str, dict[str, tarfile.TarInfo]] = {}
     with tarfile.open(path, "r:*") as archive:
         for member in archive:
+            diagnostic_add("sibling_archive_members_seen")
             parts = member.name.replace("\\", "/").split("/")
             if len(parts) != 2 or parts[1] not in {"asset", "asset.meta", "pathname"} or not member.isfile():
                 continue
@@ -97,8 +117,11 @@ def _manifest(path: Path, accounting: dict[str, int] | None = None) -> list[Pack
 def _read_asset(path: Path, guid: str, extension: str, accounting: dict[str, int]) -> bytes:
     """Read a recognized textual dependency source on demand."""
     with tarfile.open(path, "r:*") as archive:
+        diagnostic_add("sibling_text_archive_opens")
         handle = archive.extractfile(archive.getmember(f"{guid}/asset"))
         payload = handle.read() if handle else b""
+    diagnostic_add("sibling_text_asset_reads")
+    diagnostic_add("sibling_text_bytes_read", len(payload))
     accounting["metadata_text_bytes_read"] = accounting.get("metadata_text_bytes_read", 0) + len(payload)
     accounting[f"{extension.lstrip('.').lower()}_text_reads"] = accounting.get(f"{extension.lstrip('.').lower()}_text_reads", 0) + 1
     return payload
@@ -146,33 +169,45 @@ def _visual_requirements_for_guids(
     visited: set[str] = set()
     required: set[str] = set()
     ignored = {"0" * 32, "0000000000000000f000000000000000"}
-    while queue:
-        guid = str(queue.pop(0)).lower()
-        if guid in visited or guid in ignored:
-            continue
-        visited.add(guid)
-        entry = entries_by_guid.get(guid)
-        if entry is None:
-            continue
-        dependencies: set[str] = set()
-        if entry.extension == ".prefab" and entry.has_asset:
-            payload = _read_asset(path, entry.guid, entry.extension, accounting)
-            dependencies = _prefab_visual_guids(payload, entries_by_guid)
-        elif entry.extension == ".mat" and entry.has_asset:
-            payload = _read_asset(path, entry.guid, entry.extension, accounting)
-            dependencies = _visual_guids_from_text(entry.extension, payload)
-        elif entry.extension == ".fbx" and entry.meta_bytes:
-            dependencies = {
-                value.lower()
-                for value in parse_external_objects(entry.meta_bytes.decode("utf-8", "replace")).values()
-            }
-        for dependency in dependencies:
-            dependency = dependency.lower()
-            if dependency in ignored or dependency not in entries_by_guid:
+    archive: tarfile.TarFile | None = None
+    try:
+        while queue:
+            guid = str(queue.pop(0)).lower()
+            if guid in visited or guid in ignored:
+                continue
+            visited.add(guid)
+            entry = entries_by_guid.get(guid)
+            if entry is None:
+                continue
+            dependencies: set[str] = set()
+            if entry.extension in {".prefab", ".mat"} and entry.has_asset:
+                if archive is None:
+                    archive = tarfile.open(path, "r:*")
+                    diagnostic_add("sibling_text_archive_opens")
+                handle = archive.extractfile(archive.getmember(f"{entry.guid}/asset"))
+                payload = handle.read() if handle else b""
+                diagnostic_add("sibling_text_asset_reads")
+                diagnostic_add("sibling_text_bytes_read", len(payload))
+                accounting["metadata_text_bytes_read"] = accounting.get("metadata_text_bytes_read", 0) + len(payload)
+                accounting[f"{entry.extension.lstrip('.').lower()}_text_reads"] = accounting.get(f"{entry.extension.lstrip('.').lower()}_text_reads", 0) + 1
+                dependencies = (
+                    _prefab_visual_guids(payload, entries_by_guid)
+                    if entry.extension == ".prefab"
+                    else _visual_guids_from_text(entry.extension, payload)
+                )
+            elif entry.extension == ".fbx" and entry.meta_bytes:
+                dependencies = {
+                    value.lower()
+                    for value in parse_external_objects(entry.meta_bytes.decode("utf-8", "replace")).values()
+                }
+            for dependency in dependencies:
+                dependency = dependency.lower()
                 required.add(dependency)
-            else:
-                required.add(dependency)
-                queue.append(dependency)
+                if dependency not in ignored and dependency in entries_by_guid:
+                    queue.append(dependency)
+    finally:
+        if archive is not None:
+            archive.close()
     return required
 
 
@@ -208,12 +243,20 @@ def discover_siblings(
     selected_asset_paths: set[str] | None = None,
     extra_package_paths: set[Path] | None = None,
     provenance_by_path: dict[str, str] | None = None,
+    prebuilt_indexes: dict[Path, object] | None = None,
     progress: Callable[[int, int, Path], None] | None = None,
 ) -> SiblingDiscoveryResult:
     del max_depth
     root_path = Path(root_path).resolve()
+    diagnostic_add("sibling_discovery_calls")
     accounting: dict[str, int] = {}
-    root_manifest = _manifest(root_path, accounting)
+    prebuilt_indexes = {Path(path).resolve(): index for path, index in (prebuilt_indexes or {}).items()}
+    if root_path in prebuilt_indexes:
+        root_manifest = _manifest_from_index(prebuilt_indexes[root_path])
+        diagnostic_add("sibling_manifest_cache_hits")
+        accounting["manifest_cache_hits"] = accounting.get("manifest_cache_hits", 0) + 1
+    else:
+        root_manifest = _manifest(root_path, accounting)
     selected = {str(path).replace("\\", "/") for path in (selected_asset_paths or set())}
     relevant = [entry for entry in root_manifest if not selected or entry.asset_path in selected]
     selected_guids = {entry.guid for entry in relevant if entry.extension == ".prefab"}
@@ -235,12 +278,20 @@ def discover_siblings(
     expanded = False
     changed = True
     while changed and unresolved:
+        diagnostic_add("sibling_resolution_passes")
         changed = False
         providers: dict[str, list[Path]] = {}
         for path_index, path in enumerate(sibling_paths, 1):
             if path in selected_paths:
                 continue
-            manifests[path] = manifests.get(path) or _manifest(path, accounting)
+            if path not in manifests:
+                if path in prebuilt_indexes:
+                    manifests[path] = _manifest_from_index(prebuilt_indexes[path])
+                    diagnostic_add("sibling_manifest_cache_hits")
+                    accounting["manifest_cache_hits"] = accounting.get("manifest_cache_hits", 0) + 1
+                else:
+                    manifests[path] = _manifest(path, accounting)
+            diagnostic_add("sibling_candidates_scanned")
             if progress is not None:
                 progress(path_index, len(sibling_paths), path)
             provided[path] = {entry.guid for entry in manifests[path]}

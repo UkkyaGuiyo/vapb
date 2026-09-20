@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from concurrent.futures import Future, ThreadPoolExecutor
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import json
 from pathlib import Path
 from queue import SimpleQueue
@@ -24,7 +24,7 @@ from ..blender.identity_registry import load_scene_registry, register_datablocks
 from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, apply_prefab_modification_materials, build_material_library
 from ..blender.texture_loader import load_textures_from_database
 from ..blender.dependency_resolver import capture_material_texture_dependencies, load_dependency_registry, resolve_after_import
-from ..blender.performance import PerformanceTimer
+from ..blender.performance import PerformanceTimer, diagnostic_add, reset_diagnostic_stats
 from ..blender.progress_overlay import ImportProgressOverlay
 from ..ui.import_panel import draw_import_options
 from ..unity.asset_database import AssetDatabase
@@ -82,6 +82,8 @@ class _PreparedImport:
     candidate_analyses: list[PrefabCandidateAnalysis] = field(default_factory=list)
     candidate_selection: PrefabSelection | None = None
     composition_plan: PackageCompositionPlan | None = None
+    candidate_prefabs: dict[str, Any] = field(default_factory=dict)
+    candidate_archive_cache: Any = None
 
 
 @dataclass
@@ -317,6 +319,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._candidate_analyses: list[PrefabCandidateAnalysis] = []
         self._candidate_selection: PrefabSelection | None = None
         self._composition_plan: PackageCompositionPlan | None = None
+        self._candidate_prefabs: dict[str, Any] = {}
+        self._candidate_archive_cache = None
 
     def _ui_log(self, message: str) -> None:
         print(f"[UI] {message}")
@@ -384,6 +388,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 self._progress_monitor = _ACTIVE_PROGRESS_MONITOR
                 self._progress_owner = False
             else:
+                reset_diagnostic_stats()
                 self._progress_monitor = ImportProgressMonitor(
                     sink=_BlenderProgressSink(context),
                     logger=print,
@@ -449,6 +454,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         events: SimpleQueue[object] | None,
     ) -> _PreparedImport:
         timings: dict[str, float] = {}
+        candidate_prefabs: dict[str, Any] = {}
 
         def phase(
             message: str,
@@ -506,6 +512,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     analyzer.analyze,
                     candidate_progress,
                 )
+                candidate_prefabs = dict(analyzer.parsed_prefabs)
                 candidate_selection = analyzer.select(candidate_analyses)
                 composition_plan = analyzer.compose(candidate_analyses)
             else:
@@ -524,6 +531,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 candidate_analyses=candidate_analyses,
                 candidate_selection=candidate_selection,
                 composition_plan=composition_plan,
+                candidate_prefabs=candidate_prefabs,
+                candidate_archive_cache=getattr(analyzer, "cache", None) if 'analyzer' in locals() else None,
             )
 
         extraction_dir = Path(tempfile.mkdtemp(prefix="unitypackage_blender_importer_"))
@@ -580,6 +589,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     analyzer.analyze,
                     candidate_progress,
                 )
+                candidate_prefabs = dict(analyzer.parsed_prefabs)
                 candidate_selection = analyzer.select(candidate_analyses)
                 composition_plan = analyzer.compose(candidate_analyses)
             else:
@@ -606,6 +616,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             candidate_analyses,
             candidate_selection,
             composition_plan,
+            candidate_prefabs,
+            getattr(analyzer, "cache", None) if 'analyzer' in locals() else None,
         )
 
     def _apply_prepared(self, context, prepared: _PreparedImport) -> None:
@@ -616,6 +628,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             self._candidate_analyses = list(prepared.candidate_analyses or [])
             self._candidate_selection = prepared.candidate_selection
             self._composition_plan = prepared.composition_plan
+            self._candidate_prefabs = dict(prepared.candidate_prefabs)
+            self._candidate_archive_cache = prepared.candidate_archive_cache
             if (
                 self._selected_prefab_choice is None
                 and self.prefab_choice == "AUTO"
@@ -640,6 +654,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         self._candidate_analyses = list(prepared.candidate_analyses or [])
         self._candidate_selection = prepared.candidate_selection
         self._composition_plan = prepared.composition_plan
+        self._candidate_prefabs = dict(prepared.candidate_prefabs)
+        self._candidate_archive_cache = prepared.candidate_archive_cache
         if (
             self._selected_prefab_choice is None
             and self.prefab_choice == "AUTO"
@@ -664,10 +680,13 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             else:
                 selected_paths = {selected_candidate.unity_path} if selected_candidate else set()
                 extra_paths = set(selected_candidate.provider_packages) if selected_candidate else set()
-            self._sibling_discovery = discover_siblings(
+            self._sibling_discovery = self._performance.measure(
+                "sibling_discovery",
+                discover_siblings,
                 self.filepath,
                 selected_asset_paths=selected_paths,
                 extra_package_paths=extra_paths,
+                prebuilt_indexes={source.path: source.index for source in self._candidate_archive_cache.sources} if self._candidate_archive_cache is not None else None,
                 progress=lambda index, total, item: self._set_phase(
                     context,
                     "Resolving related packages",
@@ -711,11 +730,14 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             extra_paths.update(selected_candidate.provider_packages)
         elif self._composition_plan is not None:
             extra_paths.update(path for item in self._candidate_analyses for path in item.provider_packages)
-        self._sibling_discovery = discover_siblings(
+        self._sibling_discovery = self._performance.measure(
+            "sibling_discovery",
+            discover_siblings,
             self.filepath,
             selected_asset_paths=selected_paths,
             extra_package_paths=extra_paths,
             provenance_by_path=self._provider_provenance,
+            prebuilt_indexes={source.path: source.index for source in self._candidate_archive_cache.sources} if self._candidate_archive_cache is not None else None,
             progress=(
                 (lambda index, total, item: self._set_phase(
                     self._progress_context,
@@ -1128,7 +1150,12 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         index = self._package_index
         if reader is None or index is None:
             raise UnityPackageError("Package dependency index is unavailable")
-        wanted = self._collect_selective_guids(planning_prefabs, planning_db)
+        wanted = self._performance.measure(
+            "selected_dependency_collection",
+            self._collect_selective_guids,
+            planning_prefabs,
+            planning_db,
+        )
         final_dir = Path(tempfile.mkdtemp(prefix="unitypackage_blender_importer_selected_"))
         previous_timings = dict(reader.last_timings)
         try:
@@ -1210,7 +1237,12 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 for planning_path in planning_paths:
                     try:
                         self._set_phase(context, "Parsing Prefab", 0.35, current_item=planning_path.name)
-                        planning_prefabs.append(self._performance.measure("prefab_parse", parse_prefab, planning_path))
+                        cached = self._candidate_prefabs.get(str(planning_path.resolve()))
+                        if cached is not None:
+                            planning_prefabs.append(cached)
+                            diagnostic_add("prepared_prefab_reuses")
+                        else:
+                            planning_prefabs.append(self._performance.measure("prefab_parse", parse_prefab, planning_path))
                         planning_unity_paths.append(planning_path.relative_to(extraction_dir).as_posix())
                     except (OSError, UnicodeError, ValueError) as exc:
                         self.report({"WARNING"}, f"Prefab parse failed; skipping {planning_path.name}: {exc}")
@@ -1225,7 +1257,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             for planning_prefab, planning_unity_path in zip(planning_prefabs, planning_unity_paths):
                 final_entry = asset_db.find_path(planning_unity_path)
                 if final_entry is not None and final_entry.path.is_file():
-                    prefabs.append((self._performance.measure("prefab_parse", parse_prefab, final_entry.path), final_entry.unity_path))
+                    prefab_data = replace(planning_prefab, path=final_entry.path)
+                    prefabs.append((prefab_data, final_entry.unity_path))
                 else:
                     self.report({"WARNING"}, f"Prefab was not included in dependency extraction: {planning_prefab.path.name}")
             prefab = prefabs[0][0] if prefabs else None
@@ -1254,7 +1287,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 )
                 if not imported_objects:
                     raise UnityPackageError("FBX import produced no Blender objects")
-                imported_objects = apply_import_options(
+                imported_objects = self._performance.measure(
+                    "apply_import_options",
+                    apply_import_options,
                     imported_objects,
                     use_armatures=self.use_armatures,
                     use_bone_weights=self.use_bone_weights,
@@ -1548,7 +1583,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             # Group children are synchronous; only resolve the primary after
             # every selected provider has created its materials and images.
             self._set_phase(context, "Resolving dependencies")
-            dependency_counts = resolve_after_import(scene)
+            dependency_counts = self._performance.measure("dependency_resolution", resolve_after_import, scene)
             package_kind = "MIXED_PACKAGE" if fbx_paths and (material_library or supported_asset_count > len(fbx_paths)) else "GEOMETRY_PACKAGE" if fbx_paths else "ASSET_PROVIDER_PACKAGE"
             current_registry = load_scene_registry(scene)
             current_package = current_registry.packages.get(package_key.source_package_id)

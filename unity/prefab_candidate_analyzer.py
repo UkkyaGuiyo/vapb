@@ -18,6 +18,7 @@ from .asset_database import AssetDatabase
 from .material_mapping import parse_external_objects
 from .package_reader import PackageIndex, PackageRecord, UnityPackageReader
 from .prefab_parser import MESH_RENDERER, SKINNED_MESH_RENDERER, PrefabData, parse_prefab
+from ..blender.performance import diagnostic_add
 
 
 _TEXTURE_RE = re.compile(r"m_Texture:\s*\{[^}]*?guid:\s*([0-9a-fA-F]{8,64})")
@@ -111,6 +112,10 @@ class PackageArchiveCache:
         self.index_build_counts: dict[Path, int] = {self.primary_path: 0}
         self.asset_read_counts: dict[tuple[Path, str], int] = {}
         self._text_cache: dict[tuple[Path, str], bytes] = {}
+        self._providers_by_guid: dict[str, list[PackageSource]] = {}
+        for source in self._sources.values():
+            for guid in source.index.records:
+                self._providers_by_guid.setdefault(guid, []).append(source)
 
     def source(self, path: Path) -> PackageSource:
         path = Path(path).resolve()
@@ -121,6 +126,8 @@ class PackageArchiveCache:
             self.index_build_counts[path] = self.index_build_counts.get(path, 0) + 1
             source = PackageSource(path, index, False)
             self._sources[path] = source
+            for guid in index.records:
+                self._providers_by_guid.setdefault(guid, []).append(source)
         return source
 
     @property
@@ -130,16 +137,20 @@ class PackageArchiveCache:
     def read_asset(self, source: PackageSource, guid: str) -> bytes:
         key = (source.path, str(guid).lower())
         if key in self._text_cache:
+            diagnostic_add("candidate_asset_cache_hits")
             return self._text_cache[key]
         record = source.index.records.get(key[1])
         if record is None or not record.has_asset:
             return b""
         with tarfile.open(source.path, "r:*") as archive:
+            diagnostic_add("candidate_asset_archive_opens")
             member = archive.getmember(f"{record.guid}/asset")
             handle = archive.extractfile(member)
             payload = handle.read() if handle is not None else b""
         self._text_cache[key] = payload
         self.asset_read_counts[key] = self.asset_read_counts.get(key, 0) + 1
+        diagnostic_add("candidate_asset_reads")
+        diagnostic_add("candidate_asset_bytes_read", len(payload))
         return payload
 
 
@@ -161,6 +172,20 @@ class PrefabCandidateAnalyzer:
         self.cache = PackageArchiveCache(self.package_path, package_index)
         self.extra_package_paths = {Path(path).resolve() for path in extra_package_paths}
         self.prefab_paths = list(prefab_paths)
+        self.parsed_prefabs: dict[str, PrefabData] = {}
+
+    def _parse_prefab_once(self, path: Path) -> PrefabData:
+        key = str(Path(path).resolve())
+        parsed_prefabs = getattr(self, "parsed_prefabs", None)
+        if parsed_prefabs is None:
+            parsed_prefabs = self.parsed_prefabs = {}
+        cached = parsed_prefabs.get(key)
+        if cached is None:
+            cached = parse_prefab(path)
+            parsed_prefabs[key] = cached
+        else:
+            diagnostic_add("prefab_parse_cache_hits")
+        return cached
 
     def _candidate_package_paths(self) -> list[Path]:
         """Return the bounded sibling neighborhood without reading archives."""
@@ -238,7 +263,7 @@ class PrefabCandidateAnalyzer:
         return "UNKNOWN"
 
     def _providers(self, guid: str) -> list[PackageSource]:
-        return [source for source in self.cache.sources if guid.lower() in source.index.records]
+        return list(self.cache._providers_by_guid.get(guid.lower(), ()))
 
     def _record(self, source: PackageSource, guid: str) -> PackageRecord | None:
         return source.index.records.get(guid.lower())
@@ -300,9 +325,11 @@ class PrefabCandidateAnalyzer:
         progress: Callable[[int, int, Path], None] | None = None,
     ) -> list[PrefabCandidateAnalysis]:
         def analyze_once() -> list[PrefabCandidateAnalysis]:
+            diagnostic_add("candidate_analysis_passes")
+            diagnostic_add("candidate_prefabs_analyzed", len(self.prefab_paths))
             result: list[PrefabCandidateAnalysis] = []
             for index, path in enumerate(self.prefab_paths):
-                prefab = parse_prefab(path)
+                prefab = self._parse_prefab_once(path)
                 renderers = prefab.renderer_documents()
                 skinned = sum(document.class_id == SKINNED_MESH_RENDERER for document in renderers)
                 mesh_renderers = sum(document.class_id == MESH_RENDERER for document in renderers)

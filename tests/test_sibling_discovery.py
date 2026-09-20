@@ -7,6 +7,7 @@ import tempfile
 from unittest.mock import patch
 import unittest
 
+from unitypackage_blender_importer.unity.package_reader import UnityPackageReader
 from unitypackage_blender_importer.unity.sibling_discovery import discover_siblings, inspect_provider_folder, inspect_provider_package
 
 
@@ -141,6 +142,23 @@ SkinnedMeshRenderer:
             self.assertEqual(scan.call_count, 1)
             self.assertEqual(result.accounting["texture_payload_bytes_read"], 0)
             self.assertEqual(result.accounting["fbx_payload_bytes_read"], 0)
+
+    def test_prebuilt_indexes_skip_duplicate_manifest_scans(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            material_guid = "a" * 32
+            primary = root / "primary.unitypackage"
+            provider = root / "provider.unitypackage"
+            _package(primary, [("b" * 32, "Assets/Avatar.prefab", _visual_prefab(material_guid))])
+            _package(provider, [(material_guid, "Assets/Avatar.mat", "")])
+            indexes = {
+                primary.resolve(): UnityPackageReader(primary).build_index(),
+                provider.resolve(): UnityPackageReader(provider).build_index(),
+            }
+            with patch("unitypackage_blender_importer.unity.sibling_discovery._manifest", side_effect=AssertionError("archive manifest rescanned")):
+                result = discover_siblings(primary, prebuilt_indexes=indexes)
+            self.assertEqual(result.visual_status, "COMPLETE")
+            self.assertEqual([Path(item.path).name for item in result.packages], [provider.name])
 
     def test_manual_package_coverage_reports_zero_partial_and_complete(self):
         with tempfile.TemporaryDirectory() as temp:
