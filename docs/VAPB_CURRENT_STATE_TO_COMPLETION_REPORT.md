@@ -440,3 +440,17 @@ The current snapshot does not capture complete Unity Variant ancestry or a per-f
 ### CURRENT NEXT ACTION
 
 The next action is one public-API Unity observation of the selected root that records Prefab source/instance chain for all 26 Renderer occurrences. The standalone public-safe closure is documented in `docs/CASE_A.md`.
+
+## 22. Stage 0.5 Unity source-chain observation (latest)
+
+### OBSERVED FACT
+
+The selected-root public-API observation completed with **26 Renderer occurrences / 41 Material slots**, immediate source resolved **26/26**, original source resolved **26/26**, and FBX model asset resolved **26/26**. Every row was a Connected Prefab instance with `PrefabAssetType.Variant` and a three-level observed chain: Scene Renderer -> selected Prefab source -> original FBX Renderer. Console errors were 0.
+
+### DERIVED
+
+The 4 exact and 22 gap rows share the same Unity chain. Therefore the loss boundary is proven after Unity source/original/model resolution and at VAPB selected-root Effective occurrence projection. Sol review classifies the 22 rows most strongly as `VAPB_ROOT_ATTRIBUTION_GAP` with medium confidence: they are emitted under other package-wide roots but not the selected root. Model-child expansion and Variant projection remain possible mechanisms, not isolated causes.
+
+### DECISION
+
+The final classification for all 22 is `VAPB_ROOT_ATTRIBUTION_GAP` (medium confidence), with mechanism assessment `SELECTED_ROOT_ATTRIBUTION_MISMATCH_MODEL_CHILD_AND_VARIANT_MECHANISM_UNRESOLVED`. Semantic Contract v0 design may proceed; full selected-root semantic freeze remains HOLD. Details are in `docs/CASE_A.md`.
