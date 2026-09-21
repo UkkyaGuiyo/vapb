@@ -26,7 +26,7 @@ one or more UnityPackage files
 ### OBSERVED FACT
 
 - Branch: `feature/multi-package-identity`
-- HEAD: `2692c213a36eb4881efef3fb61c8276636cbd3e8`
+- HEAD at the previous handoff: `aa4cd4a2ab585fefe68ce7830c4b937b818f1a46`.
 - `origin/feature/multi-package-identity` は同じ HEAD を指している。
 - 作業ツリーには、今回以前からの未コミット変更がある。Importer、Prefab parser、Material builder、provenance bridge、export 関連の追加ファイルなどが含まれる。
 - したがって、未コミットの exporter/provenance 実装は「現行HEADの完成機能」ではなく、検証前の作業ツリー状態として扱う。
@@ -420,3 +420,23 @@ selected-root 22件の offline provenance matrix を一度作り、26 occurrence
 ## 20. Public-safety declaration
 
 この文書は aggregate / sanitized な研究結果だけを含む。commercial UnityPackage本体、FBX、Texture、Material、Prefab YAML、raw Unity Oracle JSON、実 asset のGUID/fileID一覧、不要な private absolute path、スクリーンショットは含めていない。
+
+## 21. Stage 0 provenance closure addendum (latest)
+
+### OBSERVED FACT
+
+The previously open 22-row selected-root gap is now classified using a private local provenance matrix. The 26 selected Unity Renderer occurrences divide into **4 EXACT_EFFECTIVE_OCCURRENCE** and **22 SELECTED_ROOT_REPRESENTATION_GAP**. All 22 have one or more package-wide Effective candidates under other roots; package-wide absence is 0 and selected-root ambiguity is 0. Other-root candidate multiplicity is 1 row with one candidate, 3 rows with two, and 18 rows with three.
+
+The raw FBX graph remains 26/26 exact and comparable valid Material mismatch remains 0. The 22-row result is therefore not evidence of raw FBX graph loss or a Material value mismatch.
+
+### DERIVED
+
+The first observed missing stage is selected-root Effective assignment / occurrence projection. The current VAPB graph can emit the same model-source identities under other root evaluations, but does not yet prove the selected Unity instance's complete occurrence scope. This is a representation diagnosis, not proof of an incorrect Unity parent.
+
+### UNKNOWN / STOP CONDITION
+
+The current snapshot does not capture complete Unity Variant ancestry or a per-function runtime trace. The deeper distinction between model-child expansion loss, root attribution loss, and Variant/inheritance projection loss remains open. Production changes must wait for an occurrence-aware public Unity source/instance-chain observation.
+
+### CURRENT NEXT ACTION
+
+The next action is one public-API Unity observation of the selected root that records Prefab source/instance chain for all 26 Renderer occurrences. The standalone public-safe closure is documented in `docs/CASE_A.md`.
