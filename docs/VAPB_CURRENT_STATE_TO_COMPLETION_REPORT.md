@@ -454,3 +454,45 @@ The 4 exact and 22 gap rows share the same Unity chain. Therefore the loss bound
 ### DECISION
 
 The final classification for all 22 is `VAPB_ROOT_ATTRIBUTION_GAP` (medium confidence), with mechanism assessment `SELECTED_ROOT_ATTRIBUTION_MISMATCH_MODEL_CHILD_AND_VARIANT_MECHANISM_UNRESOLVED`. Semantic Contract v0 design may proceed; full selected-root semantic freeze remains HOLD. Details are in `docs/CASE_A.md`.
++## 23. Stage 1A synthetic occurrence projection isolation (latest)
+
+### OBSERVED / PROVEN
+
+Stage 1A added only public synthetic fixtures. At the current `EffectivePrefabResolver` boundary:
+
+- A Prefab that explicitly references a synthetic model with three source Renderer records, but has no Renderer material override, produces 0 Effective Renderers.
+- Addressing one source Renderer by override produces 1 Effective Renderer; addressing all three produces 3.
+- A serialized base Prefab containing three Renderer components remains 3 through the tested Variant and nested no-extra-override chain.
+- Changing between the two tested non-empty synthetic Material GUIDs on the same override does not change the fixture's Renderer occurrence count.
+- `OccurrenceKey` distinguishes the same source Renderer under different synthetic root/instance paths, but `EffectivePrefabResolver.resolve()` has no selected-root or instance-edge context parameter.
+- Full Python unittest discovery: **233 tests PASS**.
+- Relevant Stage 1A/parser/provenance tests: **26 tests PASS**.
+- `python -m compileall -q blender unity operators ui export tests`: **PASS**.
+
+The synthetic test and public-safe interpretation are stored in
+`tests/test_stage1a_synthetic_projection.py` and
+`docs/CASE_A.md`.
+
+### DERIVED
+
+- The result is reproducible as a general occurrence-projection limitation, not a CASE_A hack or rule.
+- A source Renderer identity alone does not represent a selected-root occurrence; root context and instance-edge path are separate semantic data.
+- An Effective semantic contract needs root context, instance path, source Renderer identity, owner/mesh identity, and ambiguity status.
+- The synthetic run narrows the code boundary but does not prove that one mechanism alone explains the private real-asset gap.
+
+### UNKNOWN
+
+- Whether the final production correction belongs directly in `EffectivePrefabResolver`.
+- Whether an occurrence projection layer should be introduced separately.
+- Where model-child expansion and selected-root context should be integrated.
+- Whether the observed variant identity-scope risk is present in every real Unity serialization shape.
+
+### DECISION
+
+- **Production behavior fix: HOLD.** No production logic was changed in Stage 1A.
+- **Semantic Contract v0 design: proceed.** Define the contract from the synthetic fixture and the Stage 0/0.5 evidence before implementation.
+- **Full semantic freeze: HOLD.** The selected-root projection mechanism is not yet fully proven.
+
+### NEXT ACTION
+
+Define Semantic Contract v0 with a synthetic occurrence-projection adapter test that emits all model-child Renderers under two selected-root/instance-edge contexts, preserving shared source identity while producing distinct occurrence keys. Do not implement the production correction until that contract boundary is reviewed.
