@@ -496,3 +496,113 @@ The synthetic test and public-safe interpretation are stored in
 ### NEXT ACTION
 
 Define Semantic Contract v0 with a synthetic occurrence-projection adapter test that emits all model-child Renderers under two selected-root/instance-edge contexts, preserving shared source identity while producing distinct occurrence keys. Do not implement the production correction until that contract boundary is reviewed.
+
+
+## 24. Stage 1B Semantic Contract v0 (latest)
+
+### OBSERVED / PROVEN
+
+- `SourceComponentKey` represents reusable source identity using source kind,
+  source asset GUID, and Renderer file ID.
+- `OccurrenceKey` adds selected-root context and ordered instance-edge path,
+  so the same source Renderer can be represented as multiple occurrences.
+- `RendererOccurrenceContract` carries occurrence identity, expected owner,
+  expected mesh, material overrides, and explicit contract version `v0`.
+- Material override values preserve occurrence identity in the synthetic contract.
+- Conflicting source relations fail closed as ambiguous.
+- Serialization is identity-based and contains no object-name join.
+- Stage 1B contract tests: **5 PASS**.
+- Stage 1A synthetic tests: **5 PASS**.
+- Production behavior changed: **NO**.
+
+### DERIVED
+
+- Source component identity and selected-root occurrence identity are separate
+  at the synthetic contract boundary. Preservation through Importer, Blender
+  realization, Exporter, and Unity rebind remains unverified.
+- Root context and ordered instance-edge path are mandatory occurrence scope;
+  source GUID/fileID alone is insufficient.
+- The adapter boundary can be specified independently of the current resolver,
+  allowing production integration to be reviewed separately.
+
+### UNKNOWN
+
+- Whether production correction belongs directly in
+  `EffectivePrefabResolver`.
+- Whether a separate occurrence projection layer should be introduced.
+- Where model-child expansion and root context should be integrated.
+- How Unity-generated ModelImporter local IDs will be supplied to production
+  without guessing.
+
+### DECISION
+
+- Semantic Contract v0 is defined in
+  `docs/SEMANTIC_CONTRACT_V0.md`.
+- The synthetic adapter is a contract oracle only; it is not wired into import.
+- Production behavior fix remains **HOLD**.
+- Full semantic freeze remains **HOLD**.
+
+### NEXT ACTION
+
+Keep the production behavior fix on HOLD until the contract boundary is
+reviewed against the existing package-to-Blender projection path. No
+`EffectivePrefabResolver` change is authorized by Stage 1B.
+
+## 25. PCA dirty-worktree recovery and public handoff (latest)
+
+### OBSERVED FACT
+
+- PCA branch: `feature/multi-package-identity`.
+- Recovery started from remote HEAD `42c0358` and completed at a later
+  feature-branch HEAD.
+- The PCA working tree contained 11 modified tracked files and 30 untracked
+  files. No destructive cleanup operation was performed.
+- The committed HEAD-only clone had 172 passing pure-Python tests. The PCA
+  working tree had 238 passing tests.
+- The difference is five additional test files containing 58 test cases,
+  plus 8 cases added to two already-committed test files: 172 + 58 + 8 = 238.
+
+### HIDDEN DEPENDENCY FINDING
+
+The first recovery commit restored `unity/effective_prefab.py` and
+`unity/provenance_model.py`. A correct HEAD-only clone then exposed one more
+required dependency: `unity/effective_prefab.py` imports
+`PrefabModification` and related semantic APIs from the modified
+`unity/prefab_parser.py`. That parser dependency was recovered in a second
+commit. This is the canonical example of why local PASS is not handoff
+complete.
+
+### PUBLIC RECOVERY DECISION
+
+Recovered public-safe source, tests, exporter prototype code, validation
+tooling, architecture documents, and this handoff update were separated from
+private or unclassified local material. No commercial asset, raw Oracle
+output, real private GUID/fileID table, credential, or machine-specific
+secret was committed.
+
+The following remained outside the recovery commits: private/local diagnostic
+outputs if present, the internal `docs/superpowers/` planning material, and
+any unrelated dirty worktree changes not required by the committed test or
+public implementation graph.
+
+### REPRODUCIBILITY RULE
+
+The required handoff acceptance condition is now explicit:
+
+```text
+GitHub feature-branch HEAD
+  -> clean clone with the repository package path configured
+  -> committed source imports successfully
+  -> committed pure-Python tests pass
+  -> compileall passes
+```
+
+The recovered HEAD-only clone passed the committed test population and
+compileall. Blender and Unity acceptance remain separate gates and are not
+claimed by this Python-only recovery.
+
+### NEXT ACTION
+
+Use the recovered public branch as the source of truth for the next review;
+audit any remaining PCA dirty item as a separate atomic change before
+committing it.
