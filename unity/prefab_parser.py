@@ -48,16 +48,45 @@ class PrefabTransform:
     scale: dict[str, float]
 
 
+@dataclass(frozen=True)
+class PrefabModification:
+    """Lossless semantic subset of one Unity PrefabInstance modification."""
+    target_file_id: int
+    target_guid: str
+    target_type: int | None
+    property_path: str
+    value: Any = None
+    object_reference: dict[str, Any] | None = None
+    raw: str = ""
+
+
 @dataclass
 class PrefabData:
     path: Path
     documents: list[UnityYAMLDocument]
     game_objects: dict[int, PrefabGameObject]
     transforms: dict[int, PrefabTransform]
+    asset_guid: str = ""
 
     @property
     def display_name(self) -> str:
-        return next(iter(self.game_objects.values())).name if self.game_objects else self.path.stem
+        roots = self.root_game_objects()
+        if len(roots) == 1:
+            return roots[0].name
+        return self.path.stem
+
+    @property
+    def asset_identity(self) -> str:
+        """Return the owning Prefab asset identity when its meta is available."""
+        return self.asset_guid.lower() or str(self.path).replace("\\", "/")
+
+    def root_game_objects(self) -> list[PrefabGameObject]:
+        root_ids = {
+            transform.game_object_id
+            for transform in self.transforms.values()
+            if transform.game_object_id is not None and transform.parent_id in (None, 0)
+        }
+        return [self.game_objects[item] for item in root_ids if item in self.game_objects]
 
     def renderer_documents(self) -> list[UnityYAMLDocument]:
         return [d for d in self.documents if d.class_id in {MESH_RENDERER, SKINNED_MESH_RENDERER}]
@@ -73,37 +102,53 @@ class PrefabData:
         to model this editor serialization, so use a narrow parser for the
         exact override records we need and refuse incomplete records.
         """
-        result: list[dict[str, Any]] = []
+        names = {
+            str(item.target_file_id): str(item.value)
+            for item in self.modifications()
+            if item.property_path == "m_Name" and item.value is not None
+        }
+        result = []
+        for item in self.modifications():
+            match = re.fullmatch(r"m_Materials\.Array\.data\[(\d+)\]", item.property_path)
+            if not match or not item.object_reference:
+                continue
+            result.append({
+                "target_file_id": str(item.target_file_id),
+                "target_source_guid": item.target_guid,
+                "slot_index": int(match.group(1)),
+                "material_guid": ref_guid(item.object_reference),
+                "object_name": names.get(str(item.target_file_id), ""),
+            })
+        return result
+
+    def modifications(self) -> list[PrefabModification]:
+        result: list[PrefabModification] = []
         for document in self.documents:
             if document.class_id != 1001:
                 continue
             chunks = re.split(r"\n\s*- target:\s*", document.raw)
-            names: dict[str, str] = {}
-            material_chunks: list[tuple[str, str]] = []
             for chunk in chunks[1:]:
-                target = re.match(r"\{fileID:\s*(-?\d+),\s*guid:\s*([0-9a-fA-F]{32})", chunk)
-                if not target:
-                    continue
-                target_file_id, target_guid = target.groups()
-                name_value = re.search(r"propertyPath:\s*m_Name\s*\n\s*value:\s*(.+)", chunk)
-                if name_value:
-                    names[target_file_id] = name_value.group(1).strip()
-                material = re.search(
-                    r"propertyPath:\s*m_Materials\.Array\.data\[(\d+)\].*?"
-                    r"objectReference:\s*\{fileID:\s*-?\d+,\s*guid:\s*([0-9a-fA-F]{32})",
-                    chunk,
-                    re.DOTALL,
+                target = re.search(
+                    r"\{\s*fileID:\s*(-?\d+).*?guid:\s*([0-9a-fA-F]{32}).*?(?:type:\s*(-?\d+))?\s*\}",
+                    chunk, re.DOTALL,
                 )
-                if material:
-                    material_chunks.append((target_file_id, target_guid, material.group(1), material.group(2)))
-            for target_file_id, target_guid, slot_index, material_guid in material_chunks:
-                result.append({
-                    "target_file_id": target_file_id,
-                    "target_source_guid": target_guid.lower(),
-                    "slot_index": int(slot_index),
-                    "material_guid": material_guid.lower(),
-                    "object_name": names.get(target_file_id, ""),
-                })
+                prop = re.search(r"propertyPath:\s*([^\n]+)", chunk)
+                if not target or not prop:
+                    continue
+                value_match = re.search(r"\n\s*value:\s*(.*?)(?=\n\s*objectReference:|\n\s*- target:|\Z)", chunk, re.DOTALL)
+                ref_match = re.search(
+                    r"objectReference:\s*\{\s*fileID:\s*(-?\d+).*?guid:\s*([0-9a-fA-F]{32}).*?(?:type:\s*(-?\d+))?\s*\}",
+                    chunk, re.DOTALL,
+                )
+                reference = None
+                if ref_match:
+                    reference = {"fileID": int(ref_match.group(1)), "guid": ref_match.group(2).lower()}
+                    if ref_match.group(3) is not None:
+                        reference["type"] = int(ref_match.group(3))
+                result.append(PrefabModification(
+                    int(target.group(1)), target.group(2).lower(), int(target.group(3)) if target.group(3) else None,
+                    prop.group(1).strip(), (value_match.group(1).strip() if value_match else None), reference, chunk,
+                ))
         return result
 
     def referenced_fbx_guids(self) -> set[str]:
@@ -117,6 +162,13 @@ class PrefabData:
                         guid = ref_guid(item) or ref_guid(item.get("material"))
                         if guid:
                             guids.add(guid.lower())
+        # Variant visual state is serialized as modifications on the source
+        # renderer, not as direct renderer documents in the variant file.
+        for modification in self.modifications():
+            if modification.property_path.startswith("m_Materials.Array.data["):
+                guids.add(modification.target_guid.lower())
+            if modification.object_reference and modification.property_path.startswith("m_Materials.Array.data["):
+                guids.discard(ref_guid(modification.object_reference) or "")
         return guids
 
     def referenced_nested_prefab_guids(self) -> set[str]:
@@ -127,6 +179,42 @@ class PrefabData:
             for guid in re.findall(r"m_SourcePrefab:.*?guid:\s*([0-9a-fA-F]{32})", document.raw, re.DOTALL):
                 guids.add(guid.lower())
         return guids
+
+    def effective_material_bindings(self) -> dict[tuple[str, int, int], str]:
+        """Return effective material bindings keyed by source renderer identity.
+
+        This is intentionally a derived view.  ``modifications()`` remains the
+        preserved raw source record and is never mutated.
+        """
+        result: dict[tuple[str, int, int], str] = {}
+        for document in self.renderer_documents():
+            source_guid = None
+            mesh = document.data.get("m_Mesh")
+            if isinstance(mesh, dict):
+                source_guid = ref_guid(mesh)
+            if not source_guid:
+                continue
+            # A direct renderer document belongs to this Prefab asset even
+            # when its geometry comes from an external Model asset.  When a
+            # .meta file is unavailable (for example a minimal fixture), the
+            # mesh GUID remains an explicitly unscoped compatibility
+            # fallback, never the authoritative renderer identity.
+            renderer_guid = self.asset_guid or source_guid
+            values = document.data.get("m_Materials")
+            if values is None:
+                values = [document.data.get("m_Material")]
+            if not isinstance(values, list):
+                values = [values]
+            for slot, value in enumerate(values):
+                material_guid = ref_guid(value)
+                if material_guid:
+                    result[(renderer_guid.lower(), document.file_id, slot)] = material_guid.lower()
+        for modification in self.modifications():
+            match = re.fullmatch(r"m_Materials\.Array\.data\[(\d+)\]", modification.property_path)
+            material_guid = ref_guid(modification.object_reference) if modification.object_reference else None
+            if match and material_guid:
+                result[(modification.target_guid, modification.target_file_id, int(match.group(1)))] = material_guid.lower()
+        return result
 
 
 def parse_prefab(path: Path) -> PrefabData:
@@ -161,4 +249,13 @@ def parse_prefab(path: Path) -> PrefabData:
                 {axis: float(rotation.get(axis, 0.0)) for axis in ("x", "y", "z", "w")},
                 {axis: float(scale.get(axis, 1.0)) for axis in ("x", "y", "z")},
             )
-    return PrefabData(Path(path), documents, game_objects, transforms)
+    asset_guid = ""
+    meta_path = Path(path).with_name(Path(path).name + ".meta")
+    try:
+        meta_text = meta_path.read_text(encoding="utf-8-sig", errors="replace")
+        match = re.search(r"(?m)^guid:\s*([0-9a-fA-F]{32})\s*$", meta_text)
+        if match:
+            asset_guid = match.group(1).lower()
+    except OSError:
+        pass
+    return PrefabData(Path(path), documents, game_objects, transforms, asset_guid)
