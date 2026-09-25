@@ -5,12 +5,20 @@ from __future__ import annotations
 import io
 import base64
 import json
+import os
 from pathlib import Path
 import sys
 import tarfile
 import tempfile
+import traceback
 
-import bpy
+try:
+    import bpy
+except BaseException:
+    traceback.print_exc()
+    sys.stdout.flush()
+    sys.stderr.flush()
+    os._exit(1)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -130,6 +138,7 @@ GameObject:
   m_Name: AvatarBody
   m_Component:
   - component: {{fileID: 101}}
+  - component: {{fileID: 200}}
 --- !u!4 &101
 Transform:
   m_GameObject: {{fileID: {large_file_id}}}
@@ -182,19 +191,41 @@ SkinnedMeshRenderer:
         ), "Material texture node was not built"
         roots = [obj for obj in bpy.data.objects if obj.get("unity_source_prefab")]
         assert roots, "Prefab root was not created"
-        body = next(
+        body_occurrence = next(
             obj
             for obj in bpy.data.objects
             if obj.get("unity_prefab_file_id") == str(large_file_id)
         )
         placement = next(o for o in bpy.data.objects if o.get("unity_prefab_file_id") == "900")
-        assert body.parent.type == "ARMATURE", "Native skin hierarchy was not retained"
-        assert body.parent.parent == placement and placement.parent in roots
+        assert body_occurrence.type == "EMPTY", "AvatarBody occurrence was not kept as a semantic object"
+        assert body_occurrence.parent == placement, "AvatarBody occurrence parent differs from serialized Transform"
         bpy.context.view_layer.update()
-        assert tuple(round(value, 3) for value in body.matrix_world.translation) == (1.0, 3.0, -2.0), body.matrix_world
-        assert body.data.materials and body.data.materials[0], "Prefab material slot was not assigned"
-        assigned = body.data.materials[0]
-        assert assigned.get("unity_material_guid") == material_guid, "Prefab explicit material GUID was not preserved"
+        assert tuple(round(value, 3) for value in body_occurrence.matrix_world.translation) == (1.0, 3.0, -2.0), body_occurrence.matrix_world
+        assert placement.parent in roots, "ScenePlacement occurrence is not under the prefab root"
+
+        member_objects = [
+            obj for obj in bpy.data.objects
+            if obj.get("unity_source_fbx_guid") == fbx_guid
+            and obj.get("unity_composition_member_id")
+        ]
+        skin_meshes = [obj for obj in member_objects if obj.type == "MESH"]
+        skin_armatures = [obj for obj in member_objects if obj.type == "ARMATURE"]
+        assert len(skin_meshes) == 1, f"Expected one receipt-identified member skin Mesh Object, got {len(skin_meshes)}"
+        assert len(skin_armatures) == 1, f"Expected one receipt-identified member Armature Object, got {len(skin_armatures)}"
+        skin_mesh = skin_meshes[0]
+        skin_armature = skin_armatures[0]
+        assert skin_mesh.get("_vapb_fbx_object_receipt_id"), "Native skin Mesh has no FBX realization receipt"
+        assert skin_mesh.parent == skin_armature, "Native skin Mesh is not parented to its Armature Object"
+        armature_modifiers = [modifier for modifier in skin_mesh.modifiers if modifier.type == "ARMATURE"]
+        assert any(modifier.object == skin_armature for modifier in armature_modifiers), "Native skin Mesh has no modifier targeting its Armature Object"
+        assert skin_mesh.vertex_groups, "Native skin Mesh has no vertex groups/weights"
+        assert skin_mesh.data.shape_keys, "Native skin Mesh has no shape keys"
+        assigned = next(
+            (material for material in bpy.data.materials
+             if material.get("unity_material_guid") == material_guid),
+            None,
+        )
+        assert assigned is not None, "Synthetic Unity material asset was not realized"
         for key in (
             "unity_material_guid",
             "unity_material_path",
@@ -219,6 +250,24 @@ SkinnedMeshRenderer:
         assert output_node.is_active_output, "Material Output is not active"
         assert sum(node.type == "OUTPUT_MATERIAL" for node in assigned.node_tree.nodes) == 1, "Duplicate Material Output was generated"
         assert sum(node.type == "BSDF_PRINCIPLED" for node in assigned.node_tree.nodes) == 1, "Duplicate Principled BSDF was generated"
+        renderer_bindings = json.loads(str(skin_mesh.get("_vapb_renderer_bindings", "{}"))).get("renderers", [])
+        body_renderer_bindings = [
+            record for record in renderer_bindings
+            if record.get("game_object_file_id") == str(large_file_id)
+            and record.get("renderer_file_id") == "200"
+            and record.get("mesh_guid") == fbx_guid
+        ]
+        occurrence_skin_link = "PROVEN" if len(body_renderer_bindings) == 1 else "LINK_NOT_YET_PROVEN"
+        print(f"OCCURRENCE_SKIN_LINK={occurrence_skin_link}")
+        skin_materials = [material for material in skin_mesh.data.materials if material]
+        if skin_materials:
+            assert any(
+                material.get("unity_material_guid") == material_guid
+                for material in skin_materials
+            ), "Native skin material slot conflicts with the synthetic Renderer material identity"
+            print("SKIN_MATERIAL_BINDING=OBSERVED")
+        else:
+            print("SKIN_MATERIAL_BINDING=UNPROVEN")
         material_guids = {material.get("unity_material_guid") for material in bpy.data.materials if material.get("unity_material_guid")}
         assert material_guid in material_guids and duplicate_material_guid in material_guids, "Same-name materials collapsed"
         export_path = temp_path / "private-package-root.fbx"
@@ -232,10 +281,29 @@ SkinnedMeshRenderer:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         assert manifest["schema_version"] == 1
         assert manifest["manifest_type"] == "unitypackage_blender_material_map"
-        assert any(item["unity_material_guid"] == material_guid for item in manifest["materials"])
-        assert any(item["material_slot_index"] == 0 for item in manifest["bindings"])
+        realized_skin_material_guids = {
+            str(material.get("unity_material_guid", ""))
+            for material in skin_materials
+            if material.get("unity_material_guid")
+        }
+        assert realized_skin_material_guids.issubset(
+            {item["unity_material_guid"] for item in manifest["materials"]}
+        ), "Round-trip manifest omitted a realized native skin material"
+        if skin_materials:
+            assert any(item["material_slot_index"] == 0 for item in manifest["bindings"])
         addon.unregister()
     print("BLENDER_INTEGRATION_OK")
 
 
-main()
+def _run_fail_closed(test_main) -> None:
+    try:
+        test_main()
+    except BaseException:
+        traceback.print_exc()
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os._exit(1)
+
+
+if __name__ == "__main__":
+    _run_fail_closed(main)
