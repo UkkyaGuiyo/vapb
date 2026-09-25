@@ -303,6 +303,16 @@ class PrefabCandidateAnalyzer:
                 if isinstance(value, dict) and value.get("guid"):
                     materials.add(str(value["guid"]).lower())
                 slots += 1
+        # Prefab Variants encode renderer state as PrefabInstance
+        # modifications against the source representation.  Treat those
+        # effective targets as visual references instead of classifying the
+        # variant as empty.
+        for modification in getattr(prefab, "modifications", lambda: ())():
+            if modification.property_path.startswith("m_Materials.Array.data["):
+                fbx.add(modification.target_guid.lower())
+                if modification.object_reference and modification.object_reference.get("guid"):
+                    materials.add(str(modification.object_reference["guid"]).lower())
+                slots += 1
         return fbx, materials, slots
 
     @staticmethod
@@ -420,12 +430,18 @@ class PrefabCandidateAnalyzer:
                 static = self._static_facts.get(str(Path(path).resolve()))
                 if static is None:
                     renderers = prefab.renderer_documents()
+                    effective_renderer_count = len(renderers) or len({
+                        (item.target_guid, item.target_file_id)
+                        for item in getattr(prefab, "modifications", lambda: ())()
+                        if item.property_path.startswith("m_Materials.Array.data[")
+                    })
+                    renderer_count = effective_renderer_count
                     skinned = sum(document.class_id == SKINNED_MESH_RENDERER for document in renderers)
                     mesh_renderers = sum(document.class_id == MESH_RENDERER for document in renderers)
                     fbx, materials, slots = self._prefab_refs(prefab)
                     nested = prefab.referenced_nested_prefab_guids() if hasattr(prefab, "referenced_nested_prefab_guids") else set()
-                    kind = self._kind(prefab, len(renderers), skinned)
-                    self._static_facts[str(Path(path).resolve())] = (prefab, len(renderers), skinned, mesh_renderers, set(fbx), set(materials), slots, set(nested), kind)
+                    kind = self._kind(prefab, effective_renderer_count, skinned)
+                    self._static_facts[str(Path(path).resolve())] = (prefab, effective_renderer_count, skinned, mesh_renderers, set(fbx), set(materials), slots, set(nested), kind)
                 else:
                     self.static_fact_cache_hits += 1
                     diagnostic_add("candidate_static_fact_cache_hits")
@@ -449,10 +465,11 @@ class PrefabCandidateAnalyzer:
                     status = "COMPLETE"
                 else:
                     status = "NONE"
-                if not renderers and nested:
+                effective_has_renderers = renderer_count > 0
+                if not effective_has_renderers and nested:
                     kind = "NESTED_COMPOSITE"
                 reasons = [f"{kind}", f"{status}"]
-                if not renderers:
+                if not effective_has_renderers:
                     reasons.append("NO_RENDERERS")
                 if ambiguous:
                     reasons.append("AMBIGUOUS_PROVIDER")
@@ -467,7 +484,7 @@ class PrefabCandidateAnalyzer:
                     display_name=prefab.display_name,
                     candidate_kind=kind,
                     visual_status=status,
-                    renderer_count=len(renderers),
+                    renderer_count=renderer_count,
                     skinned_renderer_count=skinned,
                     mesh_renderer_count=mesh_renderers,
                     game_object_count=len(prefab.game_objects),

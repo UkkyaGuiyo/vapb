@@ -15,7 +15,7 @@ class UnityYAMLDocument:
     raw: str
 
 
-_HEADER = re.compile(r"^---\s+!u!(\d+)\s+&(\d+)", re.MULTILINE)
+_HEADER = re.compile(r"^---\s+!u!(\d+)\s+&(-?\d+)", re.MULTILINE)
 
 
 def _split_top_level(text: str) -> list[str]:

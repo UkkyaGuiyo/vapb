@@ -375,18 +375,126 @@ def apply_materials_by_name(
                     })
 
 
-def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.Object], asset_db, material_library, scene=None) -> None:
+def _append_renderer_provenance(obj, member_id, source_prefab_guid, renderer_file_id,
+                                 game_object_file_id, renderer_type, mesh_ref,
+                                 slots, renderer_source_kind="", mapping_confidence="") -> None:
+    """Persist the semantic renderer-to-object join used for assignment/audit."""
+    try:
+        payload = json.loads(str(obj.get("_vapb_renderer_bindings", "{}")))
+        records = list(payload.get("renderers", []))
+    except (TypeError, ValueError, AttributeError):
+        records = []
+    source_guid = ref_guid(mesh_ref) if isinstance(mesh_ref, dict) else ""
+    mesh_file_id = ref_file_id(mesh_ref) if isinstance(mesh_ref, dict) else None
+    record = {
+        "schema_version": 1,
+        "semantic_id": f"v1:{member_id}:{source_prefab_guid}:{renderer_file_id}",
+        "member_id": str(member_id or ""),
+        "source_prefab_guid": str(source_prefab_guid or "").lower(),
+        "renderer_identity_guid": str(source_prefab_guid or "").lower(),
+        "source_asset_guid": str(
+            obj.get("unity_source_fbx_guid") or source_prefab_guid or ""
+        ).lower(),
+        "renderer_source_kind": str(renderer_source_kind or ""),
+        "mapping_confidence": str(mapping_confidence or ""),
+        "renderer_file_id": str(renderer_file_id),
+        "game_object_semantic_id": str(obj.get("_vapb_semantic_id", "")),
+        "game_object_file_id": str(game_object_file_id or obj.get("unity_prefab_file_id", "")),
+        "renderer_type": int(renderer_type or 0),
+        "mesh_guid": str(source_guid or "").lower(),
+        "mesh_file_id": str(mesh_file_id or ""),
+        "material_slots": slots,
+    }
+    existing = next((item for item in records if item.get("semantic_id") == record["semantic_id"]), None)
+    if existing is not None:
+        merged = {str(item.get("slot")): item for item in existing.get("material_slots", [])}
+        merged.update({str(item.get("slot")): item for item in record["material_slots"]})
+        existing.update(record)
+        existing["material_slots"] = [merged[key] for key in sorted(merged, key=lambda value: int(value))]
+    else:
+        records.append(record)
+    obj["_vapb_renderer_bindings"] = json.dumps(
+        {"schema_version": 1, "renderers": records}, ensure_ascii=False, sort_keys=True
+    )
+
+
+def _renderer_slot_records(references, material_library, asset_db):
+    def texture_guid(material, label):
+        if material is None or not getattr(material, "node_tree", None):
+            return ""
+        prefix = f"Unity {label} "
+        node = next((item for item in material.node_tree.nodes
+                     if item.type == "TEX_IMAGE" and str(item.name).startswith(prefix)), None)
+        return str(node.image.get("unity_guid", "")) if node is not None and node.image else ""
+
+    def expected_texture_guid(material, key):
+        if material is None:
+            return ""
+        try:
+            normalized = json.loads(str(material.get("unity_normalized", "{}")))
+            value = normalized.get(key) or {}
+            return str(value.get("guid", ""))
+        except (TypeError, ValueError, AttributeError):
+            return ""
+
+    result = []
+    for index, reference in enumerate(references):
+        guid = ref_guid(reference)
+        entry = asset_db.find_guid(guid) if guid else None
+        material = material_library.get(str(entry.path)) if entry else None
+        result.append({
+            "slot": index,
+            "effective_material_guid": str(guid or "").lower(),
+            "effective_material_file_id": str(ref_file_id(reference) or ""),
+            "realized_material_guid": str(material.get("unity_material_guid", "")) if material else "",
+            "base_color_texture_guid": expected_texture_guid(material, "base_color_tex"),
+            "realized_base_color_texture_guid": texture_guid(material, "Base Color"),
+            "normal_texture_guid": expected_texture_guid(material, "normal_tex"),
+            "realized_normal_texture_guid": texture_guid(material, "Normal"),
+        })
+    return result
+
+
+def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.Object], asset_db, material_library, scene=None, imported_objects=None, member_id="") -> None:
     """Follow Prefab Renderer ``m_Materials`` GUIDs into Blender slots."""
     for document in prefab.renderer_documents():
         game_object_id = ref_file_id(document.data.get("m_GameObject"))
         obj = object_map.get(game_object_id)
-        if obj is None or not getattr(obj, "data", None) or not hasattr(obj.data, "materials"):
+        if obj is None:
+            continue
+        targets = [obj]
+        if not getattr(obj, "data", None) or not hasattr(obj.data, "materials"):
+            # A wrapper or empty owner is not proof of the native FBX
+            # realization. Do not select a descendant or package-wide unique
+            # mesh without an explicit semantic bridge.
+            targets = []
+        targets = [candidate for candidate in targets if getattr(candidate, "data", None) and hasattr(candidate.data, "materials")]
+        if not targets:
             continue
         references = document.data.get("m_Materials")
         if references is None:
             references = [document.data.get("m_Material")]
         if not isinstance(references, list):
             references = [references]
+        slots = _renderer_slot_records(references, material_library, asset_db)
+        mesh_ref = document.data.get("m_Mesh")
+        mesh_guid = ref_guid(mesh_ref) if isinstance(mesh_ref, dict) else ""
+        direct_mesh = isinstance(mesh_ref, dict) and bool(mesh_ref.get("guid"))
+        renderer_identity_guid = str(prefab.asset_guid if direct_mesh and prefab.asset_guid else mesh_guid).lower()
+        renderer_source_kind = "PREFAB_LOCAL" if direct_mesh and prefab.asset_guid else "MODEL_SOURCE"
+        for target in targets:
+            _append_renderer_provenance(
+                target,
+                member_id or target.get("unity_composition_member_id", ""),
+                renderer_identity_guid,
+                document.file_id,
+                game_object_id,
+                document.class_id,
+                mesh_ref,
+                slots,
+                renderer_source_kind,
+                str(target.get("_vapb_mapping_confidence", "UNKNOWN")),
+            )
         for index, reference in enumerate(references):
             guid = ref_guid(reference)
             entry = asset_db.find_guid(guid)
@@ -405,17 +513,29 @@ def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.O
                         "source_prefab_asset_path": obj.get("unity_asset_path", ""),
                     })
                 continue
-            while len(obj.data.materials) <= index:
-                obj.data.materials.append(None)
-            obj.data.materials[index] = material
+            for target in targets:
+                while len(target.data.materials) <= index:
+                    target.data.materials.append(None)
+                _assign_object_material(target, index, material)
 
 
-def apply_prefab_modification_materials(prefab: PrefabData, imported_objects, asset_db, material_library, scene=None) -> None:
-    """Apply exact PrefabInstance material overrides from imported object names."""
-    imported = list(imported_objects)
+def apply_prefab_modification_materials(prefab: PrefabData, source_to_member, asset_db, material_library, scene=None, member_id="") -> None:
+    """Apply PrefabInstance overrides using semantic IDs only."""
+    if hasattr(source_to_member, "items"):
+        source_to_member = dict(source_to_member)
+    else:
+        source_to_member = {obj: obj for obj in source_to_member}
+    source_objects = list(source_to_member)
     for override in prefab.modification_materials():
         object_name = str(override.get("object_name", ""))
-        candidates = [obj for obj in imported if obj.name == object_name and getattr(obj, "data", None) and hasattr(obj.data, "materials")]
+        target_file_id = str(override.get("target_file_id", ""))
+        identity_candidates = [
+            obj for obj in source_objects
+            if str(obj.get("unity_prefab_file_id", "")) == target_file_id
+            and getattr(obj, "data", None) and hasattr(obj.data, "materials")
+        ]
+        mapping_confidence = "SEMANTIC_ID" if len(identity_candidates) == 1 else "UNKNOWN"
+        candidates = identity_candidates
         if len(candidates) != 1:
             if scene and override.get("material_guid"):
                 capture_dependency(scene, {
@@ -431,7 +551,8 @@ def apply_prefab_modification_materials(prefab: PrefabData, imported_objects, as
                     "source_prefab_asset_path": str(prefab.path),
                 })
             continue
-        obj = candidates[0]
+        source_obj = candidates[0]
+        obj = source_to_member[source_obj]
         guid = str(override.get("material_guid", ""))
         entry = asset_db.find_guid(guid)
         material = material_library.get(str(entry.path)) if entry else None
@@ -453,4 +574,40 @@ def apply_prefab_modification_materials(prefab: PrefabData, imported_objects, as
         slot = int(override.get("slot_index", 0))
         while len(obj.data.materials) <= slot:
             obj.data.materials.append(None)
-        obj.data.materials[slot] = material
+        _assign_object_material(obj, slot, material)
+        _append_renderer_provenance(
+            obj,
+            member_id or obj.get("unity_composition_member_id", ""),
+            override.get("target_source_guid", ""),
+            override.get("target_file_id", ""),
+            obj.get("unity_prefab_file_id", ""),
+            1001,
+            {"guid": str(override.get("target_source_guid", "")), "fileID": ""},
+            [{**_renderer_slot_records(
+                [{"guid": guid, "fileID": ref_file_id({"fileID": override.get("target_file_id", "")})}],
+                material_library, asset_db,
+            )[0], "slot": slot}],
+            "MODEL_SOURCE_MODIFICATION",
+            mapping_confidence,
+        )
+
+
+def _assign_object_material(obj, index: int, material) -> None:
+    """Assign renderer state without mutating a shared Mesh material table."""
+    if not getattr(obj, "data", None) or not hasattr(obj.data, "materials"):
+        return
+    while len(obj.data.materials) <= index:
+        obj.data.materials.append(None)
+    if not obj.get("_vapb_use_object_material_slots", False):
+        obj.data.materials[index] = material
+        return
+    try:
+        # Ensure the Object has a slot before switching that slot away from
+        # the shared Mesh table.  Blender may defer slot materialization for a
+        # copied object whose source Mesh had no material slots.
+        obj.data.materials[index] = material
+        slot = obj.material_slots[index]
+        slot.link = "OBJECT"
+        slot.material = material
+    except (AttributeError, IndexError, TypeError):
+        obj.data.materials[index] = material

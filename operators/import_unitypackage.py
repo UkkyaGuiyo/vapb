@@ -33,6 +33,7 @@ from ..unity.package_reader import PackageIndex, UnityPackageError, UnityPackage
 from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab
+from ..unity.effective_prefab import EffectivePrefabResolver, ModelSourceSemanticIndex
 from ..unity.physbone_parser import extract_physbone_snapshot
 from ..unity.prefab_candidate_analyzer import (
     PackageCompositionPlan,
@@ -1115,6 +1116,15 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         diagnostic_add("selected_fbx_guids", len(fbx_guids))
         if self.import_mode == "RAW_FBX" or (not fbx_guids and not prefabs):
             fbx_guids = records_with_suffix(".fbx")
+        elif not fbx_guids:
+            # Some Unity prefab exports omit the MeshFilter reference while
+            # still shipping one unambiguous model representation.  Use that
+            # representation only when package structure proves uniqueness;
+            # never guess among multiple FBX candidates.
+            package_fbxs = records_with_suffix(".fbx")
+            if len(package_fbxs) == 1:
+                fbx_guids = package_fbxs
+                diagnostic_add("unique_package_fbx_fallback")
         wanted.update(fbx_guids)
 
         if self.use_materials:
@@ -1276,7 +1286,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             for planning_prefab, planning_unity_path in zip(planning_prefabs, planning_unity_paths):
                 final_entry = asset_db.find_path(planning_unity_path)
                 if final_entry is not None and final_entry.path.is_file():
-                    prefab_data = replace(planning_prefab, path=final_entry.path)
+                    prefab_data = replace(
+                        planning_prefab,
+                        path=final_entry.path,
+                        asset_guid=final_entry.guid.lower(),
+                    )
                     prefabs.append((prefab_data, final_entry.unity_path))
                 else:
                     self.report({"WARNING"}, f"Prefab was not included in dependency extraction: {planning_prefab.path.name}")
@@ -1303,6 +1317,10 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     fbx_paths,
                     package_key.source_package_id,
                     fbx_progress,
+                    {
+                        str(path.resolve()): (asset_db.guid_for_path(path) or "").lower()
+                        for path in fbx_paths
+                    },
                 )
                 if not imported_objects:
                     raise UnityPackageError("FBX import produced no Blender objects")
@@ -1324,6 +1342,12 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 unity_path = extracted_fbx_paths.get(str(Path(str(source_fbx)).resolve()))
                 if unity_path:
                     obj["unity_asset_path"] = unity_path
+                    source_guid = asset_db.guid_for_path(Path(str(source_fbx)))
+                    if source_guid:
+                        # Native FBX import does not expose Unity local IDs;
+                        # preserve the source asset identity so later joins
+                        # can only use explicit semantic provenance.
+                        obj["unity_source_fbx_guid"] = source_guid.lower()
             material_library = {}
             if self.use_materials:
                 self._set_phase(context, "Building Materials and Textures", 0.75)
@@ -1376,7 +1400,30 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 representation_paths: dict[str, list[Any]] = {}
                 for obj in imported_objects:
                     representation_paths.setdefault(str(obj.get("unity_asset_path", "")), []).append(obj)
-                realized_representation_ids: set[str] = set()
+                representation_member_bindings: dict[str, list[dict[tuple[str, int, int], str]]] = {}
+                prefab_by_guid = {
+                    prefab.asset_guid.lower(): prefab
+                    for prefab, _ in prefabs
+                    if prefab.asset_guid
+                }
+                model_source_index = ModelSourceSemanticIndex.from_prefabs(
+                    prefab for prefab, _ in prefabs
+                )
+                effective_prefabs = [
+                    (EffectivePrefabResolver(
+                        lambda guid: prefab_by_guid.get(str(guid).lower()),
+                        model_source_index=model_source_index,
+                    ).resolve(prefab), path)
+                    for prefab, path in prefabs
+                ]
+                for effective_prefab, _ in effective_prefabs:
+                    bindings = effective_prefab.effective_material_bindings()
+                    for representation_guid in effective_prefab.referenced_source_guids:
+                        representation_member_bindings.setdefault(representation_guid, []).append(bindings)
+                representation_needs_object_slots = {
+                    guid: len({tuple(sorted(binding.items())) for binding in binding_sets}) > 1
+                    for guid, binding_sets in representation_member_bindings.items()
+                }
                 for prefab, prefab_unity_path in prefabs:
                     self._set_phase(context, "Reconstructing Prefab", current_item=prefab_unity_path or prefab.path.name)
                     member_collection = bpy.data.collections.new(prefab.display_name)
@@ -1388,34 +1435,27 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         if entry is None:
                             continue
                         candidates = representation_paths.get(entry.unity_path, [])
-                        copy_representation = entry.unity_path in realized_representation_ids
-                        copy_data_for_override = bool(prefab.modification_materials())
                         for source_object in candidates:
-                            if copy_representation:
-                                member_object = source_object.copy()
-                                if (
-                                    copy_data_for_override
-                                    and getattr(source_object, "type", "") == "MESH"
-                                    and getattr(source_object, "data", None) is not None
-                                ):
-                                    member_object.data = source_object.data.copy()
-                                context.scene.collection.objects.link(member_object)
-                                member_object_map[source_object] = member_object
-                            else:
-                                member_object = source_object
-                                if source_object.name not in shared_collection.objects:
-                                    shared_collection.objects.link(source_object)
+                            if source_object.name not in shared_collection.objects:
+                                shared_collection.objects.link(source_object)
+                            # Every effective composition member owns an Object
+                            # realization.  Mesh data remains shared; renderer
+                            # material state is assigned through OBJECT slots.
+                            member_object = source_object.copy()
+                            context.scene.collection.objects.link(member_object)
+                            member_object["_vapb_use_object_material_slots"] = (
+                                representation_needs_object_slots.get(entry.guid.lower(), False)
+                            )
+                            member_object_map[source_object] = member_object
                             if member_object.name not in member_collection.objects:
                                 member_collection.objects.link(member_object)
                             member_objects.append(member_object)
-                        if copy_representation:
-                            for source_object, member_object in member_object_map.items():
-                                if source_object.parent in member_object_map:
-                                    member_object.parent = member_object_map[source_object.parent]
-                                for modifier in member_object.modifiers:
-                                    if getattr(modifier, "object", None) in member_object_map:
-                                        modifier.object = member_object_map[modifier.object]
-                        realized_representation_ids.add(entry.unity_path)
+                        for source_object, member_object in member_object_map.items():
+                            if source_object.parent in member_object_map:
+                                member_object.parent = member_object_map[source_object.parent]
+                            for modifier in member_object.modifiers:
+                                if getattr(modifier, "object", None) in member_object_map:
+                                    modifier.object = member_object_map[modifier.object]
                     prefab_root, prefab_object_map = self._performance.measure(
                         "prefab_reconstruct",
                         build_prefab_hierarchy,
@@ -1454,17 +1494,19 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     member_collection["unity_composition_classification"] = classification
                     prefab_root["unity_composition_member_id"] = member_id
                     prefab_root["unity_composition_classification"] = classification
-                    for member_object in prefab_object_map.values():
+                    for member_object in member_objects:
                         member_object["unity_composition_member_id"] = member_id
                         member_object["unity_composition_classification"] = classification
                     if self.use_materials:
                         self._performance.measure(
                             "material_mapping", apply_prefab_materials,
                             prefab, prefab_object_map, asset_db, material_library, context.scene,
+                            imported_objects, member_id,
                         )
                         self._performance.measure(
                             "material_mapping", apply_prefab_modification_materials,
-                            prefab, member_objects, asset_db, material_library, context.scene,
+                            prefab, member_object_map, asset_db, material_library, context.scene,
+                            member_id=member_id,
                         )
             self._performance.add("package_composition", perf_counter() - composition_started)
             prefab_root = prefab_roots[0] if prefab_roots else None

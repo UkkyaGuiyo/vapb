@@ -53,25 +53,19 @@ def build_prefab_hierarchy(
         root["unity_asset_path"] = str(source_prefab_unity_path).replace("\\", "/")
     if source_package_id:
         root["unity_source_package_id"] = source_package_id
-    by_name: dict[str, list[bpy.types.Object]] = {}
-    by_base_name: dict[str, list[bpy.types.Object]] = {}
-    for obj in imported:
-        by_name.setdefault(obj.name.casefold(), []).append(obj)
-        base_name = _BLENDER_DUPLICATE_SUFFIX.sub("", obj.name).casefold()
-        if base_name != obj.name.casefold():
-            by_base_name.setdefault(base_name, []).append(obj)
     used: set[int] = set()
     game_object_map: dict[int, bpy.types.Object] = {}
     for game_object_id, game_object in prefab.game_objects.items():
-        exact_candidates = by_name.get(game_object.name.casefold(), [])
-        if exact_candidates:
-            candidates = exact_candidates
-        else:
-            base_candidates = by_base_name.get(game_object.name.casefold(), [])
-            candidates = base_candidates if len(base_candidates) == 1 else []
-        obj = next((candidate for candidate in candidates if candidate.as_pointer() not in used), None)
+        semantic_candidates = [
+            candidate for candidate in imported
+            if str(candidate.get("unity_prefab_file_id", "")) == str(game_object_id)
+        ]
+        candidates = [candidate for candidate in semantic_candidates if candidate.as_pointer() not in used]
+        mapping_confidence = "SEMANTIC_ID" if len(candidates) == 1 else "UNKNOWN"
+        obj = candidates[0] if len(candidates) == 1 else None
         if obj is not None:
             used.add(obj.as_pointer())
+            obj["_vapb_mapping_confidence"] = mapping_confidence
             game_object_map[game_object_id] = obj
     transform_by_go = {t.game_object_id: t for t in prefab.transforms.values()}
     transform_to_game_object = {t.file_id: t.game_object_id for t in prefab.transforms.values()}

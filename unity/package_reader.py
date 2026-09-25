@@ -288,13 +288,19 @@ class UnityPackageReader:
                     errors.append(f"{guid}: invalid pathname")
                     continue
                 try:
+                    meta_probe = state.meta_bytes
+                    if meta_probe is None and state.meta_spool is not None and state.meta_spool.exists() and state.meta_spool.stat().st_size <= 4096:
+                        meta_probe = state.meta_spool.read_bytes()
+                    is_folder_asset = bool(meta_probe and re.search(rb"(?m)^folderAsset:\s*(?:yes|true|1)\s*$", meta_probe, re.IGNORECASE))
                     if state.asset_spool is not None:
-                        if state.pathname.endswith("/") and state.asset_spool.stat().st_size == 0:
+                        if is_folder_asset or (state.pathname.endswith("/") and state.asset_spool.stat().st_size == 0):
                             state.asset_spool.unlink(missing_ok=True)
                             target.mkdir(parents=True, exist_ok=True)
                         else:
                             target.parent.mkdir(parents=True, exist_ok=True)
                             os.replace(state.asset_spool, target)
+                    elif is_folder_asset:
+                        target.mkdir(parents=True, exist_ok=True)
                     meta_target: Optional[Path] = None
                     if state.meta_bytes is not None or state.meta_spool is not None:
                         meta_target = safe_relative_path(output_dir, state.pathname + ".meta")

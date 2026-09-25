@@ -7,24 +7,30 @@ from typing import Callable, Iterable
 
 import bpy  # type: ignore
 
+from .fbx_receipt import import_with_receipts
+
 
 def import_fbx(
     path: Path,
     use_custom_props: bool = True,
     source_package_id: str = "",
+    source_asset_guid: str = "",
 ) -> list[bpy.types.Object]:
     before = set(bpy.data.objects)
-    bpy.ops.import_scene.fbx(
-        filepath=str(path),
-        use_manual_orientation=False,
-        use_custom_normals=True,
-        use_image_search=False,
-        use_anim=True,
-        use_custom_props=use_custom_props,
-        ignore_leaf_bones=False,
-        automatic_bone_orientation=False,
-        use_prepost_rot=True,
-    )
+    def native_import() -> None:
+        bpy.ops.import_scene.fbx(
+            filepath=str(path),
+            use_manual_orientation=False,
+            use_custom_normals=True,
+            use_image_search=False,
+            use_anim=True,
+            use_custom_props=use_custom_props,
+            ignore_leaf_bones=False,
+            automatic_bone_orientation=False,
+            use_prepost_rot=True,
+        )
+
+    import_with_receipts(path, native_import, source_asset_guid, bpy)
     imported = [obj for obj in bpy.data.objects if obj not in before]
     for obj in imported:
         obj["unity_source_fbx"] = str(path)
@@ -37,6 +43,7 @@ def import_fbx_files(
     paths: Iterable[Path],
     source_package_id: str = "",
     progress: Callable[[Path, int, int, bool], None] | None = None,
+    source_asset_guids: dict[str, str] | None = None,
 ) -> list[bpy.types.Object]:
     imported: list[bpy.types.Object] = []
     paths = list(paths)
@@ -44,7 +51,8 @@ def import_fbx_files(
         try:
             if progress is not None:
                 progress(path, index, len(paths), True)
-            imported.extend(import_fbx(path, source_package_id=source_package_id))
+            source_guid = (source_asset_guids or {}).get(str(path.resolve()), "")
+            imported.extend(import_fbx(path, source_package_id=source_package_id, source_asset_guid=source_guid))
         except (OSError, RuntimeError) as exc:
             print(f"[UnityPackage Importer] FBX import failed: {path}: {exc}")
         finally:

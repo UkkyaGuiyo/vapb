@@ -26,6 +26,17 @@ def make_package(path: Path, records: list[tuple[str, str, bytes, bytes | None]]
 
 
 class PackageReaderTests(unittest.TestCase):
+    def test_extracts_folder_asset_as_directory(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            package = root / "folder.unitypackage"
+            guid = "f" * 32
+            make_package(package, [(guid, "Assets/SyntheticFolder", b"", b"guid: " + guid.encode() + b"\nfolderAsset: true\n")])
+            extracted = UnityPackageReader(package).extract(root / "out")
+            self.assertEqual([], extracted.errors)
+            self.assertTrue((root / "out/Assets/SyntheticFolder").is_dir())
+            self.assertTrue((root / "out/Assets/SyntheticFolder.meta").is_file())
+
     def test_extracts_unicode_path_and_indexes_assets(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
