@@ -39,7 +39,7 @@ def _materials(mesh, package_id, assets):
     return result
 
 
-def _working_textures(mesh, package_id, assets):
+def _working_textures(mesh, package_id, assets, *, additional_meshes=()):
     """Read source-identified working images without saving over their files."""
     images, visited = {}, set()
 
@@ -54,9 +54,10 @@ def _working_textures(mesh, package_id, assets):
             if node.type == 'GROUP':
                 visit(node.node_tree)
 
-    for slot in mesh.material_slots:
-        if slot.material is not None:
-            visit(slot.material.node_tree)
+    for selected in (mesh, *additional_meshes):
+        for slot in selected.material_slots:
+            if slot.material is not None:
+                visit(slot.material.node_tree)
     sources = {asset.guid: asset for asset in assets}
     providers = {}
     replacements = []
@@ -287,15 +288,13 @@ def export_skin_package(context, mesh, output):
     return _write_package(tree, manifest, output)
 
 
-def export_model_skin_package(context, mesh, output, *, direct=False):
+def _prepare_model_skin(context, mesh, assets, *, direct=False):
     """Defer model Renderer identity to Unity while preserving source assets."""
     from ..blender.fbx_witness import prepare_witness, source_export_scale_options, source_skin_bone_uids
     from ..blender.fbx_receipt import RECEIPT_VERSION
     from ..export.model_skin import model_skin_task, direct_skin_task
     if context.mode != 'OBJECT' or mesh is None or mesh.type != 'MESH':
         raise ValueError('オブジェクトモードでモデル由来のSkin Meshを選択してください')
-    if Path(output).exists():
-        raise ValueError('出力先が既にあります。新しいファイル名を指定してください')
     if mesh.library or mesh.data.library or len(mesh.users_scene) != 1:
         raise ValueError('リンクされたMeshや複数SceneのMeshはこの経路では未対応です')
     if (mesh.get('_vapb_fbx_receipt_version') != RECEIPT_VERSION or
@@ -330,14 +329,6 @@ def export_model_skin_package(context, mesh, output, *, direct=False):
     if (roots[0].get('unity_source_package_id') != package_id or
             any(edge.get('container_package_id') != package_id for edge in edges)):
         raise ValueError('Packageを跨ぐモデルSkinの復元はこの経路では未対応です')
-    package = load_scene_registry(context.scene).packages.get(package_id)
-    if not package:
-        raise ValueError('元Packageの保存情報がありません')
-    source = SourcePackage(Path(package['source_archive_path']), package['package_sha256'])
-    source_bytes = source.path.read_bytes()
-    if hashlib.sha256(source_bytes).hexdigest() != source.expected_sha256:
-        raise ValueError('保存済み原本のハッシュが変わっています')
-    assets = RawAssetRepository(source.path).read_all(source_bytes)
     prefabs = [a for a in assets if a.guid == root_guid]
     if len(prefabs) != 1:
         raise ValueError('元Prefabを一意に取得できません')
@@ -399,27 +390,68 @@ def export_model_skin_package(context, mesh, output, *, direct=False):
                 witness_noop_sha256=hashlib.sha256(noop_bytes).hexdigest(),
                 witness_path=witness_base + '_Source.bytes',
                 witness_sha256=hashlib.sha256(witness_bytes).hexdigest())
-    tree, manifest = materialize_model_package([source], [], generator_version='0.4.0',
-        blender_version=bpy.app.version_string,
-        texture_replacements=_working_textures(mesh, package_id, assets))
     meta, replacements = re.subn(rb'(?m)^guid:\s*[0-9a-fA-F]{32}\s*$',
                                 ('guid: ' + guid).encode(), original.meta_bytes)
     if replacements != 1:
         raise ValueError('元モデルのImporter設定を安全に複製できません')
-    tree.add(StagedUnityAsset(guid, path, payload, meta, asset_type='MESH_ASSET',
-                             operation='CREATE', strategy='REGENERATE_FROM_BLENDER'))
-    generated = [(path, guid, 'MESH_ASSET')]
+    generated = [StagedUnityAsset(guid, path, payload, meta, asset_type='MESH_ASSET',
+                                 operation='CREATE', strategy='REGENERATE_FROM_BLENDER')]
     for field, data in (('witness_noop_path', noop_bytes), ('witness_path', witness_bytes)):
         destination = task[field]
         asset_guid = hashlib.sha256(('VAPB_WITNESS_V1:' + destination).encode()).hexdigest()[:32]
-        tree.add(StagedUnityAsset(asset_guid, destination, data,
-                                 f'fileFormatVersion: 2\nguid: {asset_guid}\n'.encode(), operation='CREATE'))
-        generated.append((destination, asset_guid, 'GENERATED_EXPORT_SUPPORT'))
-    manifest = replace(manifest, reference_rebind_tasks=(task,),
-        export_assets=manifest.export_assets + tuple({'node_id': p, 'node_type': kind,
+        generated.append(StagedUnityAsset(asset_guid, destination, data,
+            f'fileFormatVersion: 2\nguid: {asset_guid}\n'.encode(), operation='CREATE',
+            asset_type='GENERATED_EXPORT_SUPPORT'))
+    return task, generated
+
+
+def export_model_skin_package(context, mesh, output, *, direct=False):
+    return export_model_skin_packages(context, [mesh], output, direct_flags=[direct])
+
+
+def export_model_skin_packages(context, meshes, output, *, direct_flags=None):
+    """Stage all selected skin edits before publishing one package/Variant task set."""
+    from ..export.model_skin import group_model_skin_tasks
+    meshes = list(meshes)
+    if context.mode != 'OBJECT' or not meshes or any(mesh is None or mesh.type != 'MESH' for mesh in meshes):
+        raise ValueError('オブジェクトモードでSkin Meshを選択してください')
+    if Path(output).exists():
+        raise ValueError('出力先が既にあります。新しいファイル名を指定してください')
+    scope_keys = ('unity_source_package_id', '_vapb_root_context_id', 'unity_composition_member_id')
+    scopes = {tuple(mesh.get(key, '') for key in scope_keys) for mesh in meshes}
+    if len(scopes) != 1 or any(not value for value in next(iter(scopes))):
+        raise ValueError('選択したSkinは同じPackage・Prefab個体に属する必要があります')
+    realizations = [mesh.get('_vapb_fbx_realization_id', '') for mesh in meshes]
+    if not all(realizations) or len(set(realizations)) != len(realizations):
+        raise ValueError('選択したSkinの実体識別子がないか重複しています')
+    package_id = meshes[0].get('unity_source_package_id')
+    package = load_scene_registry(context.scene).packages.get(package_id)
+    if not package:
+        raise ValueError('元Packageの保存情報がありません')
+    source = SourcePackage(Path(package['source_archive_path']), package['package_sha256'])
+    source_bytes = source.path.read_bytes()
+    if hashlib.sha256(source_bytes).hexdigest() != source.expected_sha256:
+        raise ValueError('保存済み原本のハッシュが変わっています')
+    assets = RawAssetRepository(source.path).read_all(source_bytes)
+    if direct_flags is None:
+        direct_flags = [not bool(mesh.get('_vapb_model_instance_edge_path')) for mesh in meshes]
+    if len(direct_flags) != len(meshes):
+        raise ValueError('Skinの出力対象と参照方式が一致しません')
+    prepared = [_prepare_model_skin(context, mesh, assets, direct=direct)
+                for mesh, direct in zip(meshes, direct_flags)]
+    tasks = group_model_skin_tasks([task for task, _ in prepared])
+    tree, manifest = materialize_model_package([source], [], generator_version='0.4.0',
+        blender_version=bpy.app.version_string,
+        texture_replacements=_working_textures(meshes[0], package_id, assets,
+                                               additional_meshes=meshes[1:]))
+    generated = [asset for _, entries in prepared for asset in entries]
+    for asset in generated:
+        tree.add(asset)
+    manifest = replace(manifest, reference_rebind_tasks=tasks,
+        export_assets=manifest.export_assets + tuple({'node_id': asset.pathname, 'node_type': asset.asset_type,
             'operation': 'CREATE', 'strategy': 'REGENERATE_FROM_BLENDER',
-            'desired_export_path': p, 'export_identity': {'export_guid': g}}
-            for p, g, kind in generated),
+            'desired_export_path': asset.pathname, 'export_identity': {'export_guid': asset.guid}}
+            for asset in generated),
         warnings=manifest.warnings + ('SOURCE_ARCHIVE_PRESERVED', 'UNITY_MODEL_IDENTITY_CHECK_REQUIRED',
                                      'NEW_PREFAB_VARIANT', 'EXISTING_SKIN_AND_TEXTURE_ASSET_EDITS'))
     return _write_package(tree, manifest, output)
@@ -504,17 +536,24 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
     bl_description = 'Mesh・Skinを書き出し、Unityで出所と参照を確認して復元します'
     filename_ext = '.unitypackage'
     filter_glob: bpy.props.StringProperty(default='*.unitypackage', options={'HIDDEN'})
+    export_scope: bpy.props.EnumProperty(name='出力対象', items=(
+        ('SELECTED', '選択Mesh', '選択した同じPrefab個体のSkin Meshをまとめて出力'),
+        ('ACTIVE', 'アクティブMeshのみ', 'アクティブなMesh一つだけを出力')),
+        default='SELECTED')
 
     def draw(self, context):
+        self.layout.prop(self, 'export_scope')
+        count = sum(obj.type == 'MESH' for obj in context.selected_objects) if self.export_scope == 'SELECTED' else 1
+        self.layout.label(text=f'出力Mesh数: {count}')
         mesh = context.active_object
         model_skin = mesh and (mesh.get('_vapb_model_instance_edge_path') or
             (mesh.type == 'MESH' and mesh.get('_vapb_fbx_realization_id') and
              not mesh.get('_vapb_skin_binding') and any(m.type == 'ARMATURE' for m in mesh.modifiers)))
         if model_skin:
-            self.layout.label(text='対象: アクティブなモデル由来Skin Mesh一つ')
+            self.layout.label(text='モデル由来Skinは同じPrefab個体の選択Meshをまとめて復元')
             self.layout.label(text='Unityで出所を確認し、新しいPrefab Variantへ復元します')
             self.layout.label(text='原本・骨階層・素材を保持。形状とウェイトの編集が対象です')
-            self.layout.label(text='頂点構成・Shape Key構成・骨階層の変更はこの経路では未対応')
+            self.layout.label(text='骨階層変更・複数Prefab個体の混在はこの経路では未対応')
         else:
             self.layout.label(text='対象: アクティブな確定済みMesh一つ')
             self.layout.label(text='Skinは骨対応の確認が必要。Unityの既存骨階層・restを保持')
@@ -525,6 +564,17 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
     def execute(self, context):
         try:
             mesh = context.active_object
+            selected = [obj for obj in context.selected_objects if obj.type == 'MESH'] if self.export_scope == 'SELECTED' else [mesh]
+            if not selected:
+                raise ValueError('出力するMeshを選択してください')
+            if len(selected) > 1:
+                if any(obj.get('_vapb_skin_binding') or not obj.get('_vapb_fbx_realization_id') or
+                       not any(mod.type == 'ARMATURE' for mod in obj.modifiers) for obj in selected):
+                    raise ValueError('複数Meshの出力は元モデル由来のSkinのみ対応しています')
+                export_model_skin_packages(context, selected, self.filepath)
+                self.report({'INFO'}, f'{len(selected)}個のSkinを出力しました。Unity側の参照復元が必要です')
+                return {'FINISHED'}
+            mesh = selected[0]
             binding = json.loads(mesh.get('_vapb_renderer_binding', '{}')) if mesh else {}
             if mesh and mesh.get('_vapb_model_instance_edge_path'):
                 export_model_skin_package(context, mesh, self.filepath)

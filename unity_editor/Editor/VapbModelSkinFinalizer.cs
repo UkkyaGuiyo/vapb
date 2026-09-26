@@ -159,6 +159,15 @@ public static class VapbModelSkinFinalizer
         public string[] shapeNames;
         public float[][] frameWeights;
     }
+    private sealed class PreparedTask
+    {
+        public Task task;
+        public WitnessResult witness;
+        public SkinnedMeshRenderer target;
+        public SourceIdentity source;
+        public EditedIdentity edited;
+        public string sourceMetaHash;
+    }
 
     public static bool Handles(string manifestAssetPath)
     {
@@ -166,10 +175,9 @@ public static class VapbModelSkinFinalizer
         {
             Manifest manifest = ReadManifest(manifestAssetPath);
             return manifest != null && manifest.schema_version == Schema &&
-                manifest.reference_rebind_tasks != null && manifest.reference_rebind_tasks.Length == 1 &&
-                manifest.reference_rebind_tasks[0] != null &&
-                (manifest.reference_rebind_tasks[0].kind == Kind ||
-                 manifest.reference_rebind_tasks[0].kind == DirectKind);
+                manifest.reference_rebind_tasks != null &&
+                Array.Exists(manifest.reference_rebind_tasks, task =>
+                    task != null && (task.kind == Kind || task.kind == DirectKind));
         }
         catch { return false; }
     }
@@ -180,12 +188,36 @@ public static class VapbModelSkinFinalizer
         {
             Manifest manifest = ReadManifest(manifestAssetPath);
             if (manifest == null || manifest.schema_version != Schema || manifest.reference_rebind_tasks == null ||
-                manifest.reference_rebind_tasks.Length != 1 || manifest.reference_rebind_tasks[0] == null)
+                manifest.reference_rebind_tasks.Length == 0)
                 Reject("MANIFEST_UNSUPPORTED");
-            Task task = manifest.reference_rebind_tasks[0];
-            ValidateTask(task);
-            ApplyTask(task);
-            Debug.Log("VAPB_MODEL_SKIN_VARIANT_APPLIED=1");
+            ValidateBatch(manifest.reference_rebind_tasks);
+            var plans = new List<PreparedTask>();
+            foreach (Task task in manifest.reference_rebind_tasks)
+                plans.Add(PrepareWitness(task));
+            var imported = new HashSet<string>(StringComparer.Ordinal);
+            foreach (PreparedTask plan in plans)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(plan.task.model_guid);
+                if (imported.Add(path)) RefreshEditedModel(path);
+            }
+            string prefabPath = AssetDatabase.GUIDToAssetPath(plans[0].task.prefab_guid);
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null || HasMissingScripts(prefab)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
+            var targets = new HashSet<SkinnedMeshRenderer>();
+            foreach (PreparedTask plan in plans)
+            {
+                ResolvePrepared(plan, prefab);
+                if (!targets.Add(plan.target)) Reject("TARGET_DUPLICATE");
+            }
+            foreach (PreparedTask plan in plans)
+            {
+                CheckSourceHashes(plan.task);
+                string sourcePath = AssetDatabase.GUIDToAssetPath(plan.task.source_model_guid);
+                if (!FileHash(Disk(sourcePath) + ".meta").Equals(plan.sourceMetaHash,
+                    StringComparison.OrdinalIgnoreCase)) Reject("SOURCE_RESTORE_FAILED");
+            }
+            SaveVariant(plans, prefab);
+            Debug.Log("VAPB_MODEL_SKIN_VARIANT_APPLIED=" + plans.Count);
             return true;
         }
         catch (Exception error)
@@ -237,20 +269,44 @@ public static class VapbModelSkinFinalizer
             {
                 Manifest manifest = ReadManifest(path);
                 if (manifest == null || manifest.schema_version != Schema ||
-                    manifest.reference_rebind_tasks == null || manifest.reference_rebind_tasks.Length != 1)
+                    manifest.reference_rebind_tasks == null || manifest.reference_rebind_tasks.Length == 0)
                     continue;
-                Task task = manifest.reference_rebind_tasks[0];
-                ValidateTask(task);
-                string modelPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
-                if (FbxPath(modelPath) && FileHash(Disk(modelPath)).Equals(task.model_sha256,
-                    StringComparison.OrdinalIgnoreCase)) authorized.Add(task);
+                ValidateBatch(manifest.reference_rebind_tasks);
+                foreach (Task task in manifest.reference_rebind_tasks)
+                {
+                    string modelPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
+                    if (!FbxPath(modelPath) || !FileHash(Disk(modelPath)).Equals(task.model_sha256,
+                        StringComparison.OrdinalIgnoreCase)) Reject("SOURCE_HASH_OR_PATH_MISMATCH");
+                }
+                authorized.AddRange(manifest.reference_rebind_tasks);
             }
             catch { /* Unreadable manifest does not authorize an import. */ }
         }
         return authorized;
     }
 
-    private static void ApplyTask(Task task)
+    private static void ValidateBatch(Task[] tasks)
+    {
+        if (tasks == null || tasks.Length == 0) Reject("MANIFEST_UNSUPPORTED");
+        var realizations = new HashSet<string>(StringComparer.Ordinal);
+        var sourceGuids = new HashSet<string>(StringComparer.Ordinal);
+        var editedGuids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (Task task in tasks)
+        {
+            if (task == null) Reject("MANIFEST_UNSUPPORTED");
+            ValidateTask(task);
+            if (task.prefab_guid != tasks[0].prefab_guid ||
+                task.prefab_source_sha256 != tasks[0].prefab_source_sha256 ||
+                task.variant_path != tasks[0].variant_path ||
+                !realizations.Add(task.realization_id) ||
+                !editedGuids.Add(task.model_guid)) Reject("TASK_BATCH_INVALID");
+            sourceGuids.Add(task.source_model_guid);
+        }
+        foreach (string guid in editedGuids)
+            if (sourceGuids.Contains(guid)) Reject("TASK_BATCH_INVALID");
+    }
+
+    private static void CheckSourceHashes(Task task)
     {
         string prefabPath = AssetDatabase.GUIDToAssetPath(task.prefab_guid);
         string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
@@ -261,17 +317,25 @@ public static class VapbModelSkinFinalizer
                 StringComparison.OrdinalIgnoreCase)) Reject("SOURCE_HASH_OR_PATH_MISMATCH");
         if (!FileHash(Disk(prefabPath)).Equals(task.prefab_source_sha256, StringComparison.OrdinalIgnoreCase))
             Reject("STALE_PREFAB_SOURCE");
+        if (task.kind == DirectKind) return;
+        foreach (InstanceEdge edge in task.instance_edges)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(edge.container_guid);
+            if (!PrefabPath(path) || !FileHash(Disk(path)).Equals(edge.container_sha256,
+                StringComparison.OrdinalIgnoreCase)) Reject("STALE_INSTANCE_EDGE");
+        }
+    }
+
+    private static PreparedTask PrepareWitness(Task task)
+    {
+        CheckSourceHashes(task);
+        string prefabPath = AssetDatabase.GUIDToAssetPath(task.prefab_guid);
+        string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
         byte[] sourceBytes = File.ReadAllBytes(Disk(sourcePath));
         byte[] sourceMeta = File.ReadAllBytes(Disk(sourcePath) + ".meta");
         bool direct = task.kind == DirectKind;
         if (!direct)
         {
-            foreach (InstanceEdge edge in task.instance_edges)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(edge.container_guid);
-                if (!PrefabPath(path) || !FileHash(Disk(path)).Equals(edge.container_sha256,
-                    StringComparison.OrdinalIgnoreCase)) Reject("STALE_INSTANCE_EDGE");
-            }
             if (task.instance_edges[0].container_guid != task.prefab_guid ||
                 task.instance_edges[task.instance_edges.Length - 1].source_guid != task.source_model_guid)
                 Reject("EDGE_CHAIN_INVALID");
@@ -282,12 +346,21 @@ public static class VapbModelSkinFinalizer
 
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         if (prefab == null || HasMissingScripts(prefab)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
-        string sourceGuid = task.source_model_guid;
         byte[] noop = Payload(task.witness_noop_path, task.witness_noop_sha256);
         byte[] witness = Payload(task.witness_path, task.witness_sha256);
         WitnessResult mapping = RunWitness(sourcePath, task, sourceBytes, sourceMeta, noop, witness);
-        prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-        if (prefab == null || HasMissingScripts(prefab)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
+        return new PreparedTask { task = task, witness = mapping,
+            sourceMetaHash = HashBytes(sourceMeta) };
+    }
+
+    private static void ResolvePrepared(PreparedTask plan, GameObject prefab)
+    {
+        Task task = plan.task;
+        WitnessResult mapping = plan.witness;
+        string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
+        string editedPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
+        string sourceGuid = task.source_model_guid;
+        bool direct = task.kind == DirectKind;
         SkinnedMeshRenderer target = direct ? ResolveDirectOccurrence(prefab, task, mapping.meshId) :
             ResolveOccurrence(prefab, task, mapping.rendererId);
         if (target.sharedMesh == null || target.bones == null || target.bones.Length == 0 ||
@@ -328,10 +401,9 @@ public static class VapbModelSkinFinalizer
             source.bonesByUid.Add(source.rootUid, target.rootBone);
         EditedIdentity edited = ResolveEdited(task, editedPath, mapping, source);
         CheckSkinCompatibility(mapping, target, edited, source, direct);
-        if (!EqualBytes(sourceBytes, File.ReadAllBytes(Disk(sourcePath))) ||
-            !EqualBytes(sourceMeta, File.ReadAllBytes(Disk(sourcePath) + ".meta")))
-            Reject("SOURCE_RESTORE_FAILED");
-        SaveVariant(task, prefab, target, edited, source);
+        plan.target = target;
+        plan.source = source;
+        plan.edited = edited;
     }
 
     private static void ValidateTask(Task task)
@@ -704,8 +776,7 @@ public static class VapbModelSkinFinalizer
         return result;
     }
 
-    private static EditedIdentity ResolveEdited(Task task, string editedPath, WitnessResult witness,
-        SourceIdentity source)
+    private static void RefreshEditedModel(string editedPath)
     {
         ModelImporter importer = AssetImporter.GetAtPath(editedPath) as ModelImporter;
         if (importer == null) Reject("EDITED_IMPORTER_MISSING");
@@ -716,6 +787,11 @@ public static class VapbModelSkinFinalizer
         }
         else AssetDatabase.ImportAsset(editedPath,
             ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+    }
+
+    private static EditedIdentity ResolveEdited(Task task, string editedPath, WitnessResult witness,
+        SourceIdentity source)
+    {
         GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(editedPath);
         if (root == null) Reject("EDITED_MODEL_UNAVAILABLE");
         SkinnedMeshRenderer found = null;
@@ -830,10 +906,9 @@ public static class VapbModelSkinFinalizer
         ValidateWeights(mesh, edited.editedBoneUids.Length);
     }
 
-    private static void SaveVariant(Task task, GameObject original, SkinnedMeshRenderer originalTarget,
-        EditedIdentity edited, SourceIdentity source)
+    private static void SaveVariant(List<PreparedTask> plans, GameObject original)
     {
-        string path = task.variant_path;
+        string path = plans[0].task.variant_path;
         string disk = Disk(path);
         if (File.Exists(disk) || File.Exists(disk + ".meta") || AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
         {
@@ -841,7 +916,7 @@ public static class VapbModelSkinFinalizer
             if (existing == null || PrefabUtility.GetPrefabAssetType(existing) != PrefabAssetType.Variant ||
                 AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(existing)) !=
                     AssetDatabase.GetAssetPath(original)) Reject("VARIANT_PATH_OCCUPIED");
-            VerifyVariant(existing, original, originalTarget, edited, source);
+            VerifyVariant(existing, original, plans);
             return;
         }
         GameObject instance = PrefabUtility.InstantiatePrefab(original) as GameObject;
@@ -849,36 +924,39 @@ public static class VapbModelSkinFinalizer
         bool saved = false;
         try
         {
-            SkinnedMeshRenderer target = null;
-            foreach (SkinnedMeshRenderer skin in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                if (PrefabUtility.GetCorrespondingObjectFromSource(skin) == originalTarget)
-                {
-                    if (target != null) Reject("VARIANT_AMBIGUOUS");
-                    target = skin;
-                }
-            if (target == null || HasMissingScripts(instance) || target.rootBone == null)
-                Reject("VARIANT_TARGET_MISSING");
-            var bones = new Transform[edited.editedBoneUids.Length];
-            for (int i = 0; i < bones.Length; i++)
+            if (HasMissingScripts(instance)) Reject("VARIANT_TARGET_MISSING");
+            foreach (PreparedTask plan in plans)
             {
-                Transform sourceBone = source.bonesByUid[edited.editedBoneUids[i]];
-                foreach (Transform transform in instance.GetComponentsInChildren<Transform>(true))
-                    if (PrefabUtility.GetCorrespondingObjectFromSource(transform) == sourceBone)
+                SkinnedMeshRenderer target = null;
+                foreach (SkinnedMeshRenderer skin in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                    if (PrefabUtility.GetCorrespondingObjectFromSource(skin) == plan.target)
                     {
-                        if (bones[i] != null) Reject("VARIANT_BONE_AMBIGUOUS");
-                        bones[i] = transform;
+                        if (target != null) Reject("VARIANT_AMBIGUOUS");
+                        target = skin;
                     }
-                if (bones[i] == null) Reject("VARIANT_BONE_MISSING");
+                if (target == null || target.rootBone == null) Reject("VARIANT_TARGET_MISSING");
+                var bones = new Transform[plan.edited.editedBoneUids.Length];
+                for (int i = 0; i < bones.Length; i++)
+                {
+                    Transform sourceBone = plan.source.bonesByUid[plan.edited.editedBoneUids[i]];
+                    foreach (Transform transform in instance.GetComponentsInChildren<Transform>(true))
+                        if (PrefabUtility.GetCorrespondingObjectFromSource(transform) == sourceBone)
+                        {
+                            if (bones[i] != null) Reject("VARIANT_BONE_AMBIGUOUS");
+                            bones[i] = transform;
+                        }
+                    if (bones[i] == null) Reject("VARIANT_BONE_MISSING");
+                }
+                target.sharedMesh = plan.edited.mesh;
+                target.bones = bones;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(target);
             }
-            target.sharedMesh = edited.mesh;
-            target.bones = bones;
-            PrefabUtility.RecordPrefabInstancePropertyModifications(target);
             GameObject variant = PrefabUtility.SaveAsPrefabAsset(instance, path);
             if (variant == null) Reject("VARIANT_SAVE_FAILED");
             GameObject reloaded = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (reloaded == null || PrefabUtility.GetPrefabAssetType(reloaded) != PrefabAssetType.Variant)
                 Reject("VARIANT_RELOAD_FAILED");
-            VerifyVariant(reloaded, original, originalTarget, edited, source);
+            VerifyVariant(reloaded, original, plans);
             saved = true;
         }
         finally
@@ -893,8 +971,10 @@ public static class VapbModelSkinFinalizer
     }
 
     private static void VerifyVariant(GameObject variant, GameObject original,
-        SkinnedMeshRenderer originalTarget, EditedIdentity edited, SourceIdentity source)
+        List<PreparedTask> plans)
     {
+        var expected = new Dictionary<SkinnedMeshRenderer, PreparedTask>();
+        foreach (PreparedTask plan in plans) expected.Add(plan.target, plan);
         if (HasMissingScripts(variant)) Reject("VARIANT_MISSING_SCRIPT");
         if (PrefabUtility.GetAddedComponents(variant).Count != 0 ||
             PrefabUtility.GetRemovedComponents(variant).Count != 0 ||
@@ -907,7 +987,8 @@ public static class VapbModelSkinFinalizer
         {
             if (mod == null || mod.target == null || String.IsNullOrEmpty(mod.propertyPath))
                 Reject("VARIANT_MODIFICATION_UNKNOWN");
-            bool skinBinding = mod.target == originalTarget &&
+            bool skinBinding = mod.target is SkinnedMeshRenderer skinTarget &&
+                expected.ContainsKey(skinTarget) &&
                 (mod.propertyPath == "m_Mesh" || mod.propertyPath == "m_Bones.Array.size" ||
                  mod.propertyPath.StartsWith("m_Bones.Array.data[", StringComparison.Ordinal));
             bool rootDefault = PrefabUtility.IsDefaultOverride(mod) &&
@@ -929,19 +1010,26 @@ public static class VapbModelSkinFinalizer
         Renderer[] sourceRenderers = original.GetComponentsInChildren<Renderer>(true);
         Renderer[] variantRenderers = variant.GetComponentsInChildren<Renderer>(true);
         if (sourceRenderers.Length != variantRenderers.Length) Reject("VARIANT_STRUCTURE_CHANGED");
-        SkinnedMeshRenderer match = null;
+        var matched = new HashSet<SkinnedMeshRenderer>();
         foreach (Renderer renderer in variantRenderers)
         {
             Renderer corresponding = PrefabUtility.GetCorrespondingObjectFromSource(renderer) as Renderer;
             if (corresponding == null || renderer.GetType() != corresponding.GetType() ||
                 !SameMaterials(renderer.sharedMaterials, corresponding.sharedMaterials) ||
                 renderer.enabled != corresponding.enabled) Reject("VARIANT_RENDERER_CHANGED");
-            if (corresponding == originalTarget)
+            if (corresponding is SkinnedMeshRenderer originalSkin &&
+                expected.TryGetValue(originalSkin, out PreparedTask plan))
             {
                 SkinnedMeshRenderer skin = renderer as SkinnedMeshRenderer;
-                if (match != null || skin == null)
+                if (skin == null || !matched.Add(originalSkin))
                     Reject("VARIANT_AMBIGUOUS");
-                match = skin;
+                if (skin.sharedMesh != plan.edited.mesh || skin.rootBone == null ||
+                    FollowSource(skin.rootBone, 1) != plan.target.rootBone ||
+                    skin.bones.Length != plan.edited.editedBoneUids.Length) Reject("VARIANT_MISMATCH");
+                for (int i = 0; i < skin.bones.Length; i++)
+                    if (FollowSource(skin.bones[i], 1) !=
+                        plan.source.bonesByUid[plan.edited.editedBoneUids[i]])
+                        Reject("VARIANT_MISMATCH");
             }
             else if (renderer is SkinnedMeshRenderer otherSkin)
             {
@@ -962,12 +1050,7 @@ public static class VapbModelSkinFinalizer
                     Reject("VARIANT_SIBLING_CHANGED");
             }
         }
-        if (match == null || match.sharedMesh != edited.mesh ||
-            match.rootBone == null || FollowSource(match.rootBone, 1) != originalTarget.rootBone ||
-            match.bones.Length != edited.editedBoneUids.Length) Reject("VARIANT_MISMATCH");
-        for (int i = 0; i < match.bones.Length; i++)
-            if (FollowSource(match.bones[i], 1) != source.bonesByUid[edited.editedBoneUids[i]])
-                Reject("VARIANT_MISMATCH");
+        if (matched.Count != plans.Count) Reject("VARIANT_MISMATCH");
     }
 
     private static bool HasMissingScripts(GameObject root)

@@ -8,7 +8,7 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 
 **Experimental / Alpha — 製品仕様全体は開発中です。** 複数のprivate実VRC Packageで、選択した既存骨Skinの編集・保存再開・UnityPackage出力・UnityでのVariant復元を検証しています。Shape Key付きSkinでは、意図したベース頂点とShapeの編集、他のShape・骨・素材・VRC参照の保持を新規Unity Oracleで確認しました。これはAvatar全体の往復対応やVRChat上でのビルド・実行成功を意味しません。
 
-選択した既存Skinに結び付くTextureでは、出所を確認できるpacked PNGの実編集・save/reopen・UnityPackage出力・新規Unity Projectでの画素変化とGUID/meta/Material参照の保持を、異なる実データ2ケースで確認しています。現在の出力・復元は一つのSkinが対象です。複数Meshを同時編集したAvatar全体の往復、任意のMaterial node graphのUnity Shader変換、全画像形式への対応は未検証です。
+選択した既存Skinに結び付くTextureでは、出所を確認できるpacked PNGの実編集・save/reopen・UnityPackage出力・新規Unity Projectでの画素変化とGUID/meta/Material参照の保持を、異なる実データ2ケースで確認しています。同じPrefab個体に属する複数のモデル由来Skinを一つのVariantへ復元する経路も、公開syntheticの2 Meshで検証しました。複数Meshを同時編集した実Avatar全体の往復、任意のMaterial node graphのUnity Shader変換、全画像形式への対応は未検証です。
 
 最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性、最終配布ZIPの検証は未完了です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
 
@@ -35,6 +35,12 @@ This README and the Git history intentionally disclose the use of AI in developm
 直接PrefabのSkinnedMeshRendererを **VAPB → Renderer対応** で確認し、Skinの骨対応を読み込み、各Unity骨の対応先をArmatureのBone選択欄で明示確認します。対応を保存した後、Meshの頂点・面・ウェイトを編集し、上記UnityPackage出力とUnity側Manifest適用を使用します。対応は名前と独立した保存IDで保持され、改名と.blend保存・再読込を検証済みです。
 
 この経路は元Unity骨階層・rest・名前と元FBXを保持します。Blender側の骨改名は対応を壊しませんが、Unity骨の改名としては出力しません。新規骨、Nested、未対応Componentや外部依存は未対応として停止します。2骨のsyntheticで頂点構成・ウェイト変更とUnityでの変形を検証済みですが、実Avatarの全面対応はまだ主張しません。
+
+### モデル由来Skinの複数選択出力
+
+同じPackage・同じPrefab個体に属するモデル由来Skinを複数選択し、**File → Export → VAPB UnityPackage（Mesh / Skin）** の「出力対象」を **選択Mesh** にします。出力Mesh数を確認し、新規Unity ProjectへImportした後、既存のManifest復元メニューを実行します。全対象の出所・骨対応を確認してから、一つのPrefab Variantへまとめて反映します。二件目が不正でも、一件目だけ反映されたVariantは作りません。
+
+元Prefab・FBX・骨階層・素材と対象外の構造を保持します。複数Prefab個体の混在、静的Meshとの混在、手動Bone対応を確定した従来経路の複数Meshは現在停止します。一つだけ出力する場合は **アクティブMeshのみ** を選べます。
 
 ### Cleanup / Bone Merge の手動操作
 

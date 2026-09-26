@@ -42,6 +42,16 @@ public static class VapbSkinRoundtripProbe
         public string original_weight_checksum;
         public int original_vertex_count;
     }
+    [Serializable] private sealed class MultiSkinInfo
+    {
+        public string prefab_guid;
+        public string prefab_source_sha256;
+        public string source_model_guid;
+        public string source_model_sha256;
+        public string material_guid;
+        public string material_file_id;
+        public SourceInfo[] skins;
+    }
     [Serializable] private sealed class OutputManifest { public Task[] reference_rebind_tasks; }
     [Serializable] private sealed class Task
     {
@@ -130,6 +140,105 @@ public static class VapbSkinRoundtripProbe
     public static void PrepareTexture()
     {
         PrepareCore(false, true);
+    }
+
+    public static void PrepareMultiSkin()
+    {
+        var report = new Report { phase = "prepare_multi", error = "UNEXPECTED_EXCEPTION" };
+        try
+        {
+            AssetDatabase.ImportAsset(Input, ImportAssetOptions.ForceUpdate);
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(Input);
+            SkinnedMeshRenderer[] imported = model == null ? null :
+                model.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            if (imported == null || imported.Length != 2 ||
+                Array.Exists(imported, skin => skin.sharedMesh == null || skin.rootBone == null || skin.bones.Length < 2))
+                throw new InvalidOperationException("INPUT_SKIN_UNSUPPORTED");
+            Shader shader = Shader.Find("Standard");
+            if (shader == null) throw new InvalidOperationException("STANDARD_SHADER_MISSING");
+            Material material = new Material(shader) { name = "SkinOriginal" };
+            AssetDatabase.CreateAsset(material, MaterialPath);
+            GameObject instance = PrefabUtility.InstantiatePrefab(model) as GameObject;
+            if (instance == null) throw new InvalidOperationException("MODEL_INSTANCE_FAILED");
+            try
+            {
+                PrefabUtility.UnpackPrefabInstance(instance, PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+                instance.name = "Avatar";
+                SkinnedMeshRenderer[] skins = instance.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                if (skins.Length != 2) throw new InvalidOperationException("UNPACK_SKIN_UNSUPPORTED");
+                foreach (SkinnedMeshRenderer skin in skins) skin.sharedMaterials = new[] { material };
+                GameObject sentinel = new GameObject("UnrelatedSentinel");
+                sentinel.transform.SetParent(instance.transform, false);
+                sentinel.transform.localPosition = new Vector3(4f, 5f, 6f);
+                if (PrefabUtility.SaveAsPrefabAsset(instance, Prefab) == null)
+                    throw new InvalidOperationException("PREFAB_SAVE_FAILED");
+            }
+            finally { UnityEngine.Object.DestroyImmediate(instance); }
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
+            SkinnedMeshRenderer[] renderers = prefab == null ? null :
+                prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            if (renderers == null || renderers.Length != 2)
+                throw new InvalidOperationException("PREFAB_SKIN_UNSUPPORTED");
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material, out string materialGuid, out long materialId))
+                throw new InvalidOperationException("ASSET_ID_UNAVAILABLE");
+            string expectedModelGuid = AssetDatabase.AssetPathToGUID(Input);
+            var rows = new SourceInfo[2];
+            var meshIds = new HashSet<long>();
+            var rendererIds = new HashSet<long>();
+            string prefabGuid = null;
+            for (int index = 0; index < renderers.Length; index++)
+            {
+                SkinnedMeshRenderer renderer = renderers[index];
+                if (renderer.sharedMesh == null || renderer.rootBone == null || renderer.bones.Length < 2 ||
+                    !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(renderer, out string rowPrefabGuid, out long rendererId) ||
+                    !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(renderer.sharedMesh, out string modelGuid, out long meshId) ||
+                    modelGuid != expectedModelGuid || !meshIds.Add(meshId) || !rendererIds.Add(rendererId) ||
+                    (prefabGuid != null && prefabGuid != rowPrefabGuid))
+                    throw new InvalidOperationException("ASSET_ID_UNAVAILABLE");
+                prefabGuid = rowPrefabGuid;
+                var bones = new BoneInfo[renderer.bones.Length];
+                for (int boneIndex = 0; boneIndex < bones.Length; boneIndex++)
+                {
+                    Transform bone = renderer.bones[boneIndex];
+                    if (bone == null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(bone,
+                        out string boneGuid, out long boneId) || boneGuid != prefabGuid)
+                        throw new InvalidOperationException("BONE_ID_UNAVAILABLE");
+                    bones[boneIndex] = new BoneInfo { name = bone.name, target_transform_file_id = Id(boneId) };
+                }
+                if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(renderer.rootBone,
+                    out string rootGuid, out long rootId) || rootGuid != prefabGuid)
+                    throw new InvalidOperationException("ROOT_ID_UNAVAILABLE");
+                rows[index] = new SourceInfo {
+                    prefab_guid = prefabGuid, renderer_file_id = Id(rendererId),
+                    source_model_guid = modelGuid, source_mesh_file_id = Id(meshId),
+                    root_bone_target_transform_file_id = Id(rootId), bones = bones,
+                    original_vertex_checksum = VertexChecksum(renderer.sharedMesh),
+                    original_weight_checksum = WeightChecksum(renderer.sharedMesh),
+                    original_vertex_count = renderer.sharedMesh.vertexCount
+                };
+            }
+            if (rows[0].root_bone_target_transform_file_id != rows[1].root_bone_target_transform_file_id ||
+                rows[0].bones.Length != rows[1].bones.Length)
+                throw new InvalidOperationException("BONE_ID_UNAVAILABLE");
+            for (int i = 0; i < rows[0].bones.Length; i++)
+                if (rows[0].bones[i].target_transform_file_id != rows[1].bones[i].target_transform_file_id)
+                    throw new InvalidOperationException("BONE_ID_UNAVAILABLE");
+            Array.Sort(rows, (left, right) =>
+                String.CompareOrdinal(left.renderer_file_id, right.renderer_file_id));
+            var info = new MultiSkinInfo {
+                prefab_guid = prefabGuid, prefab_source_sha256 = FileHash(AssetFile(Prefab)),
+                source_model_guid = expectedModelGuid, source_model_sha256 = FileHash(AssetFile(Input)),
+                material_guid = materialGuid, material_file_id = Id(materialId), skins = rows
+            };
+            File.WriteAllText(ProjectFile("MultiSkinSourceInfo.json"), JsonUtility.ToJson(info, true));
+            AssetDatabase.ExportPackage(new[] { Input, Prefab, MaterialPath },
+                ProjectFile("Source.unitypackage"), ExportPackageOptions.IncludeDependencies);
+            report.pass = File.Exists(ProjectFile("Source.unitypackage"));
+            report.error = report.pass ? "NONE" : "PACKAGE_MISSING";
+        }
+        catch (Exception error) { report.error = SafeError(error); }
+        Finish(report);
     }
 
     private static void PrepareCore(bool separateRoot, bool textured)

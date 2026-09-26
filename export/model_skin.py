@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+from copy import deepcopy
 from pathlib import PurePosixPath
 import re
 
@@ -14,6 +15,38 @@ from ..unity.prefab_parser import ref_file_id, ref_guid
 _GUID = re.compile(r"[0-9a-fA-F]{32}\Z")
 _SHA = re.compile(r"[0-9a-fA-F]{64}\Z")
 _SIGNED_ID = re.compile(r"-?(?:0|[1-9][0-9]*)\Z")
+
+
+def group_model_skin_tasks(tasks):
+    """Give already prepared skins of one Prefab a single deterministic Variant."""
+    if not tasks:
+        raise ValueError('No skin tasks selected')
+    result = deepcopy(list(tasks))
+    prefabs, realizations, models = set(), set(), set()
+    for task in result:
+        try:
+            if task['kind'] not in ('RESTORE_MODEL_SKIN_VARIANT_V1', 'RESTORE_DIRECT_SKIN_VARIANT_V1'):
+                raise ValueError('Unsupported skin task kind')
+            prefabs.add((_guid(task['prefab_guid']), _sha(task['prefab_source_sha256'])))
+            realization, model = task['realization_id'], _guid(task['model_guid'])
+            if not isinstance(realization, str) or not realization or realization in realizations or model in models:
+                raise ValueError('Skin realization or edited model is missing or duplicated')
+            realizations.add(realization)
+            models.add(model)
+        except (KeyError, TypeError) as exc:
+            raise ValueError('Skin task identity is incomplete') from exc
+    if len(prefabs) != 1:
+        raise ValueError('Selected skins must belong to the same Prefab revision')
+    result.sort(key=lambda task: task['realization_id'])
+    if len(result) > 1:
+        identity = {'prefab_guid': result[0]['prefab_guid'], 'skins': [
+            {key: task[key] for key in ('kind', 'realization_id', 'instance_edges')}
+            for task in result]}
+        suffix = hashlib.sha256(('MODEL_SKIN_SET_V1:' + json.dumps(
+            identity, sort_keys=True, separators=(',', ':'))).encode()).hexdigest()
+        for task in result:
+            task['variant_path'] = f'Assets/VAPBExport/EditedVariant_{suffix}.prefab'
+    return tuple(result)
 
 
 def _guid(value):
