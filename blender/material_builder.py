@@ -202,7 +202,7 @@ def build_material(
                 alpha = nodes.get(f"Unity Alpha Cutout {data.name}") or nodes.new("ShaderNodeMath")
                 alpha.name = alpha.label = f"Unity Alpha Cutout {data.name}"
                 alpha.operation = "GREATER_THAN"
-                _set_input(alpha, 1, normalized.alpha_cutoff)
+                alpha.inputs[1].default_value = normalized.alpha_cutoff
                 links.new(tex.outputs.get("Alpha"), alpha.inputs[0])
                 links.new(alpha.outputs[0], alpha_socket)
             elif normalized.alpha_mode == "blend":
@@ -261,7 +261,7 @@ def build_material(
             invert = nodes.get(f"Unity Smoothness to Roughness {data.name}") or nodes.new("ShaderNodeMath")
             invert.name = invert.label = f"Unity Smoothness to Roughness {data.name}"
             invert.operation = "SUBTRACT"
-            _set_input(invert, 0, 1.0)
+            invert.inputs[0].default_value = 1.0
             links.new(tex.outputs.get("Alpha"), invert.inputs[1])
             links.new(invert.outputs[0], _input(bsdf, "Roughness"))
 

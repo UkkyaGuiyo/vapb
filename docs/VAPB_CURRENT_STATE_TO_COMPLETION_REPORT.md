@@ -61,7 +61,7 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | UI-01 / 12 | Japanese GUI for all operations | ui, operators | No console/GUID entry in normal flow; targets/progress/outcomes explained | 実装中 | Partial legacy GUI; new editing/export controls pending |
 | UI-02 / 12 | Recovery and independent operation selection | operators, docs | Undo/retry/reopen, no unselected destructive operation chains | 未着手 | Unknown |
 | QA-01 / 13–15 | Python/Blender/Unity integrated synthetic matrix | tests, tools, public API Oracle | Identity/rename/reopen/multi-instance/sharing/ambiguity and actual deformation | 実装中 | Current Python/Blender/static Unity roundtrip PASS; full product matrix pending |
-| QA-02 / 14,15 | Representative private regression | external corpus/catalog | Read-only originals, bounded safe copies; publish only synthetic findings | 未着手 | Unknown; no new private scan |
+| QA-02 / 14,15 | Representative private regression | external corpus/catalog | Read-only originals, bounded safe copies; publish only synthetic findings | 実装中 | Partial: four real Import/save-reopen smokes; Material bug reproduced synthetically and fixed; Unity structural equivalence and real roundtrip remain UNKNOWN |
 | PK-01 / 1,21 | Build/install/use final addon ZIP | tools/build_distribution_zip.py | Exact commit/hash; clean Blender GUI install and all major user operations | 実装中 | Legacy builder exists; final artifact unbuilt |
 | GH-01 / 17,18,21 | GitHub reproducible checkpoints/handoff | this document, PRODUCT_SPEC, tests | All needed helpers tracked; fresh checkout; remote SHA verified; no private data | 実装中 | Remote access restored; checkpoint pending |
 
@@ -73,7 +73,7 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 4. Complete remaining Cleanup, Weight Transfer and Bone Merge functionality on top of the working Core, with protected references, preview and recovery.
 5. Verify the entire original specification and a commit-bound distributable ZIP. Real-data Core success and full product completion remain separate acceptance claims.
 
-Current block: the bounded existing-bone skin checkpoint is verified; begin multiple private Import smoke next. The native editing, receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
+Current block: the existing-bone skin checkpoint is verified and the first four private Import smokes have run. Reconcile inherited/model Prefab occurrences against Unity public API observations next. The native editing, receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
 
 ## Existing-bone skin package checkpoint — 2026-09-26
 
@@ -88,6 +88,29 @@ Current block: the bounded existing-bone skin checkpoint is verified; begin mult
 Reproduce using tests/blender_skin_package_test.py with --prepare-fbx, then Unity VapbSkinRoundtripProbe.Prepare to produce a synthetic Source.unitypackage, then the same Blender script without --prepare-fbx to generate Output.unitypackage. A fresh Unity project should preload first-party helpers at their package destinations (Assets/VAPBExport/Editor/VapbReferenceFinalizer.cs and Assets/VAPBExport/VapbRealizationMarker.cs), plus tests/unity_skin_roundtrip_probe/Editor/VapbSkinRoundtripProbe.cs under Assets/Editor. Put only generated Output.unitypackage and SourceInfo.json at its root, then run VapbSkinRoundtripProbe.Validate in batchmode without -quit; it writes a bounded result and exits 0/1.
 
 **Exact next action:** bounded Import smoke of heterogeneous private packages selected from the existing 24-package catalog, including the authorized representative Avatar, then fix observed Core defects through public-safe synthetic regressions. Original private inputs remain outside Git and read-only.
+
+## First private Core Import checkpoint — 2026-09-26
+
+Selected four distinct package contents from the existing catalog, including the authorized representative Avatar and structurally different skinned/nested/Variant candidates. Reused catalog hashes and checked bounded working copies; no full-corpus rescan or private original edit. All four originals still match their catalog hashes. Selected inputs contain no C# or DLL according to the catalog; Unity execution requires its own bounded content/dependency check.
+
+Initial result: two packages imported and reopened; two failed in Material creation. Repository-frame exception tracing isolated integer Math socket indexes being passed to the string-key `bpy_prop_collection.get()` API. Both the smoothness-inversion and alpha-cutout paths had the same bug. A fully synthetic two-case Blender regression reproduces both errors (exit 1), and changing only those two call sites to indexed socket access gives 2 PASS (exit 0). The two failing real inputs then import and reopen successfully. Scope review: PASS for the correction; the smoke runner review also identified unchecked save/open operator results, which are now explicitly checked before reporting PASS.
+
+The following are **process/metadata observations, not Unity structural equivalence or Core completion**:
+
+| Anonymous case | Source Prefabs / PrefabInstance documents | Imported Mesh Objects / Armatures | Recorded Renderer occurrences | Import / save-reopen |
+|---|---|---|---|---|
+| A | 15 / 12 | 459 / 18 | 170 | PASS / PASS |
+| B | 2 / 8 | 4 / 0 | 0 | PASS / PASS |
+| C | 20 / 19 | 4 / 0 | 2 | PASS / PASS |
+| D | 4 / 4 | 102 / 3 | 54 | PASS / PASS |
+
+Source document counts are serialized-document observations, not resolved occurrence counts. In particular, B has only inherited/model Prefab structure and no directly serialized Renderer documents; zero projected Renderer occurrences is a significant unresolved Core boundary. A contains 176 serialized skin Renderer documents across the archive, while the chosen automatic composition records 170 occurrences and exposes 459 Mesh Objects. These different populations must be reconciled by source/instance identity rather than equating aggregate counts or treating the difference as proven duplication.
+
+For A, the saved .blend has 19 images referenced by used Material nodes; all 19 are packed and decode after reopen. Other unused/unreferenced Image datablocks lack external files, so `images_loaded` or total Image counts alone do not prove texture loss or preservation. Appearance equivalence, required source Renderer coverage, readable composition structure, actual edits, package export and fresh Unity/VRC usability remain **UNKNOWN / NOT RUN** for all four real cases. Private logs, source identifiers, working packages and .blend files remain outside Git; only this aggregate finding and synthetic regression are public.
+
+Verification: Python 321 PASS; compileall PASS; synthetic Material regression 2 PASS; four bounded private Import/save-reopen successes after the correction. Private validation is now an active development layer, not deferred final QA.
+
+**Exact next action:** use Unity 2022.3.22f1 public APIs in a dedicated private Oracle to resolve case B's inherited/model Prefab structure and compare authoritative source/occurrence relations with Blender's zero recorded Renderer occurrences. Fix confirmed Core gaps through public-safe synthetic regressions before auxiliary-feature expansion.
 
 ## Checkpoint: observed FBX Object-copy lineage
 
