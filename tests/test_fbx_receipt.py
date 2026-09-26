@@ -10,6 +10,8 @@ from unitypackage_blender_importer.blender.fbx_receipt import (
     persist_receipt,
     validate_receipt_continuity,
     copy_with_receipt,
+    make_bone_receipt,
+    persist_bone_receipt,
 )
 
 
@@ -63,6 +65,9 @@ class FbxReceiptTests(unittest.TestCase):
         index = RawFbxSemanticIndex([FbxModelLink(10, 20), FbxModelLink(11, 21)])
         self.assertEqual(20, index.geometry_for_model(10))
         self.assertIsNone(RawFbxSemanticIndex([FbxModelLink(10, 20), FbxModelLink(10, 22)]).geometry_for_model(10))
+        self.assertTrue(RawFbxSemanticIndex([], [10]).unique_source_model(10))
+        self.assertFalse(RawFbxSemanticIndex([], [10, 10]).unique_source_model(10))
+        self.assertFalse(RawFbxSemanticIndex([], []).unique_source_model(10))
 
     def test_receipt_is_hash_bound_and_signed_uids_are_strings_when_persisted(self):
         receipt = make_receipt(-10, 20, "A" * 32, "b" * 64)
@@ -100,6 +105,21 @@ class FbxReceiptTests(unittest.TestCase):
             path.write_bytes(payload)
             expected = hashlib.sha256(payload).hexdigest()
             self.assertEqual(expected, make_receipt(1, 2, "g", expected).source_asset_sha256)
+
+    def test_bone_receipts_keep_source_uid_and_distinct_realizations(self):
+        first = make_bone_receipt(-10, "A" * 32, "b" * 64)
+        second = make_bone_receipt(-11, "A" * 32, "b" * 64)
+        self.assertNotEqual(first.blender_bone_receipt_id, second.blender_bone_receipt_id)
+        self.assertNotEqual(first.blender_bone_receipt_id,
+                            make_bone_receipt(-10, "c" * 32, "b" * 64).blender_bone_receipt_id)
+        bone_a, bone_b = {}, {}
+        persist_bone_receipt(bone_a, first)
+        persist_bone_receipt(bone_b, second)
+        self.assertEqual("-10", bone_a["_vapb_fbx_model_uid"])
+        self.assertEqual("-11", bone_b["_vapb_fbx_model_uid"])
+        self.assertNotEqual(bone_a["_vapb_fbx_bone_realization_id"], bone_b["_vapb_fbx_bone_realization_id"])
+        self.assertEqual("a" * 32, bone_a["_vapb_fbx_source_asset_guid"])
+        self.assertEqual("b" * 64, bone_a["_vapb_fbx_source_asset_sha256"])
 
 
 if __name__ == "__main__":

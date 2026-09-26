@@ -34,8 +34,11 @@ class FbxModelLink:
 class RawFbxSemanticIndex:
     """The minimal raw-FBX graph needed for realization provenance."""
 
-    def __init__(self, links: list[FbxModelLink]):
+    def __init__(self, links: list[FbxModelLink], model_uids: list[int] | None = None):
         self.links = tuple(links)
+        self._model_uid_counts: dict[int, int] = {}
+        for uid in model_uids or []:
+            self._model_uid_counts[uid] = self._model_uid_counts.get(uid, 0) + 1
         by_model: dict[int, list[int]] = {}
         for link in links:
             by_model.setdefault(link.model_uid, []).append(link.geometry_uid)
@@ -44,6 +47,9 @@ class RawFbxSemanticIndex:
     def geometry_for_model(self, model_uid: int) -> int | None:
         values = self._by_model.get(int(model_uid), ())
         return values[0] if len(values) == 1 else None
+
+    def unique_source_model(self, model_uid: int) -> bool:
+        return self._model_uid_counts.get(model_uid) == 1
 
     @classmethod
     def from_file(cls, path: Path) -> "RawFbxSemanticIndex":
@@ -57,11 +63,12 @@ class RawFbxSemanticIndex:
         connections = next((item for item in root.elems if item.id == b"Connections"), None)
         if objects is None or connections is None:
             return cls([])
-        models = {
+        model_uids = [
             _uid(item.props[0])
             for item in objects.elems
             if item.id == b"Model" and item.props and _uid(item.props[0]) is not None
-        }
+        ]
+        models = set(model_uids)
         geometries = {
             _uid(item.props[0])
             for item in objects.elems
@@ -78,7 +85,7 @@ class RawFbxSemanticIndex:
             destination = _uid(item.props[2])
             if source in geometries and destination in models:
                 links.append(FbxModelLink(destination, source))
-        return cls(links)
+        return cls(links, model_uids)
 
 
 @dataclass(frozen=True)
@@ -90,6 +97,15 @@ class FbxImportReceipt:
     blender_object_receipt_id: str
     blender_mesh_receipt_id: str
     evidence: str = "OFFICIAL_IMPORTER_MODEL_HOOK"
+
+
+@dataclass(frozen=True)
+class FbxBoneReceipt:
+    source_asset_guid: str
+    source_asset_sha256: str
+    fbx_model_uid: int
+    blender_bone_receipt_id: str
+    evidence: str = "OFFICIAL_IMPORTER_BUILD_SKELETON_RETURN"
 
 
 def source_sha256(path: Path) -> str:
@@ -158,6 +174,31 @@ def validate_receipt_continuity(obj: Any) -> bool:
     )
 
 
+def make_bone_receipt(model_uid: int, source_asset_guid: str, sha256: str) -> FbxBoneReceipt:
+    source_asset_guid = source_asset_guid.lower()
+    return FbxBoneReceipt(
+        source_asset_guid=source_asset_guid,
+        source_asset_sha256=sha256,
+        fbx_model_uid=model_uid,
+        blender_bone_receipt_id=f"vapb-fbx-bone:{hashlib.sha256(f'{source_asset_guid}:{sha256}:{model_uid}'.encode()).hexdigest()}",
+    )
+
+
+def persist_bone_receipt(bone: Any, receipt: FbxBoneReceipt) -> None:
+    """Tag the EditBone returned by Blender's creator while it is still valid."""
+    values = {
+        "_vapb_fbx_receipt_version": RECEIPT_VERSION,
+        "_vapb_fbx_source_asset_guid": receipt.source_asset_guid,
+        "_vapb_fbx_source_asset_sha256": receipt.source_asset_sha256,
+        "_vapb_fbx_model_uid": str(receipt.fbx_model_uid),
+        "_vapb_fbx_bone_receipt_id": receipt.blender_bone_receipt_id,
+        "_vapb_fbx_bone_realization_id": str(uuid.uuid4()),
+        "_vapb_fbx_receipt_evidence": receipt.evidence,
+    }
+    for key, value in values.items():
+        bone[key] = value
+
+
 def copy_with_receipt(source: Any) -> Any:
     """Observe a native Object copy and retain its proven FBX lineage.
 
@@ -206,8 +247,20 @@ def import_with_receipts(
         import_call()
         return []
 
+    try:
+        original_bone = helper_type.build_skeleton
+        original_pose = helper_type.set_pose_matrix_and_custom_props
+        bone_supported = (
+            tuple(inspect.signature(original_bone).parameters) ==
+            ("self", "arm", "parent_matrix", "settings", "parent_bone_size")
+            and tuple(inspect.signature(original_pose).parameters) == ("self", "arm", "settings")
+        )
+    except (AttributeError, TypeError, ValueError):
+        bone_supported = False
+
     sha256 = source_sha256(path)
     captures: list[tuple[int, Any]] = []
+    bone_captures: dict[int, dict[str, str]] = {}
 
     def hook(self: Any, fbx_tmpl: Any, settings: Any) -> Any:
         result = original(self, fbx_tmpl, settings)
@@ -216,11 +269,38 @@ def import_with_receipts(
             captures.append((model_uid, result))
         return result
 
-    helper_type.build_node_obj = hook
+    def bone_hook(self: Any, arm: Any, parent_matrix: Any, settings: Any, parent_bone_size: float = 1) -> Any:
+        bone = original_bone(self, arm, parent_matrix, settings, parent_bone_size)
+        elem = getattr(self, "fbx_elem", None)
+        model_uid = _uid(elem.props[0]) if elem is not None and elem.props else None
+        if bone is not None and model_uid is not None and semantic.unique_source_model(model_uid):
+            persist_bone_receipt(bone, make_bone_receipt(model_uid, source_asset_guid, sha256))
+            bone_captures[id(self)] = {key: bone[key] for key in bone.keys() if key.startswith("_vapb_fbx_")}
+        return bone
+
+    def pose_hook(self: Any, arm: Any, settings: Any) -> Any:
+        result = original_pose(self, arm, settings)
+        values = bone_captures.get(id(self))
+        if values is not None:
+            # The official importer assigned bl_bone from the newly created
+            # EditBone.name and uses this same key to resolve its PoseBone.
+            pose_bone = self.bl_obj.pose.bones[self.bl_bone]
+            if all(pose_bone.bone.get(key) == value for key, value in values.items()):
+                for key, value in values.items():
+                    pose_bone[key] = value
+        return result
+
     try:
+        helper_type.build_node_obj = hook
+        if bone_supported:
+            helper_type.build_skeleton = bone_hook
+            helper_type.set_pose_matrix_and_custom_props = pose_hook
         import_call()
     finally:
         helper_type.build_node_obj = original
+        if bone_supported:
+            helper_type.build_skeleton = original_bone
+            helper_type.set_pose_matrix_and_custom_props = original_pose
 
     receipts: list[FbxImportReceipt] = []
     for model_uid, obj in captures:

@@ -779,3 +779,15 @@ claimed by this Python-only recovery.
 Use the recovered public branch as the source of truth for the next review;
 audit any remaining PCA dirty item as a separate atomic change before
 committing it.
+
+## Bone receipt and synthetic Unity source witness checkpoint (2026-09-26)
+
+Native Blender 5.2.1 import now records source FBX Model UID, source GUID/SHA, deterministic receipt identity and unique realization identity on the EditBone returned by the official importer. The corresponding PoseBone receives the same values only after its Bone creation receipt matches. Names are not used as source identity. Native FBX export carries those PoseBone properties on the Model node. Unsupported bone-hook signatures leave existing Mesh receipt capture available.
+
+Verification: Python **300 PASS**, compileall PASS. The focused Blender probe verifies two same-named source bones with distinct UIDs, rename/save/reload, actual parsed FBX Model properties, compatible Mesh capture with unsupported bone API, and hook restoration after success/failure. Scope review identified accidental Mesh/bone API coupling; the correction was adopted and verified.
+
+A separate, test-only Unity 2022.3.22f1 experiment checks a fully synthetic FBX before/after official Blender FBX re-encoding and injected source-UID custom properties. Parsed FBX semantics match except the official writer's root FileId/CreationTime fields. Original source bytes remain untouched. Public Unity API snapshots compare each persistent Transform/Mesh/Renderer ID, parent/rest state, geometry/bindposes/weights/shapes and skin references; they do not equate FBX UID with Unity file ID.
+
+Actual Unity result: PASS; 5 transforms, 1 mesh, 1 SkinnedMeshRenderer, 2 skin bones; 4 unique marker callbacks, no duplicates or missing skin-bone marker. No-op, marker-added and restored-source snapshots match, and meta stays byte-identical after the baseline readable setting. This is evidence for this fixture and importer configuration only. General model identity mapping, skin package export and general Unity/VRC reference restoration remain incomplete.
+
+Reproduction: use Blender with `--factory-startup --background --python-exit-code 1 --python tests/blender_bone_receipt_test.py`. For the independent witness experiment, run `tests/blender_fbx_witness_fixture.py -- <fixture-folder>`, create a fresh Unity 2022.3.22f1 project, put the three generated FBX files at its root, and copy `tests/unity_bone_witness_probe` scripts into its Assets tree preserving Editor placement. Run `-batchmode -executeMethod VapbBoneWitnessProbe.Run` without `-quit`; the probe exits 0/1 and writes `VapbBoneWitnessResult.json` at project root. No private corpus or third-party source copy was used.
