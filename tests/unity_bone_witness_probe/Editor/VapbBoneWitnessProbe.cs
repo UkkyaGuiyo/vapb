@@ -43,7 +43,10 @@ public static class VapbBoneWitnessProbe
         public string error;
         public int transformCount;
         public int meshCount;
+        public int rendererCount;
+        public int meshRendererCount;
         public int skinnedRendererCount;
+        public int markedRendererCount;
         public int skinBoneCount;
         public int witnessMarkerCount;
         public int callbackCount;
@@ -56,6 +59,33 @@ public static class VapbBoneWitnessProbe
         public bool callbackExactlyOnce;
         public bool markerIdentityUnique;
         public bool allSkinBonesMarked;
+        public bool readabilityChanged;
+        public bool sourceMetaRestored;
+        public bool sourceRawRestored;
+        public bool mappingWritten;
+    }
+
+    [Serializable] private sealed class RendererMapping
+    {
+        public string class_id;
+        public string renderer_local_id;
+        public string mesh_local_id;
+    }
+
+    [Serializable] private sealed class ModelMapping
+    {
+        public string model_uid;
+        public string transform_local_id;
+        public RendererMapping[] renderers;
+    }
+
+    [Serializable] private sealed class Mapping
+    {
+        public string schema_version = "vapb-source-fbx-model-witness-1";
+        public string source_fbx_sha256;
+        public string model_guid;
+        public bool importer_readability_changed;
+        public ModelMapping[] models;
     }
 
     private sealed class Snapshot
@@ -66,6 +96,8 @@ public static class VapbBoneWitnessProbe
         public readonly HashSet<long> skinBoneIds = new HashSet<long>();
         public string guid;
         public int skinBoneCount;
+        public int meshRendererCount;
+        public int skinnedRendererCount;
 
         public bool SameAs(Snapshot other)
         {
@@ -93,13 +125,19 @@ public static class VapbBoneWitnessProbe
         string metaFile = assetFile + ".meta";
         byte[] original = null;
         byte[] originalMeta = null;
+        byte[] comparisonMeta = null;
         Snapshot baseline = null;
+        Mapping mapping = null;
         try
         {
             if (File.Exists(assetFile) || File.Exists(metaFile))
                 throw new InvalidOperationException("MODEL_PATH_OCCUPIED");
             Directory.CreateDirectory(Path.GetDirectoryName(assetFile));
             string projectRoot = Path.GetDirectoryName(Application.dataPath);
+            string suppliedMetaPath = Path.Combine(projectRoot, "Source.fbx.meta");
+            string mappingPath = Path.Combine(projectRoot, "VapbBoneWitnessMapping.json");
+            if (File.Exists(mappingPath))
+                throw new InvalidOperationException("MAPPING_PATH_OCCUPIED");
             original = File.ReadAllBytes(Path.Combine(projectRoot, "Source.fbx"));
             byte[] noop = File.ReadAllBytes(Path.Combine(projectRoot, "Noop.fbx"));
             byte[] witness = File.ReadAllBytes(Path.Combine(projectRoot, "Witness.fbx"));
@@ -107,29 +145,37 @@ public static class VapbBoneWitnessProbe
                 throw new InvalidOperationException("INPUT_EMPTY");
 
             File.WriteAllBytes(assetFile, original);
+            if (File.Exists(suppliedMetaPath))
+            {
+                originalMeta = File.ReadAllBytes(suppliedMetaPath);
+                File.WriteAllBytes(metaFile, originalMeta);
+            }
             AssetDatabase.ImportAsset(ModelPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            if (originalMeta == null) originalMeta = File.ReadAllBytes(metaFile);
             ModelImporter importer = AssetImporter.GetAtPath(ModelPath) as ModelImporter;
             if (importer == null)
                 throw new InvalidOperationException("MODEL_IMPORT_MISSING");
             if (!importer.isReadable)
             {
+                report.readabilityChanged = true;
                 importer.isReadable = true;
                 importer.SaveAndReimport();
             }
-            originalMeta = File.ReadAllBytes(metaFile);
+            comparisonMeta = File.ReadAllBytes(metaFile);
             baseline = Capture();
             report.transformCount = baseline.transforms.Count;
             report.meshCount = baseline.meshes.Count;
-            report.skinnedRendererCount = baseline.renderers.Count;
+            report.rendererCount = baseline.renderers.Count;
+            report.meshRendererCount = baseline.meshRendererCount;
+            report.skinnedRendererCount = baseline.skinnedRendererCount;
             report.skinBoneCount = baseline.skinBoneCount;
-            if (report.transformCount < 3 || report.meshCount == 0 ||
-                report.skinnedRendererCount == 0 || report.skinBoneCount < 2)
+            if (report.transformCount == 0 || report.meshCount == 0 || report.rendererCount == 0)
                 throw new InvalidOperationException("FIXTURE_STRUCTURE_INVALID");
 
             File.WriteAllBytes(assetFile, noop);
             AssetDatabase.ImportAsset(ModelPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             report.noopEquivalent = baseline.SameAs(Capture());
-            report.metaStable = EqualBytes(originalMeta, File.ReadAllBytes(metaFile));
+            report.metaStable = EqualBytes(comparisonMeta, File.ReadAllBytes(metaFile));
             if (!report.noopEquivalent || !report.metaStable)
                 throw new InvalidOperationException("NOOP_DRIFT");
 
@@ -138,10 +184,11 @@ public static class VapbBoneWitnessProbe
             AssetDatabase.ImportAsset(ModelPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             Snapshot witnessed = Capture();
             report.witnessEquivalent = baseline.SameAs(witnessed);
-            report.metaStable &= EqualBytes(originalMeta, File.ReadAllBytes(metaFile));
-            InspectMarkers(witnessed, report);
+            report.metaStable &= EqualBytes(comparisonMeta, File.ReadAllBytes(metaFile));
+            mapping = InspectMarkers(witnessed, report, original);
             if (!report.witnessEquivalent || !report.metaStable || !report.callbackExactlyOnce ||
-                !report.markerIdentityUnique || !report.allSkinBonesMarked)
+                !report.markerIdentityUnique || !report.allSkinBonesMarked ||
+                report.markedRendererCount != report.rendererCount)
                 throw new InvalidOperationException("WITNESS_DRIFT_OR_AMBIGUITY");
             report.error = "NONE";
         }
@@ -156,20 +203,44 @@ public static class VapbBoneWitnessProbe
                 try
                 {
                     File.WriteAllBytes(assetFile, original);
-                    if (originalMeta != null)
+                    if (comparisonMeta != null)
+                        File.WriteAllBytes(metaFile, comparisonMeta);
+                    else if (originalMeta != null)
                         File.WriteAllBytes(metaFile, originalMeta);
                     AssetDatabase.ImportAsset(ModelPath,
                         ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
                     report.restoredEquivalent = baseline != null && baseline.SameAs(Capture());
-                    report.metaStable &= originalMeta != null && EqualBytes(originalMeta, File.ReadAllBytes(metaFile));
+                    report.metaStable &= comparisonMeta != null && EqualBytes(comparisonMeta, File.ReadAllBytes(metaFile));
+                    if (originalMeta != null && !EqualBytes(originalMeta, File.ReadAllBytes(metaFile)))
+                    {
+                        File.WriteAllBytes(metaFile, originalMeta);
+                        AssetDatabase.ImportAsset(ModelPath,
+                            ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                    }
+                    report.sourceMetaRestored = originalMeta != null &&
+                        EqualBytes(originalMeta, File.ReadAllBytes(metaFile));
+                    report.sourceRawRestored = EqualBytes(original, File.ReadAllBytes(assetFile));
                 }
                 catch { report.error = "RESTORE_FAILED"; }
             }
             report.pass = report.error == "NONE" && report.noopEquivalent && report.witnessEquivalent &&
                 report.restoredEquivalent && report.metaStable && report.callbackExactlyOnce &&
-                report.markerIdentityUnique && report.allSkinBonesMarked;
+                report.markerIdentityUnique && report.allSkinBonesMarked && report.sourceMetaRestored &&
+                report.sourceRawRestored &&
+                report.markedRendererCount == report.rendererCount;
             if (!report.restoredEquivalent && baseline != null && report.error == "NONE")
                 report.error = "RESTORED_STATE_DRIFT";
+            if (report.pass)
+            {
+                try
+                {
+                    string output = Path.Combine(Path.GetDirectoryName(Application.dataPath),
+                        "VapbBoneWitnessMapping.json");
+                    File.WriteAllText(output, JsonUtility.ToJson(mapping, true));
+                    report.mappingWritten = true;
+                }
+                catch { report.pass = false; report.error = "MAPPING_WRITE_FAILED"; }
+            }
             try
             {
                 File.WriteAllText(Path.Combine(Path.GetDirectoryName(Application.dataPath),
@@ -203,13 +274,20 @@ public static class VapbBoneWitnessProbe
                 throw new InvalidOperationException("DUPLICATE_MESH_ID");
             result.meshes.Add(id, MeshSignature(mesh));
         }
-        foreach (SkinnedMeshRenderer renderer in root.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
         {
+            if (!(renderer is SkinnedMeshRenderer) && !(renderer is MeshRenderer))
+                throw new InvalidOperationException("RENDERER_UNSUPPORTED");
             long id = LocalId(renderer, result.guid);
             if (result.renderers.ContainsKey(id))
                 throw new InvalidOperationException("DUPLICATE_RENDERER_ID");
             result.renderers.Add(id, RendererSignature(renderer, result.guid, result.skinBoneIds));
-            result.skinBoneCount += renderer.bones.Length;
+            if (renderer is SkinnedMeshRenderer skin)
+            {
+                result.skinnedRendererCount++;
+                result.skinBoneCount += skin.bones.Length;
+            }
+            else result.meshRendererCount++;
         }
         return result;
     }
@@ -240,17 +318,42 @@ public static class VapbBoneWitnessProbe
         return Hash(writer =>
         {
             writer.Write(mesh.vertexCount);
+            Write(writer, mesh.bounds.center);
+            Write(writer, mesh.bounds.extents);
+            writer.Write((int)mesh.indexFormat);
+            writer.Write(mesh.subMeshCount);
+            for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+            {
+                writer.Write((int)mesh.GetTopology(submesh));
+                int[] indices = mesh.GetIndices(submesh);
+                writer.Write(indices.Length);
+                foreach (int index in indices) writer.Write(index);
+            }
             foreach (Vector3 vertex in mesh.vertices) Write(writer, vertex);
             foreach (Vector3 normal in mesh.normals) Write(writer, normal);
-            foreach (int index in mesh.triangles) writer.Write(index);
-            foreach (Matrix4x4 bindpose in mesh.bindposes) Write(writer, bindpose);
-            foreach (BoneWeight weight in mesh.boneWeights)
+            foreach (Vector4 tangent in mesh.tangents) Write(writer, tangent);
+            foreach (Color color in mesh.colors) Write(writer, color);
+            foreach (Color32 color in mesh.colors32)
+            { writer.Write(color.r); writer.Write(color.g); writer.Write(color.b); writer.Write(color.a); }
+            for (int channel = 0; channel < 8; channel++)
             {
-                writer.Write(weight.boneIndex0); writer.Write(weight.boneIndex1);
-                writer.Write(weight.boneIndex2); writer.Write(weight.boneIndex3);
-                writer.Write(weight.weight0); writer.Write(weight.weight1);
-                writer.Write(weight.weight2); writer.Write(weight.weight3);
+                var uv = new List<Vector4>();
+                mesh.GetUVs(channel, uv);
+                writer.Write(uv.Count);
+                foreach (Vector4 value in uv) Write(writer, value);
             }
+            foreach (Matrix4x4 bindpose in mesh.bindposes) Write(writer, bindpose);
+            var boneCounts = mesh.GetBonesPerVertex();
+            var boneWeights = mesh.GetAllBoneWeights();
+            try
+            {
+                writer.Write(boneCounts.Length);
+                for (int i = 0; i < boneCounts.Length; i++) writer.Write(boneCounts[i]);
+                writer.Write(boneWeights.Length);
+                for (int i = 0; i < boneWeights.Length; i++)
+                { writer.Write(boneWeights[i].boneIndex); writer.Write(boneWeights[i].weight); }
+            }
+            finally { boneCounts.Dispose(); boneWeights.Dispose(); }
             writer.Write(mesh.blendShapeCount);
             for (int i = 0; i < mesh.blendShapeCount; i++)
             {
@@ -272,33 +375,62 @@ public static class VapbBoneWitnessProbe
         });
     }
 
-    private static string RendererSignature(SkinnedMeshRenderer renderer, string guid, HashSet<long> boneIds)
+    private static string RendererSignature(Renderer renderer, string guid, HashSet<long> boneIds)
     {
         return Hash(writer =>
         {
+            writer.Write(renderer is SkinnedMeshRenderer ? 137 : 23);
             writer.Write(LocalId(renderer.transform, guid));
-            writer.Write(renderer.sharedMesh == null ? 0L : LocalId(renderer.sharedMesh, guid));
-            writer.Write(renderer.rootBone == null ? 0L : LocalId(renderer.rootBone, guid));
-            Transform[] bones = renderer.bones;
-            writer.Write(bones.Length);
-            foreach (Transform bone in bones)
+            writer.Write(LocalId(SharedMesh(renderer), guid));
+            writer.Write(renderer.enabled);
+            writer.Write((int)renderer.shadowCastingMode);
+            writer.Write(renderer.receiveShadows);
+            Material[] materials = renderer.sharedMaterials;
+            writer.Write(materials.Length);
+            foreach (Material material in materials)
             {
-                long id = LocalId(bone, guid);
-                writer.Write(id);
-                boneIds.Add(id);
+                if (material == null) { writer.Write(0L); continue; }
+                if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material, out string materialGuid, out long materialId) ||
+                    string.IsNullOrEmpty(materialGuid) || materialId == 0)
+                    throw new InvalidOperationException("MATERIAL_ID_UNAVAILABLE");
+                writer.Write(materialGuid); writer.Write(materialId);
             }
-            writer.Write(renderer.sharedMesh == null ? 0 : renderer.sharedMesh.blendShapeCount);
-            if (renderer.sharedMesh != null)
-                for (int i = 0; i < renderer.sharedMesh.blendShapeCount; i++)
-                    writer.Write(renderer.GetBlendShapeWeight(i));
+            if (renderer is SkinnedMeshRenderer skin)
+            {
+                writer.Write(skin.rootBone == null ? 0L : LocalId(skin.rootBone, guid));
+                Transform[] bones = skin.bones;
+                writer.Write(bones.Length);
+                foreach (Transform bone in bones)
+                {
+                    long id = LocalId(bone, guid);
+                    writer.Write(id);
+                    boneIds.Add(id);
+                }
+                writer.Write(skin.sharedMesh.blendShapeCount);
+                for (int i = 0; i < skin.sharedMesh.blendShapeCount; i++)
+                    writer.Write(skin.GetBlendShapeWeight(i));
+            }
         });
     }
 
-    private static void InspectMarkers(Snapshot snapshot, Report report)
+    private static Mesh SharedMesh(Renderer renderer)
+    {
+        if (renderer is SkinnedMeshRenderer skin && skin.sharedMesh != null) return skin.sharedMesh;
+        if (renderer is MeshRenderer direct)
+        {
+            MeshFilter[] filters = direct.GetComponents<MeshFilter>();
+            if (filters.Length == 1 && filters[0].sharedMesh != null) return filters[0].sharedMesh;
+        }
+        throw new InvalidOperationException("RENDERER_MESH_UNAVAILABLE");
+    }
+
+    private static Mapping InspectMarkers(Snapshot snapshot, Report report, byte[] originalBytes)
     {
         GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
         var uids = new HashSet<string>(StringComparer.Ordinal);
         var markedTransformIds = new HashSet<long>();
+        var markedRendererIds = new HashSet<long>();
+        var rows = new List<ModelMapping>();
         foreach (VapbSourceBoneMarker marker in root.GetComponentsInChildren<VapbSourceBoneMarker>(true))
         {
             report.witnessMarkerCount++;
@@ -309,7 +441,33 @@ public static class VapbBoneWitnessProbe
             long id = LocalId(marker.transform, snapshot.guid);
             if (!markedTransformIds.Add(id))
                 report.duplicateUidCount++;
+            var rendererRows = new List<RendererMapping>();
+            var classes = new HashSet<int>();
+            foreach (Renderer renderer in marker.GetComponents<Renderer>())
+            {
+                int classId = renderer is SkinnedMeshRenderer ? 137 :
+                              renderer is MeshRenderer ? 23 : 0;
+                if (classId == 0 || !classes.Add(classId))
+                    throw new InvalidOperationException("RENDERER_MARKER_AMBIGUOUS");
+                long rendererId = LocalId(renderer, snapshot.guid);
+                if (!snapshot.renderers.ContainsKey(rendererId) || !markedRendererIds.Add(rendererId))
+                    throw new InvalidOperationException("RENDERER_MARKER_AMBIGUOUS");
+                rendererRows.Add(new RendererMapping
+                {
+                    class_id = classId.ToString(CultureInfo.InvariantCulture),
+                    renderer_local_id = rendererId.ToString(CultureInfo.InvariantCulture),
+                    mesh_local_id = LocalId(SharedMesh(renderer), snapshot.guid)
+                        .ToString(CultureInfo.InvariantCulture)
+                });
+            }
+            rows.Add(new ModelMapping
+            {
+                model_uid = marker.sourceModelUid,
+                transform_local_id = id.ToString(CultureInfo.InvariantCulture),
+                renderers = rendererRows.ToArray()
+            });
         }
+        report.markedRendererCount = markedRendererIds.Count;
         foreach (long boneId in snapshot.skinBoneIds)
             if (!markedTransformIds.Contains(boneId))
                 report.missingSkinBoneMarkerCount++;
@@ -322,7 +480,19 @@ public static class VapbBoneWitnessProbe
             if (count != 1)
                 report.callbackExactlyOnce = false;
         report.markerIdentityUnique = report.witnessMarkerCount > 0 && report.duplicateUidCount == 0;
-        report.allSkinBonesMarked = snapshot.skinBoneIds.Count >= 2 && report.missingSkinBoneMarkerCount == 0;
+        report.allSkinBonesMarked = report.missingSkinBoneMarkerCount == 0;
+        return new Mapping
+        {
+            source_fbx_sha256 = HashBytes(originalBytes), model_guid = snapshot.guid,
+            importer_readability_changed = report.readabilityChanged,
+            models = rows.ToArray()
+        };
+    }
+
+    private static string HashBytes(byte[] bytes)
+    {
+        using (SHA256 sha = SHA256.Create())
+            return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant();
     }
 
     private static string Hash(Action<BinaryWriter> write)
@@ -340,6 +510,16 @@ public static class VapbBoneWitnessProbe
     private static void Write(BinaryWriter writer, Vector3 value)
     {
         writer.Write(value.x); writer.Write(value.y); writer.Write(value.z);
+    }
+
+    private static void Write(BinaryWriter writer, Vector4 value)
+    {
+        writer.Write(value.x); writer.Write(value.y); writer.Write(value.z); writer.Write(value.w);
+    }
+
+    private static void Write(BinaryWriter writer, Color value)
+    {
+        writer.Write(value.r); writer.Write(value.g); writer.Write(value.b); writer.Write(value.a);
     }
 
     private static void Write(BinaryWriter writer, Quaternion value)
@@ -368,6 +548,9 @@ public static class VapbBoneWitnessProbe
             switch (exception.Message)
             {
                 case "MODEL_PATH_OCCUPIED": case "INPUT_EMPTY": case "FIXTURE_STRUCTURE_INVALID":
+                case "MAPPING_PATH_OCCUPIED": case "MATERIAL_ID_UNAVAILABLE":
+                case "RENDERER_MESH_UNAVAILABLE": case "RENDERER_MARKER_AMBIGUOUS":
+                case "RENDERER_UNSUPPORTED":
                 case "NOOP_DRIFT": case "WITNESS_DRIFT_OR_AMBIGUITY":
                 case "MODEL_IMPORT_MISSING": case "DUPLICATE_TRANSFORM_ID":
                 case "DUPLICATE_MESH_ID": case "DUPLICATE_RENDERER_ID":

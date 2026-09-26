@@ -65,6 +65,24 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | PK-01 / 1,21 | Build/install/use final addon ZIP | tools/build_distribution_zip.py | Exact commit/hash; clean Blender GUI install and all major user operations | 実装中 | Legacy builder exists; final artifact unbuilt |
 | GH-01 / 17,18,21 | GitHub reproducible checkpoints/handoff | this document, PRODUCT_SPEC, tests | All needed helpers tracked; fresh checkout; remote SHA verified; no private data | 実装中 | Remote access restored; checkpoint pending |
 
+## Real-source FBX witness checkpoint — 2026-09-26
+
+**PROVEN, test-only:** a working copy of the model used by private case B was re-encoded using installed Blender FBX APIs, with a decimal source Model UID property on each Model. Original bytes remain untouched. Reparsing verifies unchanged FBX semantics except the documented encoder header fields and added witness property. No third-party implementation or private fixture was added to Git.
+
+Unity 2022.3.22f1 compared source, noop, witness and restored imports using documented public APIs. The synthetic case passes (5 Transforms, 1 Mesh, 1 skin, 2 bone references); real B passes (142 Transforms, 23 Meshes, 23 SkinnedMeshRenderers, 2,070 bone references, 141 unique marker callbacks). Both exit 0 with compiler error count 0. Existing per-ID Transform, Mesh geometry/topology/UV/normal/tangent/color/shape/skin values and Material **slot identities** match. This does not check every generated Material shader property or texture value.
+
+Readability was enabled on each disposable imported model for full geometry capture. Noop/witness/restored comparisons therefore use that explicit comparison setting; supplied original meta and original raw FBX are restored byte-for-byte afterward. Separately, real B's Renderer ID set matches the prior Oracle observation under the original importer setting. This is not a general proof that all importer setting changes are harmless.
+
+The real mapping's 141 Model UIDs were explicitly compared with all source FBX Model UIDs: exact set match. The generic Unity probe only guarantees imported marker/Renderer coverage; unsupported importer configurations may drop other source nodes and must not inherit this real-case set-equality claim. Blender creation receipts from the saved real case join **46 native skin occurrences across two scoped model edges to 23 source Renderer IDs**, without names or ordering. Raw FBX SHA and source GUID agree. Nested Prefab edge-ID resolution, effective override fidelity and saving/restoring those occurrences are not proven by this join.
+
+Negative control: replacing the synthetic noop FBX with a different synthetic model returns `NOOP_DRIFT`, exit 1, no mapping output, and restored original raw/meta. An earlier setup invocation used a wrong input path and did not run the probe; it is not counted as negative-control evidence. The corrected invocation produced the stated fail-closed result.
+
+Reproduce external source encoding with Blender `--factory-startup --background --python-exit-code 1 --python tests/blender_fbx_source_witness.py -- <external-folder>` containing Source.fbx. It refuses existing Noop/Witness outputs and repository-local evidence. Copy the existing `tests/unity_bone_witness_probe` first-party scripts into a disposable Unity project (Editor script under Assets/Editor), place Source/Noop/Witness.fbx plus optional original Source.fbx.meta at project root, and run `VapbBoneWitnessProbe.Run` in batchmode. Detailed mapping and private runtime evidence stay outside Git. Material dependencies must be present for meaningful referenced-slot observations.
+
+Independent scope review of the witness files used the other agent's read-only scope_guard context because dedicated reviewer sessions were unavailable; PASS with the Model-UID coverage and Material-content limitations above explicitly adopted. Production mapper code was not added. Current public Python suite remains **323 PASS**; compileall PASS.
+
+**Exact next action:** implement the smallest supported deferred model-instance export/restore path using source FBX receipts, serialized instance edges and public Unity API witness mapping, first proving the occurrence edge on the synthetic nested/Variant fixture, then exercising an actual private Mesh edit and fresh Unity restoration. Keep source assets and VRC state intact; refuse ambiguous identity. Full real Core roundtrip remains incomplete.
+
 ## Explicit cross-package Material confirmation checkpoint — 2026-09-26
 
 The repaired split-package group probe exposed an actual confirmation blocker: authored Material references retain the Prefab package as their source context, while the real Material provider belongs to another package. Confirmation previously required that authored package to own the Material. A missing native slot before explicit confirmation is expected, not itself an import regression.
