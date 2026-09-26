@@ -5,6 +5,7 @@ Unity importer verifies original/noop/witness/restored state for that source.
 """
 import array
 import hashlib
+import math
 from pathlib import Path
 import struct
 
@@ -18,6 +19,32 @@ METHODS = {
     ord('f'): 'add_float32_array', ord('d'): 'add_float64_array',
     ord('b'): 'add_bool_array', ord('c'): 'add_byte_array',
 }
+
+
+def source_export_scale_options(source, scene_unit_scale):
+    """Keep the two verified FBX unit conventions without guessing other units."""
+    from io_scene_fbx import parse_fbx
+    if not math.isclose(scene_unit_scale, 1.0, rel_tol=0.0, abs_tol=1e-9):
+        raise ValueError('Skin export requires the verified scene unit scale of 1')
+    decoded, _ = parse_fbx.parse(str(source), use_namedtuple=True)
+    settings = [node for node in decoded.elems if node.id == b'GlobalSettings']
+    if len(settings) != 1:
+        raise ValueError('Source FBX unit settings are missing or duplicated')
+    containers = [node for node in settings[0].elems if node.id == b'Properties70']
+    if len(containers) != 1:
+        raise ValueError('Source FBX unit properties are missing or duplicated')
+    properties = [node for node in containers[0].elems
+                  if node.id == b'P' and node.props and node.props[0] == b'UnitScaleFactor']
+    if len(properties) != 1 or len(properties[0].props) != 5:
+        raise ValueError('Source FBX unit scale is missing or duplicated')
+    value = properties[0].props[-1]
+    if type(value) not in (int, float) or not math.isfinite(value):
+        raise ValueError('Source FBX unit scale is invalid')
+    if math.isclose(value, 1.0, rel_tol=0.0, abs_tol=1e-9):
+        return 'FBX_SCALE_NONE'
+    if math.isclose(value, 100.0, rel_tol=0.0, abs_tol=1e-9):
+        return 'FBX_SCALE_ALL'
+    raise ValueError('Source FBX unit convention is not yet supported for skin restoration')
 
 
 def encode_node(node, witness):

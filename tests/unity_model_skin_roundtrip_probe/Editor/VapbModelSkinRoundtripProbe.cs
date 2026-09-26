@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -23,6 +24,13 @@ public static class VapbModelSkinRoundtripProbe
         public string model_guid;
         public string model_sha256;
         public string variant_path;
+        public RendererCandidate[] renderer_candidates;
+    }
+    [Serializable] private sealed class RendererCandidate
+    {
+        public string renderer_file_id;
+        public string source_mesh_file_id;
+        public string[] bone_transform_file_ids;
     }
     [Serializable] private sealed class Report
     {
@@ -45,6 +53,9 @@ public static class VapbModelSkinRoundtripProbe
         public bool extra_component_rejected;
         public bool rejected_variant_unchanged;
         public bool variant_restored_after_negative;
+        public bool bad_candidate_rejected;
+        public bool bad_candidate_unchanged;
+        public bool manifest_restored_after_negative;
         public int selected_skin_count;
         public int sibling_renderer_count;
         public int edited_vertex_count;
@@ -108,7 +119,8 @@ public static class VapbModelSkinRoundtripProbe
             Manifest manifest = JsonUtility.FromJson<Manifest>(File.ReadAllText(Disk(ManifestPath)));
             if (manifest == null || manifest.reference_rebind_tasks == null ||
                 manifest.reference_rebind_tasks.Length != 1 ||
-                manifest.reference_rebind_tasks[0].kind != "RESTORE_MODEL_SKIN_VARIANT_V1")
+                (manifest.reference_rebind_tasks[0].kind != "RESTORE_MODEL_SKIN_VARIANT_V1" &&
+                 manifest.reference_rebind_tasks[0].kind != "RESTORE_DIRECT_SKIN_VARIANT_V1"))
                 throw new InvalidOperationException("TASK_MISSING");
             Task task = manifest.reference_rebind_tasks[0];
             string prefabPath = AssetDatabase.GUIDToAssetPath(task.prefab_guid);
@@ -170,6 +182,8 @@ public static class VapbModelSkinRoundtripProbe
             string firstHash = Hash(Disk(task.variant_path));
             report.second_apply = VapbModelSkinFinalizer.Apply(ManifestPath);
             report.second_apply_unchanged = report.second_apply && firstHash == Hash(Disk(task.variant_path));
+            if (task.kind == "RESTORE_DIRECT_SKIN_VARIANT_V1")
+                NegativeBadCandidate(task, sourceMeshId, firstHash, report);
             NegativeExtraComponent(task.variant_path, firstHash, report);
             report.pass = report.package_imported && report.first_apply && report.variant_created &&
                 report.variant_linked && report.edited_mesh_bound && report.originals_unchanged &&
@@ -177,7 +191,10 @@ public static class VapbModelSkinRoundtripProbe
                 report.geometry_matches_edited_model && report.topology_and_weights_valid &&
                 report.target_bones_and_root_preserved && report.materials_preserved &&
                 report.siblings_preserved && report.extra_component_rejected &&
-                report.rejected_variant_unchanged && report.variant_restored_after_negative;
+                report.rejected_variant_unchanged && report.variant_restored_after_negative &&
+                (task.kind != "RESTORE_DIRECT_SKIN_VARIANT_V1" ||
+                 (report.bad_candidate_rejected && report.bad_candidate_unchanged &&
+                  report.manifest_restored_after_negative));
             report.error = report.pass ? "NONE" : "ASSERTION_FAILED";
         }
         catch (Exception error)
@@ -349,6 +366,49 @@ public static class VapbModelSkinRoundtripProbe
             else return false;
         }
         return true;
+    }
+
+    private static void NegativeBadCandidate(Task task, long sourceMeshId,
+        string variantHash, Report report)
+    {
+        string file = Disk(ManifestPath);
+        byte[] original = File.ReadAllBytes(file);
+        byte[] meta = File.ReadAllBytes(file + ".meta");
+        try
+        {
+            RendererCandidate selected = null;
+            foreach (RendererCandidate candidate in task.renderer_candidates)
+                if (candidate.source_mesh_file_id == sourceMeshId.ToString())
+                {
+                    if (selected != null) throw new InvalidOperationException("SELECTED_SKIN_AMBIGUOUS");
+                    selected = candidate;
+                }
+            if (selected == null || selected.bone_transform_file_ids == null ||
+                selected.bone_transform_file_ids.Length == 0 ||
+                selected.renderer_file_id == selected.bone_transform_file_ids[0])
+                throw new InvalidOperationException("BAD_CANDIDATE_CONTROL_INVALID");
+            string json = File.ReadAllText(file);
+            string pattern = "\"renderer_file_id\"\\s*:\\s*\"" +
+                Regex.Escape(selected.renderer_file_id) + "\"";
+            if (Regex.Matches(json, pattern).Count != 1)
+                throw new InvalidOperationException("BAD_CANDIDATE_CONTROL_INVALID");
+            json = Regex.Replace(json, pattern,
+                "\"renderer_file_id\": \"" + selected.bone_transform_file_ids[0] + "\"");
+            File.WriteAllText(file, json);
+            AssetDatabase.ImportAsset(ManifestPath,
+                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            report.bad_candidate_rejected = !VapbModelSkinFinalizer.Apply(ManifestPath);
+            report.bad_candidate_unchanged = Hash(Disk(task.variant_path)) == variantHash;
+        }
+        finally
+        {
+            File.WriteAllBytes(file, original);
+            File.WriteAllBytes(file + ".meta", meta);
+            AssetDatabase.ImportAsset(ManifestPath,
+                ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            report.manifest_restored_after_negative = EqualBytes(original, File.ReadAllBytes(file)) &&
+                EqualBytes(meta, File.ReadAllBytes(file + ".meta"));
+        }
     }
 
     private static void NegativeExtraComponent(string path, string expectedHash, Report report)

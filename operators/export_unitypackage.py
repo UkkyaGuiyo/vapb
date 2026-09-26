@@ -75,7 +75,7 @@ def _export_staged_mesh(context, source, output):
         bpy.data.scenes.remove(scene)
 
 
-def _export_staged_skin(context, source, armature, output, skin_binding):
+def _export_staged_skin(context, source, armature, output, skin_binding, *, scale_options='FBX_SCALE_NONE'):
     """Export a private rest-pose rig/mesh copy carrying only allowed identity markers."""
     scene = bpy.data.scenes.new('VAPB Skin Export')
     scene.unit_settings.scale_length = context.scene.unit_settings.scale_length
@@ -125,7 +125,8 @@ def _export_staged_skin(context, source, armature, output, skin_binding):
             result = bpy.ops.export_scene.fbx(filepath=str(output), use_selection=True,
                 object_types={'MESH', 'ARMATURE'}, use_mesh_modifiers=False,
                 use_custom_props=True, add_leaf_bones=False, use_armature_deform_only=False,
-                bake_anim=False, bake_space_transform=False, path_mode='STRIP', embed_textures=False)
+                bake_anim=False, bake_space_transform=False, apply_scale_options=scale_options,
+                path_mode='STRIP', embed_textures=False)
         if result != {'FINISHED'} or not output.is_file():
             raise ValueError('Skin FBXの書き出しに失敗しました')
     finally:
@@ -197,11 +198,11 @@ def export_skin_package(context, mesh, output):
     return _write_package(tree, manifest, output)
 
 
-def export_model_skin_package(context, mesh, output):
+def export_model_skin_package(context, mesh, output, *, direct=False):
     """Defer model Renderer identity to Unity while preserving source assets."""
-    from ..blender.fbx_witness import prepare_witness
+    from ..blender.fbx_witness import prepare_witness, source_export_scale_options
     from ..blender.fbx_receipt import RECEIPT_VERSION
-    from ..export.model_skin import model_skin_task
+    from ..export.model_skin import model_skin_task, direct_skin_task
     if context.mode != 'OBJECT' or mesh is None or mesh.type != 'MESH':
         raise ValueError('オブジェクトモードでモデル由来のSkin Meshを選択してください')
     if Path(output).exists():
@@ -229,11 +230,12 @@ def export_model_skin_package(context, mesh, output):
     if not context_id or len(roots) != 1 or rig.get('_vapb_root_context_id') != context_id:
         raise ValueError('選択したSkinのPrefabルートまたはArmatureの所属が不明です')
     edges = json.loads(mesh.get('_vapb_model_instance_edge_path', '[]'))
-    if not isinstance(edges, list) or not edges or edges != json.loads(rig.get('_vapb_model_instance_edge_path', '[]')):
+    if (not isinstance(edges, list) or bool(edges) == direct or
+            edges != json.loads(rig.get('_vapb_model_instance_edge_path', '[]'))):
         raise ValueError('MeshとArmatureのモデルインスタンス経路が一致しません')
     root_guid = roots[0].get('unity_composition_member_id', '')
     if (not root_guid or root_guid != mesh.get('unity_composition_member_id') or
-            root_guid != edges[0].get('container_asset_guid')):
+            (not direct and root_guid != edges[0].get('container_asset_guid'))):
         raise ValueError('選択ルートとモデルインスタンスの元Prefabが一致しません')
     package_id = mesh.get('unity_source_package_id', '')
     if (roots[0].get('unity_source_package_id') != package_id or
@@ -247,11 +249,15 @@ def export_model_skin_package(context, mesh, output):
     if hashlib.sha256(source_bytes).hexdigest() != source.expected_sha256:
         raise ValueError('保存済み原本のハッシュが変わっています')
     assets = RawAssetRepository(source.path).read_all(source_bytes)
+    prefabs = [a for a in assets if a.guid == root_guid]
+    if len(prefabs) != 1:
+        raise ValueError('元Prefabを一意に取得できません')
     source_guid = mesh.get('_vapb_fbx_source_asset_guid', '')
     source_sha = mesh.get('_vapb_fbx_source_asset_sha256', '')
     metadata = {
         'prefab_guid': mesh.get('unity_composition_member_id', ''),
-        'prefab_source_sha256': edges[0].get('container_revision_sha256', ''),
+        'prefab_source_sha256': (hashlib.sha256(prefabs[0].asset_bytes).hexdigest() if direct
+                                 else edges[0].get('container_revision_sha256', '')),
         'source_model_guid': source_guid, 'source_model_sha256': source_sha,
         'source_model_uid': mesh.get('_vapb_fbx_model_uid', ''),
         'source_geometry_uid': mesh.get('_vapb_fbx_geometry_uid', ''),
@@ -272,7 +278,7 @@ def export_model_skin_package(context, mesh, output):
             raise ValueError('元モデルと異なるBoneはこの復元経路では未対応です')
         bones.append({'edited_bone_realization_id': str(bone[keys[3]]),
                       'source_model_uid': str(bone[keys[2]])})
-    task = model_skin_task(metadata, bones, assets)
+    task = (direct_skin_task if direct else model_skin_task)(metadata, bones, assets)
     original = next(a for a in assets if a.guid == task['source_model_guid'])
     guid = hashlib.sha256(('VAPB_MODEL_SKIN_V1:' + package_id + ':' + realization).encode()).hexdigest()[:32]
     path = f'Assets/VAPBExport/EditedSkin_{guid}.fbx'
@@ -281,6 +287,7 @@ def export_model_skin_package(context, mesh, output):
         folder = Path(temporary)
         raw = folder / 'source.fbx'
         raw.write_bytes(original.asset_bytes)
+        scale_options = source_export_scale_options(raw, context.scene.unit_settings.scale_length)
         index = RawFbxSemanticIndex.from_file(raw)
         if (not index.unique_source_model(int(task['source_model_uid'])) or
                 index.geometry_for_model(int(task['source_model_uid'])) != int(task['source_geometry_uid'])):
@@ -290,7 +297,7 @@ def export_model_skin_package(context, mesh, output):
         if not {b['source_model_uid'] for b in bones} <= set(task['source_model_uids']):
             raise ValueError('BoneのModel UIDが元FBXにありません')
         edited = folder / 'edited.fbx'
-        _export_staged_skin(context, mesh, rig, edited, {'mappings': bones})
+        _export_staged_skin(context, mesh, rig, edited, {'mappings': bones}, scale_options=scale_options)
         payload, noop_bytes, witness_bytes = edited.read_bytes(), noop.read_bytes(), witness.read_bytes()
     task.update(model_guid=guid, model_sha256=hashlib.sha256(payload).hexdigest(),
                 witness_noop_path=witness_base + '_Noop.bytes',
@@ -402,7 +409,10 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
     filter_glob: bpy.props.StringProperty(default='*.unitypackage', options={'HIDDEN'})
 
     def draw(self, context):
-        model_skin = context.active_object and context.active_object.get('_vapb_model_instance_edge_path')
+        mesh = context.active_object
+        model_skin = mesh and (mesh.get('_vapb_model_instance_edge_path') or
+            (mesh.type == 'MESH' and mesh.get('_vapb_fbx_realization_id') and
+             not mesh.get('_vapb_skin_binding') and any(m.type == 'ARMATURE' for m in mesh.modifiers)))
         if model_skin:
             self.layout.label(text='対象: アクティブなモデル由来Skin Mesh一つ')
             self.layout.label(text='Unityで出所を確認し、新しいPrefab Variantへ復元します')
@@ -421,8 +431,11 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
             binding = json.loads(mesh.get('_vapb_renderer_binding', '{}')) if mesh else {}
             if mesh and mesh.get('_vapb_model_instance_edge_path'):
                 export_model_skin_package(context, mesh, self.filepath)
-            elif binding.get('occurrence', {}).get('renderer_class_id') == 137:
+            elif binding.get('occurrence', {}).get('renderer_class_id') == 137 and mesh.get('_vapb_skin_binding'):
                 export_skin_package(context, mesh, self.filepath)
+            elif (mesh and mesh.type == 'MESH' and mesh.get('_vapb_fbx_realization_id') and
+                  any(m.type == 'ARMATURE' for m in mesh.modifiers)):
+                export_model_skin_package(context, mesh, self.filepath, direct=True)
             else:
                 export_static_package(context, mesh, self.filepath)
         except (OSError, RuntimeError, ValueError, KeyError) as exc:

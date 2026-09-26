@@ -8,6 +8,7 @@ from pathlib import PurePosixPath
 import re
 
 from ..unity.yaml_parser import parse_unity_yaml
+from ..unity.prefab_parser import ref_file_id, ref_guid
 
 
 _GUID = re.compile(r"[0-9a-fA-F]{32}\Z")
@@ -43,6 +44,25 @@ def _asset(by_guid, guid, extension, sha):
     if hashlib.sha256(source.asset_bytes).hexdigest() != sha:
         raise ValueError("Source asset revision changed")
     return source
+
+
+def _bone_rows(bone_mappings):
+    if not isinstance(bone_mappings, list) or not bone_mappings:
+        raise ValueError("Bone mappings are incomplete")
+    bones = []
+    seen_edits, seen_sources = set(), set()
+    for row in bone_mappings:
+        try:
+            edited = row['edited_bone_realization_id']
+            source_uid = _id(row['source_model_uid'])
+        except (KeyError, TypeError) as exc:
+            raise ValueError("Bone mapping is incomplete") from exc
+        if not isinstance(edited, str) or not edited or edited in seen_edits or source_uid in seen_sources:
+            raise ValueError("Bone mapping identity is missing or duplicated")
+        seen_edits.add(edited)
+        seen_sources.add(source_uid)
+        bones.append({'edited_bone_realization_id': edited, 'source_model_uid': source_uid})
+    return sorted(bones, key=lambda row: int(row['source_model_uid']))
 
 
 def model_skin_task(metadata, bone_mappings, assets):
@@ -96,22 +116,7 @@ def model_skin_task(metadata, bone_mappings, assets):
     if expected_container != model_guid:
         raise ValueError("Prefab instance path does not end at the source FBX")
 
-    if not isinstance(bone_mappings, list) or not bone_mappings:
-        raise ValueError("Bone mappings are incomplete")
-    bones = []
-    seen_edits, seen_sources = set(), set()
-    for row in bone_mappings:
-        try:
-            edited = row['edited_bone_realization_id']
-            source_uid = _id(row['source_model_uid'])
-        except (KeyError, TypeError) as exc:
-            raise ValueError("Bone mapping is incomplete") from exc
-        if not isinstance(edited, str) or not edited or edited in seen_edits or source_uid in seen_sources:
-            raise ValueError("Bone mapping identity is missing or duplicated")
-        seen_edits.add(edited)
-        seen_sources.add(source_uid)
-        bones.append({'edited_bone_realization_id': edited, 'source_model_uid': source_uid})
-    bones.sort(key=lambda row: int(row['source_model_uid']))
+    bones = _bone_rows(bone_mappings)
 
     identity = {'prefab_guid': prefab_guid, 'instance_edges': edges, 'realization_id': realization_id}
     suffix = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
@@ -123,3 +128,60 @@ def model_skin_task(metadata, bone_mappings, assets):
         'realization_id': realization_id, 'instance_edges': edges, 'bone_mappings': bones,
         'variant_path': f'Assets/VAPBExport/EditedVariant_{suffix}.prefab',
     }
+
+
+def direct_skin_task(metadata, bone_mappings, assets):
+    """Carry serialized candidates; Unity witnesses must resolve exactly one."""
+    try:
+        prefab_guid = _guid(metadata['prefab_guid'])
+        prefab_sha = _sha(metadata['prefab_source_sha256'])
+        model_guid = _guid(metadata['source_model_guid'])
+        model_sha = _sha(metadata['source_model_sha256'])
+        model_uid = _id(metadata['source_model_uid'])
+        geometry_uid = _id(metadata['source_geometry_uid'])
+        realization = metadata['realization_id']
+    except (KeyError, TypeError) as exc:
+        raise ValueError('Direct skin metadata is incomplete') from exc
+    if not isinstance(realization, str) or not realization or metadata.get('instance_edges'):
+        raise ValueError('Direct skin context is incomplete or inherited')
+    by_guid = {}
+    for asset in assets:
+        guid = _guid(asset.guid)
+        if guid in by_guid:
+            raise ValueError('Source asset GUID is duplicated')
+        by_guid[guid] = asset
+    prefab = _asset(by_guid, prefab_guid, '.prefab', prefab_sha)
+    _asset(by_guid, model_guid, '.fbx', model_sha)
+    docs = parse_unity_yaml(prefab.asset_bytes.decode('utf-8-sig'))
+    if len({doc.file_id for doc in docs}) != len(docs):
+        raise ValueError('Prefab document local ID is duplicated')
+    transforms = {str(doc.file_id) for doc in docs if doc.class_id == 4}
+    candidates = []
+    for doc in docs:
+        reference = doc.data.get('m_Mesh')
+        if doc.class_id != 137 or ref_guid(reference) != model_guid:
+            continue
+        references = doc.data.get('m_Bones')
+        root = doc.data.get('m_RootBone')
+        if (not isinstance(references, list) or not references or not isinstance(root, dict)
+                or any(not isinstance(ref, dict) or ref_guid(ref) not in (None, '', '0' * 32)
+                       for ref in references + [root])):
+            raise ValueError('Direct skin bone references are incomplete or external')
+        bones = [_id(str(ref_file_id(ref))) for ref in references]
+        root_id = _id(str(ref_file_id(root)))
+        if len(set(bones)) != len(bones) or not set(bones + [root_id]) <= transforms:
+            raise ValueError('Direct skin bone Transform is missing or duplicated')
+        candidates.append({'renderer_file_id': _id(str(doc.file_id)),
+                           'source_mesh_file_id': _id(str(ref_file_id(reference))),
+                           'bone_transform_file_ids': bones, 'root_bone_transform_file_id': root_id})
+    if not candidates:
+        raise ValueError('No direct skin references the source FBX')
+    candidates.sort(key=lambda row: int(row['renderer_file_id']))
+    suffix = hashlib.sha256(('DIRECT_SKIN_V1:' + prefab_guid + ':' + realization).encode()).hexdigest()
+    return {'kind': 'RESTORE_DIRECT_SKIN_VARIANT_V1',
+            'prefab_guid': prefab_guid, 'prefab_source_sha256': prefab_sha,
+            'source_model_guid': model_guid, 'source_model_sha256': model_sha,
+            'source_model_uid': model_uid, 'source_geometry_uid': geometry_uid,
+            'realization_id': realization, 'instance_edges': [],
+            'renderer_candidates': candidates, 'bone_mappings': _bone_rows(bone_mappings),
+            'variant_path': f'Assets/VAPBExport/EditedVariant_{suffix}.prefab'}

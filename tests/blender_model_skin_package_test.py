@@ -47,14 +47,20 @@ def main():
                 import_mode='RECONSTRUCT', prefab_choice='AUTO', keep_extracted=False,
                 source_storage_directory=str(folder / 'Sources')) == {'FINISHED'}
         candidates = [o for o in bpy.context.scene.objects if o.type == 'MESH'
-                      and o.get('_vapb_model_instance_edge_path')
+                      and (config.get('direct_skin') or o.get('_vapb_model_instance_edge_path'))
+                      and o.get('_vapb_fbx_realization_id')
+                      and o.get('_vapb_root_context_id')
                       and any(m.type == 'ARMATURE' for m in o.modifiers)]
         if config.get('realization_id'):
             candidates = [o for o in candidates if o.get('_vapb_fbx_realization_id') == config['realization_id']]
             assert len(candidates) == 1
         assert candidates
         # Test selection only. The exporter proves source identity independently.
-        mesh = max(candidates, key=lambda o: len(json.loads(o['_vapb_model_instance_edge_path'])))
+        if config.get('direct_skin'):
+            assert len(candidates) == 1
+            mesh = candidates[0]
+        else:
+            mesh = max(candidates, key=lambda o: len(json.loads(o['_vapb_model_instance_edge_path'])))
         realization = mesh['_vapb_fbx_realization_id']
         mesh.data = mesh.data.copy()
         if not config.get('already_edited'):
