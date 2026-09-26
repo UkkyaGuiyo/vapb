@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,14 @@ class ModelReplacement:
     expected_asset_sha256: str
     fbx_bytes: bytes
     rebind_payload: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class TextureReplacement:
+    source_package_id: str
+    source_guid: str
+    expected_asset_sha256: str
+    encoded_bytes: bytes
 
 
 def _sha256(payload: bytes) -> str:
@@ -60,6 +69,7 @@ def materialize_model_package(
     sources: tuple[SourcePackage, ...] | list[SourcePackage],
     replacements: tuple[ModelReplacement, ...] | list[ModelReplacement],
     *,
+    texture_replacements: tuple[TextureReplacement, ...] | list[TextureReplacement] = (),
     generator_version: str,
     blender_version: str,
 ) -> tuple[StagingTree, ExportManifest]:
@@ -119,6 +129,22 @@ def materialize_model_package(
             renderer_mappings.append({**mapping, "source_package_id": key[0], "source_guid": key[1]})
         by_identity[key] = replacement
 
+    textures: dict[tuple[str, str], TextureReplacement] = {}
+    for texture in texture_replacements:
+        key = (texture.source_package_id, normalize_guid(texture.source_guid))
+        if key in textures or key in by_identity:
+            raise ValueError("ambiguous texture replacement provider")
+        asset = source_assets.get(key)
+        if asset is None or not re.search(rb"(?m)^TextureImporter:\s*$", asset.meta_bytes):
+            raise ValueError("texture source identity or TextureImporter is unavailable")
+        if _sha256(asset.asset_bytes) != _expected_hash(texture.expected_asset_sha256):
+            raise ValueError("source texture SHA256 is stale")
+        if not isinstance(texture.encoded_bytes, bytes) or not texture.encoded_bytes:
+            raise ValueError("replacement texture bytes are empty or invalid")
+        if texture.encoded_bytes == asset.asset_bytes:
+            raise ValueError("replacement texture does not change source bytes")
+        textures[key] = texture
+
     graph = SemanticGraph()
     graph.add_node(GraphNode("source-closure", NodeType.EXPORT_ROOT, Provenance("SOURCE_CLOSURE")))
     node_keys: dict[str, tuple[str, str]] = {}
@@ -126,6 +152,8 @@ def materialize_model_package(
         node_id = f"source-asset-{index}"
         node_keys[node_id] = (package_id, guid)
         node_type = NodeType.MESH_ASSET if asset.pathname.lower().endswith(".fbx") else NodeType.PRESERVED_UNKNOWN_ASSET
+        if (package_id, guid) in textures:
+            node_type = NodeType.TEXTURE_ASSET
         graph.add_node(GraphNode(node_id, node_type, Provenance("EXACT", package_id, guid, None, asset.pathname), {"operation": "PRESERVE"}))
         graph.add_edge("source-closure", node_id, EdgeType.RAW_SERIALIZED_REFERENCE)
     base_plan = plan_assets(graph, ["source-closure"])
@@ -138,6 +166,18 @@ def materialize_model_package(
         asset = source_assets[key]
         source_identity = {**item.source_identity, "source_sha256": _sha256(asset.asset_bytes)}
         replacement = by_identity.get(key)
+        texture = textures.get(key)
+        if texture is not None:
+            planned.append(replace(
+                item, source_identity=source_identity,
+                operation=AssetOperation.MODIFY,
+                strategy=ExportStrategy.PRESERVE_META_REPLACE_BYTES,
+                path_status=PathStatus.PRESERVE,
+                reference_stability=ReferenceStability.EXPECTED_STABLE,
+                postimport_tasks=(),
+                postimport_identity={"content_sha256": _sha256(texture.encoded_bytes)},
+            ))
+            continue
         if replacement is None:
             planned.append(replace(item, source_identity=source_identity))
             continue
@@ -159,9 +199,10 @@ def materialize_model_package(
         key = node_keys[item.node_id]
         asset = source_assets[key]
         replacement = by_identity.get(key)
+        texture = textures.get(key)
         return StagedUnityAsset(
             asset.guid, asset.pathname,
-            replacement.fbx_bytes if replacement else asset.asset_bytes,
+            replacement.fbx_bytes if replacement else texture.encoded_bytes if texture else asset.asset_bytes,
             asset.meta_bytes, asset.preview_bytes,
             asset_type=item.node_type,
             source_identity=item.source_identity,

@@ -16,7 +16,7 @@ from ..blender.identity_registry import load_scene_registry
 from ..blender.renderer_binding import validate_existing_binding
 from ..export.direct_renderer import direct_renderer_task
 from ..export.skin_renderer import skin_renderer_task
-from ..export.model_package import SourcePackage, ModelReplacement, materialize_model_package
+from ..export.model_package import SourcePackage, ModelReplacement, TextureReplacement, materialize_model_package
 from ..export.package_writer import UnityPackageWriter
 from ..export.raw_assets import RawAssetRepository
 from ..export.staging import StagedUnityAsset
@@ -37,6 +37,65 @@ def _materials(mesh, package_id, assets):
             raise ValueError('素材の元Assetを確認できません。新規素材はこの経路では未対応です')
         result.append({'guid': guid, 'file_id': str(file_id)})
     return result
+
+
+def _working_textures(mesh, package_id, assets):
+    """Read source-identified working images without saving over their files."""
+    images, visited = {}, set()
+
+    def visit(tree):
+        if tree is None or tree.as_pointer() in visited:
+            return
+        visited.add(tree.as_pointer())
+        for node in tree.nodes:
+            image = getattr(node, 'image', None)
+            if image is not None:
+                images[image.as_pointer()] = image
+            if node.type == 'GROUP':
+                visit(node.node_tree)
+
+    for slot in mesh.material_slots:
+        if slot.material is not None:
+            visit(slot.material.node_tree)
+    sources = {asset.guid: asset for asset in assets}
+    providers = {}
+    replacements = []
+    for image in images.values():
+        guid = image.get('unity_guid', '')
+        asset = sources.get(guid)
+        if (image.get('unity_source_package_id') != package_id or asset is None or
+                image.get('unity_asset_path') != asset.pathname or
+                not re.search(rb'(?m)^TextureImporter:\s*$', asset.meta_bytes)):
+            raise ValueError('画像の元Package・Texture Assetを確認できません。新規画像の追加は未対応です')
+        if image.library or image.source != 'FILE':
+            raise ValueError('リンク画像・連番・UDIM画像はこの書き出し経路では未対応です')
+        if image.is_dirty:
+            formats = {'.png': 'PNG', '.jpg': 'JPEG', '.jpeg': 'JPEG', '.tga': 'TARGA',
+                       '.tif': 'TIFF', '.tiff': 'TIFF', '.bmp': 'BMP', '.exr': 'OPEN_EXR'}
+            suffix = Path(asset.pathname).suffix.lower()
+            if formats.get(suffix) != image.file_format:
+                raise ValueError('編集中の画像形式を元Textureの形式で保存できません')
+            with tempfile.TemporaryDirectory(prefix='vapb_texture_export_') as temporary:
+                target = Path(temporary) / ('texture' + suffix)
+                image.save(filepath=str(target), save_copy=True)
+                encoded = target.read_bytes()
+        elif image.packed_file is not None:
+            encoded = bytes(image.packed_file.data)
+        else:
+            current = Path(bpy.path.abspath(image.filepath)).resolve()
+            source_path = image.get('unity_source_path', '')
+            if not source_path or current != Path(source_path).resolve() or not current.is_file():
+                raise ValueError('作業Textureファイルの出所または保存先を確認できません')
+            encoded = current.read_bytes()
+        if not encoded:
+            raise ValueError('作業Textureの画像データが空です')
+        if guid in providers and providers[guid] != encoded:
+            raise ValueError('同一Textureに異なる編集画像があります。出力を一意に選べません')
+        if guid not in providers and encoded != asset.asset_bytes:
+            replacements.append(TextureReplacement(package_id, guid,
+                hashlib.sha256(asset.asset_bytes).hexdigest(), encoded))
+        providers[guid] = encoded
+    return replacements
 
 
 def _export_staged_mesh(context, source, output):
@@ -211,7 +270,8 @@ def export_skin_package(context, mesh, output):
     task['model_guid'] = guid
     task['model_sha256'] = hashlib.sha256(payload).hexdigest()
     tree, manifest = materialize_model_package([source], [], generator_version='0.4.0',
-                                               blender_version=bpy.app.version_string)
+        blender_version=bpy.app.version_string,
+        texture_replacements=_working_textures(mesh, package_id, assets))
     meta, replacements = re.subn(rb'(?m)^guid:\s*[0-9a-fA-F]{32}\s*$',
                                 ('guid: ' + guid).encode(), original.meta_bytes)
     if replacements != 1:
@@ -340,7 +400,8 @@ def export_model_skin_package(context, mesh, output, *, direct=False):
                 witness_path=witness_base + '_Source.bytes',
                 witness_sha256=hashlib.sha256(witness_bytes).hexdigest())
     tree, manifest = materialize_model_package([source], [], generator_version='0.4.0',
-                                               blender_version=bpy.app.version_string)
+        blender_version=bpy.app.version_string,
+        texture_replacements=_working_textures(mesh, package_id, assets))
     meta, replacements = re.subn(rb'(?m)^guid:\s*[0-9a-fA-F]{32}\s*$',
                                 ('guid: ' + guid).encode(), original.meta_bytes)
     if replacements != 1:
@@ -359,8 +420,8 @@ def export_model_skin_package(context, mesh, output, *, direct=False):
             'operation': 'CREATE', 'strategy': 'REGENERATE_FROM_BLENDER',
             'desired_export_path': p, 'export_identity': {'export_guid': g}}
             for p, g, kind in generated),
-        warnings=manifest.warnings + ('SOURCE_RAW_PRESERVED', 'UNITY_MODEL_IDENTITY_CHECK_REQUIRED',
-                                     'NEW_PREFAB_VARIANT', 'MODEL_SKIN_GEOMETRY_ONLY'))
+        warnings=manifest.warnings + ('SOURCE_ARCHIVE_PRESERVED', 'UNITY_MODEL_IDENTITY_CHECK_REQUIRED',
+                                     'NEW_PREFAB_VARIANT', 'EXISTING_SKIN_AND_TEXTURE_ASSET_EDITS'))
     return _write_package(tree, manifest, output)
 
 
@@ -404,9 +465,10 @@ def export_static_package(context, mesh, output):
             binding['mesh_receipt']['source_sha256'], edited_fbx.read_bytes(),
             {'renderer_mappings': [binding]})
         tree, manifest = materialize_model_package([source], [replacement],
-            generator_version='0.4.0', blender_version=bpy.app.version_string)
+            generator_version='0.4.0', blender_version=bpy.app.version_string,
+            texture_replacements=_working_textures(mesh, package_id, assets))
     manifest = replace(manifest, reference_rebind_tasks=(task,),
-        warnings=manifest.warnings + ('STATIC_MESH_GEOMETRY_ONLY', 'UNITY_FINALIZER_REQUIRED'))
+        warnings=manifest.warnings + ('EXISTING_STATIC_MESH_AND_TEXTURE_ASSET_EDITS', 'UNITY_FINALIZER_REQUIRED'))
     return _write_package(tree, manifest, output)
 
 

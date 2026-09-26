@@ -6,6 +6,7 @@ from pathlib import Path
 import tarfile
 import tempfile
 import unittest
+from dataclasses import replace
 
 from unitypackage_blender_importer.export.model_package import (
     ModelReplacement, SourcePackage, materialize_model_package,
@@ -48,6 +49,41 @@ def replacement(source: SourcePackage, guid: str = A, **changes) -> ModelReplace
 
 
 class ModelPackageTests(unittest.TestCase):
+    def test_working_texture_preserves_identity_meta_and_other_source_assets(self):
+        from unitypackage_blender_importer.export.model_package import TextureReplacement
+        with tempfile.TemporaryDirectory() as temp:
+            meta = f"guid: {B}\nTextureImporter:\n  sRGBTexture: 1\n".encode()
+            source = make_archive(Path(temp) / "source.unitypackage",
+                fields(A, "Assets/Model.fbx", b"old-model") + fields(B, "Assets/Color.png", b"original-png", meta))
+            before = source.path.read_bytes()
+            texture = TextureReplacement("sha256:" + source.expected_sha256, B, sha(b"original-png"), b"edited-png")
+            tree, manifest = materialize_model_package([source], [], generator_version="test", blender_version="test",
+                texture_replacements=[texture])
+            self.assertEqual(source.path.read_bytes(), before)
+            self.assertEqual(tree.get(A).asset_bytes, b"old-model")
+            self.assertEqual((tree.get(B).asset_bytes, tree.get(B).meta_bytes, tree.get(B).pathname),
+                             (b"edited-png", meta, "Assets/Color.png"))
+            item, = manifest.texture_mappings
+            self.assertEqual((item["operation"], item["strategy"]), ("MODIFY", "PRESERVE_META_REPLACE_BYTES"))
+            self.assertEqual(item["source_identity"]["source_sha256"], sha(b"original-png"))
+            self.assertEqual(item["postimport_identity"]["content_sha256"], sha(b"edited-png"))
+
+    def test_working_texture_rejects_stale_ambiguous_or_wrong_source(self):
+        from unitypackage_blender_importer.export.model_package import TextureReplacement
+        with tempfile.TemporaryDirectory() as temp:
+            source = make_archive(Path(temp) / "source.unitypackage",
+                fields(A, "Assets/Model.fbx", b"old-model") +
+                fields(B, "Assets/Color.png", b"original-png", f"guid: {B}\nTextureImporter:\n".encode()))
+            texture = TextureReplacement("sha256:" + source.expected_sha256, B, sha(b"original-png"), b"edited-png")
+            for replacements in ([texture, texture], [replace(texture, expected_asset_sha256="0" * 64)],
+                                 [replace(texture, encoded_bytes=b"")], [replace(texture, encoded_bytes=b"original-png")],
+                                 [replace(texture, source_guid=A, expected_asset_sha256=sha(b"old-model"))],
+                                 [replace(texture, source_package_id="sha256:" + "0" * 64)],
+                                 [replace(texture, source_guid=C)]):
+                with self.subTest(replacements=replacements), self.assertRaises(ValueError):
+                    materialize_model_package([source], [], generator_version="test", blender_version="test",
+                        texture_replacements=replacements)
+
     def test_source_closure_exact_preservation_and_typed_model_modification(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

@@ -1,4 +1,4 @@
-# Unity Package / VRChat Avatar Importer
+# VAPB — UnityPackage / VRChat Avatar ↔ Blender round-trip bridge
 
 Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.4.0 candidate。Unity Editorを起動せず、UnityPackageを一時フォルダへ安全に復元し、FBXをBlenderへ読み込みます。
 
@@ -6,7 +6,9 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 
 ## 現在の製品化状況
 
-今回指定されたVRCアバター改変仕様全体は開発中です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Merge、直接Prefabの静的Meshと既存骨SkinのUnityPackage往復を合成データで検証しました。次の最優先は複数private実VRC PackageのImport・実編集・Unity復元です。全面的なUnity/VRC参照復元、private実データ回帰、最終配布ZIPの検証は未完了です。全仕様の正本と現状は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。
+**Experimental / Alpha — 製品仕様全体は開発中です。** 複数のprivate実VRC Packageで、選択した既存骨Skinの編集・保存再開・UnityPackage出力・UnityでのVariant復元を検証しています。Shape Key付きSkinでは、意図したベース頂点とShapeの編集、他のShape・骨・素材・VRC参照の保持を新規Unity Oracleで確認しました。これはAvatar全体の往復対応やVRChat上でのビルド・実行成功を意味しません。
+
+最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性、最終配布ZIPの検証は未完了です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
 
 ### 既存骨Skinの限定往復
 

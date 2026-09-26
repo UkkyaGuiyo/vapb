@@ -14,6 +14,7 @@ public static class VapbSkinRoundtripProbe
     private const string Input = Folder + "/Input.fbx";
     private const string Prefab = Folder + "/Avatar.prefab";
     private const string MaterialPath = Folder + "/Original.mat";
+    private const string TexturePath = Folder + "/Original.png";
     private const string Manifest = "Assets/VAPBExport/manifest.json";
     private const string Phase = "VAPB_SKIN_ROUNDTRIP_PHASE";
     private const string ImportStart = "VAPB_SKIN_ROUNDTRIP_IMPORT_START";
@@ -33,6 +34,8 @@ public static class VapbSkinRoundtripProbe
         public string source_mesh_file_id;
         public string material_guid;
         public string material_file_id;
+        public string texture_guid;
+        public string texture_sha256;
         public string root_bone_target_transform_file_id;
         public BoneInfo[] bones;
         public string original_vertex_checksum;
@@ -116,15 +119,20 @@ public static class VapbSkinRoundtripProbe
 
     public static void Prepare()
     {
-        PrepareCore(false);
+        PrepareCore(false, false);
     }
 
     public static void PrepareSeparateRoot()
     {
-        PrepareCore(true);
+        PrepareCore(true, false);
     }
 
-    private static void PrepareCore(bool separateRoot)
+    public static void PrepareTexture()
+    {
+        PrepareCore(false, true);
+    }
+
+    private static void PrepareCore(bool separateRoot, bool textured)
     {
         var report = new Report { phase = "prepare", error = "UNEXPECTED_EXCEPTION" };
         try
@@ -138,6 +146,18 @@ public static class VapbSkinRoundtripProbe
             Shader shader = Shader.Find("Standard");
             if (shader == null) throw new InvalidOperationException("STANDARD_SHADER_MISSING");
             Material material = new Material(shader) { name = "SkinOriginal" };
+            if (textured)
+            {
+                var pixels = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                pixels.SetPixels(new[] { Color.red, Color.green, Color.blue, Color.white });
+                pixels.Apply();
+                File.WriteAllBytes(AssetFile(TexturePath), pixels.EncodeToPNG());
+                UnityEngine.Object.DestroyImmediate(pixels);
+                AssetDatabase.ImportAsset(TexturePath, ImportAssetOptions.ForceSynchronousImport);
+                material.mainTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(TexturePath);
+                if (material.mainTexture == null)
+                    throw new InvalidOperationException("TEXTURE_IMPORT_FAILED");
+            }
             AssetDatabase.CreateAsset(material, MaterialPath);
             GameObject instance = PrefabUtility.InstantiatePrefab(model) as GameObject;
             if (instance == null) throw new InvalidOperationException("MODEL_INSTANCE_FAILED");
@@ -193,6 +213,8 @@ public static class VapbSkinRoundtripProbe
                 source_mesh_file_id = Id(meshId),
                 material_guid = materialGuid,
                 material_file_id = Id(materialId),
+                texture_guid = textured ? AssetDatabase.AssetPathToGUID(TexturePath) : null,
+                texture_sha256 = textured ? FileHash(AssetFile(TexturePath)) : null,
                 root_bone_target_transform_file_id = Id(rootId),
                 bones = bones,
                 original_vertex_checksum = VertexChecksum(renderer.sharedMesh),
@@ -200,7 +222,8 @@ public static class VapbSkinRoundtripProbe
                 original_vertex_count = renderer.sharedMesh.vertexCount
             };
             File.WriteAllText(ProjectFile("SourceInfo.json"), JsonUtility.ToJson(info, true));
-            AssetDatabase.ExportPackage(new[] { Input, Prefab, MaterialPath }, ProjectFile("Source.unitypackage"),
+            AssetDatabase.ExportPackage(textured ? new[] { Input, Prefab, MaterialPath, TexturePath } :
+                new[] { Input, Prefab, MaterialPath }, ProjectFile("Source.unitypackage"),
                 ExportPackageOptions.IncludeDependencies);
             report.pass = File.Exists(ProjectFile("Source.unitypackage"));
             report.error = report.pass ? "NONE" : "PACKAGE_MISSING";
