@@ -30,11 +30,11 @@ Historical sanitized reports are evidence summaries, not independently reproduci
 
 ## Licenses and attribution
 
-The owner selected **GPL-3.0-or-later** for the Blender/Python project and **MIT** for independent first-party `unity_editor/` helpers. See [LICENSES.md](../LICENSES.md). The owner confirmed that the legacy Material Restore helper was newly implemented with AI assistance for VAPB before the first Git commit. The code/history independence and third-party attribution audit remains a publication gate; contrary concrete evidence must stop MIT application to the affected code.
+The owner selected **GPL-3.0-or-later** for the Blender/Python project and **MIT** for independent first-party `unity_editor/` helpers. See [LICENSES.md](../LICENSES.md). The owner confirmed that the legacy Material Restore helper was newly implemented with AI assistance for VAPB before the first Git commit. The code/history independence and third-party attribution audit passed before publication; contrary concrete evidence must stop MIT application to the affected code.
 
 ## Publication gate and validation
 
-Publication is pending until the reconstructed repository passes its independent all-ref history review and clean-clone validation. Results and the public remote HEAD will be recorded here after they are observed. The original private repository must still be private and unchanged at that point.
+Independent all-ref source/license and private-data reviews passed, including the corrected historical regex and final delta review. A separate fresh clone passed 340 Python tests, compileall, Git fsck and Blender 5.2.1 integration (exit 0, including register/unregister and rename/save/reopen receipt checks). Its distribution ZIP includes three license/scope files and full MIT notices in all three packaged helpers. The tested preparation commit is `d01cd774cd49dc277ab2c4016f8f7be7f15f089d`. See the [scoped audit](../PUBLIC_REPO_HYGIENE_AUDIT.md). Publication itself remains pending until the remote is created/pushed and checked; the original private repository remains unchanged.
 
 The pre-migration private checkpoint has 340 Python tests passing, compileall passing, synthetic file-backed/packed Texture edit/save/reopen/export and fresh Unity public-API restoration passing. Migration introduces no production behavior change. The distribution builder includes the license texts and scope notice; helper source includes the complete MIT notice in generated UnityPackages. These earlier results must not substitute for tests of the reconstructed checkout.
 
