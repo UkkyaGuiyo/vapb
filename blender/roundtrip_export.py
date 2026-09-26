@@ -30,6 +30,14 @@ class UNITYPACKAGE_OT_export_roundtrip(bpy.types.Operator, ExportHelper):
         default=True,
         description="Export the selected avatar objects; include Mesh, Armature, and Empty objects",
     )
+    cleanup_materials: BoolProperty(
+        name="出力のみ: 未使用のMaterial枠を整理", default=False,
+        description="参照を確認できた未使用枠だけを出力用コピーから除外。編集中のsceneは変更しません",
+    )
+    cleanup_bones: BoolProperty(
+        name="出力のみ: 未使用Boneを整理", default=False,
+        description="Weight・祖先・親子関係・保存stateなどの参照が不明なBoneは保持します",
+    )
 
     def execute(self, context):
         fbx_path = Path(self.filepath)
@@ -46,21 +54,47 @@ class UNITYPACKAGE_OT_export_roundtrip(bpy.types.Operator, ExportHelper):
             return {"CANCELLED"}
 
         try:
-            manifest = build_material_manifest(objects, fbx_path, reference_objects=bpy.data.objects)
-            bpy.ops.export_scene.fbx(
-                filepath=str(fbx_path),
-                check_existing=True,
-                use_selection=self.selected_only,
-                object_types={"ARMATURE", "MESH", "EMPTY"},
-                use_mesh_modifiers=False,
-                use_custom_props=True,
-                add_leaf_bones=False,
-                use_armature_deform_only=False,
-                bake_anim=False,
-                bake_space_transform=False,
-                path_mode="AUTO",
-                embed_textures=False,
-            )
+            def export_current(selected_only):
+                result = bpy.ops.export_scene.fbx(
+                    filepath=str(fbx_path),
+                    check_existing=True,
+                    use_selection=selected_only,
+                    object_types={"ARMATURE", "MESH", "EMPTY"},
+                    use_mesh_modifiers=False,
+                    use_custom_props=True,
+                    add_leaf_bones=False,
+                    use_armature_deform_only=False,
+                    bake_anim=False,
+                    bake_space_transform=False,
+                    path_mode="AUTO",
+                    embed_textures=False,
+                )
+                if result != {'FINISHED'}:
+                    raise RuntimeError('FBX export was cancelled')
+
+            if self.cleanup_materials or self.cleanup_bones:
+                from .semantic_cleanup import cleanup_export_objects
+                references = tuple(bpy.data.objects)
+                with cleanup_export_objects(context, objects, materials=self.cleanup_materials,
+                                            bones=self.cleanup_bones) as staged:
+                    staged_references = [staged.source_to_copy.get(obj, obj) for obj in references]
+                    manifest = build_material_manifest(staged.objects, fbx_path,
+                                                       reference_objects=staged_references)
+                    manifest['cleanup'] = {
+                        'scope': 'EXPORT_COPIES_ONLY', 'removed_count': staged.removed_count,
+                        'unknown_references': 'PROTECTED',
+                    }
+                    layer = staged.scene.view_layers[0]
+                    with context.temp_override(scene=staged.scene, view_layer=layer,
+                                               selected_objects=list(staged.objects),
+                                               selected_editable_objects=list(staged.objects),
+                                               active_object=staged.objects[0], object=staged.objects[0]):
+                        for obj in staged.objects:
+                            obj.select_set(True)
+                        export_current(True)
+            else:
+                manifest = build_material_manifest(objects, fbx_path, reference_objects=bpy.data.objects)
+                export_current(self.selected_only)
             if not fbx_path.is_file():
                 raise RuntimeError("Blender FBX export did not create the requested file")
             write_material_manifest(objects, fbx_path, manifest)

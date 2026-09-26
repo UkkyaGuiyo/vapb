@@ -6,7 +6,14 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 
 ## 現在の製品化状況
 
-今回指定されたVRCアバター改変仕様全体は開発中です。Weight Transferと、直接Prefabの静的MeshのUnityPackage往復を合成データで検証しました。SkinのUnity復元、Semantic Cleanup、Semantic Bone Merge、private実データ回帰、最終配布ZIPの検証は完了していません。全仕様の正本と現状は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。
+今回指定されたVRCアバター改変仕様全体は開発中です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Merge、直接Prefabの静的MeshのUnityPackage往復を合成データで検証しました。SkinのUnity復元、Unity/VRC参照を含む編集機能全体、private実データ回帰、最終配布ZIPの検証は完了していません。全仕様の正本と現状は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。
+
+### Cleanup / Bone Merge の手動操作
+
+- **Nキー → VAPB → Semantic Cleanup**: Mesh / Armatureを選択して候補を解析し、保持理由を確認してから削除します。Undoで戻せます。未解決のUnity/VRC state、Animation、Envelope、外部参照、共有データは保護します。現時点の削除対象は未使用Material枠と、参照を確認できた末端Boneです。Material datablock全体の一括削除は行いません。
+- **File → Export → FBX + Unity Material Map**: 「出力のみ」のCleanupを個別に選べます。出力用コピーだけを整理し、編集中のsceneを維持します。このFBX出力と、上記のUnityPackage出力は別の入口です。
+- **Nキー → VAPB → Bone Merge**: 基準Aと対象Bを選び、候補を取得します。各BoneについてA側への対応またはB固有Boneとしての保持を明示確認し、解析後に実行します。移植先のrest / pose、Meshの変形、Bone親参照を検証し、失敗時は戻します。Bは保持し、Weight Transferは別操作です。
+- Bone Mergeの不明なUnity/VRC参照、Animation、Constraint、特殊なBone設定、共有データ、名前衝突、多対一対応は現在保護して停止します。これらを含む全面的な統合・Unity復元は引き続き実装中です。
 
 ### UnityPackage書き出し：直接Prefabの静的Mesh
 
@@ -138,9 +145,9 @@ Material検索は次の順序です。
 
 GUIDが見つからない場合はPathへ進み、Pathも失敗した場合だけNameを使います。同名Materialが複数ある場合は警告して未解決のままにし、勝手に別Materialを割り当てません。見つからないSlotがあっても、他のSlotの処理は継続します。Restoreを繰り返しても元`.mat`の複製・上書きは行わず、既存のMaterial remapを更新します。
 
-## 非対応範囲
+## 現在の未対応範囲
 
-PhysBoneの完全再現・Unityへの自動restore、Contact、Animator Controller、Expressions、Modular Avatar、NDMF、lilToon/Poiyomiの完全再現、AudioLink、Unity Constraint、MonoBehaviour/C#実行、Prefab Variantの完全互換は対象外です。PhysBone/Colliderのserialized source captureと限定的な近似preview prototypeは保存データを書き換えずに提供します。
+PhysBoneの完全再現・Unityへの自動restore、Contact、Animator Controller、Expressions、Modular Avatar、NDMF、lilToon/Poiyomiの完全再現、AudioLink、Unity Constraint、MonoBehaviour/C#実行、Prefab Variantの完全互換は現在未対応です。最終的に必要な保存・復元範囲は `PRODUCT_SPEC.md` が正本であり、この一覧で縮小しません。PhysBone/Colliderのserialized source captureと限定的な近似preview prototypeは保存データを書き換えずに提供します。
 
 Imported scenes expose the approximate preview at `3D View → N → VAPB → Physics Preview`. Enable/Disable and Reset use only identity-matched chains and run from a Blender main-thread timer; unmatched chains are skipped and reported.
 

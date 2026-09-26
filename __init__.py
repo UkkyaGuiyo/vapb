@@ -28,6 +28,15 @@ if bpy is not None:
         unregister_weight_transfer_properties,
     )
     from .ui.weight_transfer_panel import WEIGHT_TRANSFER_PANEL_CLASSES
+    from .operators.bone_merge import (
+        BONE_MERGE_CLASSES, register_bone_merge_properties, unregister_bone_merge_properties,
+    )
+    from .ui.bone_merge_panel import BONE_MERGE_PANEL_CLASSES
+    from .operators.semantic_cleanup import (
+        SEMANTIC_CLEANUP_CLASSES, register_semantic_cleanup_properties,
+        unregister_semantic_cleanup_properties,
+    )
+    from .ui.semantic_cleanup_panel import SEMANTIC_CLEANUP_PANEL_CLASSES
     from .operators.export_unitypackage import CLASSES as PACKAGE_EXPORT_CLASSES, menu_export as menu_package_export
     from .operators.renderer_binding import CLASSES as RENDERER_OPERATOR_CLASSES
     from .ui.renderer_binding_panel import (
@@ -53,6 +62,12 @@ if bpy is not None:
         for cls in WEIGHT_TRANSFER_CLASSES + WEIGHT_TRANSFER_PANEL_CLASSES:
             bpy.utils.register_class(cls)
         register_weight_transfer_properties()
+        for cls in BONE_MERGE_CLASSES + BONE_MERGE_PANEL_CLASSES:
+            bpy.utils.register_class(cls)
+        register_bone_merge_properties()
+        for cls in SEMANTIC_CLEANUP_CLASSES + SEMANTIC_CLEANUP_PANEL_CLASSES:
+            bpy.utils.register_class(cls)
+        register_semantic_cleanup_properties()
         for cls in RENDERER_OPERATOR_CLASSES + RENDERER_PANEL_CLASSES:
             bpy.utils.register_class(cls)
         register_renderer_properties()
@@ -63,6 +78,12 @@ if bpy is not None:
         bpy.types.TOPBAR_MT_file_export.append(menu_package_export)
 
     def unregister():
+        unregister_semantic_cleanup_properties()
+        for cls in reversed(SEMANTIC_CLEANUP_CLASSES + SEMANTIC_CLEANUP_PANEL_CLASSES):
+            bpy.utils.unregister_class(cls)
+        unregister_bone_merge_properties()
+        for cls in reversed(BONE_MERGE_CLASSES + BONE_MERGE_PANEL_CLASSES):
+            bpy.utils.unregister_class(cls)
         bpy.types.TOPBAR_MT_file_export.remove(menu_package_export)
         for cls in reversed(PACKAGE_EXPORT_CLASSES):
             bpy.utils.unregister_class(cls)
