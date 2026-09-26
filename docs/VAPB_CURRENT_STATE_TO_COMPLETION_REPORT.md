@@ -112,6 +112,14 @@ Verification: Python 321 PASS; compileall PASS; synthetic Material regression 2 
 
 **Exact next action:** use Unity 2022.3.22f1 public APIs in a dedicated private Oracle to resolve case B's inherited/model Prefab structure and compare authoritative source/occurrence relations with Blender's zero recorded Renderer occurrences. Fix confirmed Core gaps through public-safe synthetic regressions before auxiliary-feature expansion.
 
+### Case B public-API comparison: real Import defect confirmed
+
+Dedicated fresh Unity 2022.3.22f1 import and structure observation exited 0 with no compiler errors. Each of the two prefab assets contains **31 Renderers / 23 SkinnedMeshRenderers**. One has a one-hop Renderer source relation to models; the other resolves through a Prefab then to models. The four standalone FBX roots contain 27 Renderers / 23 skins in total. Do not add standalone model assets to prefab-instance populations when comparing compositions. Persistent GUID/signed local IDs and source chains were obtained through public APIs and kept only in private local evidence. The no-SDK observation project has 38 missing components; component/VRC behavior is not proven by the structural result.
+
+Blender's 4 Mesh Objects / 0 Armatures for this package is a confirmed Core Import defect. Code tracing identifies independent boundaries: selective extraction and member assembly consume direct Mesh/material-override FBX references but omit model-backed `m_SourcePrefab` closure; AUTO selection also excludes candidates whose Renderer count is only inherited/model-backed. Existing candidate analysis already tracks transitive visual dependency GUIDs, which can be reused. Separately, Renderer occurrence projection stops at a binary model source, because current metadata does not supply Unity-generated local IDs. Fixing geometry inclusion must not fabricate those IDs or claim the identity boundary is solved.
+
+**Current next action:** reproduce the model-instance and inherited-Variant paths using a Unity-generated public-safe synthetic package, correct bounded dependency extraction/attachment, then recheck private B. Keep exact Unity Renderer identity coverage and missing VRC dependencies explicitly unresolved until independently proven.
+
 ## Checkpoint: observed FBX Object-copy lineage
 
 - Change: production composition-member copies now call `copy_with_receipt`. A validated same-session source receipt is explicitly transferred to the observed copy, with a fresh persistent realization ID and its source realization ID. Shared Mesh/source metadata is untouched. Unobserved copies lose inherited receipt authority; Renderer occurrence bindings are never copied across Objects.
