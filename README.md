@@ -218,3 +218,9 @@ for separate scene attachments retain their Empty representation.
 ### Cross-Package Dependencies
 
 Geometry-only、Material-only、Texture-onlyのUnityPackageを同一Sceneへ順次importできます。Prefab Renderer→Material、Material→TextureはPackage-scoped GUIDを正本にScene-wide resolverでlate bindし、未解決・曖昧参照は`unitypackage_dependency_registry`へ保存します。静的Mesh向けExporter/Unity Finalizerは上記の限定範囲に対応します。Skin・複数Packageの全面的な往復は未完成です。
+
+## ライセンスと開発の正本
+
+通常開発の正本は [UkkyaGuiyo/vapb](https://github.com/UkkyaGuiyo/vapb) です。Blender Add-on/Python は **GPL-3.0-or-later**、独立した `unity_editor/` の C# helper は **MIT** です。適用範囲・出自・外部ソフトウェアとの境界は [LICENSES.md](LICENSES.md) を参照してください。入力アセット自体の権利条件は変更しません。
+
+旧 private repository の全履歴は保持し、こちらには個人パス・実Asset識別情報を取り除いて再構成した履歴を収録します。`archive/` のブランチは開発過程の保存用であり、現行の対応範囲や配布推奨版を示しません。履歴の古いローカル検証スクリプトは環境変数で入力を指定する必要があります。詳細は [公開履歴の移行記録](docs/PUBLIC_HISTORY_MIGRATION.md) を参照してください。

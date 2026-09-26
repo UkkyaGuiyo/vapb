@@ -13,6 +13,9 @@ import zipfile
 
 PACKAGE_ROOT = "unitypackage_blender_importer"
 DOCS = (
+    "LICENSE",
+    "LICENSES.md",
+    "unity_editor/LICENSE",
     "PRODUCT_SPEC.md",
     "ARCHITECTURE.md",
     "TEST_STRATEGY.md",

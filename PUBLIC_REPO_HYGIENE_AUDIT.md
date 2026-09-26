@@ -1,25 +1,24 @@
-# Public Repository Hygiene Audit
+# Public repository hygiene audit
 
-監査対象: current tracked tree / `feature/multi-package-identity`
+## Scope and status
 
-## Current tree
+This report supersedes the earlier current-tree-only assessment. That assessment did not establish that the reachable Git history was suitable for public release. The original private repository contained historical workstation paths, real asset identities and a binary fixture requiring a provenance decision.
 
-- Developer absolute paths: PASS
-- Username / home-directory dependency: PASS
-- Real-world asset/product fixture identity: PASS
-- Real UnityPackage filename dependency: PASS
-- Obvious credentials / private keys / tokens: PASS
-- Proprietary binary assets (`.unitypackage`, `.fbx`, `.blend`, `.psd`, `.tga`): PASS
-- Public hygiene tests: PASS
+The publication candidate is a separate reconstruction of all 110 source commits and 11 branch heads, starting at a new root. The original repository and a complete verified bundle remain private and unchanged. See [migration details](docs/PUBLIC_HISTORY_MIGRATION.md).
 
-## Real-package harness
+**Publication gate: PENDING independent final review and fresh-clone verification.** A scan with no credential-pattern matches is not a universal absence-of-secrets proof.
 
-`tests/blender_real_identity_verify.py`は`UNITYPACKAGE_REAL_TEST_FILE`またはBlender CLIの`--`引数だけを入力とし、未指定時は`REAL_PACKAGE_TEST_SKIPPED`で終了する。repository内に実Package名・実Package path・期待する第三者Asset identityは保持しない。
+## Review categories
 
-## History
+- All reachable commit trees, messages, author/committer metadata and branch names.
+- Workstation paths, personal identifiers, private asset names/identity tables and raw structure dumps.
+- Known real-package GUID/hash denylist and identifying prefixes; public shader and synthetic fixture IDs are assessed separately.
+- Tracked binary assets, embedded binary data and uncertain redistribution provenance.
+- Third-party implementation, attribution, copyright and the first-party GPL/MIT boundary.
+- Production behavior preservation and synthetic fixture validity after path sanitization.
 
-Reachable historyには過去の実環境検証で生成された、実Package identityと開発者ローカルpathへの参照が存在した。credential、private key、tracked proprietary binaryは履歴監査で検出しなかった。history rewrite / force pushは実施していないため、Public化前にsanitized squashまたはclean public branchを採用するか、別途判断が必要である。
+Private matched values and raw scan inputs are stored outside the public repository. Only aggregate findings and safe locations are published. Public Windows font defaults and synthetic path-rejection inputs are intentional path literals, not developer-machine dependencies.
 
-## Policy
+## Ongoing policy
 
-Synthetic fixtureとgeneric harnessのみをrepositoryへ保存する。real-world testを実行する場合は、local-only environment variable / CLI inputを使い、結果はaggregate statisticsへ限定する。CPD、SPD、Identity、Material、Texture、Importerのproduction behaviorとExporter実装は今回変更していない。
+Keep private/commercial UnityPackages, extracted assets, exact identity tables and raw corpus dumps outside Git. Derive public synthetic regressions from generalized failures. Generic real-data probes accept an external path/environment variable and emit only approved aggregates for publication. Historical archive branches document earlier development; they are not supported releases or current product claims.

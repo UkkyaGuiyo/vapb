@@ -30,6 +30,7 @@ class DistributionZipTests(unittest.TestCase):
         }
         members = git_files(ROOT, 'HEAD')
         self.assertTrue(helpers <= set(members))
+        self.assertTrue({"LICENSE", "LICENSES.md", "unity_editor/LICENSE"} <= set(members))
         self.assertFalse(any(path.startswith('tests/') for path in members))
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp) / 'addon.zip'

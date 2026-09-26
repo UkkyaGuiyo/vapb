@@ -1,8 +1,11 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 UkkyaGuiyo and VAPB contributors
+
 """UnityPackage / VRChat asset importer for Blender 5.2.1 LTS."""
 
 bl_info = {
     "name": "Unity Package / VRChat Avatar Importer",
-    "author": "OpenAI",
+    "author": "UkkyaGuiyo and VAPB contributors",
     "version": (0, 4, 0),
     "blender": (5, 2, 0),
     "location": "File > Import > Unity Package / VRChat Avatar (.unitypackage)",
