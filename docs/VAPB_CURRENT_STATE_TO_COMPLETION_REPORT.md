@@ -65,6 +65,23 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | PK-01 / 1,21 | Build/install/use final addon ZIP | tools/build_distribution_zip.py | Exact commit/hash; clean Blender GUI install and all major user operations | 実装中 | Legacy builder exists; final artifact unbuilt |
 | GH-01 / 17,18,21 | GitHub reproducible checkpoints/handoff | this document, PRODUCT_SPEC, tests | All needed helpers tracked; fresh checkout; remote SHA verified; no private data | 実装中 | Remote access restored; checkpoint pending |
 
+## Exact occurrence and first private edit checkpoint — 2026-09-26
+
+The public Unity API occurrence gate passes. At each Renderer source level, the persistent GUID and signed ID of GetPrefabInstanceHandle match the containing Prefab's class1001 document, and its source GUID matches the next public source object. Ordered edges plus the leaf Renderer identity distinguish instances without names or order.
+
+- Synthetic Base/Variant/repeated model/RepeatedVariant: 4 Prefabs, 6 Renderers, 9 matched edge visits; repeated instances distinct, unresolved/ambiguous counts zero. Missing-edge and wrong-source controls reject matches.
+- Private B: 2 Prefabs, 62 Renderers (46 Skin), 93 matched edge visits; all occurrences unique. The repeated_distinct flag is only evaluated by PrepareSynthetic, not generic Run.
+- Saved Blender receipts, per-object source SHA, Model UID and ordered serialized edges join all 46 native Skin Objects to the exact Unity occurrences. Transform/Material override fidelity and VRC restoration remain unproven.
+- Private C rerun after the model fix: Import/save-reopen PASS, source unchanged; 23 Mesh Objects / 2 Mesh datablocks / 0 Armatures / 0 Skin modifiers / 2 projected Renderer records. Counts include templates and do not prove Unity equivalence.
+
+Actual private edit: in a separate B working copy, selected a receipt-qualified 4,160-vertex Skin Mesh, made its Mesh data single-user, renamed the Object and moved vertex 0 in local X by 0.0005 of maximum mesh extent. Save/reopen PASS; other Mesh/shape-coordinate hashes unchanged; selected occurrence/creation metadata retained. Selection by mesh size is a test choice, never identity evidence. Original imported .blend and source assets remain intact. Edited .blend and private selection details remain outside Git. **Real edited UnityPackage export and fresh Unity restoration have not run.**
+
+Independent scope_guard contract review of the new test probe: PASS with bounded findings adopted. PrepareSynthetic now checks existing Prefab .meta and input JSON before writing; exception handlers explicitly set failure. Occupied preparation exits 1 with SYNTHETIC_PATH_OCCUPIED and input unchanged. Final synthetic/private Run exits 0. Parser scope is signed handle plus source GUID, not every source-reference field or arbitrary YAML.
+
+Reproduction: put tests/unity_model_occurrence_probe/Editor/VapbModelOccurrenceProbe.cs under a disposable project's Assets/Editor. PrepareSynthetic requires the existing synthetic model fixture's Base/Variant/Input assets and refuses occupied outputs. Run reads ModelOccurrenceInput.json with a prefabs array at project root. Private detailed output stays outside Git. Production mapper code is unchanged.
+
+Exact next action: extend existing package export/finalizer with a bounded deferred model-Skin task. Preserve source RAW; create a new edited Prefab Variant with the selected Renderer Mesh override. Resolve ModelUID and ordered edges in Unity, check bone/rest/shape compatibility and inherited state before saving. Prove repeated/Variant controls, then use the edited real B copy in an SDK-qualified fresh Oracle. The structure-only Oracle has missing VRC components, so it cannot establish VRC usability. Full Core and full product remain incomplete.
+
 ## Real-source FBX witness checkpoint — 2026-09-26
 
 **PROVEN, test-only:** a working copy of the model used by private case B was re-encoded using installed Blender FBX APIs, with a decimal source Model UID property on each Model. Original bytes remain untouched. Reparsing verifies unchanged FBX semantics except the documented encoder header fields and added witness property. No third-party implementation or private fixture was added to Git.
