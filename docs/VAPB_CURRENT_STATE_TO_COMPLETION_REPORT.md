@@ -8,13 +8,13 @@ The user explicitly changed the resource policy again: **use an earned reset whe
 
 ## Current state and authority
 
-### Next campaign boundary: public repository migration
+### Completed campaign boundary: public repository migration
 
 The user requested a new public development repository, `UkkyaGuiyo/vapb`, after the current atomic verification checkpoint. Preserve the existing private repository and its complete history without rewriting, deleting or force-pushing it. Audit trees, commit messages and all history intended for publication; reconstruct from a new safe root while retaining as many safe historical changes, dates, messages and design transitions as possible. Sanitize, split or omit unsafe portions rather than publishing their ancestors or collapsing all development into one snapshot. The user selected GPL-3.0-or-later for the Blender Add-on/Python code and MIT for independent first-party `unity_editor/` helpers, conditional on a code/history audit proving that the latter contains no inseparable GPL-derived/copy relationship. Preserve third-party licenses and notices. Audit the independently reconstructed repository before public creation/push. Core roundtrip remains the product priority after migration; no Core redesign is authorized by the migration.
 
 ### Public migration validation checkpoint
 
-The public history candidate preserves all 110 original commits from a new root, with historical unsafe records sanitized and twelve unsafe/uncertain asset-record paths omitted. The private repository and its complete bundle remain intact. Independent history/privacy and source/license reviews passed. Fresh-clone verification: 340 Python tests, compileall, Git fsck, Blender 5.2.1 integration/register-unregister and license-complete ZIP packaging PASS. Publication and remote equality are recorded in `docs/PUBLIC_HISTORY_MIGRATION.md` once observed. This migration does not complete Core; the next Core action remains a real bound Texture edit/save/reopen/export/fresh-Unity check.
+The public history candidate preserves all 110 original commits from a new root, with historical unsafe records sanitized and twelve unsafe/uncertain asset-record paths omitted. The private repository and its complete bundle remain intact. Independent history/privacy and source/license reviews passed. Fresh-clone verification: 340 Python tests, compileall, Git fsck, Blender 5.2.1 integration/register-unregister and license-complete ZIP packaging PASS. Publication is complete at `UkkyaGuiyo/vapb` (PUBLIC); all 11 remote branch heads match and unauthenticated Git access succeeds. The default/current development branch is `feature/multi-package-identity`. The former repository remains PRIVATE and unchanged. Publication evidence and the history map are recorded in `docs/PUBLIC_HISTORY_MIGRATION.md`. Normal development now uses the public repository. This migration does not complete Core; the next Core action remains a real bound Texture edit/save/reopen/export/fresh-Unity check.
 
 ### Real shape-bearing skin: fresh Oracle confirmation
 
