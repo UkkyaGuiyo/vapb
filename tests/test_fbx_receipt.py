@@ -9,10 +9,56 @@ from unitypackage_blender_importer.blender.fbx_receipt import (
     make_receipt,
     persist_receipt,
     validate_receipt_continuity,
+    copy_with_receipt,
 )
 
 
 class FbxReceiptTests(unittest.TestCase):
+    def _native_object(self):
+        class Data(dict):
+            session_uid = 22
+
+        class Obj(dict):
+            session_uid = 11
+
+            def copy(self):
+                result = Obj(self)
+                result.session_uid = self.session_uid + 1
+                result.data = self.data
+                return result
+
+        obj = Obj()
+        obj.data = Data()
+        persist_receipt(obj, make_receipt(-10, 20, "a" * 32, "b" * 64))
+        return obj
+
+    def test_explicit_copy_carries_source_receipt_and_distinct_realization(self):
+        source = self._native_object()
+        member = copy_with_receipt(source)
+        self.assertTrue(validate_receipt_continuity(member))
+        self.assertIs(member.data, source.data)
+        self.assertEqual(source['_vapb_fbx_object_receipt_id'], member['_vapb_fbx_object_receipt_id'])
+        self.assertNotEqual(source['_vapb_fbx_realization_id'], member['_vapb_fbx_realization_id'])
+        self.assertEqual(source['_vapb_fbx_realization_id'], member['_vapb_fbx_source_realization_id'])
+        self.assertNotIn('_vapb_renderer_bindings', member)
+
+    def test_unobserved_copy_cannot_launder_a_receipt(self):
+        source = self._native_object()
+        copied = source.copy()
+        member = copy_with_receipt(copied)
+        self.assertFalse(validate_receipt_continuity(member))
+        self.assertNotIn('_vapb_fbx_object_receipt_id', member)
+        self.assertNotIn('_vapb_fbx_realization_id', member)
+
+    def test_copy_does_not_modify_source_or_mesh_metadata(self):
+        source = self._native_object()
+        source['_vapb_renderer_bindings'] = 'source occurrence only'
+        before, mesh_before = dict(source), dict(source.data)
+        member = copy_with_receipt(source)
+        self.assertEqual(before, dict(source))
+        self.assertEqual(mesh_before, dict(source.data))
+        self.assertNotIn('_vapb_renderer_bindings', member)
+
     def test_model_geometry_link_is_exact_only_when_unique(self):
         index = RawFbxSemanticIndex([FbxModelLink(10, 20), FbxModelLink(11, 21)])
         self.assertEqual(20, index.geometry_for_model(10))

@@ -215,6 +215,10 @@ SkinnedMeshRenderer:
         skin_mesh = skin_meshes[0]
         skin_armature = skin_armatures[0]
         assert skin_mesh.get("_vapb_fbx_object_receipt_id"), "Native skin Mesh has no FBX realization receipt"
+        from unitypackage_blender_importer.blender.fbx_receipt import validate_receipt_continuity
+        assert validate_receipt_continuity(skin_mesh), "Copied member lost validated source receipt continuity"
+        assert skin_mesh.get("_vapb_fbx_receipt_evidence") == "OBSERVED_OBJECT_COPY"
+        assert skin_mesh.get("_vapb_fbx_realization_id") != skin_mesh.get("_vapb_fbx_source_realization_id")
         assert skin_mesh.parent == skin_armature, "Native skin Mesh is not parented to its Armature Object"
         armature_modifiers = [modifier for modifier in skin_mesh.modifiers if modifier.type == "ARMATURE"]
         assert any(modifier.object == skin_armature for modifier in armature_modifiers), "Native skin Mesh has no modifier targeting its Armature Object"
@@ -291,6 +295,20 @@ SkinnedMeshRenderer:
         ), "Round-trip manifest omitted a realized native skin material"
         if skin_materials:
             assert any(item["material_slot_index"] == 0 for item in manifest["bindings"])
+        realization_id = skin_mesh["_vapb_fbx_realization_id"]
+        source_realization_id = skin_mesh["_vapb_fbx_source_realization_id"]
+        skin_mesh.name = "Renamed native skin"
+        saved_scene = temp_path / "receipt_roundtrip.blend"
+        bpy.ops.wm.save_as_mainfile(filepath=str(saved_scene))
+        bpy.ops.wm.open_mainfile(filepath=str(saved_scene))
+        reloaded = [obj for obj in bpy.data.objects
+                    if obj.get("_vapb_fbx_realization_id") == realization_id]
+        assert len(reloaded) == 1, "Persistent realization identity lost or duplicated"
+        assert reloaded[0]["_vapb_fbx_source_realization_id"] == source_realization_id
+        assert reloaded[0].parent.type == "ARMATURE"
+        assert any(modifier.type == "ARMATURE" and modifier.object == reloaded[0].parent
+                   for modifier in reloaded[0].modifiers)
+        print("MEMBER_RECEIPT_RENAME_SAVE_RELOAD=PASS")
         addon.unregister()
     print("BLENDER_INTEGRATION_OK")
 

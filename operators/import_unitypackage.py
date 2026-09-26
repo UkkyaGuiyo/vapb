@@ -19,6 +19,7 @@ from bpy_extras.io_utils import ImportHelper  # type: ignore
 from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 
 from ..blender.fbx_importer import apply_import_options, import_fbx_files
+from ..blender.fbx_receipt import copy_with_receipt
 from ..blender.hierarchy_builder import build_prefab_hierarchy
 from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package, save_scene_registry
 from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, apply_prefab_modification_materials, build_material_library
@@ -1441,7 +1442,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             # Every effective composition member owns an Object
                             # realization.  Mesh data remains shared; renderer
                             # material state is assigned through OBJECT slots.
-                            member_object = source_object.copy()
+                            member_object = copy_with_receipt(source_object)
                             context.scene.collection.objects.link(member_object)
                             member_object["_vapb_use_object_material_slots"] = (
                                 representation_needs_object_slots.get(entry.guid.lower(), False)

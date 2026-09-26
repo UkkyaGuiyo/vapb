@@ -59,13 +59,23 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 
 First block: trace the existing member realization/receipt path, add a failing public synthetic regression for the actual missing edge, implement the smallest evidence-backed mapping, verify Python and Blender. Do not infer Unity-generated localID from names or FBX UID. No full-source/context cross-product. Independent scope review before code completion.
 
+## Checkpoint: observed FBX Object-copy lineage
+
+- Change: production composition-member copies now call `copy_with_receipt`. A validated same-session source receipt is explicitly transferred to the observed copy, with a fresh persistent realization ID and its source realization ID. Shared Mesh/source metadata is untouched. Unobserved copies lose inherited receipt authority; Renderer occurrence bindings are never copied across Objects.
+- Scope: closes only the observed source-Object -> member-Object edge. Does not prove Unity Renderer -> FBX primitive, package/root scope, or arbitrary duplicate/reopen continuity. Session UID is a transient check, not persistent identity.
+- Python 3.14.6: from repository parent, `python -m unittest discover -s unitypackage_blender_importer/tests -p 'test_*.py' -t . -q`: **241 PASS**, 0 FAIL/ERROR, three new receipt tests. Initial focused test failed because copy API was absent; implemented API passed 7 focused tests.
+- Blender 5.2.1 LTS: `blender --factory-startup --background --python-exit-code 1 --python tests/blender_integration_test.py`: exit 0; integration PASS, receipt rename/save/reopen PASS, addon register/unregister completed. `OCCURRENCE_SKIN_LINK=LINK_NOT_YET_PROVEN` remains explicit.
+- Negative control: execute `_run_fail_closed` with a synthetic AssertionError through Blender `--python-expr`: exit 1 (without relying on `--python-exit-code`).
+- Compileall for blender/unity/operators/ui/export/validation PASS. Independent scope_guard: PASS, no unnecessary implementation found; accepted with no production revisions requested.
+- Runtime evidence is under ignored `artifacts/campaign/`. Required tests and code are tracked; no private input was used.
+
 ## Decisions / evidence / next action
 
 - DERIVED: contract adapter is reference-only; do not rebuild it or call it production-complete.
 - UNKNOWN: input-independent authoritative Unity Renderer -> FBX primitive mapping. Resolve from production code and supported serialized evidence; unsupported roots cannot silently succeed.
 - First remote probe failed due absent Git username; existing GitHub CLI authentication succeeded through command-scoped helper. No persistent Git configuration change.
 - Resource policy: use official shared-account usage readings; protect final-window 30% remaining. Three earned resets confirmed available at campaign start, zero used. Do not purchase credits or change plan. Detailed account values stay outside the repository.
-- NEXT ACTION: complete the bounded production mapping investigation and introduce its failing regression before the minimal production change.
+- NEXT ACTION: harden Material override joins against Renderer-vs-GameObject fileID and source-scope conflation, while evaluating explicit authoritative mapping for the remaining source-to-skin edge.
 
 ---
 

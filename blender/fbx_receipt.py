@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import inspect
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
@@ -122,6 +123,7 @@ def persist_receipt(obj: Any, receipt: FbxImportReceipt) -> None:
         "_vapb_fbx_object_receipt_id": receipt.blender_object_receipt_id,
         "_vapb_fbx_mesh_receipt_id": receipt.blender_mesh_receipt_id,
         "_vapb_fbx_receipt_evidence": receipt.evidence,
+        "_vapb_fbx_realization_id": str(uuid.uuid4()),
     }
     for key, value in values.items():
         obj[key] = value
@@ -140,7 +142,7 @@ def persist_receipt(obj: Any, receipt: FbxImportReceipt) -> None:
 
 
 def validate_receipt_continuity(obj: Any) -> bool:
-    """Reject copied metadata when the current Blender IDs differ."""
+    """Check same-session continuity, not persistent identity after reopening."""
     stored_object = obj.get("_vapb_fbx_object_session_uid")
     data = getattr(obj, "data", None)
     stored_mesh = data.get("_vapb_fbx_mesh_session_uid") if data is not None else None
@@ -154,6 +156,33 @@ def validate_receipt_continuity(obj: Any) -> bool:
         and str(current_object) == str(stored_object)
         and str(current_mesh) == str(stored_mesh)
     )
+
+
+def copy_with_receipt(source: Any) -> Any:
+    """Observe a native Object copy and retain its proven FBX lineage.
+
+    The source receipt identifies a source primitive, while realization IDs
+    distinguish objects. Shared Mesh metadata is never rewritten. Unity
+    Renderer/occurrence bindings cannot be inherited from a different object.
+    An unobserved copy or reopened object needs other evidence; this function
+    must not upgrade its copied metadata to a verified import receipt.
+    """
+    proven = validate_receipt_continuity(source) and bool(
+        source.get("_vapb_fbx_realization_id")
+    )
+    member = source.copy()
+    for key in list(member.keys()):
+        if key.startswith("_vapb_fbx_") or key == "_vapb_renderer_bindings":
+            del member[key]
+    if proven and member.data is source.data:
+        for key in source.keys():
+            if key.startswith("_vapb_fbx_"):
+                member[key] = source[key]
+        member["_vapb_fbx_source_realization_id"] = source["_vapb_fbx_realization_id"]
+        member["_vapb_fbx_realization_id"] = str(uuid.uuid4())
+        member["_vapb_fbx_object_session_uid"] = str(member.session_uid)
+        member["_vapb_fbx_receipt_evidence"] = "OBSERVED_OBJECT_COPY"
+    return member
 
 
 def import_with_receipts(
