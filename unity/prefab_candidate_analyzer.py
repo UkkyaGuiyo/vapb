@@ -57,6 +57,12 @@ class PrefabCandidateAnalysis:
     provider_packages: set[Path] = field(default_factory=set)
     reasons: list[str] = field(default_factory=list)
 
+    @property
+    def has_visual_source(self) -> bool:
+        # A Model PrefabInstance can supply native geometry even when its
+        # Renderer components are absent from the textual Prefab YAML.
+        return self.renderer_count > 0 or bool(self.nested_prefab_guids and self.referenced_fbx_guids)
+
 
 @dataclass(frozen=True)
 class PrefabSelection:
@@ -514,7 +520,7 @@ class PrefabCandidateAnalyzer:
     @staticmethod
     def select(analyses: Iterable[PrefabCandidateAnalysis]) -> PrefabSelection:
         items = list(analyses)
-        supported = [item for item in items if item.renderer_count > 0]
+        supported = [item for item in items if item.has_visual_source]
         if len(supported) == 1 and supported[0].visual_status != "AMBIGUOUS":
             return PrefabSelection("AUTO_SELECTED", supported[0].token, "ONLY_SUPPORTED_PREFAB")
         if len(supported) == 1 and supported[0].visual_status == "AMBIGUOUS":
@@ -556,7 +562,7 @@ class PrefabCandidateAnalyzer:
         ambiguous: set[str] = set()
         identity_kinds: dict[str, set[str]] = {}
         for item in items:
-            if item.renderer_count <= 0:
+            if not item.has_visual_source:
                 helpers.append(item)
                 continue
             classification = classification_map.get(item.candidate_kind)

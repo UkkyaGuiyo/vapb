@@ -1,6 +1,7 @@
 """GI-001..007: synthetic split import in background or a fresh foreground UI."""
 from pathlib import Path
 import base64
+import json
 import sys
 import tempfile
 import time
@@ -18,6 +19,10 @@ def prefab(fbx_guid, material_guid):
 --- !u!1 &1001
 GameObject:
   m_Name: Coat
+  m_Component:
+  - component: {{fileID: 101}}
+  - component: {{fileID: 103}}
+  - component: {{fileID: 102}}
 --- !u!4 &101
 Transform:
   m_GameObject: {{fileID: 1001}}
@@ -115,14 +120,24 @@ def main():
         assert evidence['children'] == [['FINISHED']], evidence
         assert not evidence['async_children'] and not evidence['child_discovery'], evidence
         assert evidence['final_resolvers'] and all(evidence['final_resolvers']), evidence
-        obj = next(o for o in bpy.data.objects if o.type=='MESH' and o.get('unity_prefab_file_id')=='1001')
+        roots = [o for o in bpy.data.objects if o.get('_vapb_renderer_occurrences')
+                 and o.get('unity_composition_member_id') == '2' * 32]
+        assert len(roots) == 1
+        selected_root = roots[0]
+        records = json.loads(selected_root['_vapb_renderer_occurrences'])['records']
+        assert len(records) == 1 and records[0]['source_key']['renderer_file_id'] == 102
+        natives = [o for o in bpy.data.objects if o.type == 'MESH'
+                   and o.get('_vapb_root_context_id') == selected_root['_vapb_root_context_id']
+                   and o.get('_vapb_fbx_source_asset_guid') == fbx_guid]
+        assert len(natives) == 1
+        obj = natives[0]
         surface = obj.data.materials[0]
         assert surface.get('unity_material_guid') == material_guid
         bsdf = next(n for n in surface.node_tree.nodes if n.type=='BSDF_PRINCIPLED')
         mix = bsdf.inputs['Base Color'].links[0].from_node
         image = mix.inputs['Color2'].links[0].from_node.image
         assert image.get('unity_guid') == image_guid
-        assert 'PrefabB.prefab' in obj.get('unity_asset_path',''), obj.get('unity_asset_path')
+        assert selected_root.get('unity_asset_path') == 'Assets/PrefabB.prefab'
         assert not m._PREPARED_SESSIONS, m._PREPARED_SESSIONS
         print('GROUP_IMPORT_E2E_OK', evidence, flush=True)
         addon.unregister()

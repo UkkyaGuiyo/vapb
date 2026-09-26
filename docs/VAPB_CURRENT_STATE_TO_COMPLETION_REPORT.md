@@ -65,6 +65,20 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | PK-01 / 1,21 | Build/install/use final addon ZIP | tools/build_distribution_zip.py | Exact commit/hash; clean Blender GUI install and all major user operations | 実装中 | Legacy builder exists; final artifact unbuilt |
 | GH-01 / 17,18,21 | GitHub reproducible checkpoints/handoff | this document, PRODUCT_SPEC, tests | All needed helpers tracked; fresh checkout; remote SHA verified; no private data | 実装中 | Remote access restored; checkpoint pending |
 
+## Model-backed real Import checkpoint — 2026-09-26
+
+**PROVEN:** dependency extraction now uses the existing selected-candidate source closure. Model-backed Prefab/Variant members are retained even without directly serialized Renderer documents. Each serialized model instance edge receives independent native Objects, with source receipts retained; shared source templates are hidden only after all copies. Material override references do not create extra direct copies. A genuine direct Mesh reference to the same model is still retained. No Unity Renderer identity is inferred from names, list order or unique object counts.
+
+Four fully synthetic Blender cases pass: repeated model edges, nested model edges, two AUTO members sharing a model, and direct plus instanced use of the same model. An unrelated FBX stays excluded; source templates are hidden and occurrence copies remain visible in viewport/render. Correct repository-parent Python suite: **323 PASS / 0 FAIL / 0 ERROR**; compileall PASS. Existing integration and synthetic skin-package probes PASS. The final four-case model probe was rerun after removing an unjustified identity inference and exits 0. Scope review completed in two rounds: source hiding order was corrected; final review PASS.
+
+Private case B was imported and saved/reopened again. It now has **62 visible Mesh Objects, two members each with 31 Mesh / 23 Skin**, plus 27 hidden source Mesh templates. The per-member populations match the Unity public-API observation. This does not establish exact Renderer correspondence, Transform/override fidelity, Material equivalence or VRC behavior. Private inputs and detailed identity evidence remain outside Git.
+
+**KNOWN FAIL:** the old split-package group probe also fails on immutable pre-change HEAD 92724b8, because it assumes native Mesh and semantic occurrence are one object. Its synthetic GameObject component list and role selection are now repaired without weakening its Material/Texture assertions. It reaches a further failure: the selected native Mesh has no Material slot. That cross-package binding path remains unresolved. Unique native/serialized counts are not accepted as identity evidence, and no production identity guess was retained to make the probe pass.
+
+**UNKNOWN:** generated Unity Renderer/local IDs for binary model children, deep instance Transform/override application, cross-package Material binding, real edits/export/fresh Unity restoration and VRC usability. Model transforms are explicitly marked UNRESOLVED; deeper containers describe edge structure only. Real Core roundtrip is not complete.
+
+**Exact next action:** establish the smallest authoritative Renderer/material bridge using existing creation receipts and public Unity source-witness evidence; reproduce the cross-package Material gap without guessing identity, then return to actual private edit/export/restore.
+
 ## Execution sequence and current block
 
 1. Close the in-progress skin roundtrip at a verified atomic checkpoint and push it.
@@ -73,7 +87,7 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 4. Complete remaining Cleanup, Weight Transfer and Bone Merge functionality on top of the working Core, with protected references, preview and recovery.
 5. Verify the entire original specification and a commit-bound distributable ZIP. Real-data Core success and full product completion remain separate acceptance claims.
 
-Current block: the existing-bone skin checkpoint is verified and the first four private Import smokes have run. Reconcile inherited/model Prefab occurrences against Unity public API observations next. The native editing, receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
+Current block: model-backed private geometry populations now match the observed per-Prefab Unity counts for case B. Authoritative model Renderer mapping, deep transforms/overrides and the repaired split-package Material probe remain unresolved. See the model checkpoint above. The native editing, receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
 
 ## Existing-bone skin package checkpoint — 2026-09-26
 

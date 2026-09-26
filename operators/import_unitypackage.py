@@ -7,6 +7,7 @@ from dataclasses import dataclass, field, replace
 import json
 from pathlib import Path
 from queue import SimpleQueue
+import re
 import shutil
 import tempfile
 from threading import Event
@@ -35,7 +36,7 @@ from ..unity.source_store import archive_source
 from ..unity.package_reader import PackageIndex, UnityPackageError, UnityPackageReader, is_unitypackage
 from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
-from ..unity.prefab_parser import parse_prefab
+from ..unity.prefab_parser import parse_prefab, ref_guid
 from ..unity.effective_prefab import EffectivePrefabResolver, ModelSourceSemanticIndex
 from ..unity.occurrence_projection import PrefabSource, project_occurrences
 from ..unity.physbone_parser import extract_physbone_snapshot
@@ -685,14 +686,14 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             effective_candidate_token = self._selected_prefab_choice or self.prefab_choice
             selected_candidate = next((item for item in self._candidate_analyses if item.token == effective_candidate_token), None)
             if (self._selected_prefab_choice or self.prefab_choice) == "AUTO" and self._composition_plan is not None:
-                selected_paths = {item.unity_path for item in self._candidate_analyses if item.renderer_count > 0}
-                extra_paths = set().union(*(item.provider_packages for item in self._candidate_analyses if item.renderer_count > 0))
-                required_visual_guids = set().union(*(item.required_visual_guids for item in self._candidate_analyses if item.renderer_count > 0))
+                selected_paths = {item.unity_path for item in self._candidate_analyses if item.has_visual_source}
+                extra_paths = set().union(*(item.provider_packages for item in self._candidate_analyses if item.has_visual_source))
+                required_visual_guids = set().union(*(item.required_visual_guids for item in self._candidate_analyses if item.has_visual_source))
             else:
                 selected_paths = {selected_candidate.unity_path} if selected_candidate else set()
                 extra_paths = set(selected_candidate.provider_packages) if selected_candidate else set()
                 required_visual_guids = set(selected_candidate.required_visual_guids) if selected_candidate else set()
-            ambiguous_visual_guids = set().union(*(item.ambiguous_visual_guids for item in self._candidate_analyses if item.renderer_count > 0))
+            ambiguous_visual_guids = set().union(*(item.ambiguous_visual_guids for item in self._candidate_analyses if item.has_visual_source))
             required_visual_guids = (required_visual_guids - set(self._package_index.records)) | ambiguous_visual_guids
             self._sibling_discovery = self._performance.measure(
                 "sibling_discovery",
@@ -729,8 +730,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             return
         selected_paths: set[str] = set()
         if (self._selected_prefab_choice or self.prefab_choice) == "AUTO" and self._composition_plan is not None:
-            selected_paths.update(item.unity_path for item in self._candidate_analyses if item.renderer_count > 0)
-            required_visual_guids = set().union(*(item.required_visual_guids for item in self._candidate_analyses if item.renderer_count > 0))
+            selected_paths.update(item.unity_path for item in self._candidate_analyses if item.has_visual_source)
+            required_visual_guids = set().union(*(item.required_visual_guids for item in self._candidate_analyses if item.has_visual_source))
         else:
             selected = self._selected_prefab(self._prefab_paths)
             if selected is not None and self._extraction_dir is not None:
@@ -743,7 +744,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 None,
             )
             required_visual_guids = set(selected_candidate_for_requirements.required_visual_guids) if selected_candidate_for_requirements else set()
-        ambiguous_visual_guids = set().union(*(item.ambiguous_visual_guids for item in self._candidate_analyses if item.renderer_count > 0))
+        ambiguous_visual_guids = set().union(*(item.ambiguous_visual_guids for item in self._candidate_analyses if item.has_visual_source))
         required_visual_guids = (required_visual_guids - set(self._package_index.records)) | ambiguous_visual_guids
         selected_candidate = next(
             (item for item in self._candidate_analyses if item.token == self._selected_prefab_choice),
@@ -1111,6 +1112,19 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 selected_guid = planning_db.guid_for_path(prefab.path)
                 if selected_guid:
                     wanted.add(selected_guid.lower())
+                selected_analysis = next((item for item in self._candidate_analyses
+                                          if (selected_guid and item.guid.lower() == selected_guid.lower())
+                                          or Path(item.prefab_path).resolve() == Path(prefab.path).resolve()), None)
+                if selected_analysis is not None:
+                    for guid in selected_analysis.required_visual_guids:
+                        record = index.records.get(guid)
+                        if record is None:
+                            continue
+                        suffix = Path(record.unity_path).suffix.lower()
+                        if suffix == ".prefab":
+                            wanted.add(guid)
+                        elif suffix == ".fbx":
+                            fbx_guids.add(guid)
                 for guid in prefab.referenced_fbx_guids():
                     entry = planning_db.find_guid(guid)
                     if entry is None:
@@ -1269,7 +1283,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 if effective_prefab_choice == "AUTO" and self._composition_plan is not None:
                     selected_paths = {
                         item.unity_path for item in self._candidate_analyses
-                        if item.renderer_count > 0
+                        if item.has_visual_source
                     }
                     planning_paths = [
                         path for path in prefab_paths
@@ -1461,17 +1475,38 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     guid: len({tuple(sorted(binding.items())) for binding in binding_sets}) > 1
                     for guid, binding_sets in representation_member_bindings.items()
                 }
+                used_source_templates = set()
                 for prefab, prefab_unity_path in prefabs:
                     self._set_phase(context, "Reconstructing Prefab", current_item=prefab_unity_path or prefab.path.name)
                     member_collection = bpy.data.collections.new(prefab.display_name)
                     members_collection.children.link(member_collection)
+                    member_analysis = next(
+                        (item for item in self._candidate_analyses if item.unity_path == prefab_unity_path), None,
+                    )
+                    member_id = member_analysis.guid if member_analysis else prefab_unity_path
+                    root_context_id = str(uuid4())
+                    projection = project_occurrences(
+                        PrefabSource.from_prefab(prefab, package_key.source_package_id, member_id),
+                        root_context_id, projection_source,
+                    )
                     member_objects = []
                     member_object_map = {}
-                    for guid in sorted(prefab.referenced_fbx_guids()):
+                    model_instances = []
+                    direct_sources = [(guid.lower(), None) for guid in sorted({
+                        ref_guid(document.data.get("m_Mesh"))
+                        for document in prefab.renderer_documents() + prefab.mesh_filter_documents()
+                        if ref_guid(document.data.get("m_Mesh"))
+                    })]
+                    model_sources = [
+                        (item.get("source_asset_guid"), item["instance_edge_path"])
+                        for item in projection.issues if item["code"] == "UNRESOLVED_SOURCE"
+                    ]
+                    for guid, edge_path in direct_sources + model_sources:
                         entry = asset_db.find_guid(guid)
-                        if entry is None:
+                        if entry is None or entry.path.suffix.lower() != ".fbx" or not entry.path.is_file():
                             continue
                         candidates = representation_paths.get(entry.unity_path, [])
+                        instance_object_map = {}
                         for source_object in candidates:
                             if source_object.name not in shared_collection.objects:
                                 shared_collection.objects.link(source_object)
@@ -1483,16 +1518,30 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             member_object["_vapb_use_object_material_slots"] = (
                                 representation_needs_object_slots.get(entry.guid.lower(), False)
                             )
-                            member_object_map[source_object] = member_object
+                            instance_object_map[source_object] = member_object
+                            if edge_path is None:
+                                member_object_map[source_object] = member_object
+                            else:
+                                member_object["_vapb_model_instance_edge_path"] = json.dumps(edge_path, sort_keys=True)
+                                member_object["_vapb_model_transform_status"] = "UNRESOLVED"
                             if member_object.name not in member_collection.objects:
                                 member_collection.objects.link(member_object)
                             member_objects.append(member_object)
-                        for source_object, member_object in member_object_map.items():
-                            if source_object.parent in member_object_map:
-                                member_object.parent = member_object_map[source_object.parent]
+                            used_source_templates.add(source_object)
+                        for source_object, member_object in instance_object_map.items():
+                            if source_object.parent in instance_object_map:
+                                member_object.parent = instance_object_map[source_object.parent]
                             for modifier in member_object.modifiers:
-                                if getattr(modifier, "object", None) in member_object_map:
-                                    modifier.object = member_object_map[modifier.object]
+                                if getattr(modifier, "object", None) in instance_object_map:
+                                    modifier.object = instance_object_map[modifier.object]
+                        if edge_path is not None and instance_object_map:
+                            model_instances.append((edge_path, instance_object_map))
+                    for source_object, member_object in member_object_map.items():
+                        if source_object.parent in member_object_map:
+                            member_object.parent = member_object_map[source_object.parent]
+                        for modifier in member_object.modifiers:
+                            if getattr(modifier, "object", None) in member_object_map:
+                                modifier.object = member_object_map[modifier.object]
                     prefab_root, prefab_object_map = self._performance.measure(
                         "prefab_reconstruct",
                         build_prefab_hierarchy,
@@ -1512,11 +1561,41 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     prefab_root["unity_physbone_collider_count"] = len(physics_snapshot.colliders)
                     prefab_roots.append(prefab_root)
                     prefab_object_maps.append(prefab_object_map)
-                    member_analysis = next(
-                        (item for item in self._candidate_analyses if item.unity_path == prefab_unity_path),
-                        None,
-                    )
-                    member_id = member_analysis.guid if member_analysis else prefab_unity_path
+                    instance_nodes = {}
+                    for edge_path, copied in model_instances:
+                        parent = prefab_root
+                        for depth, step in enumerate(edge_path, 1):
+                            prefix = json.dumps(edge_path[:depth], sort_keys=True)
+                            node = instance_nodes.get(prefix)
+                            if node is None:
+                                node = bpy.data.objects.new(f"PrefabInstance {step['prefab_instance_file_id']}", None)
+                                member_collection.objects.link(node)
+                                node["_vapb_model_instance_edge_path"] = prefix
+                                node["_vapb_model_transform_status"] = "UNRESOLVED"
+                                if depth == 1:
+                                    instance_doc = next((doc for doc in prefab.documents
+                                                         if doc.class_id == 1001
+                                                         and doc.file_id == step["prefab_instance_file_id"]), None)
+                                    match = re.search(r"m_TransformParent:\s*\{\s*fileID:\s*(-?\d+)",
+                                                      instance_doc.raw) if instance_doc else None
+                                    if match:
+                                        transform_id = int(match.group(1))
+                                        owner_id = (prefab.transforms[transform_id].game_object_id
+                                                    if transform_id in prefab.transforms else None)
+                                        mapped = prefab_object_map.get(owner_id)
+                                        if transform_id == 0 or mapped is not None:
+                                            parent = mapped or prefab_root
+                                            node["_vapb_model_parent_status"] = "EXACT"
+                                else:
+                                    node["_vapb_model_parent_status"] = "CONTAINER_EDGE_ONLY"
+                                node.parent = parent
+                                instance_nodes[prefix] = node
+                            parent = node
+                        for source_object, member_object in copied.items():
+                            if source_object.parent not in copied:
+                                world = member_object.matrix_world.copy()
+                                member_object.parent = parent
+                                member_object.matrix_world = world
                     composition_member = next(
                         (item for item in self._composition_plan.members
                          if item.unity_path == prefab_unity_path),
@@ -1534,12 +1613,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     for member_object in member_objects:
                         member_object["unity_composition_member_id"] = member_id
                         member_object["unity_composition_classification"] = classification
-                    root_context_id = str(uuid4())
                     prefab_root['_vapb_root_context_id'] = root_context_id
-                    projection = project_occurrences(
-                        PrefabSource.from_prefab(prefab, package_key.source_package_id, member_id),
-                        root_context_id, projection_source,
-                    )
                     for record in projection.records:
                         mesh_entry = asset_db.find_guid(record['mesh']['mesh_guid'])
                         if mesh_entry is not None and mesh_entry.path.is_file():
@@ -1568,6 +1642,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             prefab, member_object_map, asset_db, material_library, context.scene,
                             member_id=member_id,
                         )
+                for source_object in used_source_templates:
+                    source_object.hide_set(True)
+                    source_object.hide_render = True
             self._performance.add("package_composition", perf_counter() - composition_started)
             prefab_root = prefab_roots[0] if prefab_roots else None
             prefab_object_map = prefab_object_maps[0] if prefab_object_maps else {}

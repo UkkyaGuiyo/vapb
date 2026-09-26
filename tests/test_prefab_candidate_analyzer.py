@@ -70,6 +70,14 @@ Material:
 """.encode()
 
 
+def _model_instance(source_guid: str, instance_id: int = 700) -> bytes:
+    return f"""%YAML 1.1
+--- !u!1001 &{instance_id}
+PrefabInstance:
+  m_SourcePrefab: {{fileID: 100100000, guid: {source_guid}, type: 3}}
+""".encode()
+
+
 def _candidate(token: str, kind: str, status: str, *, renderers: int = 1) -> PrefabCandidateAnalysis:
     return PrefabCandidateAnalysis(
         token=token,
@@ -89,6 +97,50 @@ def _candidate(token: str, kind: str, status: str, *, renderers: int = 1) -> Pre
 
 
 class PrefabCandidateAnalyzerTests(unittest.TestCase):
+    def test_model_instance_candidate_keeps_transitive_fbx_without_claiming_renderer_ids(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            prefab_guid, nested_guid, model_guid, unrelated_guid = ("1" * 32, "2" * 32, "a" * 32, "b" * 32)
+            package = root / "Models.unitypackage"
+            _package(package, [
+                (prefab_guid, "Assets/Root.prefab", _model_instance(nested_guid)),
+                (nested_guid, "Assets/Nested.prefab", _model_instance(model_guid)),
+                (model_guid, "Assets/Chosen.fbx", b"FBX_A"),
+                (unrelated_guid, "Assets/Unrelated.fbx", b"FBX_B"),
+            ])
+            extract = root / "extract"
+            path = extract / "Assets/Root.prefab"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(_model_instance(nested_guid))
+            analyzer = PrefabCandidateAnalyzer(package, UnityPackageReader(package).build_index(), extract, [path])
+            item = analyzer.analyze()[0]
+            self.assertEqual(0, item.renderer_count)
+            self.assertEqual({model_guid}, item.referenced_fbx_guids)
+            self.assertEqual({nested_guid, model_guid}, item.required_visual_guids)
+            self.assertEqual("NESTED_COMPOSITE", item.candidate_kind)
+            self.assertEqual("AUTO_SELECTED", analyzer.select([item]).mode)
+            self.assertEqual(1, len(analyzer.compose([item]).members))
+
+    def test_direct_model_instance_is_visual_candidate(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            prefab_guid, model_guid, unrelated_guid = ("1" * 32, "a" * 32, "b" * 32)
+            package = root / "Models.unitypackage"
+            _package(package, [
+                (prefab_guid, "Assets/Root.prefab", _model_instance(model_guid)),
+                (model_guid, "Assets/Chosen.fbx", b"FBX_A"),
+                (unrelated_guid, "Assets/Unrelated.fbx", b"FBX_B"),
+            ])
+            extract = root / "extract"
+            path = extract / "Assets/Root.prefab"
+            path.parent.mkdir(parents=True)
+            path.write_bytes(_model_instance(model_guid))
+            analyzer = PrefabCandidateAnalyzer(package, UnityPackageReader(package).build_index(), extract, [path])
+            item = analyzer.analyze()[0]
+            self.assertEqual({model_guid}, item.referenced_fbx_guids)
+            self.assertEqual(0, item.renderer_count)
+            self.assertEqual("AUTO_SELECTED", analyzer.select([item]).mode)
+
     def test_pca_016_unrelated_external_package_is_not_fully_indexed(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
