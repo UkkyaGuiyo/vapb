@@ -830,3 +830,19 @@ REMOTE_HANDOFF = PENDING
 予算・権限・安全性で停止が必要なら、成果と続きをGitHubへ残す。
 
 「使えるVAPB」と「途中からでも再現・継承できるGitHub」の両方を完成させること。
+
+## 23. 追加優先順位指示 — Core Round-trip First (2026-09-26)
+
+最優先は「複数の実VRC UnityPackageを正しくBlenderへ入れて、実際に編集し、Unityへ戻して使えること」。本節は既存仕様を削減せず、完成させる順序だけを変更する。
+
+現在作業は破棄・巻き戻しせず、Coreにも利用できる意味的な区切りまで完了し、code / tests / current state / PROVEN・UNKNOWN / exact next actionをcommit・pushする。その後、性質の異なる複数private実データを選定してCoreを優先する。ユーザー指定の代表Avatarに加え、別Avatar・衣装・Variant・Nested Prefab・複数Package依存を対象にし、一つのAsset専用実装にしない。
+
+受入条件は、実UnityPackage -> Blender Import -> 人間が扱いやすいHierarchy / Object構造 -> Mesh / Armature / Material / Texture / Shape Key等の実編集 -> save / reopen -> UnityPackage Export -> fresh Unity Import -> 必要なRebind / Restore -> Unity / VRC上で利用可能、という往復が複数の実データで成立すること。syntheticだけ、見た目だけ、FBXだけ、UnityPackage生成だけ、static Mesh限定の実験だけではCore完成と呼ばない。
+
+小さなsynthetic証明 -> 複数private smoke / regression -> 実データの不具合を原因特定・一般化 -> public-safe synthetic regression -> 修正 -> 実データ再確認、を反復する。private検証を最終工程まで遅らせない。commercial/private asset自体や実Assetの識別子表はGitHubへ保存しない。
+
+当面の順序は複数private Import smoke、Unity/Blender構造比較、壊れるImport修正、save/reopen identity維持、実編集、Export、fresh Unity Import、Mesh/Material/Skin/Bone/Prefab/VRC stateの復元、複数実データroundtrip回帰。Coreに必要なら順序を調整してよい。
+
+Semantic Cleanup / Weight Transfer / Semantic Bone Mergeは正式必須機能のまま維持する。Core往復を遅らせる拡張・磨き込みは後にし、心臓部の上に載る編集支援機能として完成させる。
+
+現在作業、最初の実データImport、重大な実データ不具合、roundtripの各成立地点、reset / session移行前に意味のあるGitHub checkpointを残す。重要なCore知見を会話やローカルだけに残さない。

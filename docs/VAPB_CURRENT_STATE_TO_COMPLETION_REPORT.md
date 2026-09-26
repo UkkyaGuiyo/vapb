@@ -8,6 +8,18 @@ The user explicitly changed the next reset trigger: **use an earned reset when t
 
 ## Current state and authority
 
+### Priority amendment — Core Round-trip First (2026-09-26)
+
+The latest user instruction changes priority, not the full product scope. Close the current skinned-Mesh roundtrip at a safe atomic checkpoint, recording code, tests, PROVEN/UNKNOWN and the exact next action in GitHub. Then prioritize multiple real private VRC packages, including the user-authorized representative avatar and different avatar/clothing/Variant/nested/cross-package cases selected from the existing private catalog.
+
+Core acceptance requires actual package import, readable independent occurrence hierarchy, real Mesh/Armature/Material/Texture/shape edits, save/reopen, package export, fresh Unity import and necessary reference/state restoration for usable Unity/VRC results across multiple real inputs. Synthetic-only, appearance-only, FBX-only, package-generation-only or static-only success is not Core completion.
+
+Use an ongoing loop: small synthetic proof -> multiple private import/regression cases -> isolate real failure -> generalize to a public-safe synthetic regression -> fix -> recheck private cases. Private originals remain read-only and outside Git. Do not publish commercial assets or private identity tables. Review executable third-party project content before Unity import. Existing catalog information should guide bounded selection rather than repeated whole-corpus scans.
+
+Semantic Cleanup, Weight Transfer and Semantic Bone Merge remain mandatory final features. Defer their expansion/polish when it would delay Core roundtrip. Preserve useful current work; no abrupt discard or rollback. Save meaningful checkpoints at the current work boundary, first real imports, major real-data defects, roundtrip milestones and before resets/session transitions.
+
+Exact next action after the current skin checkpoint: select heterogeneous representative packages from the existing private catalog and perform bounded Blender Import smoke, comparing occurrence/Mesh/Armature/Material structure before further feature expansion. Private validation is a continuous Core development layer, not a final-only gate.
+
 - Branch: `feature/multi-package-identity`.
 - Starting code HEAD: `c7dcb1b38dd63f1e5af366d538c818878f2ddd9f`; worktree was clean.
 - Live remote branch query confirmed the same HEAD on 2026-09-26. Plain Git lacked usable credentials; a command-scoped `gh auth git-credential` helper used the existing authenticated GitHub CLI successfully. No credential or global config changes.
@@ -55,13 +67,13 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 
 ## Execution sequence and current block
 
-1. Close production occurrence/skin/slot provenance using existing contract and receipt.
-2. Connect actual Blender edit delta -> export plan/staging -> fresh Unity import -> minimal idempotent restore. This V1 is intermediate.
-3. Extend requested Unity/VRC preservation/restoration and reference coverage.
-4. Implement all Cleanup, Weight Transfer, Bone Merge cores and practical GUI, with protected references, preview and recovery.
-5. Integrate synthetic/private regression and verify a commit-bound distributable ZIP.
+1. Close the in-progress skin roundtrip at a verified atomic checkpoint and push it.
+2. Select multiple heterogeneous private packages and run Import smoke; compare Unity/Blender hierarchy, occurrences, Mesh, Armature and Materials. Fix actual input failures using public-safe synthetic regressions.
+3. Preserve identity through save/reopen and actual edits; export packages, import into fresh Unity and restore required Mesh/Material/Skin/Bone/Prefab/VRC state. Repeat across the representative private cases throughout Core development.
+4. Complete remaining Cleanup, Weight Transfer and Bone Merge functionality on top of the working Core, with protected references, preview and recovery.
+5. Verify the entire original specification and a commit-bound distributable ZIP. Real-data Core success and full product completion remain separate acceptance claims.
 
-Current block: extend the proven static package roundtrip to skin restoration, then close the Unity/VRC reference coverage currently protected by the new Cleanup/Bone Merge controls. The native editing, receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
+Current block: finish the bounded existing-bone skin package checkpoint, then begin multiple private Import smoke immediately. The native editing, receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
 
 ## Checkpoint: observed FBX Object-copy lineage
 
