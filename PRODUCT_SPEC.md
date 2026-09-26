@@ -538,6 +538,61 @@ import、Package/Prefab選択、統合、Weight Transfer、Cleanup、Exportま�
 取り消し・再試行・保存再読込を検証する。
 使い方と、対応外の入力に遭遇した場合の行動を説明書に残す。
 
+### Unity側：Import後のVAPB適用アシスタント
+
+VAPBの通常ユーザーへManifestやFinalizerの内部概念を操作させない。
+Blender版VAPBから書き出した`.unitypackage`は、VAPB専用Unity Packageの事前インストールを要求せず、VAPB自身のEditor helper、Manifest、編集済みAsset、復元に必要なidentity / witness情報を含む。元Avatarが要求するVRChat SDK、Shader framework、その他third-party dependencyはこの「VAPB helper自己完結」の対象外であり、必要条件として明示する。
+
+通常のUnity側フローは次とする。
+
+```plain text
+Blenderで編集
+→ 「Unity用に書き出す」
+→ .unitypackageをUnityへImport
+→ script compile / domain reload完了後にVAPB Manifestを自動検出
+→ 非破壊preflight
+→ 日本語の確認画面
+→ ユーザーが［適用］
+→ 既存Finalizerを実行
+→ 完了結果を表示
+```
+
+完全な無確認自動適用は禁止する。
+自動化するのは「検出・preflight・確認画面を開く」までとし、Prefab / Variant / Renderer / Bone等を書き換えるFinalizerは、ユーザーが明示的に［適用］を押した後だけ実行する。
+
+確認画面では通常表示として、少なくとも次を示す。
+- VAPB編集データを検出したこと。
+- 対象Prefabの人間可読path / name。
+- 更新予定のMesh / Skin等の件数。
+- Bone / rootBone、Material、元Prefab、既存Unity/VRC設定について何を保持・再接続する予定か。
+- 生成するPrefab Variantのpath。
+- 外部Dependency、不足Dependency、Missing Script、stale source、identity mismatch、unsupported edit、既存Variant衝突等の警告。
+- `適用可能` / `部分対応` / `適用不可` の状態。
+
+GUID、signed fileID、Manifest JSON、witness内部表等は通常画面に出さず、「詳細」に隔離する。
+
+［適用］を有効にする前に、Manifest schema、task種別、対象Asset解決、source hash、identity、必要Dependency、Missing Script、出力先衝突等について、可能な範囲の**非破壊preflight**を行う。
+必須rebindが曖昧・不足・stale・unsupportedなら`適用不可`としてFinalizerを開始しない。
+`部分対応`は、要求されたCore復元自体は安全に実行できるが、preserve-only / unsupported state等の非致命的制約が明示されている場合にのみ使用し、必須identity未解決を部分成功扱いしない。
+
+Import順序へ依存した実装にしない。
+同じ`.unitypackage`内でEditor C# helperが初めて導入される場合、Asset import中にはそのコードがまだロードされていない可能性があるため、`importPackageCompleted`や`OnPostprocessAllAssets`だけを唯一の初回triggerにしない。
+script compile / domain reload後に動作するbootstrapから、Editorが安定状態になった後でManifestを再走査できる設計にする。
+Import中、compiling中、updating中、Asset Import Worker、batchmodeで対話ダイアログを開かない。
+
+domain reloadやEditor再起動で同じManifestの確認画面を無限に再表示しない。
+Manifest内容identityを基準に、prompt済み / cancel済み / apply済み状態をProjectローカルの非Asset状態へ記録する。
+Manifest内容が変わった新しいexportは再検出する。
+CancelはAssetを変更せず、`Tools > VAPB`等から同じ検出結果を再確認できるfallbackを残す。
+既存の「Manifestを手動選択してFinalizerを実行する」入口は、診断・復旧用のfallbackとして当面維持してよい。
+
+実装は既存の`VapbReferenceFinalizer`、`VapbModelSkinFinalizer`、Manifest、marker / witness、public Unity API identity検証を再利用する。
+Import Assistantは新しい復元エンジンを作らず、検出・read-only inspection・表示・既存Finalizer呼出しを担当する薄いorchestration層とする。
+Core round-tripのidentity / fail-closed条件を緩めてUXを成立させてはならない。
+
+このUXは最終製品の必須UIだが、現在進行中の複数private実データCore round-trip検証を中断してまで先行しない。
+Finalizer task schemaと実データの主要復元経路が安全なcheckpointに到達した時点で小さく統合し、最終distribution ZIP受入前には実装・検証を完了する。
+
 
 ## 13. Oracle・MCP・Computer Use・開発環境
 
@@ -715,7 +770,7 @@ private corpus、raw Oracle、credentials、個人pathを含む詳細ログはre
 GitHubだけでpublicな開発・synthetic再現が可能にし、privateデータが必要な検証は別要件として明記する。
 
 
-## 19. リセット権・利用枠・30%保全
+## 19. リセット権・利用枠・10%保全
 
 ユーザーは保存済みリセット権を最大3回使用することを許可している。
 必要なら3回すべて使って、今回仕様全体の完成へ進む。
@@ -737,18 +792,18 @@ GitHubだけでpublicな開発・synthetic再現が可能にし、privateデー�
 リセットしても新規sessionが必須とは決めつけず、必要なときだけcheckpointから再開する。
 
 最終残量条件：
-3回目のリセット後、終了時の該当Codex利用枠を30%以上残す。
+利用可能なリセット権を使い切った後も、未完了作業があるなら該当Codex利用枠を**残り約10%まで使用してよい**。
 5時間枠と週間枠等が同時に適用される場合、それぞれの残量を管理し、厳しい方を保護する。
 終了時に「使った割合」ではなく「残っている割合」を確認する。
 
 途中でまだ使用可能な権利が残り、未完了作業がある場合：
 保存余力を残してcheckpointを作り、必要なリセットを使って継続する。
-現在枠が35%になっただけでキャンペーン全体を終了しない。
+現在枠が35%や30%になっただけでキャンペーン全体を終了しない。
 
 最後の利用枠、または利用できるリセットがなくなった場合：
-- 40%付近：大型の新規作業や追加並列処理を抑制する。
-- 35%付近：機能追加を止め、検証・保存・引継ぎへ収束する。
-- 30%へ達する前に終了する。
+- 20%付近：新しい大規模並列処理や長時間の探索を必要性ベースで絞る。
+- 15%付近：未保存成果を優先してcheckpoint化し、残作業の完了可能性を再評価する。
+- **10%付近：新規の高消費作業を止め、検証・保存・引継ぎへ収束し、10%を大きく割り込む前に終了する。**
 
 大きな処理では、次の確認時に安全線を越えないよう先に余裕を取る。
 親・子agent、別作業との共有、反映遅延、保存用の消費を考慮する。
@@ -756,8 +811,8 @@ GitHubだけでpublicな開発・synthetic再現が可能にし、privateデー�
 
 残量が取得できない・古い値しかない場合、推測で「まだ十分」と判断しない。
 新規の高消費作業を止め、既存成果の保全と公式表示の確認を優先する。
-30%保全は指示だけで保証できるものではないため、確認値と時刻を残す。
-未確認なら「30%残した」と報告しない。
+10%保全は指示だけで保証できるものではないため、確認値と時刻を残す。
+未確認なら「10%残した」と報告しない。
 
 
 ## 20. 禁止事項と人間確認の境界
