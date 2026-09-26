@@ -57,7 +57,7 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 4. Implement all Cleanup, Weight Transfer, Bone Merge cores and practical GUI, with protected references, preview and recovery.
 5. Integrate synthetic/private regression and verify a commit-bound distributable ZIP.
 
-First block: trace the existing member realization/receipt path, add a failing public synthetic regression for the actual missing edge, implement the smallest evidence-backed mapping, verify Python and Blender. Do not infer Unity-generated localID from names or FBX UID. No full-source/context cross-product. Independent scope review before code completion.
+Current block: extend the proven static package roundtrip to authoritative skin/bone restoration, and implement the mandatory Cleanup/Bone Merge controls. The original receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
 
 ## Checkpoint: observed FBX Object-copy lineage
 
@@ -100,7 +100,9 @@ First block: trace the existing member realization/receipt path, add a failing p
 
 For automated fresh validation copy `SourceInfo.json` and the generated output as `Output.unitypackage` to the fresh project root. Preload only the two exact first-party C# payloads **and their meta files from the output package**, plus the probe C# script, so the running validation method is available before Import. No source FBX/Prefab/Material is preloaded. Run Unity `-batchmode -projectPath <fresh-project> -executeMethod VapbRoundtripProbe.Validate -logFile <log>`. Success requires process exit 0 and `VapbRoundtripResult.json` pass=true. These generated assets/logs remain outside Git. Normal user import simply lets Unity compile the included scripts and uses the menu.
 
-**Next action:** preserve this checkpoint and extend the verified reference path to Skin/bone correspondence, then the mandatory Cleanup/Bone Merge and VRC state restoration. This is an intermediate result, not requested-spec completion.
+Fresh committed checkout of `5635fc3c65a5a2cf395d1598c1c2fd7fdad54f00`: Python **299 PASS**, clean worktree; live remote SHA matched. Final bounded scope review PASS. One authorized earned reset has now been consumed through the documented official app-server API; two remain. Delayed window refresh was confirmed after consumption; detailed account values and the idempotency record are kept outside Git.
+
+**Next action:** extend the verified reference path to Skin/bone correspondence, then the mandatory Cleanup/Bone Merge and VRC state restoration. This is an intermediate result, not requested-spec completion.
 
 ## Checkpoint: source-preserving model package materialization
 
