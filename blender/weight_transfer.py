@@ -11,6 +11,15 @@ def _dot(a, b):
     return sum(x * y for x, y in zip(a, b))
 
 
+DECLARED_PLANE_EPSILON = 1e-5
+
+
+def crosses_declared_plane(target_local_x, source_local_x, epsilon=DECLARED_PLANE_EPSILON):
+    """True only for unambiguous opposite sides of a user-declared local X=0 plane."""
+    return (abs(target_local_x) > epsilon and abs(source_local_x) > epsilon
+            and target_local_x * source_local_x < 0)
+
+
 def closest_triangle_weights(point, a, b, c):
     """Barycentric coordinates of the nearest point on triangle abc.
 

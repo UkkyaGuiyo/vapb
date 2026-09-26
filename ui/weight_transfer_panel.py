@@ -30,6 +30,11 @@ class VAPB_PT_weight_transfer(bpy.types.Panel):
         layout.prop(state, 'scope')
         layout.prop(state, 'blend', slider=True)
         layout.prop(state, 'max_distance')
+        layout.prop(state, 'guard_declared_plane')
+        if state.guard_declared_plane:
+            layout.label(text="宣言: A参照骨ローカル X=0 が左右境界")
+            layout.label(text="|X| ≤ 0.00001 は境界上として警告しません")
+            layout.label(text="越境頂点は保護。解剖学的左右は自動判定しません")
         if state.mode == 'REPLACE':
             layout.label(text="置換: 対応先の既存値を補間値へ")
         elif state.mode == 'MERGE':

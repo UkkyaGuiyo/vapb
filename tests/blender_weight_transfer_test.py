@@ -1,6 +1,7 @@
 """Run with Blender --background --factory-startup --python this_file."""
 
 from pathlib import Path
+import math
 import os
 import sys
 import traceback
@@ -217,6 +218,57 @@ def main():
             raise AssertionError('Object shared with another scene was accepted')
         other_scene.collection.objects.unlink(b)
         bpy.data.scenes.remove(other_scene)
+
+        # All world X coordinates are positive. A rotated reference rig makes
+        # its local X axis align with world Y, so only rig-local sign detects
+        # the two actual crossings of the user-declared plane.
+        rig.rotation_euler.z = math.pi / 2
+        bpy.context.view_layer.update()
+        a_lr = make_mesh('A plane test',
+            [(0.1, 0.02, 0), (0.3, 0.02, 0), (0.3, 0.04, 0), (0.1, 0.04, 0)],
+            [(0, 1, 2, 3)])
+        a_lr.modifiers.new('Reference', 'ARMATURE').object = rig
+        a_lr.vertex_groups.new(name='Bone1').add([0, 1, 2, 3], 1, 'REPLACE')
+        b_lr = make_mesh('B plane test',
+            [(0.15, -0.01, 0), (0.25, -0.01, 0), (0.2, 0.03, 0)],
+            [(0, 1, 2)])
+        state.source, state.target = a_lr, b_lr
+        state.max_distance = 0.05
+        assert bpy.ops.vapb.weight_mappings() == {'FINISHED'}
+        assert len(state.mappings) == 1
+        state.mappings[0].confirmed = True
+        assert all((a_lr.matrix_world @ vertex.co).x > 0 for vertex in a_lr.data.vertices)
+        assert all((b_lr.matrix_world @ vertex.co).x > 0 for vertex in b_lr.data.vertices)
+        state.guard_declared_plane = False
+        unguarded_plan, unguarded = calculate_transfer(state)
+        assert unguarded['matched'] == 3 and unguarded['cross_plane'] == 0
+        assert len(unguarded_plan) == 3
+        state.guard_declared_plane = True
+        lr_coords = [tuple(v.co) for v in b_lr.data.vertices]
+        guarded_plan, guarded = calculate_transfer(state)
+        assert guarded['matched'] == 1 and guarded['cross_plane'] == 2
+        assert guarded['cross_plane_indices'] == (0, 1)
+        assert len(guarded_plan) == 1 and guarded_plan[0][1] == 2
+        assert bpy.ops.vapb.weight_preview() == {'FINISHED'}
+        assert len(b_lr.vertex_groups) == 0
+        assert [tuple(v.co) for v in b_lr.data.vertices] == lr_coords
+        assert bpy.ops.vapb.weight_select_unresolved() == {'FINISHED'}
+        bpy.ops.object.mode_set(mode='OBJECT')
+        assert [v.index for v in b_lr.data.vertices if v.select] == [0, 1]
+        assert bpy.ops.vapb.weight_apply() == {'FINISHED'}
+        lr_group = b_lr.vertex_groups['Bone1']
+        assert weight(lr_group, 0) == 0 and weight(lr_group, 1) == 0
+        assert abs(weight(lr_group, 2) - 1) < 1e-5
+        state.guard_declared_plane = False
+        assert bpy.ops.vapb.weight_apply() == {'FINISHED'}
+        assert all(abs(weight(lr_group, i) - 1) < 1e-5 for i in range(3))
+        rig.rotation_euler.z = 0
+        bpy.context.view_layer.update()
+        state.source, state.target = a, b
+        state.max_distance = 0.1
+        assert bpy.ops.vapb.weight_mappings() == {'FINISHED'}
+        for mapping in state.mappings:
+            mapping.confirmed = True
         # Explicit pushes reproduce Blender's UI undo boundaries in a script.
         # Confirm restoration through the real undo system, then reacquire RNA
         # references, which are invalidated when the scene snapshot is restored.
@@ -232,7 +284,7 @@ def main():
         state = bpy.context.scene.vapb_weight_transfer
         state.target = None
         assert len(state.mappings) == 0
-        print('WEIGHT_TRANSFER_RUNTIME_PASS modes=3 selected_scope=1 unresolved_selection=1 posed_deformation=1 rollback=1 undo=1 stale_mapping_cleared=1 source_unchanged=1 shared_rejected=1')
+        print('WEIGHT_TRANSFER_RUNTIME_PASS modes=3 selected_scope=1 unresolved_selection=1 declared_plane_crossings=2 guarded=1 unguarded=1 posed_deformation=1 rollback=1 undo=1 stale_mapping_cleared=1 source_unchanged=1 shared_rejected=1')
     finally:
         unregister_weight_transfer_properties()
         for cls in reversed(WEIGHT_TRANSFER_CLASSES):

@@ -39,7 +39,7 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | CL-01 / 9 | Export Cleanup of unused Bone/Material | graph + export staging | Exclude only proven unused; exported skin/references valid; scene unchanged | 未着手 | Unknown |
 | CL-02 / 9 | Edit Cleanup preview/apply | Blender operator/UI | Scope/reasons/unknown visible, Undo/recovery, shared users protected | 未着手 | Unknown |
 | WT-01 / 10 | Explicit Weight Transfer source/armature/target/preview/apply | operators/weight_transfer, ui/weight_transfer_panel, blender/weight_transfer | Different topology; REPLACE/MERGE/FILL_MISSING with declared rules | 検証済み | Supported synthetic original-mesh surface, ALL/SELECTED range; private quality and installed ZIP flow pending |
-| WT-02 / 10 | Transfer protections and quality feedback | transfer core | B-only/locked weights preserved, grounded distance indicators, deformation/Undo | 実装中 | Partial: distance/locks/shared data, explicit unresolved selection, actual Undo/rollback and posed deformation PASS; left/right caution and private quality pending |
+| WT-02 / 10 | Transfer protections and quality feedback | transfer core | B-only/locked weights preserved, grounded distance indicators, deformation/Undo | 実装中 | Partial: distance/locks/shared data, user-declared rig-local X=0 crossing protection and selection, actual Undo/rollback and posed deformation PASS; private quality and installed ZIP flow pending |
 | BM-01 / 11 | Explicit Semantic Bone Merge mapping/classification | Blender operator/UI + remap core | EQUIVALENT/B_ONLY/AMBIGUOUS; provenance or confirmed mapping | 未着手 | Unknown |
 | BM-02 / 11 | Rest/skin/reference-preserving transplant and remap | bone transform, reference graph, Finalizer | Roll/rest/world transform, all listed refs, collisions/sharing; verified deletion | 未着手 | Unknown |
 | UI-01 / 12 | Japanese GUI for all operations | ui, operators | No console/GUID entry in normal flow; targets/progress/outcomes explained | 実装中 | Partial legacy GUI; new editing/export controls pending |
@@ -81,6 +81,12 @@ First block: trace the existing member realization/receipt path, add a failing p
 - `PrefabModification` now retains its containing signed PrefabInstance fileID. Material override records retain that instance ID and the actual referenced Material fileID, separate from the targeted Renderer fileID. Display-name lookup is scoped by instance and source GUID, so repeated source renderers cannot leak names across instances.
 - This preserves serialized evidence needed by production occurrence traversal. It does not turn the existing source-key-only effective resolver into an occurrence resolver.
 - Regression first failed on missing fields; parser and Stage 1A suites then **18 PASS** on Python 3.14.6. Command from repository parent: `python -m unittest unitypackage_blender_importer.tests.test_prefab_parser unitypackage_blender_importer.tests.test_stage1a_synthetic_projection -q`. Scope_guard PASS. An earlier combined invocation named a nonexistent Stage 1B test module and failed discovery; the corrected invocation above is the recorded result.
+
+## Checkpoint: declared Weight Transfer boundary
+
+The optional boundary guard treats reference Armature local X=0 as a user-declared plane, with 1e-5 local-unit tolerance. It protects cross-plane hits and includes them in explicit warning selection; it does not infer anatomical identity. A rotated-rig fixture proves that the check uses rig-local rather than world X.
+
+Validation on top of code `3a19a71`: Python 3.14.6 `python -m unittest discover -s unitypackage_blender_importer/tests -p "test_*.py"` from repository parent: **289 PASS, 0 FAIL, 0 ERROR**. Blender 5.2.1 factory-background `tests/blender_weight_transfer_test.py`: exit 0 and `WEIGHT_TRANSFER_RUNTIME_PASS`, including guard on/off, preview unchanged, protected weights, selection and existing rollback/Undo. Read-only scope review: PASS. Full product remains incomplete; next action is production UnityPackage export and public-API reference restoration.
 
 ## Checkpoint: explicit surface Weight Transfer
 

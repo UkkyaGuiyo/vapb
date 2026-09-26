@@ -6,7 +6,7 @@ import bpy  # type: ignore
 import bmesh  # type: ignore
 from mathutils.bvhtree import BVHTree  # type: ignore
 
-from ..blender.weight_transfer import closest_triangle_weights, combine_weight
+from ..blender.weight_transfer import closest_triangle_weights, combine_weight, crosses_declared_plane
 
 
 def _mesh(obj):
@@ -58,6 +58,9 @@ class VAPB_PG_weight_transfer(bpy.types.PropertyGroup):
     blend: bpy.props.FloatProperty(name="適用率", min=0.0, max=1.0, default=1.0)
     max_distance: bpy.props.FloatProperty(name="最大距離 (ワールド単位)", min=0.0, default=0.05, precision=4,
         description="B の頂点から A の表面までのワールド空間距離。超過は変更しない")
+    guard_declared_plane: bpy.props.BoolProperty(
+        name="宣言した左右境界で越境を保護", default=False,
+        description="ユーザーが A の参照アーマチュアのローカル X=0 を左右境界と宣言した場合だけ有効")
 
 
 def register_weight_transfer_properties():
@@ -104,7 +107,9 @@ def calculate_transfer(state):
     plan = []
     distances = []
     skipped_distance = 0
+    cross_plane_indices = []
     locked = 0
+    rig_inverse = state.armature.matrix_world.inverted() if state.guard_declared_plane else None
     vertices = [v for v in b.data.vertices if state.scope == 'ALL' or v.select]
     if not vertices:
         raise ValueError("B の対象頂点がありません。選択範囲を確認してください")
@@ -115,6 +120,11 @@ def calculate_transfer(state):
         if hit is None or distance > state.max_distance:
             skipped_distance += 1
             unresolved_indices.append(vertex.index)
+            continue
+        if rig_inverse is not None and crosses_declared_plane(
+            (rig_inverse @ point).x, (rig_inverse @ hit).x
+        ):
+            cross_plane_indices.append(vertex.index)
             continue
         tri = triangles[triangle_index]
         bary = closest_triangle_weights(tuple(point), *(coords[i] for i in tri))
@@ -132,7 +142,9 @@ def calculate_transfer(state):
     return plan, {
         'matched': len(distances), 'unresolved': skipped_distance, 'locked': locked,
         'edits': len(plan), 'max_distance': max(distances, default=0.0),
-        'unresolved_indices': tuple(unresolved_indices), 'scope_vertices': len(vertices),
+        'unresolved_indices': tuple(unresolved_indices),
+        'cross_plane': len(cross_plane_indices), 'cross_plane_indices': tuple(cross_plane_indices),
+        'scope_vertices': len(vertices),
     }
 
 
@@ -177,8 +189,8 @@ class VAPB_OT_weight_preview(bpy.types.Operator):
 
 class VAPB_OT_weight_select_unresolved(bpy.types.Operator):
     bl_idname = "vapb.weight_select_unresolved"
-    bl_label = "距離超過・未解決頂点を選択表示"
-    bl_description = "明示的に B の該当頂点を選択し、編集モードで表示します"
+    bl_label = "距離超過・境界警告頂点を選択表示"
+    bl_description = "明示的に B の距離超過・境界越境頂点を選択し、編集モードで表示します"
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
@@ -194,7 +206,7 @@ class VAPB_OT_weight_select_unresolved(bpy.types.Operator):
         if target.name not in context.view_layer.objects:
             self.report({'ERROR'}, "B は現在のビューレイヤーにありません")
             return {'CANCELLED'}
-        unresolved = set(stats['unresolved_indices'])
+        unresolved = set(stats['unresolved_indices']) | set(stats['cross_plane_indices'])
         for vertex in target.data.vertices:
             vertex.select = vertex.index in unresolved
         for selected in context.selected_objects:
@@ -207,12 +219,13 @@ class VAPB_OT_weight_select_unresolved(bpy.types.Operator):
         for vertex in edit_mesh.verts:
             vertex.select_set(vertex.index in unresolved)
         bmesh.update_edit_mesh(target.data)
-        self.report({'INFO'}, f"未解決頂点 {len(unresolved)} を B で選択表示しました")
+        self.report({'INFO'}, f"距離超過 {stats['unresolved']} / 境界越境 {stats['cross_plane']} 頂点を B で選択表示しました")
         return {'FINISHED'}
 
 
 def _summary(stats):
     return (f"対象 {stats['scope_vertices']} / 一致 {stats['matched']} / 距離超過・未解決 {stats['unresolved']} / "
+            f"宣言境界越境 {stats['cross_plane']} / "
             f"ロック保護 {stats['locked']} / 変更予定 {stats['edits']} / "
             f"一致最大距離 {stats['max_distance']:.5f} ワールド単位")
 
