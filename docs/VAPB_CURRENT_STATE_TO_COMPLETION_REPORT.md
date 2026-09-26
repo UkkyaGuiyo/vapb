@@ -65,6 +65,20 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | PK-01 / 1,21 | Build/install/use final addon ZIP | tools/build_distribution_zip.py | Exact commit/hash; clean Blender GUI install and all major user operations | 実装中 | Legacy builder exists; final artifact unbuilt |
 | GH-01 / 17,18,21 | GitHub reproducible checkpoints/handoff | this document, PRODUCT_SPEC, tests | All needed helpers tracked; fresh checkout; remote SHA verified; no private data | 実装中 | Remote access restored; checkpoint pending |
 
+## Multiple skins in one model: causal regression — 2026-09-26
+
+The private model population exposed a missing discrimination step: matching only the ordered Prefab instance edges cannot choose among several Renderers inside the same FBX. A public synthetic source with two skin Mesh Objects in one model reproduced `OCCURRENCE_AMBIGUOUS` after successful Blender import/edit/save-reopen/export. This is a production selection defect, separate from private B's missing external script dependency.
+
+The finalizer now first completes the full source/no-op/witness/restored identity check. It derives the selected source Renderer and Mesh public IDs from the exact FBX Model UID, verifies membership in the original per-ID snapshot, then selects by both the ordered instance edges and the leaf Renderer ID. It does not use names or list order to assign identity.
+
+Fresh Unity 2022.3.22f1 validation after the fix: PASS, exit 0; one selected skin changed, one sibling Renderer preserved, 24 edited vertices/two bones, original assets/materials/root/bones preserved, idempotent second application and unrelated-Component negative control PASS. The package carries the tested current helper source. compileall/diff checks PASS. Independent read-only scope review PASS. The existing Python count remains 327; this follow-up changes C# selection and Blender/Unity fixture setup only.
+
+Private B's SDK-qualified Oracle public-API diagnosis confirms three missing MonoBehaviours on each of its two loaded Prefabs. Three serialized references point to one script absent from Assets, embedded VRChat packages and PackageCache; the other sixteen script references resolve. Its publisher/package is not identified from bounded local evidence. Do not remove those components or install a guessed dependency.
+
+Representative private A has 459 native skin Mesh Objects across fourteen contexts, without model-instance edge metadata. Of 170 direct SkinnedRenderer records, 151 have exact serialized skin/material data and distinct per-context Mesh references. An isolated source witness passes for one selected record: 26 source Renderers/skins/Meshes and 204 Transforms, with full no-op/witness/restored parity and original raw/meta restoration. The selected serialized Mesh GUID/localID maps to exactly one source Renderer, one witnessed FBX Model/Geometry pair and one of 26 native candidates in that root. Both source and declared skin arrays have 176 bone slots with the root at the same index. Individual target bone Transform identities and rest-pose correspondence still require public-API verification; matching counts alone is not that proof. Neither A nor B is yet a completed real roundtrip.
+
+**Next action:** verify the representative-avatar direct skin's exact public bone identities and rest matrices in an isolated SDK-qualified Oracle before implementing its deferred restoration path, while keeping B's unknown external dependency explicitly unresolved.
+
 ## Model-instance skin export checkpoint — 2026-09-26
 
 The model-instance export operator now preserves the original package and emits an edited FBX, two source witnesses, and one deferred Unity restoration task. Object/data receipts and the selected root/ordered instance edges must agree. Unity checks source/no-op/witness equivalence and exact public identities before creating a new Prefab Variant. Only the selected skin Mesh/bone binding is overridden; source assets, materials and other components are retained. Failed new-Variant verification rolls back the new asset; an occupied Variant with unrelated changes is rejected without overwriting it.

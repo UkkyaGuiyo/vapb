@@ -31,6 +31,13 @@ def prepare(root):
     mesh.vertex_groups.new(name='Child').add([4, 5, 6, 7], 1.0, 'REPLACE')
     mesh.modifiers.new('Skin', 'ARMATURE').object = rig
     mesh.parent = rig
+    if '--two-model-skins' in sys.argv:
+        other = mesh.copy()
+        other.data = mesh.data.copy()
+        bpy.context.collection.objects.link(other)
+        other.name = 'SyntheticOtherSkin'
+        other.location.x += 3
+        other.select_set(True)
     target = root / 'Assets/VapbSkinRoundtrip/Input.fbx'
     target.parent.mkdir(parents=True, exist_ok=True)
     assert not target.exists()

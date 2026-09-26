@@ -244,30 +244,23 @@ public static class VapbModelSkinFinalizer
 
         GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         if (prefab == null || HasMissingScripts(prefab)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
-        SkinnedMeshRenderer target = ResolveOccurrence(prefab, task);
-        if (target.sharedMesh == null || target.bones == null || target.bones.Length == 0 ||
-            target.rootBone == null) Reject("SOURCE_SKIN_UNSUPPORTED");
         string sourceGuid = task.source_model_guid;
-        SkinnedMeshRenderer sourceRenderer = SourceLeaf(target, task, out string[] targetBoneIds);
-        if (sourceRenderer == null || sourceRenderer.sharedMesh == null) Reject("SOURCE_SKIN_UNSUPPORTED");
-        long sourceRendererId = LocalId(sourceRenderer, sourceGuid);
-        long sourceMeshId = LocalId(sourceRenderer.sharedMesh, sourceGuid);
-        SourceIdentity source = ResolveSourceIdentity(target, sourceRenderer, sourceGuid, targetBoneIds);
         byte[] noop = Payload(task.witness_noop_path, task.witness_noop_sha256);
         byte[] witness = Payload(task.witness_path, task.witness_sha256);
-        WitnessResult mapping = RunWitness(sourcePath, task, sourceBytes, sourceMeta, noop, witness,
-            sourceRendererId, sourceMeshId);
+        WitnessResult mapping = RunWitness(sourcePath, task, sourceBytes, sourceMeta, noop, witness);
         prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
         if (prefab == null || HasMissingScripts(prefab)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
-        target = ResolveOccurrence(prefab, task);
-        sourceRenderer = SourceLeaf(target, task, out targetBoneIds);
-        if (LocalId(sourceRenderer, sourceGuid) != sourceRendererId ||
-            LocalId(sourceRenderer.sharedMesh, sourceGuid) != sourceMeshId)
+        SkinnedMeshRenderer target = ResolveOccurrence(prefab, task, mapping.rendererId);
+        if (target.sharedMesh == null || target.bones == null || target.bones.Length == 0 ||
+            target.rootBone == null) Reject("SOURCE_SKIN_UNSUPPORTED");
+        SkinnedMeshRenderer sourceRenderer = SourceLeaf(target, task, out string[] targetBoneIds);
+        if (sourceRenderer == null || sourceRenderer.sharedMesh == null) Reject("SOURCE_SKIN_UNSUPPORTED");
+        if (LocalId(sourceRenderer, sourceGuid) != mapping.rendererId ||
+            LocalId(sourceRenderer.sharedMesh, sourceGuid) != mapping.meshId)
             Reject("SOURCE_ID_DRIFT");
-        source = ResolveSourceIdentity(target, sourceRenderer, sourceGuid, targetBoneIds);
+        SourceIdentity source = ResolveSourceIdentity(target, sourceRenderer, sourceGuid, targetBoneIds);
         if (!mapping.transformIds.TryGetValue(task.source_model_uid, out long mappedRendererTransform) ||
-            mappedRendererTransform != LocalId(sourceRenderer.transform, sourceGuid) ||
-            mapping.rendererId != sourceRendererId || mapping.meshId != sourceMeshId)
+            mappedRendererTransform != LocalId(sourceRenderer.transform, sourceGuid))
             Reject("WITNESS_RENDERER_MISMATCH");
         var uidByTransform = new Dictionary<long, string>();
         foreach (KeyValuePair<string, long> row in mapping.transformIds)
@@ -352,12 +345,12 @@ public static class VapbModelSkinFinalizer
     private static void Reject(string code) { throw new InvalidOperationException(code); }
     private static string SafeError(Exception error) { return error is InvalidOperationException && Regex.IsMatch(error.Message, "^[A-Z_]+$") ? error.Message : "UNEXPECTED_EXCEPTION"; }
 
-    private static SkinnedMeshRenderer ResolveOccurrence(GameObject prefab, Task task)
+    private static SkinnedMeshRenderer ResolveOccurrence(GameObject prefab, Task task, long leafRendererId)
     {
         SkinnedMeshRenderer found = null;
         foreach (SkinnedMeshRenderer skin in prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true))
         {
-            if (MatchesOccurrence(skin, task))
+            if (MatchesOccurrence(skin, task, leafRendererId))
             {
                 if (found != null) Reject("OCCURRENCE_AMBIGUOUS");
                 found = skin;
@@ -367,7 +360,7 @@ public static class VapbModelSkinFinalizer
         return found;
     }
 
-    private static bool MatchesOccurrence(SkinnedMeshRenderer renderer, Task task)
+    private static bool MatchesOccurrence(SkinnedMeshRenderer renderer, Task task, long leafRendererId)
     {
         UnityEngine.Object current = renderer;
         for (int i = 0; i < task.instance_edges.Length; i++)
@@ -386,7 +379,7 @@ public static class VapbModelSkinFinalizer
         }
         return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(current)) == task.source_model_guid &&
             PrefabUtility.GetCorrespondingObjectFromSource(current) == null &&
-            current is SkinnedMeshRenderer;
+            current is SkinnedMeshRenderer && LocalId(current, task.source_model_guid) == leafRendererId;
     }
 
     private static SkinnedMeshRenderer SourceLeaf(SkinnedMeshRenderer renderer, Task task, out string[] targetBoneIds)
@@ -463,7 +456,7 @@ public static class VapbModelSkinFinalizer
     }
 
     private static WitnessResult RunWitness(string sourcePath, Task task, byte[] original,
-        byte[] originalMeta, byte[] noop, byte[] witness, long sourceRendererId, long sourceMeshId)
+        byte[] originalMeta, byte[] noop, byte[] witness)
     {
         byte[] comparisonMeta = null;
         Snapshot baseline = null;
@@ -482,8 +475,6 @@ public static class VapbModelSkinFinalizer
             }
             comparisonMeta = File.ReadAllBytes(Disk(sourcePath) + ".meta");
             baseline = Capture(sourcePath, task.source_model_guid);
-            MeshLayout sourceLayout = CaptureLayout(SourceMeshById(sourcePath, task.source_model_guid,
-                sourceMeshId));
             File.WriteAllBytes(Disk(sourcePath), noop);
             AssetDatabase.ImportAsset(sourcePath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             if (!baseline.Same(Capture(sourcePath, task.source_model_guid)) ||
@@ -498,8 +489,11 @@ public static class VapbModelSkinFinalizer
             if (!baseline.Same(Capture(sourcePath, task.source_model_guid)) ||
                 !EqualBytes(comparisonMeta, File.ReadAllBytes(Disk(sourcePath) + ".meta")))
                 Reject("WITNESS_SEMANTIC_DRIFT");
-            result = InspectWitness(sourcePath, task, sourceRendererId, sourceMeshId);
-            result.sourceLayout = sourceLayout;
+            result = InspectWitness(sourcePath, task);
+            if (!baseline.renderers.ContainsKey(result.rendererId) ||
+                !baseline.meshes.ContainsKey(result.meshId)) Reject("WITNESS_SOURCE_ID_MISSING");
+            result.sourceLayout = CaptureLayout(SourceMeshById(sourcePath, task.source_model_guid,
+                result.meshId));
         }
         finally
         {
@@ -528,8 +522,7 @@ public static class VapbModelSkinFinalizer
         return result;
     }
 
-    private static WitnessResult InspectWitness(string sourcePath, Task task,
-        long sourceRendererId, long sourceMeshId)
+    private static WitnessResult InspectWitness(string sourcePath, Task task)
     {
         GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
         var result = new WitnessResult();
@@ -549,7 +542,7 @@ public static class VapbModelSkinFinalizer
             result.meshId = LocalId(skins[0].sharedMesh, task.source_model_guid);
         }
         if (unexpectedWitnessUid || expected.Count != 0 || callbackCounts.Count != task.source_model_uids.Length ||
-            result.rendererId != sourceRendererId || result.meshId != sourceMeshId)
+            result.rendererId == 0 || result.meshId == 0)
             Reject("WITNESS_UID_SET_MISMATCH");
         return result;
     }

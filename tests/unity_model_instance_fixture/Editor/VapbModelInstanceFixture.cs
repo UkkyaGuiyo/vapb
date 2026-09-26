@@ -41,6 +41,16 @@ public static class VapbModelInstanceFixture
 
     public static void Prepare()
     {
+        PrepareWithSkinCount(1);
+    }
+
+    public static void PrepareTwoSkins()
+    {
+        PrepareWithSkinCount(2);
+    }
+
+    private static void PrepareWithSkinCount(int expectedSkins)
+    {
         var report = new Report { error = "UNEXPECTED_EXCEPTION" };
         try
         {
@@ -52,7 +62,7 @@ public static class VapbModelInstanceFixture
                 AssetDatabase.LoadAssetAtPath<GameObject>(OtherModelPath) == null)
                 throw new InvalidOperationException("SECOND_MODEL_UNAVAILABLE");
             GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
-            SkinnedMeshRenderer modelSkin = SingleSkin(model);
+            SkinnedMeshRenderer modelSkin = RepresentativeSkin(model, expectedSkins);
             if (modelSkin == null || modelSkin.sharedMesh == null || modelSkin.bones.Length < 2)
                 throw new InvalidOperationException("INPUT_MODEL_UNSUPPORTED");
             report.model_renderers = CountRenderers(model);
@@ -85,8 +95,8 @@ public static class VapbModelInstanceFixture
             finally { UnityEngine.Object.DestroyImmediate(baseInstance); }
 
             GameObject variant = AssetDatabase.LoadAssetAtPath<GameObject>(VariantPath);
-            SkinnedMeshRenderer baseSkin = SingleSkin(baseAsset);
-            SkinnedMeshRenderer variantSkin = SingleSkin(variant);
+            SkinnedMeshRenderer baseSkin = RepresentativeSkin(baseAsset, expectedSkins);
+            SkinnedMeshRenderer variantSkin = RepresentativeSkin(variant, expectedSkins);
             if (baseSkin == null || variantSkin == null)
                 throw new InvalidOperationException("PREFAB_SKIN_UNAVAILABLE");
             report.variant_asset_type = PrefabUtility.GetPrefabAssetType(variant) == PrefabAssetType.Variant;
@@ -110,9 +120,9 @@ public static class VapbModelInstanceFixture
             report.package_exists = File.Exists(ProjectFile("Source.unitypackage"));
             report.pass = report.package_exists && report.variant_asset_type && report.distinct_model_guids &&
                 report.base_source_is_input && report.variant_source_is_input &&
-                report.model_renderers == 1 && report.model_skins == 1 && report.model_bones >= 2 &&
-                report.base_renderers == 1 && report.base_skins == 1 && report.base_bones == report.model_bones &&
-                report.variant_renderers == 1 && report.variant_skins == 1 && report.variant_bones == report.model_bones &&
+                report.model_renderers == expectedSkins && report.model_skins == expectedSkins && report.model_bones >= 2 &&
+                report.base_renderers == expectedSkins && report.base_skins == expectedSkins && report.base_bones == report.model_bones &&
+                report.variant_renderers == expectedSkins && report.variant_skins == expectedSkins && report.variant_bones == report.model_bones &&
                 report.base_source_hops == 1 && report.variant_source_hops == 2 &&
                 report.base_instance_documents >= 1 && report.variant_instance_documents >= 1 &&
                 report.base_direct_renderer_documents == 0 && report.variant_direct_renderer_documents == 0;
@@ -122,11 +132,12 @@ public static class VapbModelInstanceFixture
         Finish(report);
     }
 
-    private static SkinnedMeshRenderer SingleSkin(GameObject root)
+    private static SkinnedMeshRenderer RepresentativeSkin(GameObject root, int expectedSkins)
     {
         if (root == null) return null;
         SkinnedMeshRenderer[] renderers = root.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-        return renderers.Length == 1 ? renderers[0] : null;
+        // Fixture summary selection only; never a production identity join.
+        return renderers.Length == expectedSkins ? renderers[0] : null;
     }
 
     private static int CountRenderers(GameObject root)
