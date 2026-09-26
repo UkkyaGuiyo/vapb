@@ -96,7 +96,36 @@ def main():
         roots[0]['unity_composition_member_id'] = '0' * 32
         reject()
         roots[0]['unity_composition_member_id'] = member
+        rig = next(mod.object for mod in mesh.modifiers if mod.type == 'ARMATURE')
+        bone_state = [(bone.get('_vapb_fbx_bone_realization_id'), bone.use_deform)
+                      for bone in rig.data.bones]
+        if config.get('source_subset_fbx'):
+            from unitypackage_blender_importer.blender.fbx_witness import source_skin_bone_uids
+            source_uids = source_skin_bone_uids(config['source_subset_fbx'],
+                mesh['_vapb_fbx_model_uid'], mesh.data['_vapb_fbx_geometry_uid'])
+            excluded = [bone for bone in rig.data.bones
+                        if str(bone.get('_vapb_fbx_model_uid')) not in source_uids]
+            assert len(rig.data.bones) == 3 and len(source_uids) == 2 and len(excluded) == 1
+            selected_bone = next(bone for bone in rig.data.bones
+                                 if str(bone.get('_vapb_fbx_model_uid')) in source_uids)
+            original_deform = selected_bone.use_deform
+            try:
+                selected_bone.use_deform = False
+                reject()
+            finally:
+                selected_bone.use_deform = original_deform
+            # Native Blender group/bone names define this intentionally added
+            # influence; the source subset above is selected by FBX identities.
+            assert mesh.vertex_groups.get(excluded[0].name) is None
+            group = mesh.vertex_groups.new(name=excluded[0].name)
+            try:
+                group.add([0], 0.25, 'REPLACE')
+                reject()
+            finally:
+                mesh.vertex_groups.remove(group)
         assert bpy.ops.export_scene.vapb_unitypackage(filepath=str(output)) == {'FINISHED'}
+        assert bone_state == [(bone.get('_vapb_fbx_bone_realization_id'), bone.use_deform)
+                              for bone in rig.data.bones]
         assert output.is_file() and output.stat().st_size > 0
         print('MODEL_SKIN_PACKAGE_PASS')
     finally:

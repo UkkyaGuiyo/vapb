@@ -26,7 +26,12 @@ def prepare(root):
     bone.head, bone.tail = (0, 0, 0), (0, 0, 1)
     child = data.edit_bones.new('Child')
     child.head, child.tail, child.parent = (0, 0, 1), (0, 0, 2), bone
+    if '--skin-bone-subset' in sys.argv:
+        unused = data.edit_bones.new('OtherBranch')
+        unused.head, unused.tail, unused.parent = (1, 0, 1), (1, 0, 2), bone
     bpy.ops.object.mode_set(mode='OBJECT')
+    if '--skin-bone-subset' in sys.argv:
+        rig.pose.bones['OtherBranch']['_vapb_fixture_unused_skin_bone'] = 'yes'
     mesh.vertex_groups.new(name='Root').add([0, 1, 2, 3], 1.0, 'REPLACE')
     mesh.vertex_groups.new(name='Child').add([4, 5, 6, 7], 1.0, 'REPLACE')
     mesh.modifiers.new('Skin', 'ARMATURE').object = rig
@@ -46,7 +51,42 @@ def prepare(root):
         use_custom_props=True, use_armature_deform_only=False,
         apply_scale_options=('FBX_SCALE_ALL' if '--source-units-in-fbx' in sys.argv
                              else 'FBX_SCALE_NONE')) == {'FINISHED'}
+    if '--skin-bone-subset' in sys.argv:
+        remove_fixture_unused_cluster(target)
     print('SKIN_SOURCE_FBX_PASS')
+
+
+def remove_fixture_unused_cluster(target):
+    """Author a synthetic skin subset while retaining its separate rig branch."""
+    from io_scene_fbx import encode_bin, parse_fbx
+    from unitypackage_blender_importer.blender.fbx_witness import encode_node
+    decoded, version = parse_fbx.parse(str(target), use_namedtuple=True)
+    objects = next(node for node in decoded.elems if node.id == b'Objects')
+    connections = next(node for node in decoded.elems if node.id == b'Connections')
+    models = [node for node in objects.elems if node.id == b'Model'
+              and any(prop.props and prop.props[0] == b'_vapb_fixture_unused_skin_bone'
+                      for group in node.elems if group.id == b'Properties70'
+                      for prop in group.elems)]
+    assert len(models) == 1
+    clusters = {node.props[0]: node for node in objects.elems
+                if node.id == b'Deformer' and node.props[-1] == b'Cluster'}
+    linked = [row.props[2] for row in connections.elems
+              if row.props[:2] == [b'OO', models[0].props[0]] and row.props[2] in clusters]
+    assert len(linked) == 1
+    cluster = clusters[linked[0]]
+    assert not any(node.props and len(node.props[0])
+                   for node in cluster.elems if node.id == b'Indexes')
+    objects.elems.remove(cluster)
+    connections.elems[:] = [row for row in connections.elems
+                            if linked[0] not in row.props[1:3]]
+    definitions = next(node for node in decoded.elems if node.id == b'Definitions')
+    for node in definitions.elems:
+        if node.id == b'Count':
+            node.props[0] -= 1
+        if node.id == b'ObjectType' and node.props[0] == b'Deformer':
+            next(child for child in node.elems if child.id == b'Count').props[0] -= 1
+    encode_bin.write(str(target), encode_node(decoded, False), version)
+    print('SKIN_SUBSET_FIXTURE_PASS')
 
 
 def main():

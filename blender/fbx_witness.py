@@ -47,6 +47,54 @@ def source_export_scale_options(source, scene_unit_scale):
     raise ValueError('Source FBX unit convention is not yet supported for skin restoration')
 
 
+def source_skin_bone_uids(source, model_uid, geometry_uid):
+    """Read one original Skin's explicit bone membership, including empty clusters."""
+    from io_scene_fbx import parse_fbx
+    decoded, _ = parse_fbx.parse(str(source), use_namedtuple=True)
+    objects = [node for node in decoded.elems if node.id == b'Objects']
+    connections = [node for node in decoded.elems if node.id == b'Connections']
+    if len(objects) != 1 or len(connections) != 1:
+        raise ValueError('Source FBX skin graph is unavailable')
+    by_uid = {}
+    for node in objects[0].elems:
+        if (not node.props or type(node.props[0]) is not int or
+                not node.props[0] or node.props[0] in by_uid):
+            raise ValueError('Source FBX object identity is invalid or duplicated')
+        by_uid[node.props[0]] = node
+    incoming = {}
+    for row in connections[0].elems:
+        if row.id == b'C' and row.props and row.props[0] == b'OO':
+            if len(row.props) != 3 or any(type(uid) is not int for uid in row.props[1:]):
+                raise ValueError('Source FBX object connection is invalid')
+            incoming.setdefault(row.props[2], []).append(row.props[1])
+
+    def kind(uid, element, subtype=None):
+        node = by_uid.get(uid)
+        return (node is not None and node.id == element and
+                (subtype is None or len(node.props) > 2 and node.props[2] == subtype))
+
+    model, geometry = int(model_uid), int(geometry_uid)
+    if (not kind(model, b'Model') or not kind(geometry, b'Geometry', b'Mesh') or
+            incoming.get(model, []).count(geometry) != 1):
+        raise ValueError('Source FBX Model and Geometry relation is invalid')
+    skins = [uid for uid in incoming.get(geometry, []) if kind(uid, b'Deformer', b'Skin')]
+    if len(skins) != 1:
+        raise ValueError('Source FBX skin is missing or ambiguous')
+    clusters = incoming.get(skins[0], [])
+    if (not clusters or len(set(clusters)) != len(clusters) or
+            any(not kind(uid, b'Deformer', b'Cluster') for uid in clusters)):
+        raise ValueError('Source FBX skin clusters are missing or ambiguous')
+    bones = []
+    for uid in clusters:
+        linked = [bone for bone in incoming.get(uid, []) if kind(bone, b'Model')]
+        if len(linked) != 1:
+            raise ValueError('Source FBX cluster bone is missing or ambiguous')
+        bones.append(str(linked[0]))
+    if len(set(bones)) != len(bones):
+        raise ValueError('Source FBX skin bone membership is duplicated')
+    return frozenset(bones)
+
+
 def encode_node(node, witness):
     from io_scene_fbx import encode_bin
     from io_scene_fbx.fbx_utils import elem_props_set

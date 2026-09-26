@@ -75,8 +75,36 @@ def _export_staged_mesh(context, source, output):
         bpy.data.scenes.remove(scene)
 
 
-def _export_staged_skin(context, source, armature, output, skin_binding, *, scale_options='FBX_SCALE_NONE'):
+def _validate_skin_subset(mesh, armature, allowed):
+    selected = {bone.name for bone in armature.data.bones
+                if armature.pose.bones[bone.name].get('_vapb_fbx_bone_realization_id') in allowed}
+    if len(selected) != len(allowed) or not selected:
+        raise ValueError('元SkinのBoneを一意に取得できません')
+    roots = 0
+    excluded_groups = set()
+    for bone in armature.data.bones:
+        if bone.name in selected:
+            if not bone.use_deform:
+                raise ValueError('元SkinのBoneで変形が無効化されています')
+            if bone.parent is None:
+                roots += 1
+            elif bone.parent.name not in selected:
+                raise ValueError('元Skin外の親Boneを必要とする構造は未対応です')
+        elif (group := mesh.vertex_groups.get(bone.name)) is not None:
+            excluded_groups.add(group.index)
+    if roots != 1:
+        raise ValueError('元SkinのルートBoneを一意に取得できません')
+    if any(group.group in excluded_groups and group.weight != 0
+           for vertex in mesh.data.vertices for group in vertex.groups):
+        raise ValueError('元Skin外のBoneに追加されたウェイトはこの経路では未対応です')
+
+
+def _export_staged_skin(context, source, armature, output, skin_binding, *,
+                        scale_options='FBX_SCALE_NONE', source_skin_only=False):
     """Export a private rest-pose rig/mesh copy carrying only allowed identity markers."""
+    allowed = {row['edited_bone_realization_id'] for row in skin_binding['mappings']}
+    if source_skin_only:
+        _validate_skin_subset(source, armature, allowed)
     scene = bpy.data.scenes.new('VAPB Skin Export')
     scene.unit_settings.scale_length = context.scene.unit_settings.scale_length
     copies, data_blocks = [], []
@@ -104,8 +132,9 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *, scal
             for key in list(block.keys()):
                 del block[key]
         mesh['_vapb_fbx_realization_id'] = source['_vapb_fbx_realization_id']
-        allowed = {row['edited_bone_realization_id'] for row in skin_binding['mappings']}
         for bone in rig.data.bones:
+            if source_skin_only:
+                bone.use_deform = rig.pose.bones[bone.name].get('_vapb_fbx_bone_realization_id') in allowed
             for key in list(bone.keys()):
                 del bone[key]
         for pose_bone in rig.pose.bones:
@@ -124,7 +153,7 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *, scal
             layer.update()
             result = bpy.ops.export_scene.fbx(filepath=str(output), use_selection=True,
                 object_types={'MESH', 'ARMATURE'}, use_mesh_modifiers=False,
-                use_custom_props=True, add_leaf_bones=False, use_armature_deform_only=False,
+                use_custom_props=True, add_leaf_bones=False, use_armature_deform_only=source_skin_only,
                 bake_anim=False, bake_space_transform=False, apply_scale_options=scale_options,
                 path_mode='STRIP', embed_textures=False)
         if result != {'FINISHED'} or not output.is_file():
@@ -200,7 +229,7 @@ def export_skin_package(context, mesh, output):
 
 def export_model_skin_package(context, mesh, output, *, direct=False):
     """Defer model Renderer identity to Unity while preserving source assets."""
-    from ..blender.fbx_witness import prepare_witness, source_export_scale_options
+    from ..blender.fbx_witness import prepare_witness, source_export_scale_options, source_skin_bone_uids
     from ..blender.fbx_receipt import RECEIPT_VERSION
     from ..export.model_skin import model_skin_task, direct_skin_task
     if context.mode != 'OBJECT' or mesh is None or mesh.type != 'MESH':
@@ -292,12 +321,18 @@ def export_model_skin_package(context, mesh, output, *, direct=False):
         if (not index.unique_source_model(int(task['source_model_uid'])) or
                 index.geometry_for_model(int(task['source_model_uid'])) != int(task['source_geometry_uid'])):
             raise ValueError('元FBXのModelとGeometryの関係を確認できません')
+        selected_uids = source_skin_bone_uids(raw, task['source_model_uid'], task['source_geometry_uid'])
+        bones = [row for row in task['bone_mappings'] if row['source_model_uid'] in selected_uids]
+        if {row['source_model_uid'] for row in bones} != selected_uids:
+            raise ValueError('元SkinのBoneをすべて出所記録から取得できません')
+        task['bone_mappings'] = bones
         noop, witness = folder / 'noop.fbx', folder / 'witness.fbx'
         task['source_model_uids'] = prepare_witness(raw, noop, witness)
         if not {b['source_model_uid'] for b in bones} <= set(task['source_model_uids']):
             raise ValueError('BoneのModel UIDが元FBXにありません')
         edited = folder / 'edited.fbx'
-        _export_staged_skin(context, mesh, rig, edited, {'mappings': bones}, scale_options=scale_options)
+        _export_staged_skin(context, mesh, rig, edited, {'mappings': bones},
+                            scale_options=scale_options, source_skin_only=True)
         payload, noop_bytes, witness_bytes = edited.read_bytes(), noop.read_bytes(), witness.read_bytes()
     task.update(model_guid=guid, model_sha256=hashlib.sha256(payload).hexdigest(),
                 witness_noop_path=witness_base + '_Noop.bytes',
