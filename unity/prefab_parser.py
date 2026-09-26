@@ -58,6 +58,8 @@ class PrefabModification:
     value: Any = None
     object_reference: dict[str, Any] | None = None
     raw: str = ""
+    # Local to the containing Prefab asset; never a source Renderer ID.
+    prefab_instance_file_id: int | None = None
 
 
 @dataclass
@@ -102,13 +104,14 @@ class PrefabData:
         to model this editor serialization, so use a narrow parser for the
         exact override records we need and refuse incomplete records.
         """
+        modifications = self.modifications()
         names = {
-            str(item.target_file_id): str(item.value)
-            for item in self.modifications()
+            (item.prefab_instance_file_id, item.target_guid, item.target_file_id): str(item.value)
+            for item in modifications
             if item.property_path == "m_Name" and item.value is not None
         }
         result = []
-        for item in self.modifications():
+        for item in modifications:
             match = re.fullmatch(r"m_Materials\.Array\.data\[(\d+)\]", item.property_path)
             if not match or not item.object_reference:
                 continue
@@ -117,7 +120,9 @@ class PrefabData:
                 "target_source_guid": item.target_guid,
                 "slot_index": int(match.group(1)),
                 "material_guid": ref_guid(item.object_reference),
-                "object_name": names.get(str(item.target_file_id), ""),
+                "object_name": names.get((item.prefab_instance_file_id, item.target_guid, item.target_file_id), ""),
+                "prefab_instance_file_id": str(item.prefab_instance_file_id),
+                "material_file_id": str(ref_file_id(item.object_reference)),
             })
         return result
 
@@ -148,6 +153,7 @@ class PrefabData:
                 result.append(PrefabModification(
                     int(target.group(1)), target.group(2).lower(), int(target.group(3)) if target.group(3) else None,
                     prop.group(1).strip(), (value_match.group(1).strip() if value_match else None), reference, chunk,
+                    prefab_instance_file_id=document.file_id,
                 ))
         return result
 

@@ -74,6 +74,13 @@ First block: trace the existing member realization/receipt path, add a failing p
 - `export/package_writer.py` now stages a complete, closed archive beside the output, publishes it with an atomic non-overwriting hard link, and removes its temporary file. Serialization failure exposes no final filename; an existing or racing output remains unchanged. Filesystems without hard-link support fail closed (export to a supported local filesystem); no unsafe fallback.
 - Tests initially reproduced both final-name visibility during writing and leftover partial output on simulated disk failure. Focused materialization suite: 20 PASS (three new writer regressions, including competing output protection), Python 3.14.6 from repository parent.
 - Scope_guard review PASS. This is export storage correctness, not proof of Blender editing or Unity reimport. End-to-end EX-03 remains incomplete.
+- HEAD-only clean checkout of code `a358bf070a35346d645d09bbbfdb12e76ad3e08d`: full Python suite **244 PASS**, 0 FAIL/ERROR, same repository-parent discovery command. No untracked helper was needed.
+
+## Checkpoint: retain serialized modification scope
+
+- `PrefabModification` now retains its containing signed PrefabInstance fileID. Material override records retain that instance ID and the actual referenced Material fileID, separate from the targeted Renderer fileID. Display-name lookup is scoped by instance and source GUID, so repeated source renderers cannot leak names across instances.
+- This preserves serialized evidence needed by production occurrence traversal. It does not turn the existing source-key-only effective resolver into an occurrence resolver.
+- Regression first failed on missing fields; parser and Stage 1A suites then **18 PASS** on Python 3.14.6. Command from repository parent: `python -m unittest unitypackage_blender_importer.tests.test_prefab_parser unitypackage_blender_importer.tests.test_stage1a_synthetic_projection -q`. Scope_guard PASS. An earlier combined invocation named a nonexistent Stage 1B test module and failed discovery; the corrected invocation above is the recorded result.
 
 ## Decisions / evidence / next action
 

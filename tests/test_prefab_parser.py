@@ -207,7 +207,39 @@ PrefabInstance:
             "slot_index": 0,
             "material_guid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             "object_name": "Coat",
+            "prefab_instance_file_id": "100",
+            "material_file_id": "2100000",
         }])
+
+    def test_modification_identity_retains_instance_and_source_scope(self):
+        # The same signed renderer localID appears in two instances. Names
+        # are display data; they must not leak from one instance to another.
+        text = "%YAML 1.1\n"
+        for instance_id, name, material_id in ((-901, "Left", -21), (902, "Right", 22)):
+            text += f"""--- !u!1001 &{instance_id}
+PrefabInstance:
+  m_Modification:
+    m_Modifications:
+    - target: {{fileID: -123, guid: {'a' * 32}, type: 3}}
+      propertyPath: m_Name
+      value: {name}
+    - target: {{fileID: -123, guid: {'a' * 32}, type: 3}}
+      propertyPath: m_Materials.Array.data[0]
+      value:
+      objectReference: {{fileID: {material_id}, guid: {'b' * 32}, type: 2}}
+"""
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "Instances.prefab"
+            path.write_text(text, encoding="utf-8")
+            prefab = parse_prefab(path)
+            modifications = prefab.modifications()
+            overrides = prefab.modification_materials()
+        self.assertEqual([-901, -901, 902, 902], [m.prefab_instance_file_id for m in modifications])
+        self.assertEqual(["Left", "Right"], [o["object_name"] for o in overrides])
+        self.assertEqual(["-901", "902"], [o["prefab_instance_file_id"] for o in overrides])
+        self.assertEqual(["-21", "22"], [o["material_file_id"] for o in overrides])
+        self.assertEqual([3] * 4, [m.target_type for m in modifications])
+        self.assertEqual([2, 2], [m.object_reference["type"] for m in modifications if m.object_reference])
 
     def test_effective_prefab_preserves_target_identity_and_last_override(self):
         text = """%YAML 1.1
