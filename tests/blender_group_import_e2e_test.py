@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import unitypackage_blender_importer as addon
 from unitypackage_blender_importer.tests.blender_cross_package_dependency_test import package, material, make_fbx
 from unitypackage_blender_importer.operators import import_unitypackage as m
+from unitypackage_blender_importer.operators.renderer_binding import _material_plan
+from unitypackage_blender_importer.blender.renderer_binding import BindingError
 
 
 def prefab(fbx_guid, material_guid):
@@ -131,14 +133,72 @@ def main():
                    and o.get('_vapb_fbx_source_asset_guid') == fbx_guid]
         assert len(natives) == 1
         obj = natives[0]
-        surface = obj.data.materials[0]
+        record = records[0]
+        authored_package = record['materials']['0']['source_package_id']
+        source_data = obj.data
+        source_materials = tuple(source_data.materials)
+        assert source_data.users > 1
+        obj.data = source_data.copy()
+        assert obj.data.users == 1
+        bpy.context.scene.vapb_renderer_root = selected_root
+        bpy.context.scene.vapb_renderer_mesh = obj
+        occurrence_id = record['occurrence_id']
+        surface = _material_plan(record, obj)[0]
+        assert surface.get('unity_source_package_id') != authored_package
+        original_slots = tuple((slot.link, slot.material) for slot in obj.material_slots)
+        original_binding = obj.get('_vapb_renderer_binding')
+        def rejected_confirmation():
+            try:
+                result = bpy.ops.vapb.confirm_renderer_binding(occurrence_id=occurrence_id)
+                assert result == {'CANCELLED'}, result
+            except RuntimeError as exc:
+                assert '素材を一意に特定' in str(exc), str(exc)
+            assert tuple((slot.link, slot.material) for slot in obj.material_slots) == original_slots
+            assert obj.get('_vapb_renderer_binding') == original_binding
+        original_file_id = surface['unity_material_file_id']
+        surface['unity_material_file_id'] = '999999'
+        try:
+            try:
+                _material_plan(record, obj)
+                raise AssertionError('Wrong local ID resolved')
+            except BindingError:
+                pass
+            rejected_confirmation()
+        finally:
+            surface['unity_material_file_id'] = original_file_id
+        competing = surface.copy()
+        competing['unity_source_package_id'] = 'competing-package'
+        try:
+            try:
+                _material_plan(record, obj)
+                raise AssertionError('Ambiguous cross-package provider resolved')
+            except BindingError:
+                pass
+            rejected_confirmation()
+            competing['unity_source_package_id'] = authored_package
+            assert _material_plan(record, obj)[0] == competing, 'Local provider was not preferred'
+        finally:
+            bpy.data.materials.remove(competing)
+        assert bpy.ops.vapb.confirm_renderer_binding(occurrence_id=occurrence_id) == {'FINISHED'}
+        assert tuple(source_data.materials) == source_materials, 'Source template material changed'
+        surface = obj.material_slots[0].material
+        assert surface.get('unity_source_package_id') != authored_package
+        assert obj.get('_vapb_renderer_binding')
         assert surface.get('unity_material_guid') == material_guid
+        provider_package = surface.get('unity_source_package_id')
         bsdf = next(n for n in surface.node_tree.nodes if n.type=='BSDF_PRINCIPLED')
         mix = bsdf.inputs['Base Color'].links[0].from_node
         image = mix.inputs['Color2'].links[0].from_node.image
         assert image.get('unity_guid') == image_guid
         assert selected_root.get('unity_asset_path') == 'Assets/PrefabB.prefab'
         assert not m._PREPARED_SESSIONS, m._PREPARED_SESSIONS
+        blend_path = root/'confirmed.blend'
+        bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
+        bpy.ops.wm.open_mainfile(filepath=str(blend_path))
+        confirmed = [o for o in bpy.data.objects if o.type == 'MESH' and o.get('_vapb_renderer_binding')]
+        assert len(confirmed) == 1
+        assert confirmed[0].material_slots[0].material.get('unity_source_package_id') == provider_package
+        assert str(confirmed[0].material_slots[0].material.get('unity_material_file_id')) == str(original_file_id)
         print('GROUP_IMPORT_E2E_OK', evidence, flush=True)
         addon.unregister()
         temp.cleanup()

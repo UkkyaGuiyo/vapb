@@ -172,9 +172,13 @@ def _material_plan(record, mesh_obj):
         if not package or not guid or not file_id:
             raise BindingError("Material reference is incomplete")
         matches = [material for material in bpy.data.materials
-                   if material.get("unity_source_package_id", "") == package
+                   if material.get("unity_source_package_id", "") not in (None, "", "LEGACY_UNSCOPED")
                    and str(material.get("unity_material_guid", "")).lower() == guid
                    and str(material.get("unity_material_file_id", "")) == file_id]
+        local = [material for material in matches
+                 if material.get("unity_source_package_id") == package]
+        if local:
+            matches = local
         if len(matches) != 1:
             raise BindingError(f"Material slot {index} has no unique scoped material")
         plan.append(matches[0])

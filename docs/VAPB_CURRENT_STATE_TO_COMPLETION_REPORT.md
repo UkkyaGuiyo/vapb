@@ -65,6 +65,16 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | PK-01 / 1,21 | Build/install/use final addon ZIP | tools/build_distribution_zip.py | Exact commit/hash; clean Blender GUI install and all major user operations | 実装中 | Legacy builder exists; final artifact unbuilt |
 | GH-01 / 17,18,21 | GitHub reproducible checkpoints/handoff | this document, PRODUCT_SPEC, tests | All needed helpers tracked; fresh checkout; remote SHA verified; no private data | 実装中 | Remote access restored; checkpoint pending |
 
+## Explicit cross-package Material confirmation checkpoint — 2026-09-26
+
+The repaired split-package group probe exposed an actual confirmation blocker: authored Material references retain the Prefab package as their source context, while the real Material provider belongs to another package. Confirmation previously required that authored package to own the Material. A missing native slot before explicit confirmation is expected, not itself an import regression.
+
+The minimal correction resolves exact Material GUID plus signed local fileID among scoped providers, prefers the authored package when available, then accepts a unique cross-package provider. Missing/wrong-ID/ambiguous candidates are rejected before mutation. It does not infer a Renderer-to-Mesh edge, replace authored provenance or introduce automatic native binding. Actual provider metadata remains on the selected Material datablock and survives .blend save/reopen.
+
+Verification: real Blender group import/explicit confirmation PASS, including wrong-fileID and ambiguous-provider rejection without mutation, local preference, deliberate single-user Mesh copy, unchanged source template, Material/Texture assignments and provider persistence after reopen. Focused Python binding **11 PASS**, full repository-parent Python **323 PASS**. The earlier group-probe failure recorded at 121cca3 is now resolved for this explicit-confirmation path. Cross-package UnityPackage export is still unsupported by the existing exporter and is not claimed here.
+
+Independent read-only scope review: PASS. The dedicated reviewer launch and old reviewer reuse were unavailable because the agent thread limit was reached; an existing independent agent performed the scope_guard contract on the other agent's changes, with no self-review or extra edits.
+
 ## Model-backed real Import checkpoint — 2026-09-26
 
 **PROVEN:** dependency extraction now uses the existing selected-candidate source closure. Model-backed Prefab/Variant members are retained even without directly serialized Renderer documents. Each serialized model instance edge receives independent native Objects, with source receipts retained; shared source templates are hidden only after all copies. Material override references do not create extra direct copies. A genuine direct Mesh reference to the same model is still retained. No Unity Renderer identity is inferred from names, list order or unique object counts.
@@ -87,7 +97,7 @@ Private case B was imported and saved/reopened again. It now has **62 visible Me
 4. Complete remaining Cleanup, Weight Transfer and Bone Merge functionality on top of the working Core, with protected references, preview and recovery.
 5. Verify the entire original specification and a commit-bound distributable ZIP. Real-data Core success and full product completion remain separate acceptance claims.
 
-Current block: model-backed private geometry populations now match the observed per-Prefab Unity counts for case B. Authoritative model Renderer mapping, deep transforms/overrides and the repaired split-package Material probe remain unresolved. See the model checkpoint above. The native editing, receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
+Current block: model-backed private geometry populations now match the observed per-Prefab Unity counts for case B. Deep transforms/overrides and real model-instance export/restore remain unresolved; explicit cross-package Material confirmation is repaired. See the model checkpoint above. The native editing, receipt and static export gates are passed only for their recorded synthetic scope. Do not infer Unity localID from names/FBX UID. Preserve the full product goal.
 
 ## Existing-bone skin package checkpoint — 2026-09-26
 
