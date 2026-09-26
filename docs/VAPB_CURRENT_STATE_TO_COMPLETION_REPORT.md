@@ -38,6 +38,22 @@ This is an intermediate installed-runtime export check, not final product delive
 
 **Next action:** finish the representative-avatar Oracle import or establish its concrete startup blocker, then verify the selected skin's exact target bone identities/rest matrices and edited layout before implementing deferred direct-skin restoration.
 
+## Real-avatar skin frame diagnosis — 2026-09-26
+
+The representative-avatar Oracle now completes. Its former long wait was a probe lifecycle failure: the revised continuation helper on disk had not been compiled into the headless Editor. A controlled restart of only the owned isolated batch process preserved its Library and pending phase, avoiding a repeat package import.
+
+**PROVEN:** one exact target Renderer/source Mesh relation; all 176 serialized bone IDs and root correspondence match public Unity API identities, with no null/duplicate bones or missing scripts. Source and Prefab relative bone matrices are exactly equal. A 0.006568499 difference between bindposes and current bone matrices already exists in the untouched source, so requiring those two representations to be identical incorrectly rejects this source. Bind-time and current transforms must not be conflated.
+
+The actual edited export retains 3,139 Unity vertices, triangle indices, one submesh, zero blendshapes and 176 bindposes. Independent source, edited and unedited-control witnesses uniquely join all 176 bone slots through FBX UID and realization receipts. All 3,315 per-vertex weights (at most two influences) and UV/color channels agree in the unedited control. These are identity and staging observations, not a completed Unity restoration.
+
+The roughly 1.105 local-coordinate difference is explained by FBX unit representation: original UnitScaleFactor is 100, staged export is 1. Public renderer matrices convert the unedited control into the original Mesh frame with maximum vertex error 2.85e-7; the frame is a positive uniform scale of approximately 100. Edit/control matrices and bindposes are identical; only two imported split vertices carry the intended change, approximately 0.000146759. Normal and tangent conversion differences remain measured separately (maximum normalized-vector distances approximately 6.21e-5 and 8.09e-4); do not claim exact shading parity.
+
+**Public-safe reproduction:** `tests/blender_skin_package_test.py --prepare-fbx --source-units-in-fbx` prepares a synthetic source using the native exporter's FBX_SCALE_ALL option. After the existing `VapbSkinRoundtripProbe.Prepare`, `tests/blender_skin_frame_test.py` imports that package and creates untouched/edited staged FBXs. `VapbSkinFrameProbe.Run` then reproduces the local-frame change while checking normalized unchanged geometry and the real edit. Blender 5.2.1 and Unity 2022.3.22f1 PASS, exit 0: 24 vertices, two bones, approximately 100 scale conversion, unchanged-control error 3.77e-7 and edited delta 0.002000034. The probe requires the frame difference to be present and reports failure with a nonzero process exit.
+
+The smaller counterfactual now passes: exporting the original untouched selection with native FBX_SCALE_ALL preserves its source UnitScaleFactor of 100. Unity local vertex positions and indices match the source exactly; weights also match. Renderer matrix error is 2.38e-7, aligned bindpose error 0.00031636, and normal/tangent component differences approximately 6.11e-5/4.18e-5. This avoids introducing a separate frame-normalization Mesh artifact. Independent scope review requested an explicit approximately-100 factor assertion in the synthetic regression; adopted. compileall/diff checks PASS. The Python baseline remains the last verified 328 PASS; these focused Blender/Unity regression files do not change that test population.
+
+**Next action:** implement the bounded witness-backed direct-skin Variant path and preserve recognized source FBX unit conventions during staging, then run the synthetic and real-avatar package restoration. No production correction is claimed complete at this checkpoint. Multiple-private-case Core roundtrip and final Unity/VRC usability remain incomplete.
+
 ## Requirements and acceptance tracking
 
 All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0–22. Each row groups those clauses; grouped rows cannot be marked complete with an omitted sub-clause.

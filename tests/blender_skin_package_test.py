@@ -43,7 +43,9 @@ def prepare(root):
     assert not target.exists()
     assert bpy.ops.export_scene.fbx(filepath=str(target), use_selection=True,
         object_types={'MESH', 'ARMATURE'}, add_leaf_bones=False, bake_anim=False,
-        use_custom_props=True, use_armature_deform_only=False) == {'FINISHED'}
+        use_custom_props=True, use_armature_deform_only=False,
+        apply_scale_options=('FBX_SCALE_ALL' if '--source-units-in-fbx' in sys.argv
+                             else 'FBX_SCALE_NONE')) == {'FINISHED'}
     print('SKIN_SOURCE_FBX_PASS')
 
 
