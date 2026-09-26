@@ -538,6 +538,61 @@ import、Package/Prefab選択、統合、Weight Transfer、Cleanup、Exportま�
 取り消し・再試行・保存再読込を検証する。
 使い方と、対応外の入力に遭遇した場合の行動を説明書に残す。
 
+### Unity側：Import後のVAPB適用アシスタント
+
+VAPBの通常ユーザーへManifestやFinalizerの内部概念を操作させない。
+Blender版VAPBから書き出した`.unitypackage`は、VAPB専用Unity Packageの事前インストールを要求せず、VAPB自身のEditor helper、Manifest、編集済みAsset、復元に必要なidentity / witness情報を含む。元Avatarが要求するVRChat SDK、Shader framework、その他third-party dependencyはこの「VAPB helper自己完結」の対象外であり、必要条件として明示する。
+
+通常のUnity側フローは次とする。
+
+```plain text
+Blenderで編集
+→ 「Unity用に書き出す」
+→ .unitypackageをUnityへImport
+→ script compile / domain reload完了後にVAPB Manifestを自動検出
+→ 非破壊preflight
+→ 日本語の確認画面
+→ ユーザーが［適用］
+→ 既存Finalizerを実行
+→ 完了結果を表示
+```
+
+完全な無確認自動適用は禁止する。
+自動化するのは「検出・preflight・確認画面を開く」までとし、Prefab / Variant / Renderer / Bone等を書き換えるFinalizerは、ユーザーが明示的に［適用］を押した後だけ実行する。
+
+確認画面では通常表示として、少なくとも次を示す。
+- VAPB編集データを検出したこと。
+- 対象Prefabの人間可読path / name。
+- 更新予定のMesh / Skin等の件数。
+- Bone / rootBone、Material、元Prefab、既存Unity/VRC設定について何を保持・再接続する予定か。
+- 生成するPrefab Variantのpath。
+- 外部Dependency、不足Dependency、Missing Script、stale source、identity mismatch、unsupported edit、既存Variant衝突等の警告。
+- `適用可能` / `部分対応` / `適用不可` の状態。
+
+GUID、signed fileID、Manifest JSON、witness内部表等は通常画面に出さず、「詳細」に隔離する。
+
+［適用］を有効にする前に、Manifest schema、task種別、対象Asset解決、source hash、identity、必要Dependency、Missing Script、出力先衝突等について、可能な範囲の**非破壊preflight**を行う。
+必須rebindが曖昧・不足・stale・unsupportedなら`適用不可`としてFinalizerを開始しない。
+`部分対応`は、要求されたCore復元自体は安全に実行できるが、preserve-only / unsupported state等の非致命的制約が明示されている場合にのみ使用し、必須identity未解決を部分成功扱いしない。
+
+Import順序へ依存した実装にしない。
+同じ`.unitypackage`内でEditor C# helperが初めて導入される場合、Asset import中にはそのコードがまだロードされていない可能性があるため、`importPackageCompleted`や`OnPostprocessAllAssets`だけを唯一の初回triggerにしない。
+script compile / domain reload後に動作するbootstrapから、Editorが安定状態になった後でManifestを再走査できる設計にする。
+Import中、compiling中、updating中、Asset Import Worker、batchmodeで対話ダイアログを開かない。
+
+domain reloadやEditor再起動で同じManifestの確認画面を無限に再表示しない。
+Manifest内容identityを基準に、prompt済み / cancel済み / apply済み状態をProjectローカルの非Asset状態へ記録する。
+Manifest内容が変わった新しいexportは再検出する。
+CancelはAssetを変更せず、`Tools > VAPB`等から同じ検出結果を再確認できるfallbackを残す。
+既存の「Manifestを手動選択してFinalizerを実行する」入口は、診断・復旧用のfallbackとして当面維持してよい。
+
+実装は既存の`VapbReferenceFinalizer`、`VapbModelSkinFinalizer`、Manifest、marker / witness、public Unity API identity検証を再利用する。
+Import Assistantは新しい復元エンジンを作らず、検出・read-only inspection・表示・既存Finalizer呼出しを担当する薄いorchestration層とする。
+Core round-tripのidentity / fail-closed条件を緩めてUXを成立させてはならない。
+
+このUXは最終製品の必須UIだが、現在進行中の複数private実データCore round-trip検証を中断してまで先行しない。
+Finalizer task schemaと実データの主要復元経路が安全なcheckpointに到達した時点で小さく統合し、最終distribution ZIP受入前には実装・検証を完了する。
+
 
 ## 13. Oracle・MCP・Computer Use・開発環境
 
