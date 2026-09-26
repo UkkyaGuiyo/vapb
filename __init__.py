@@ -28,6 +28,7 @@ if bpy is not None:
         unregister_weight_transfer_properties,
     )
     from .ui.weight_transfer_panel import WEIGHT_TRANSFER_PANEL_CLASSES
+    from .operators.export_unitypackage import CLASSES as PACKAGE_EXPORT_CLASSES, menu_export as menu_package_export
     from .operators.renderer_binding import CLASSES as RENDERER_OPERATOR_CLASSES
     from .ui.renderer_binding_panel import (
         CLASSES as RENDERER_PANEL_CLASSES,
@@ -41,6 +42,8 @@ if bpy is not None:
         for cls in UNITYPACKAGE_CLASSES:
             bpy.utils.register_class(cls)
         for cls in ROUNDTRIP_EXPORT_CLASSES:
+            bpy.utils.register_class(cls)
+        for cls in PACKAGE_EXPORT_CLASSES:
             bpy.utils.register_class(cls)
         for cls in TEXTURE_EDITING_CLASSES + TEXTURE_PANEL_CLASSES:
             bpy.utils.register_class(cls)
@@ -57,8 +60,12 @@ if bpy is not None:
             bpy.utils.register_class(cls)
         bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
         bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
+        bpy.types.TOPBAR_MT_file_export.append(menu_package_export)
 
     def unregister():
+        bpy.types.TOPBAR_MT_file_export.remove(menu_package_export)
+        for cls in reversed(PACKAGE_EXPORT_CLASSES):
+            bpy.utils.unregister_class(cls)
         unregister_renderer_properties()
         for cls in reversed(RENDERER_OPERATOR_CLASSES + RENDERER_PANEL_CLASSES):
             bpy.utils.unregister_class(cls)

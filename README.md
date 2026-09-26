@@ -4,6 +4,23 @@ Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.
 
 Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と、Blender内部引数を受け取るconstructor形式に対応しています。legacy `bpy.ops.import_scene.fbx` は既存のArmature、Weight、Shape Key、Material Slotの挙動を維持するため継続使用します。
 
+## 現在の製品化状況
+
+今回指定されたVRCアバター改変仕様全体は開発中です。Weight Transferと、直接Prefabの静的MeshのUnityPackage往復を合成データで検証しました。SkinのUnity復元、Semantic Cleanup、Semantic Bone Merge、private実データ回帰、最終配布ZIPの検証は完了していません。全仕様の正本と現状は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。
+
+### UnityPackage書き出し：直接Prefabの静的Mesh
+
+1. PackageをPrefab再構築モードで取り込み、**VAPB → Renderer対応** でRendererとnative Meshの対応を確定します。
+2. 対象Meshの頂点・面や素材割当を編集し、そのMeshをアクティブにします。
+3. **File → Export → VAPB UnityPackage（静的Mesh）** を選び、新しい出力名を指定します。
+4. 新規Unity Projectへ生成PackageをImportします。コンパイル完了後、`Assets/VAPBExport/manifest.json` を選択し、**Tools → VAPB → Apply Selected Export Manifest** を実行します。
+
+この経路は、元FBXにMeshが一つあり、直接Prefabの一つのMeshRendererだけが参照する場合の形状・素材割当が対象です。元PrefabのTransformとUnity Material/Shader設定は保持します。Shape Key、Modifier、Skin、Nested Prefab、追加のモデル参照、欠落依存、未対応serialized stateがある場合は停止します。GUIで未対応と表示される範囲を、VRCアバター全体の往復対応と解釈しないでください。
+
+編集Sceneとは別の一時Sceneで書き出し、元のPackageと保存済みRAWは変更しません。出力には元Package資産を保守的に全件含め、続きの論理モデルのGUID・meta・Importer設定を維持します。新しいShaderをBlender Nodesから生成する機能ではありません。既存出力ファイルは上書きせず、出力失敗時に半端なPackageを公開しません。
+
+Unity側は元PrefabのGUID/signed local fileIDと、FBXへ明示的に書いた実体識別情報を照合します。名前による再結合はしません。出力FBXのhashや元Prefabのrevisionが変わった場合、未保存のPrefab編集がある場合、対象が一意でない場合は復元を停止します。成功後の再実行は同じ結果になります。元PrefabやShaderの異なる版を含む既存Projectへの上書きImportは、この新規Projectでの検証範囲外です。
+
 ## インストール
 
 1. `unitypackage_blender_importer.zip` を用意する。
@@ -185,4 +202,4 @@ for separate scene attachments retain their Empty representation.
 UnityPackageの再梱包Exporterとreachability pruningは将来仕様です。現在のアドオンはimport/editを提供し、ExporterやUnity Finalizer roundtripは実装していません。
 ### Cross-Package Dependencies
 
-Geometry-only、Material-only、Texture-onlyのUnityPackageを同一Sceneへ順次importできます。Prefab Renderer→Material、Material→TextureはPackage-scoped GUIDを正本にScene-wide resolverでlate bindし、未解決・曖昧参照は`unitypackage_dependency_registry`へ保存します。ExporterやUnity Finalizerは未実装です。
+Geometry-only、Material-only、Texture-onlyのUnityPackageを同一Sceneへ順次importできます。Prefab Renderer→Material、Material→TextureはPackage-scoped GUIDを正本にScene-wide resolverでlate bindし、未解決・曖昧参照は`unitypackage_dependency_registry`へ保存します。静的Mesh向けExporter/Unity Finalizerは上記の限定範囲に対応します。Skin・複数Packageの全面的な往復は未完成です。
