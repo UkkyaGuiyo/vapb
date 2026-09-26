@@ -69,6 +69,12 @@ First block: trace the existing member realization/receipt path, add a failing p
 - Compileall for blender/unity/operators/ui/export/validation PASS. Independent scope_guard: PASS, no unnecessary implementation found; accepted with no production revisions requested.
 - Runtime evidence is under ignored `artifacts/campaign/`. Required tests and code are tracked; no private input was used.
 
+## Checkpoint: atomic UnityPackage publication
+
+- `export/package_writer.py` now stages a complete, closed archive beside the output, publishes it with an atomic non-overwriting hard link, and removes its temporary file. Serialization failure exposes no final filename; an existing or racing output remains unchanged. Filesystems without hard-link support fail closed (export to a supported local filesystem); no unsafe fallback.
+- Tests initially reproduced both final-name visibility during writing and leftover partial output on simulated disk failure. Focused materialization suite: 20 PASS (three new writer regressions, including competing output protection), Python 3.14.6 from repository parent.
+- Scope_guard review PASS. This is export storage correctness, not proof of Blender editing or Unity reimport. End-to-end EX-03 remains incomplete.
+
 ## Decisions / evidence / next action
 
 - DERIVED: contract adapter is reference-only; do not rebuild it or call it production-complete.

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import tarfile
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from unitypackage_blender_importer.export.fbx_export import FBX_EXPORT_PRESET, export_fbx
 from unitypackage_blender_importer.export.asset_plan import plan_assets
@@ -23,6 +25,44 @@ GUID_B = "b" * 32
 
 
 class ExportMaterializationTests(unittest.TestCase):
+    def test_writer_does_not_overwrite_a_racing_output(self):
+        tree = StagingTree([StagedUnityAsset(GUID_A, "Assets/A.bin", b"data", b"guid: " + GUID_A.encode())])
+        link = os.link
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "result.unitypackage"
+            def race(source, destination):
+                output.write_bytes(b"other completed output")
+                return link(source, destination)
+            with patch('unitypackage_blender_importer.export.package_writer.os.link', race):
+                with self.assertRaises(FileExistsError):
+                    UnityPackageWriter().write(tree, output)
+            self.assertEqual(b"other completed output", output.read_bytes())
+            self.assertEqual([output], list(Path(temp).iterdir()))
+
+    def test_writer_failure_leaves_no_final_or_staging_file(self):
+        tree = StagingTree([StagedUnityAsset(GUID_A, "Assets/A.bin", b"data", b"guid: " + GUID_A.encode())])
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "result.unitypackage"
+            with patch.object(tarfile.TarFile, "addfile", side_effect=OSError("synthetic disk failure")):
+                with self.assertRaises(OSError):
+                    UnityPackageWriter().write(tree, output)
+            self.assertFalse(output.exists())
+            self.assertEqual([], list(Path(temp).iterdir()))
+
+    def test_writer_publishes_only_after_archive_is_complete(self):
+        tree = StagingTree([StagedUnityAsset(GUID_A, "Assets/A.bin", b"data", b"guid: " + GUID_A.encode())])
+        original = tarfile.TarFile.addfile
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / "result.unitypackage"
+            def observe(archive, *args, **kwargs):
+                self.assertFalse(output.exists(), "Incomplete archive is already visible at final path")
+                return original(archive, *args, **kwargs)
+            with patch.object(tarfile.TarFile, "addfile", observe):
+                UnityPackageWriter().write(tree, output)
+            self.assertEqual([output], list(Path(temp).iterdir()))
+            with self.assertRaises(FileExistsError):
+                UnityPackageWriter().write(tree, output)
+
     def test_staging_preserves_bytes_and_rejects_unsafe_path(self):
         tree = StagingTree()
         asset = StagedUnityAsset(GUID_A, "Assets/VAPB/テスト/モデル.txt", b"payload", b"guid: " + GUID_A.encode("ascii") + b"\n")
