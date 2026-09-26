@@ -70,6 +70,7 @@ def main():
                 assert len(keys) == 3 and mesh.data.uv_layers.active is not None
                 rings = [tuple(mesh.data.loops[index].vertex_index for index in polygon.loop_indices)
                          for polygon in mesh.data.polygons]
+                mesh.data.vertices[0].co.x += 0.002
                 for key in keys:
                     key.data[0].co.x += 0.002
                 keys[1].data[0].co.z += 0.003
@@ -79,6 +80,7 @@ def main():
                 assert rings == [tuple(mesh.data.loops[index].vertex_index for index in polygon.loop_indices)
                                  for polygon in mesh.data.polygons]
             elif mesh.data.shape_keys:
+                mesh.data.vertices[0].co.x += 0.002
                 for key in mesh.data.shape_keys.key_blocks:
                     key.data[0].co.x += 0.002
             else:

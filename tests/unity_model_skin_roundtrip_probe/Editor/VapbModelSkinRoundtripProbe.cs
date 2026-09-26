@@ -45,6 +45,7 @@ public static class VapbModelSkinRoundtripProbe
         public bool second_apply;
         public bool second_apply_unchanged;
         public bool geometry_changed;
+        public bool vertex_layout_changed;
         public bool geometry_matches_edited_model;
         public bool topology_and_weights_valid;
         public bool target_bones_and_root_preserved;
@@ -170,6 +171,7 @@ public static class VapbModelSkinRoundtripProbe
             report.geometry_matches_edited_model = ModelContainsMesh(editedModel, editedMesh);
             report.vertex_change_threshold = Mathf.Max(0.0000001f,
                 report.source_bounds_extent * 0.000001f);
+            report.vertex_layout_changed = sourceVertices.Length != editedVertices.Length;
             report.geometry_changed = DifferentVertices(sourceVertices, editedVertices,
                 report.vertex_change_threshold, out report.max_vertex_delta);
             report.topology_and_weights_valid = ValidateMesh(editedMesh, selected.bones.Length);
@@ -187,7 +189,8 @@ public static class VapbModelSkinRoundtripProbe
             NegativeExtraComponent(task.variant_path, firstHash, report);
             report.pass = report.package_imported && report.first_apply && report.variant_created &&
                 report.variant_linked && report.edited_mesh_bound && report.originals_unchanged &&
-                report.second_apply && report.second_apply_unchanged && report.geometry_changed &&
+                report.second_apply && report.second_apply_unchanged &&
+                (report.geometry_changed || report.vertex_layout_changed) &&
                 report.geometry_matches_edited_model && report.topology_and_weights_valid &&
                 report.target_bones_and_root_preserved && report.materials_preserved &&
                 report.siblings_preserved && report.extra_component_rejected &&

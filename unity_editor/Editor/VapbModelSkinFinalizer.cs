@@ -755,16 +755,28 @@ public static class VapbModelSkinFinalizer
     {
         MeshLayout old = witness.sourceLayout;
         Mesh mesh = edited.mesh;
-        if (old == null || old.vertexCount != mesh.vertexCount ||
+        if (old == null || (!direct && old.vertexCount != mesh.vertexCount) ||
             old.topologies.Length != mesh.subMeshCount || mesh.bindposes.Length != edited.editedBoneUids.Length ||
             !SameBlendShapes(old, mesh)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+        bool layoutChanged = old.vertexCount != mesh.vertexCount;
         for (int i = 0; i < old.topologies.Length; i++)
         {
             if (old.topologies[i] != mesh.GetTopology(i)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
             int[] a = old.indices[i];
             int[] b = mesh.GetIndices(i);
             if (a.Length != b.Length) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
-            for (int j = 0; j < a.Length; j++) if (a[j] != b[j]) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+            for (int j = 0; j < a.Length; j++)
+                if (a[j] != b[j])
+                {
+                    if (!direct) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+                    layoutChanged = true;
+                }
+        }
+        if (direct)
+        {
+            if (layoutChanged && target.GetComponent<Cloth>() != null)
+                Reject("CLOTH_INDEX_STATE_UNSUPPORTED");
+            ValidateMeshStreams(mesh);
         }
         var sourceSlots = new Dictionary<string, int>(StringComparer.Ordinal);
         if (direct)
@@ -787,7 +799,8 @@ public static class VapbModelSkinFinalizer
                 Transform bone = source.bonesByUid[edited.editedBoneUids[i]];
                 expected = bone.worldToLocalMatrix * target.transform.localToWorldMatrix;
             }
-            if (!SameMatrix(mesh.bindposes[i], expected, 0.001f)) Reject("EDITED_REST_MISMATCH");
+            if (!FiniteMatrix(mesh.bindposes[i]) || !FiniteMatrix(expected) ||
+                !SameMatrix(mesh.bindposes[i], expected, 0.001f)) Reject("EDITED_REST_MISMATCH");
         }
         ValidateWeights(mesh, edited.editedBoneUids.Length);
     }
@@ -989,7 +1002,8 @@ public static class VapbModelSkinFinalizer
             if (a.shapeNames[i] != b.GetBlendShapeName(i) ||
                 a.frameWeights[i].Length != b.GetBlendShapeFrameCount(i)) return false;
             for (int j = 0; j < a.frameWeights[i].Length; j++)
-                if (Mathf.Abs(a.frameWeights[i][j] - b.GetBlendShapeFrameWeight(i, j)) > 0.0001f)
+                if (!Finite(a.frameWeights[i][j]) || !Finite(b.GetBlendShapeFrameWeight(i, j)) ||
+                    Mathf.Abs(a.frameWeights[i][j] - b.GetBlendShapeFrameWeight(i, j)) > 0.0001f)
                     return false;
         }
         return true;
@@ -1015,6 +1029,58 @@ public static class VapbModelSkinFinalizer
         for (int i = 0; i < 16; i++)
             if (float.IsNaN(value[i]) || float.IsInfinity(value[i])) return false;
         return true;
+    }
+
+    private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+    private static bool Finite(Vector3 value) => Finite(value.x) && Finite(value.y) && Finite(value.z);
+    private static bool Finite(Vector4 value) => Finite(value.x) && Finite(value.y) &&
+        Finite(value.z) && Finite(value.w);
+
+    private static void ValidateMeshStreams(Mesh mesh)
+    {
+        int count = mesh.vertexCount;
+        if (count == 0) Reject("EDITED_STREAM_INVALID");
+        Vector3[] vertices = mesh.vertices, normals = mesh.normals;
+        Vector4[] tangents = mesh.tangents;
+        Color[] colors = mesh.colors;
+        if (vertices.Length != count || (normals.Length != 0 && normals.Length != count) ||
+            (tangents.Length != 0 && tangents.Length != count) ||
+            (colors.Length != 0 && colors.Length != count)) Reject("EDITED_STREAM_INVALID");
+        foreach (Vector3 value in vertices) if (!Finite(value)) Reject("EDITED_STREAM_INVALID");
+        foreach (Vector3 value in normals) if (!Finite(value)) Reject("EDITED_STREAM_INVALID");
+        foreach (Vector4 value in tangents) if (!Finite(value)) Reject("EDITED_STREAM_INVALID");
+        foreach (Color value in colors)
+            if (!Finite(value.r) || !Finite(value.g) || !Finite(value.b) || !Finite(value.a))
+                Reject("EDITED_STREAM_INVALID");
+        var uvs = new List<Vector4>();
+        for (int channel = 0; channel < 8; channel++)
+        {
+            uvs.Clear();
+            mesh.GetUVs(channel, uvs);
+            if (uvs.Count != 0 && uvs.Count != count) Reject("EDITED_STREAM_INVALID");
+            foreach (Vector4 value in uvs) if (!Finite(value)) Reject("EDITED_STREAM_INVALID");
+        }
+        if (!Finite(mesh.bounds.center) || !Finite(mesh.bounds.extents))
+            Reject("EDITED_STREAM_INVALID");
+        for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+        {
+            int[] indices = mesh.GetIndices(submesh);
+            if (mesh.GetTopology(submesh) == MeshTopology.Triangles && indices.Length % 3 != 0)
+                Reject("EDITED_STREAM_INVALID");
+            foreach (int index in indices)
+                if (index < 0 || index >= count) Reject("EDITED_STREAM_INVALID");
+        }
+        var deltaVertices = new Vector3[count];
+        var deltaNormals = new Vector3[count];
+        var deltaTangents = new Vector3[count];
+        for (int shape = 0; shape < mesh.blendShapeCount; shape++)
+            for (int frame = 0; frame < mesh.GetBlendShapeFrameCount(shape); frame++)
+            {
+                mesh.GetBlendShapeFrameVertices(shape, frame, deltaVertices, deltaNormals, deltaTangents);
+                for (int vertex = 0; vertex < count; vertex++)
+                    if (!Finite(deltaVertices[vertex]) || !Finite(deltaNormals[vertex]) ||
+                        !Finite(deltaTangents[vertex])) Reject("EDITED_STREAM_INVALID");
+            }
     }
 
     private static void ValidateWeights(Mesh mesh, int boneCount)
