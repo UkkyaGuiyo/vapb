@@ -116,6 +116,16 @@ public static class VapbSkinRoundtripProbe
 
     public static void Prepare()
     {
+        PrepareCore(false);
+    }
+
+    public static void PrepareSeparateRoot()
+    {
+        PrepareCore(true);
+    }
+
+    private static void PrepareCore(bool separateRoot)
+    {
         var report = new Report { phase = "prepare", error = "UNEXPECTED_EXCEPTION" };
         try
         {
@@ -143,6 +153,11 @@ public static class VapbSkinRoundtripProbe
                 GameObject sentinel = new GameObject("UnrelatedSentinel");
                 sentinel.transform.SetParent(instance.transform, false);
                 sentinel.transform.localPosition = new Vector3(4f, 5f, 6f);
+                if (separateRoot)
+                {
+                    skin.bones[1].localRotation *= Quaternion.Euler(0f, 0f, 12f);
+                    skin.rootBone = sentinel.transform;
+                }
                 if (PrefabUtility.SaveAsPrefabAsset(instance, Prefab) == null)
                     throw new InvalidOperationException("PREFAB_SAVE_FAILED");
             }

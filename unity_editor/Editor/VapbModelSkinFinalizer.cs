@@ -352,11 +352,10 @@ public static class VapbModelSkinFinalizer
                     !rendererIds.Add(ParseId(candidate.renderer_file_id)))
                     Reject("DIRECT_CANDIDATES_INVALID");
                 ParseId(candidate.source_mesh_file_id);
-                long rootId = ParseId(candidate.root_bone_transform_file_id);
+                ParseId(candidate.root_bone_transform_file_id);
                 var bones = new HashSet<long>();
                 foreach (string value in candidate.bone_transform_file_ids)
                     if (!bones.Add(ParseId(value))) Reject("DIRECT_CANDIDATES_INVALID");
-                if (!bones.Contains(rootId)) Reject("DIRECT_CANDIDATES_INVALID");
             }
         }
         else if (task.renderer_candidates != null && task.renderer_candidates.Length != 0)
@@ -561,21 +560,21 @@ public static class VapbModelSkinFinalizer
             sourceBoneUids = new string[target.bones.Length] };
         var sourceIds = new HashSet<long>();
         var targetIds = new HashSet<long>();
-        int sourceRoot = -1, targetRoot = -1;
+        int sourceRoot = -1;
         for (int i = 0; i < target.bones.Length; i++)
         {
             Transform sourceBone = sourceRenderer.bones[i], targetBone = target.bones[i];
             if (sourceBone == null || targetBone == null ||
                 !sourceIds.Add(LocalId(sourceBone, sourceGuid)) ||
                 !targetIds.Add(LocalId(targetBone, task.prefab_guid)) ||
-                !SameMatrix(sourceBone.worldToLocalMatrix * sourceRenderer.transform.localToWorldMatrix,
-                    targetBone.worldToLocalMatrix * target.transform.localToWorldMatrix, 0.001f))
+                !FiniteMatrix(sourceBone.worldToLocalMatrix * sourceRenderer.transform.localToWorldMatrix) ||
+                !FiniteMatrix(targetBone.worldToLocalMatrix * target.transform.localToWorldMatrix))
                 Reject("DIRECT_SOURCE_REST_MISMATCH");
             result.sourceBoneUids[i] = LocalId(sourceBone, sourceGuid).ToString(CultureInfo.InvariantCulture);
             if (sourceBone == sourceRenderer.rootBone) sourceRoot = i;
-            if (targetBone == target.rootBone) targetRoot = i;
         }
-        if (sourceRoot < 0 || sourceRoot != targetRoot) Reject("DIRECT_ROOT_MISMATCH");
+        if (sourceRoot < 0) Reject("DIRECT_ROOT_MISMATCH");
+        // Shared Mesh bindposes and m_Bones use the same slot indices; current target pose may differ.
         for (int i = 0; i < target.bones.Length; i++)
         {
             int sourceParent = Array.IndexOf(sourceRenderer.bones, sourceRenderer.bones[i].parent);
@@ -1008,6 +1007,13 @@ public static class VapbModelSkinFinalizer
         for (int i = 0; i < 16; i++)
             if (float.IsNaN(a[i]) || float.IsInfinity(a[i]) || float.IsNaN(b[i]) ||
                 float.IsInfinity(b[i]) || Mathf.Abs(a[i] - b[i]) > tolerance) return false;
+        return true;
+    }
+
+    private static bool FiniteMatrix(Matrix4x4 value)
+    {
+        for (int i = 0; i < 16; i++)
+            if (float.IsNaN(value[i]) || float.IsInfinity(value[i])) return false;
         return true;
     }
 
