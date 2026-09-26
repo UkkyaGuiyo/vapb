@@ -15,13 +15,19 @@ public sealed class VapbRealizationPostprocessor : AssetPostprocessor
             return;
         for (int i = 0; i < names.Length; i++)
         {
-            if (names[i] != "_vapb_fbx_realization_id" || !(values[i] is string id) ||
-                !VapbReferenceFinalizer.IsAuthorizedRealization(assetPath, id))
+            if (!(values[i] is string id))
+                continue;
+            bool mesh = names[i] == "_vapb_fbx_realization_id" &&
+                VapbReferenceFinalizer.IsAuthorizedRealization(assetPath, id);
+            bool bone = names[i] == "_vapb_fbx_bone_realization_id" &&
+                VapbReferenceFinalizer.IsAuthorizedBone(assetPath, id);
+            if (!mesh && !bone)
                 continue;
             VapbRealizationMarker marker = gameObject.GetComponent<VapbRealizationMarker>();
             if (marker == null)
                 marker = gameObject.AddComponent<VapbRealizationMarker>();
-            marker.realizationId = id;
+            if (mesh) marker.realizationId = id;
+            if (bone) marker.boneRealizationId = id;
         }
     }
 }
@@ -35,7 +41,10 @@ public static class VapbReferenceFinalizer
         "MATERIAL_ID_INVALID", "NESTED_OR_AMBIGUOUS_TARGET", "TARGET_NOT_FOUND",
         "MODEL_STRUCTURE_UNSUPPORTED", "MODEL_MESH_MISSING", "REALIZATION_NOT_FOUND",
         "MATERIAL_NOT_FOUND", "MATERIAL_AMBIGUOUS", "LOCAL_ID_INVALID",
-        "MODEL_HASH_MISMATCH", "STALE_PREFAB_SOURCE", "INCONSISTENT_PREFAB_SOURCE", "UNSAVED_PREFAB_CHANGES"
+        "MODEL_HASH_MISMATCH", "STALE_PREFAB_SOURCE", "INCONSISTENT_PREFAB_SOURCE", "UNSAVED_PREFAB_CHANGES",
+        "SOURCE_MODEL_UNAVAILABLE", "SOURCE_MODEL_HASH_MISMATCH", "SOURCE_MESH_MISMATCH",
+        "BONE_TARGET_INVALID", "BONE_MAPPING_INVALID", "BONE_MARKER_MISSING", "BONE_REST_MISMATCH",
+        "SKIN_WEIGHTS_INVALID", "SKIN_ROOT_INVALID"
     };
     [Serializable] private sealed class Manifest
     {
@@ -54,6 +63,18 @@ public static class VapbReferenceFinalizer
         public string realization_id;
         public int renderer_class_id;
         public MaterialId[] materials;
+        public string source_model_guid;
+        public string source_model_sha256;
+        public string source_mesh_file_id;
+        public BoneId[] bones;
+        public string[] source_bone_transform_file_ids;
+        public string root_bone_target_transform_file_id;
+    }
+
+    [Serializable] private sealed class BoneId
+    {
+        public string edited_bone_realization_id;
+        public string target_transform_file_id;
     }
 
     [Serializable] private sealed class MaterialId
@@ -66,8 +87,11 @@ public static class VapbReferenceFinalizer
     {
         public MeshFilter filter;
         public MeshRenderer renderer;
+        public SkinnedMeshRenderer skin;
         public Mesh mesh;
         public Material[] materials;
+        public Transform[] bones;
+        public Transform rootBone;
     }
 
     private sealed class PrefabPlan
@@ -106,6 +130,16 @@ public static class VapbReferenceFinalizer
             var modelGuids = new HashSet<string>(StringComparer.Ordinal);
             foreach (Task task in manifest.reference_rebind_tasks)
                 modelGuids.Add(task.model_guid);
+            foreach (Task task in manifest.reference_rebind_tasks)
+            {
+                if (task.kind != "REBIND_SKINNED_RENDERER_V1")
+                    continue;
+                string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
+                if (string.IsNullOrEmpty(sourcePath) || !sourcePath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("SOURCE_MODEL_UNAVAILABLE");
+                if (!FileHash(ToDiskPath(sourcePath)).Equals(task.source_model_sha256, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("SOURCE_MODEL_HASH_MISMATCH");
+            }
             foreach (string guid in modelGuids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -148,13 +182,24 @@ public static class VapbReferenceFinalizer
                 }
                 else if (!plan.sourceHash.Equals(task.prefab_source_sha256, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("INCONSISTENT_PREFAB_SOURCE");
-                MeshRenderer target = ResolveTarget(plan.contents, task.prefab_guid, rendererId);
-                MeshFilter filter = target.GetComponent<MeshFilter>();
-                if (filter == null || target.GetComponents<Renderer>().Length != 1)
-                    throw new InvalidOperationException("TARGET_STRUCTURE_UNSUPPORTED");
-                Mesh mesh = ResolveModelMesh(task);
                 Material[] materials = ResolveMaterials(task.materials);
-                plan.bindings.Add(new Binding { filter = filter, renderer = target, mesh = mesh, materials = materials });
+                if (task.kind == "REBIND_DIRECT_RENDERER_V1")
+                {
+                    MeshRenderer target = ResolveTarget<MeshRenderer>(plan.contents, task.prefab_guid, rendererId);
+                    MeshFilter filter = target.GetComponent<MeshFilter>();
+                    if (filter == null || target.GetComponents<Renderer>().Length != 1)
+                        throw new InvalidOperationException("TARGET_STRUCTURE_UNSUPPORTED");
+                    Mesh mesh = ResolveModelMesh(task);
+                    plan.bindings.Add(new Binding { filter = filter, renderer = target, mesh = mesh, materials = materials });
+                }
+                else
+                {
+                    SkinnedMeshRenderer target = ResolveTarget<SkinnedMeshRenderer>(plan.contents, task.prefab_guid, rendererId);
+                    if (target.GetComponents<Renderer>().Length != 1)
+                        throw new InvalidOperationException("TARGET_STRUCTURE_UNSUPPORTED");
+                    Binding binding = ResolveSkinBinding(plan.contents, task, target, materials);
+                    plan.bindings.Add(binding);
+                }
             }
 
             // All targets and references are resolved before any prefab is changed.
@@ -163,8 +208,7 @@ public static class VapbReferenceFinalizer
                 plan.originalBytes = File.ReadAllBytes(ToDiskPath(plan.path));
                 bool needsChange = false;
                 foreach (Binding binding in plan.bindings)
-                    if (binding.filter.sharedMesh != binding.mesh ||
-                        !SameMaterials(binding.renderer.sharedMaterials, binding.materials))
+                    if (NeedsChange(binding))
                         needsChange = true;
                 if (needsChange && !HashBytes(plan.originalBytes).Equals(plan.sourceHash, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("STALE_PREFAB_SOURCE");
@@ -179,17 +223,49 @@ public static class VapbReferenceFinalizer
                     bool changed = false;
                     foreach (Binding binding in plan.bindings)
                     {
-                        if (binding.filter.sharedMesh != binding.mesh)
+                        if (binding.skin != null)
                         {
-                            binding.filter.sharedMesh = binding.mesh;
-                            EditorUtility.SetDirty(binding.filter);
-                            changed = true;
+                            bool bindingChanged = false;
+                            if (binding.skin.sharedMesh != binding.mesh)
+                            {
+                                binding.skin.sharedMesh = binding.mesh;
+                                bindingChanged = true;
+                            }
+                            if (!SameBones(binding.skin.bones, binding.bones))
+                            {
+                                binding.skin.bones = binding.bones;
+                                bindingChanged = true;
+                            }
+                            if (binding.skin.rootBone != binding.rootBone)
+                            {
+                                binding.skin.rootBone = binding.rootBone;
+                                bindingChanged = true;
+                            }
+                            if (!SameMaterials(binding.skin.sharedMaterials, binding.materials))
+                            {
+                                binding.skin.sharedMaterials = binding.materials;
+                                bindingChanged = true;
+                            }
+                            if (bindingChanged)
+                            {
+                                EditorUtility.SetDirty(binding.skin);
+                                changed = true;
+                            }
                         }
-                        if (!SameMaterials(binding.renderer.sharedMaterials, binding.materials))
+                        else
                         {
-                            binding.renderer.sharedMaterials = binding.materials;
-                            EditorUtility.SetDirty(binding.renderer);
-                            changed = true;
+                            if (binding.filter.sharedMesh != binding.mesh)
+                            {
+                                binding.filter.sharedMesh = binding.mesh;
+                                EditorUtility.SetDirty(binding.filter);
+                                changed = true;
+                            }
+                            if (!SameMaterials(binding.renderer.sharedMaterials, binding.materials))
+                            {
+                                binding.renderer.sharedMaterials = binding.materials;
+                                EditorUtility.SetDirty(binding.renderer);
+                                changed = true;
+                            }
                         }
                     }
                     if (!changed)
@@ -234,22 +310,52 @@ public static class VapbReferenceFinalizer
             throw new InvalidOperationException("MANIFEST_UNSUPPORTED");
         foreach (Task task in manifest.reference_rebind_tasks)
         {
-            if (task == null || task.kind != "REBIND_DIRECT_RENDERER_V1" || task.renderer_class_id != 23 ||
+            if (task == null || (task.kind != "REBIND_DIRECT_RENDERER_V1" && task.kind != "REBIND_SKINNED_RENDERER_V1") ||
+                task.renderer_class_id != (task.kind == "REBIND_DIRECT_RENDERER_V1" ? 23 : 137) ||
                 !ValidGuid(task.prefab_guid) || !ValidGuid(task.model_guid) ||
                 !ValidSha256(task.model_sha256) || !ValidSha256(task.prefab_source_sha256) ||
                 string.IsNullOrEmpty(task.realization_id) || task.materials == null)
                 throw new InvalidOperationException("TASK_UNSUPPORTED");
             ParseLocalId(task.renderer_file_id);
+            if (task.kind == "REBIND_SKINNED_RENDERER_V1")
+            {
+                if (!ValidGuid(task.source_model_guid) || !ValidSha256(task.source_model_sha256) ||
+                    task.source_model_guid == task.model_guid || task.bones == null || task.bones.Length == 0 ||
+                    task.source_bone_transform_file_ids == null ||
+                    task.source_bone_transform_file_ids.Length == 0)
+                    throw new InvalidOperationException("TASK_UNSUPPORTED");
+                ParseLocalId(task.source_mesh_file_id);
+                ParseLocalId(task.root_bone_target_transform_file_id);
+                var edited = new HashSet<string>(StringComparer.Ordinal);
+                var targets = new HashSet<long>();
+                foreach (BoneId bone in task.bones)
+                {
+                    if (bone == null || string.IsNullOrEmpty(bone.edited_bone_realization_id) ||
+                        !edited.Add(bone.edited_bone_realization_id) ||
+                        !targets.Add(ParseLocalId(bone.target_transform_file_id)))
+                        throw new InvalidOperationException("BONE_MAPPING_INVALID");
+                }
+                var sourceTargets = new HashSet<long>();
+                foreach (string sourceId in task.source_bone_transform_file_ids)
+                    if (!sourceTargets.Add(ParseLocalId(sourceId)))
+                        throw new InvalidOperationException("BONE_MAPPING_INVALID");
+                long rootTarget = ParseLocalId(task.root_bone_target_transform_file_id);
+                if (!targets.Contains(rootTarget))
+                    throw new InvalidOperationException("SKIN_ROOT_INVALID");
+                sourceTargets.Add(rootTarget);
+                if (!sourceTargets.SetEquals(targets))
+                    throw new InvalidOperationException("BONE_MAPPING_INVALID");
+            }
             foreach (MaterialId material in task.materials)
                 if (material != null && (!ValidGuid(material.guid) || ParseLocalId(material.file_id) == 0))
                     throw new InvalidOperationException("MATERIAL_ID_INVALID");
         }
     }
 
-    private static MeshRenderer ResolveTarget(GameObject contents, string guid, long localId)
+    private static T ResolveTarget<T>(GameObject contents, string guid, long localId) where T : Renderer
     {
-        MeshRenderer result = null;
-        foreach (MeshRenderer renderer in contents.GetComponentsInChildren<MeshRenderer>(true))
+        T result = null;
+        foreach (T renderer in contents.GetComponentsInChildren<T>(true))
         {
             if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(renderer, out string sourceGuid, out long sourceId) ||
                 sourceGuid != guid || sourceId != localId)
@@ -260,6 +366,23 @@ public static class VapbReferenceFinalizer
         }
         if (result == null)
             throw new InvalidOperationException("TARGET_NOT_FOUND");
+        return result;
+    }
+
+    private static Transform ResolveBoneTarget(GameObject contents, string guid, long localId)
+    {
+        Transform result = null;
+        foreach (Transform transform in contents.GetComponentsInChildren<Transform>(true))
+        {
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(transform, out string foundGuid, out long foundId) ||
+                foundGuid != guid || foundId != localId)
+                continue;
+            if (PrefabUtility.IsPartOfPrefabInstance(transform) || result != null)
+                throw new InvalidOperationException("BONE_TARGET_INVALID");
+            result = transform;
+        }
+        if (result == null)
+            throw new InvalidOperationException("BONE_TARGET_INVALID");
         return result;
     }
 
@@ -283,6 +406,172 @@ public static class VapbReferenceFinalizer
         if (found == null)
             throw new InvalidOperationException("REALIZATION_NOT_FOUND");
         return found;
+    }
+
+    private static Binding ResolveSkinBinding(GameObject contents, Task task, SkinnedMeshRenderer target,
+                                               Material[] materials)
+    {
+        GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(task.model_guid));
+        if (model == null)
+            throw new InvalidOperationException("MODEL_UNAVAILABLE");
+        SkinnedMeshRenderer edited = null;
+        foreach (VapbRealizationMarker marker in model.GetComponentsInChildren<VapbRealizationMarker>(true))
+        {
+            if (marker.realizationId != task.realization_id)
+                continue;
+            if (edited != null || marker.GetComponents<Renderer>().Length != 1)
+                throw new InvalidOperationException("MODEL_STRUCTURE_UNSUPPORTED");
+            edited = marker.GetComponent<SkinnedMeshRenderer>();
+            if (edited == null || edited.sharedMesh == null)
+                throw new InvalidOperationException("MODEL_STRUCTURE_UNSUPPORTED");
+        }
+        if (edited == null)
+            throw new InvalidOperationException("REALIZATION_NOT_FOUND");
+        Mesh mesh = edited.sharedMesh;
+        Mesh sourceMesh = ResolveSourceMesh(task);
+        Transform[] editedBones = edited.bones;
+        if (editedBones == null || editedBones.Length != task.source_bone_transform_file_ids.Length ||
+            mesh.bindposes.Length != editedBones.Length || sourceMesh.bindposes.Length != editedBones.Length ||
+            !SameBlendShapeLayout(sourceMesh, mesh))
+            throw new InvalidOperationException("BONE_MAPPING_INVALID");
+        Transform[] targetBones = new Transform[editedBones.Length];
+        var mapping = new Dictionary<string, long>(StringComparer.Ordinal);
+        foreach (BoneId bone in task.bones)
+            mapping.Add(bone.edited_bone_realization_id, ParseLocalId(bone.target_transform_file_id));
+        var markerCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (VapbRealizationMarker marker in model.GetComponentsInChildren<VapbRealizationMarker>(true))
+        {
+            if (string.IsNullOrEmpty(marker.boneRealizationId)) continue;
+            if (!markerCounts.ContainsKey(marker.boneRealizationId)) markerCounts.Add(marker.boneRealizationId, 0);
+            markerCounts[marker.boneRealizationId]++;
+        }
+        var seenEditedBones = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < editedBones.Length; i++)
+        {
+            Transform bone = editedBones[i];
+            string id = bone == null ? null : bone.GetComponent<VapbRealizationMarker>()?.boneRealizationId;
+            if (id == null || !seenEditedBones.Add(id) || !mapping.TryGetValue(id, out long targetId) ||
+                !markerCounts.TryGetValue(id, out int count) || count != 1)
+                throw new InvalidOperationException("BONE_MARKER_MISSING");
+            targetBones[i] = ResolveBoneTarget(contents, task.prefab_guid, targetId);
+        }
+        Transform root = ResolveBoneTarget(contents, task.prefab_guid,
+            ParseLocalId(task.root_bone_target_transform_file_id));
+        string rootMarker = edited.rootBone == null ? null :
+            edited.rootBone.GetComponent<VapbRealizationMarker>()?.boneRealizationId;
+        if (rootMarker == null || !mapping.TryGetValue(rootMarker, out long mappedRoot) ||
+            mappedRoot != ParseLocalId(task.root_bone_target_transform_file_id) ||
+            !markerCounts.TryGetValue(rootMarker, out int rootCount) || rootCount != 1)
+            throw new InvalidOperationException("SKIN_ROOT_INVALID");
+        seenEditedBones.Add(rootMarker);
+        if (seenEditedBones.Count != mapping.Count)
+            throw new InvalidOperationException("BONE_MAPPING_INVALID");
+        bool alreadyApplied = target.sharedMesh == mesh && SameBones(target.bones, targetBones) && target.rootBone == root;
+        if (!alreadyApplied)
+        {
+            Mesh old = target.sharedMesh;
+            if (old != sourceMesh)
+                throw new InvalidOperationException("SOURCE_MESH_MISMATCH");
+            Transform[] existing = target.bones;
+            if (existing == null || existing.Length != task.source_bone_transform_file_ids.Length ||
+                target.rootBone != root)
+                throw new InvalidOperationException("BONE_TARGET_INVALID");
+            for (int i = 0; i < existing.Length; i++)
+                if (existing[i] != ResolveBoneTarget(contents, task.prefab_guid,
+                    ParseLocalId(task.source_bone_transform_file_ids[i])) ||
+                    !SameMatrix(sourceMesh.bindposes[i], existing[i].worldToLocalMatrix *
+                        target.transform.localToWorldMatrix, 0.001f))
+                    throw new InvalidOperationException("BONE_TARGET_INVALID");
+        }
+        Matrix4x4[] bindposes = mesh.bindposes;
+        for (int i = 0; i < targetBones.Length; i++)
+        {
+            Matrix4x4 expected = targetBones[i].worldToLocalMatrix * target.transform.localToWorldMatrix;
+            if (!SameMatrix(bindposes[i], expected, 0.001f))
+                throw new InvalidOperationException("BONE_REST_MISMATCH");
+        }
+        ValidateWeights(mesh, targetBones.Length);
+        return new Binding { skin = target, mesh = mesh, materials = materials,
+                             bones = targetBones, rootBone = root };
+    }
+
+    private static Mesh ResolveSourceMesh(Task task)
+    {
+        string path = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
+        long requiredId = ParseLocalId(task.source_mesh_file_id);
+        Mesh found = null;
+        foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+        {
+            if (!(asset is Mesh mesh) ||
+                !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(mesh, out string guid, out long id) ||
+                guid != task.source_model_guid || id != requiredId)
+                continue;
+            if (found != null) throw new InvalidOperationException("SOURCE_MESH_MISMATCH");
+            found = mesh;
+        }
+        if (found == null) throw new InvalidOperationException("SOURCE_MESH_MISMATCH");
+        return found;
+    }
+
+    private static bool SameBlendShapeLayout(Mesh source, Mesh edited)
+    {
+        if (source.blendShapeCount != edited.blendShapeCount) return false;
+        for (int shape = 0; shape < source.blendShapeCount; shape++)
+        {
+            if (source.GetBlendShapeName(shape) != edited.GetBlendShapeName(shape) ||
+                source.GetBlendShapeFrameCount(shape) != edited.GetBlendShapeFrameCount(shape)) return false;
+            for (int frame = 0; frame < source.GetBlendShapeFrameCount(shape); frame++)
+                if (Mathf.Abs(source.GetBlendShapeFrameWeight(shape, frame) -
+                              edited.GetBlendShapeFrameWeight(shape, frame)) > 0.0001f) return false;
+        }
+        return true;
+    }
+
+    private static bool SameMatrix(Matrix4x4 a, Matrix4x4 b, float tolerance)
+    {
+        for (int i = 0; i < 16; i++)
+            if (float.IsNaN(a[i]) || float.IsInfinity(a[i]) ||
+                float.IsNaN(b[i]) || float.IsInfinity(b[i]) || Mathf.Abs(a[i] - b[i]) > tolerance)
+                return false;
+        return true;
+    }
+
+    private static void ValidateWeights(Mesh mesh, int boneCount)
+    {
+        try
+        {
+            var perVertex = mesh.GetBonesPerVertex();
+            var weights = mesh.GetAllBoneWeights();
+            try
+            {
+                if (perVertex.Length != mesh.vertexCount)
+                    throw new InvalidOperationException("SKIN_WEIGHTS_INVALID");
+                int offset = 0;
+                for (int vertex = 0; vertex < perVertex.Length; vertex++)
+                {
+                    int count = perVertex[vertex];
+                    if (count == 0 || offset + count > weights.Length)
+                        throw new InvalidOperationException("SKIN_WEIGHTS_INVALID");
+                    float sum = 0f;
+                    for (int i = 0; i < count; i++)
+                    {
+                        var weight = weights[offset + i];
+                        if (weight.boneIndex < 0 || weight.boneIndex >= boneCount ||
+                            float.IsNaN(weight.weight) || float.IsInfinity(weight.weight) || weight.weight <= 0f)
+                            throw new InvalidOperationException("SKIN_WEIGHTS_INVALID");
+                        sum += weight.weight;
+                    }
+                    if (Mathf.Abs(sum - 1f) > 0.01f)
+                        throw new InvalidOperationException("SKIN_WEIGHTS_INVALID");
+                    offset += count;
+                }
+                if (offset != weights.Length)
+                    throw new InvalidOperationException("SKIN_WEIGHTS_INVALID");
+            }
+            finally { perVertex.Dispose(); weights.Dispose(); }
+        }
+        catch (InvalidOperationException) { throw; }
+        catch (Exception) { throw new InvalidOperationException("SKIN_WEIGHTS_INVALID"); }
     }
 
     private static Material[] ResolveMaterials(MaterialId[] ids)
@@ -322,6 +611,24 @@ public static class VapbReferenceFinalizer
         return true;
     }
 
+    private static bool SameBones(Transform[] a, Transform[] b)
+    {
+        if (a == null || b == null || a.Length != b.Length) return false;
+        for (int i = 0; i < a.Length; i++)
+            if (a[i] != b[i]) return false;
+        return true;
+    }
+
+    private static bool NeedsChange(Binding binding)
+    {
+        if (binding.skin != null)
+            return binding.skin.sharedMesh != binding.mesh || !SameBones(binding.skin.bones, binding.bones) ||
+                binding.skin.rootBone != binding.rootBone ||
+                !SameMaterials(binding.skin.sharedMaterials, binding.materials);
+        return binding.filter.sharedMesh != binding.mesh ||
+            !SameMaterials(binding.renderer.sharedMaterials, binding.materials);
+    }
+
     internal static bool IsAuthorizedModel(string modelPath)
     {
         if (string.IsNullOrEmpty(modelPath) || !modelPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
@@ -336,7 +643,8 @@ public static class VapbReferenceFinalizer
                 Manifest manifest = ReadManifest(path);
                 ValidateTaskSyntax(manifest);
                 foreach (Task task in manifest.reference_rebind_tasks)
-                    if (task != null && task.kind == "REBIND_DIRECT_RENDERER_V1" && task.model_guid == guid)
+                    if (task != null && (task.kind == "REBIND_DIRECT_RENDERER_V1" ||
+                        task.kind == "REBIND_SKINNED_RENDERER_V1") && task.model_guid == guid)
                         return true;
             }
             catch { /* Invalid manifest does not authorize imports. */ }
@@ -356,9 +664,30 @@ public static class VapbReferenceFinalizer
                 Manifest manifest = ReadManifest(path);
                 ValidateTaskSyntax(manifest);
                 foreach (Task task in manifest.reference_rebind_tasks)
-                    if (task != null && task.kind == "REBIND_DIRECT_RENDERER_V1" && task.model_guid == guid &&
+                    if (task != null && (task.kind == "REBIND_DIRECT_RENDERER_V1" ||
+                        task.kind == "REBIND_SKINNED_RENDERER_V1") && task.model_guid == guid &&
                         task.realization_id == id)
                         return true;
+            }
+            catch { /* Invalid manifest does not authorize imports. */ }
+        }
+        return false;
+    }
+
+    internal static bool IsAuthorizedBone(string modelPath, string id)
+    {
+        if (string.IsNullOrEmpty(id)) return false;
+        string guid = AssetDatabase.AssetPathToGUID(modelPath);
+        foreach (string path in ManifestPaths())
+        {
+            try
+            {
+                Manifest manifest = ReadManifest(path);
+                ValidateTaskSyntax(manifest);
+                foreach (Task task in manifest.reference_rebind_tasks)
+                    if (task != null && task.kind == "REBIND_SKINNED_RENDERER_V1" && task.model_guid == guid)
+                        foreach (BoneId bone in task.bones)
+                            if (bone.edited_bone_realization_id == id) return true;
             }
             catch { /* Invalid manifest does not authorize imports. */ }
         }

@@ -6,7 +6,9 @@ import json
 
 import bpy
 
-from ..blender.renderer_binding import BindingError, validate_binding
+from ..blender.renderer_binding import (BindingError, validate_binding,
+                                        validate_existing_binding, make_skin_binding,
+                                        _skin_ids)
 
 
 def _display_error(error):
@@ -37,6 +39,110 @@ def projection_records(root):
     except (TypeError, ValueError):
         return []
     return projection.get("records", []) if isinstance(projection, dict) else []
+
+
+def _confirmed_renderer(mesh, root):
+    raw = mesh.get("_vapb_renderer_binding")
+    try:
+        value = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError) as exc:
+        raise BindingError("Renderer binding is malformed") from exc
+    if not isinstance(value, dict):
+        raise BindingError("Renderer binding is missing")
+    return validate_existing_binding(value, root, mesh, bpy.data.objects)
+
+
+def _unconfirm_skin_row(row, _context):
+    row.confirmed = False
+
+
+class VAPB_PG_skin_mapping_row(bpy.types.PropertyGroup):
+    target_transform_file_id: bpy.props.StringProperty()
+    display_name: bpy.props.StringProperty()
+    target_name: bpy.props.StringProperty(update=_unconfirm_skin_row)
+    confirmed: bpy.props.BoolProperty(default=False)
+
+
+class VAPB_PG_skin_mapping_state(bpy.types.PropertyGroup):
+    renderer_occurrence_id: bpy.props.StringProperty()
+    root_context_id: bpy.props.StringProperty()
+    mesh_realization_id: bpy.props.StringProperty()
+    source_revision_sha256: bpy.props.StringProperty()
+    root_bone_target_transform_file_id: bpy.props.StringProperty()
+    rows: bpy.props.CollectionProperty(type=VAPB_PG_skin_mapping_row)
+
+
+class VAPB_OT_load_skin_mappings(bpy.types.Operator):
+    bl_idname = "vapb.load_skin_mappings"
+    bl_label = "Bone対応を確認"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        root = context.scene.vapb_renderer_root
+        mesh = context.scene.vapb_renderer_mesh
+        state = context.scene.vapb_skin_mapping
+        state.rows.clear()
+        state.renderer_occurrence_id = ""
+        if root is None or mesh is None:
+            self.report({"ERROR"}, "Prefabルートとメッシュを選択してください")
+            return {"CANCELLED"}
+        try:
+            renderer = _confirmed_renderer(mesh, root)
+            record = renderer["occurrence"]
+            if record.get("renderer_class_id") != 137:
+                raise BindingError("Skinned Rendererが必要です")
+            ids, root_id = _skin_ids(record)
+            labels = {row["transform_file_id"]: row["display_name"] for row in record["skin"]["bones"]}
+            labels.setdefault(root_id, record["skin"].get("root_bone_display_name", "Root Bone"))
+            for file_id in ids + ([] if root_id in ids else [root_id]):
+                row = state.rows.add()
+                row.target_transform_file_id = file_id
+                row.display_name = labels[file_id]
+            state.renderer_occurrence_id = renderer["occurrence_id"]
+            state.root_context_id = renderer["root_context_id"]
+            state.mesh_realization_id = renderer["native_realization_id"]
+            state.source_revision_sha256 = record["source_revision_sha256"]
+            state.root_bone_target_transform_file_id = root_id
+        except (BindingError, TypeError, ValueError, KeyError) as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
+        return {"FINISHED"}
+
+
+class VAPB_OT_confirm_skin_binding(bpy.types.Operator):
+    bl_idname = "vapb.confirm_skin_binding"
+    bl_label = "Bone対応を確定"
+    bl_options = {"REGISTER", "UNDO"}
+
+    def execute(self, context):
+        root = context.scene.vapb_renderer_root
+        mesh = context.scene.vapb_renderer_mesh
+        state = context.scene.vapb_skin_mapping
+        if root is None or mesh is None or not state.renderer_occurrence_id:
+            self.report({"ERROR"}, "Bone対応を読み込み直してください")
+            return {"CANCELLED"}
+        if not state.rows or any(not row.confirmed or not row.target_name for row in state.rows):
+            self.report({"ERROR"}, "各Boneの選択と確認が必要です")
+            return {"CANCELLED"}
+        try:
+            renderer = _confirmed_renderer(mesh, root)
+            record = renderer["occurrence"]
+            if (state.renderer_occurrence_id != renderer["occurrence_id"]
+                    or state.root_context_id != renderer["root_context_id"]
+                    or state.mesh_realization_id != renderer["native_realization_id"]
+                    or state.source_revision_sha256 != record["source_revision_sha256"]
+                    or state.root_bone_target_transform_file_id != record["skin"]["root_bone_transform_file_id"]):
+                raise BindingError("Bone対応の読込後に対象が変わりました")
+            selections = {row.target_transform_file_id: row.target_name for row in state.rows}
+            if len(selections) != len(state.rows):
+                raise BindingError("Bone対応が重複しています")
+            binding = make_skin_binding(mesh, root, bpy.data.objects, selections)
+            mesh["_vapb_skin_binding"] = json.dumps(binding, sort_keys=True)
+        except (BindingError, TypeError, ValueError, KeyError) as exc:
+            self.report({"ERROR"}, str(exc))
+            return {"CANCELLED"}
+        self.report({"INFO"}, "Bone対応を確定しました")
+        return {"FINISHED"}
 
 
 def _material_plan(record, mesh_obj):
@@ -154,4 +260,6 @@ class VAPB_OT_confirm_renderer_binding(bpy.types.Operator):
         return {"FINISHED"}
 
 
-CLASSES = (VAPB_OT_confirm_renderer_binding,)
+CLASSES = (VAPB_PG_skin_mapping_row, VAPB_PG_skin_mapping_state,
+           VAPB_OT_confirm_renderer_binding, VAPB_OT_load_skin_mappings,
+           VAPB_OT_confirm_skin_binding)

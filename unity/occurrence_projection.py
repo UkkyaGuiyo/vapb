@@ -59,6 +59,37 @@ def _source_guid(source: PrefabSource) -> str:
     return (source.asset_guid or (source.prefab.asset_guid if source.prefab else "")).lower()
 
 
+def _skin_projection(prefab: PrefabData, renderer: object) -> dict:
+    """Only direct, local serialized Transform references establish skin slots."""
+    unknown = {"status": "UNKNOWN", "bones": [], "root_bone_transform_file_id": ""}
+    values = renderer.data.get("m_Bones")
+    root_ref = renderer.data.get("m_RootBone")
+    if not isinstance(values, list) or not values or not isinstance(root_ref, dict):
+        return unknown
+    refs = values + [root_ref]
+    if any(not isinstance(ref, dict) or "guid" in ref or ref_file_id(ref) in (None, 0)
+           for ref in refs):
+        return unknown
+    ids = [ref_file_id(ref) for ref in refs]
+    if len(set(ids[:-1])) != len(ids) - 1 or any(file_id not in prefab.transforms for file_id in ids):
+        return unknown
+    rows = []
+    for file_id in ids[:-1]:
+        transform = prefab.transforms[file_id]
+        owner = prefab.game_objects.get(transform.game_object_id)
+        if owner is None:
+            return unknown
+        rows.append({"transform_file_id": str(file_id), "display_name": owner.name,
+                     "parent_transform_file_id": str(transform.parent_id or 0)})
+    root_transform = prefab.transforms[ids[-1]]
+    root_owner = prefab.game_objects.get(root_transform.game_object_id)
+    if root_owner is None:
+        return unknown
+    return {"status": "EXACT", "bones": rows,
+            "root_bone_transform_file_id": str(ids[-1]),
+            "root_bone_display_name": root_owner.name}
+
+
 def project_occurrences(
     root: PrefabSource,
     root_context_id: str,
@@ -157,6 +188,8 @@ def project_occurrences(
                 "material_slot_count": len(values),
                 "material_status": material_status,
             }
+            if renderer.class_id == 137:
+                record["skin"] = _skin_projection(prefab, renderer)
             record["occurrence_id"] = occurrence_identity(record)
             records.append(record)
         for document in prefab.documents:
@@ -201,6 +234,18 @@ def project_occurrences(
             child_records = visit(child, child_path, active + (identity,))
             for modification in prefab.modifications():
                 if modification.prefab_instance_file_id != document.file_id:
+                    continue
+                if re.match(r"^(m_Bones(?:\.|$)|m_RootBone(?:\.|$)|m_Mesh(?:\.|$))", modification.property_path):
+                    matches = [record for record in child_records
+                               if record["renderer_class_id"] == 137
+                               and record["source_key"]["source_asset_guid"] == modification.target_guid.lower()
+                               and record["source_key"]["renderer_file_id"] == modification.target_file_id]
+                    for record in matches if matches else child_records:
+                        if "skin" in record:
+                            record["skin"]["status"] = "UNKNOWN"
+                    issue("UNRESOLVED_SKIN_OVERRIDE", child_path,
+                          target_source_guid=modification.target_guid,
+                          target_renderer_file_id=modification.target_file_id)
                     continue
                 match = re.fullmatch(r"m_Materials\.Array\.data\[(\d+)\]", modification.property_path)
                 if not match:

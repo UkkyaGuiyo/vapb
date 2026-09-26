@@ -89,6 +89,43 @@ class OccurrenceProjectionTests(unittest.TestCase):
         self.assertEqual(ROOT, record["root_asset_guid"])
         self.assertEqual("EXACT", record["material_status"])
 
+    def test_direct_local_skin_refs_preserve_signed_transform_ids(self):
+        payload = direct().replace("  m_Materials:", "  m_Bones:\n  - {fileID: -101}\n  - {fileID: -102}\n  m_RootBone: {fileID: -101}\n  m_Materials:")
+        payload += """--- !u!1 &11
+GameObject:
+  m_Name: Root
+--- !u!4 &-101
+Transform:
+  m_GameObject: {fileID: 11}
+  m_Father: {fileID: 0}
+--- !u!1 &12
+GameObject:
+  m_Name: Child
+--- !u!4 &-102
+Transform:
+  m_GameObject: {fileID: 12}
+  m_Father: {fileID: -101}
+"""
+        record = self.project(self.source(ROOT, payload)).records[0]
+        self.assertEqual("EXACT", record["skin"]["status"])
+        self.assertEqual(["-101", "-102"], [row["transform_file_id"] for row in record["skin"]["bones"]])
+        self.assertEqual("-101", record["skin"]["bones"][1]["parent_transform_file_id"])
+        self.assertEqual("-101", record["skin"]["root_bone_transform_file_id"])
+
+    def test_missing_and_external_skin_refs_are_unknown(self):
+        missing = self.project(self.source(ROOT, direct())).records[0]
+        self.assertEqual("UNKNOWN", missing["skin"]["status"])
+        external = direct().replace("  m_Materials:",
+                                   f"  m_Bones:\n  - {{fileID: -101, guid: {CHILD}}}\n  m_RootBone: {{fileID: -101}}\n  m_Materials:")
+        self.assertEqual("UNKNOWN", self.project(self.source(CHILD, external)).records[0]["skin"]["status"])
+
+    def test_nested_skin_override_is_unknown(self):
+        root = self.source(ROOT, instance(ids=(10,), target=-20).replace(
+            "m_Materials.Array.data[0]", "m_Bones.Array.data[0]"))
+        result = self.project(root, self.source(CHILD, direct()))
+        self.assertEqual("UNKNOWN", result.records[0]["skin"]["status"])
+        self.assertEqual("UNRESOLVED_SKIN_OVERRIDE", result.issues[0]["code"])
+
     def test_repeated_real_edges_and_exact_per_instance_override(self):
         root = self.source(ROOT, instance(target=-20))
         child = self.source(CHILD, direct())

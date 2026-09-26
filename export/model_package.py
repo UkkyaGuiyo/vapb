@@ -65,12 +65,14 @@ def materialize_model_package(
 ) -> tuple[StagingTree, ExportManifest]:
     """Build a validated whole-source closure and manifest; caller writes it atomically.
 
+    An empty replacement list preserves the complete source closure so callers
+    can add a new edited asset without replacing the original skeleton model.
     A replacement continues the source FBX asset with its original GUID, path,
     importer meta and settings. Unity must resolve changed model subassets after
     import using the caller's authoritative renderer mapping.
     """
-    if not sources or not replacements:
-        raise ValueError("source packages and model replacements are required")
+    if not sources:
+        raise ValueError("source packages are required")
     source_assets: dict[tuple[str, str], RawAsset] = {}
     seen_packages: set[str] = set()
     seen_guids: set[str] = set()

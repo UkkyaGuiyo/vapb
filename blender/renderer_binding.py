@@ -185,3 +185,168 @@ def validate_existing_binding(binding: dict, root: Any, mesh_obj: Any,
     if checked != binding:
         raise BindingError("Stored binding evidence changed")
     return checked
+
+
+SKIN_BINDING_VERSION = "1"
+_BONE_KEYS = ("_vapb_fbx_bone_realization_id", "_vapb_fbx_bone_receipt_id",
+              "_vapb_fbx_model_uid", "_vapb_fbx_source_asset_guid",
+              "_vapb_fbx_source_asset_sha256")
+
+
+def _stored_renderer_binding(mesh_obj: Any, root: Any, objects: tuple) -> dict:
+    raw = mesh_obj.get("_vapb_renderer_binding")
+    try:
+        binding = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError) as exc:
+        raise BindingError("Malformed Renderer binding") from exc
+    if not isinstance(binding, dict):
+        raise BindingError("Renderer binding missing")
+    return validate_existing_binding(binding, root, mesh_obj, objects)
+
+
+def _skin_ids(record: dict) -> tuple[list[str], str]:
+    skin = record.get("skin")
+    if not isinstance(skin, dict) or skin.get("status") != "EXACT":
+        raise BindingError("Skin projection is unresolved")
+    rows = skin.get("bones")
+    root_id = str(skin.get("root_bone_transform_file_id", ""))
+    if not isinstance(rows, list) or not rows or not root_id:
+        raise BindingError("Skin projection is incomplete")
+    ids = [str(row.get("transform_file_id", "")) for row in rows if isinstance(row, dict)]
+    if len(ids) != len(rows) or len(set(ids)) != len(ids) or any(not item for item in ids):
+        raise BindingError("Skin bone slots are incomplete")
+    return ids, root_id
+
+
+def _skin_armature(mesh_obj: Any, binding: dict, objects: tuple) -> Any:
+    modifiers = [modifier for modifier in getattr(mesh_obj, "modifiers", ())
+                 if getattr(modifier, "type", None) == "ARMATURE"]
+    if len(modifiers) != 1 or getattr(modifiers[0], "object", None) is None:
+        raise BindingError("Skin armature target is unresolved")
+    armature = modifiers[0].object
+    if not any(obj is armature for obj in objects) or getattr(armature, "type", None) != "ARMATURE":
+        raise BindingError("Skin armature target is outside the scene")
+    if str(armature.get("_vapb_native_object_id", "")) != binding.get("armature_native_object_id"):
+        raise BindingError("Skin armature identity changed")
+    return armature
+
+
+def _bone_values(bone: Any) -> dict:
+    if str(bone.get("_vapb_fbx_receipt_version", "")) != RECEIPT_VERSION:
+        raise BindingError("Native Bone receipt version mismatch")
+    values = {key: _property(bone, key) for key in _BONE_KEYS}
+    guid = values["_vapb_fbx_source_asset_guid"]
+    sha = values["_vapb_fbx_source_asset_sha256"]
+    uid = values["_vapb_fbx_model_uid"]
+    expected_receipt = "vapb-fbx-bone:" + hashlib.sha256(f"{guid}:{sha}:{uid}".encode()).hexdigest()
+    if (len(guid) != 32 or len(sha) != 64 or any(c not in "0123456789abcdef" for c in guid + sha)
+            or values["_vapb_fbx_bone_receipt_id"] != expected_receipt):
+        raise BindingError("Native Bone source receipt is invalid")
+    evidence = str(bone.get("_vapb_fbx_receipt_evidence", ""))
+    if evidence not in {"OFFICIAL_IMPORTER_BUILD_SKELETON_RETURN", "OBSERVED_BONE_TRANSPLANT"}:
+        raise BindingError("Native Bone creation evidence missing")
+    if evidence == "OBSERVED_BONE_TRANSPLANT" and not bone.get("_vapb_fbx_source_realization_id"):
+        raise BindingError("Transplanted Bone source realization missing")
+    values["_vapb_fbx_receipt_evidence"] = evidence
+    values["_vapb_fbx_source_realization_id"] = str(bone.get("_vapb_fbx_source_realization_id", ""))
+    return values
+
+
+def _native_bones(armature: Any) -> list[Any]:
+    data = getattr(armature, "data", None)
+    if data is None or not hasattr(data, "bones"):
+        raise BindingError("Armature Bone datablocks missing")
+    return list(data.bones)
+
+
+def make_skin_binding(mesh_obj: Any, root: Any, all_objects: Iterable[Any],
+                      selections: dict[str, str]) -> dict:
+    """Capture explicit Unity Transform -> observed native Bone choices."""
+    objects = tuple(all_objects)
+    renderer = _stored_renderer_binding(mesh_obj, root, objects)
+    record = renderer["occurrence"]
+    if record.get("renderer_class_id") != 137:
+        raise BindingError("Renderer is not skinned")
+    ids, root_id = _skin_ids(record)
+    expected = ids + ([] if root_id in ids else [root_id])
+    if not isinstance(selections, dict) or set(selections) != set(expected):
+        raise BindingError("Every source Bone and root needs one explicit choice")
+    armature = _skin_armature(mesh_obj, renderer, objects)
+    bones = _native_bones(armature)
+    mappings = []
+    used = set()
+    for transform_id in expected:
+        name = selections[transform_id]
+        matches = [bone for bone in bones if bone.name == name]
+        if len(matches) != 1:
+            raise BindingError("Selected native Bone missing or ambiguous")
+        values = _bone_values(matches[0])
+        realization = values["_vapb_fbx_bone_realization_id"]
+        if sum(bone.get("_vapb_fbx_bone_realization_id") == realization for bone in bones) != 1 or realization in used:
+            raise BindingError("Native Bone realization is duplicate")
+        used.add(realization)
+        mappings.append({"target_transform_file_id": transform_id,
+                         "edited_bone_realization_id": realization,
+                         "native_bone_receipt_id": values["_vapb_fbx_bone_receipt_id"],
+                         "source_fbx_model_uid": values["_vapb_fbx_model_uid"],
+                         "source_fbx_guid": values["_vapb_fbx_source_asset_guid"],
+                         "source_fbx_sha256": values["_vapb_fbx_source_asset_sha256"],
+                         "creation_evidence": values["_vapb_fbx_receipt_evidence"],
+                         "source_bone_realization_id": values["_vapb_fbx_source_realization_id"]})
+    binding = {"version": SKIN_BINDING_VERSION,
+               "renderer_occurrence_id": renderer["occurrence_id"],
+               "source_revision_sha256": record["source_revision_sha256"],
+               "root_revision_sha256": record["root_revision_sha256"],
+               "root_context_id": renderer["root_context_id"],
+               "native_mesh_realization_id": renderer["native_realization_id"],
+               "armature_native_object_id": renderer["armature_native_object_id"],
+               "root_bone_target_transform_file_id": root_id, "mappings": mappings}
+    return binding
+
+
+def validate_skin_binding(mesh_obj: Any, root: Any, all_objects: Iterable[Any]) -> dict:
+    """Revalidate persisted skin choices without using Blender Bone names."""
+    objects = tuple(all_objects)
+    renderer = _stored_renderer_binding(mesh_obj, root, objects)
+    record = renderer["occurrence"]
+    ids, root_id = _skin_ids(record)
+    raw = mesh_obj.get("_vapb_skin_binding")
+    try:
+        binding = json.loads(raw) if isinstance(raw, str) else raw
+    except (TypeError, ValueError) as exc:
+        raise BindingError("Malformed Skin binding") from exc
+    if not isinstance(binding, dict) or binding.get("version") != SKIN_BINDING_VERSION:
+        raise BindingError("Skin binding missing or unsupported")
+    checks = {"renderer_occurrence_id": renderer["occurrence_id"],
+              "source_revision_sha256": record["source_revision_sha256"],
+              "root_revision_sha256": record["root_revision_sha256"],
+              "root_context_id": renderer["root_context_id"],
+              "native_mesh_realization_id": renderer["native_realization_id"],
+              "armature_native_object_id": renderer["armature_native_object_id"],
+              "root_bone_target_transform_file_id": root_id}
+    if any(binding.get(key) != value for key, value in checks.items()):
+        raise BindingError("Skin binding scope changed")
+    expected = ids + ([] if root_id in ids else [root_id])
+    mappings = binding.get("mappings")
+    if not isinstance(mappings, list) or [row.get("target_transform_file_id") for row in mappings
+                                              if isinstance(row, dict)] != expected or len(mappings) != len(expected):
+        raise BindingError("Skin source Bone list changed")
+    armature = _skin_armature(mesh_obj, renderer, objects)
+    bones = _native_bones(armature)
+    used = set()
+    for row in mappings:
+        realization = row.get("edited_bone_realization_id")
+        matches = [bone for bone in bones if bone.get("_vapb_fbx_bone_realization_id") == realization]
+        if not realization or len(matches) != 1 or realization in used:
+            raise BindingError("Native Bone realization missing or duplicate")
+        used.add(realization)
+        values = _bone_values(matches[0])
+        if any(row.get(key) != values[source] for key, source in (
+                ("native_bone_receipt_id", "_vapb_fbx_bone_receipt_id"),
+                ("source_fbx_model_uid", "_vapb_fbx_model_uid"),
+                ("source_fbx_guid", "_vapb_fbx_source_asset_guid"),
+                ("source_fbx_sha256", "_vapb_fbx_source_asset_sha256"),
+                ("creation_evidence", "_vapb_fbx_receipt_evidence"),
+                ("source_bone_realization_id", "_vapb_fbx_source_realization_id"))):
+            raise BindingError("Native Bone receipt changed")
+    return binding

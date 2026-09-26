@@ -1,0 +1,120 @@
+"""Actual GUI skin confirmation and edited topology/weight UnityPackage export."""
+from pathlib import Path
+import json
+import sys
+
+import bpy
+import bmesh
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+import unitypackage_blender_importer as addon
+
+
+def prepare(root):
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.delete(use_global=False)
+    bpy.ops.mesh.primitive_cube_add()
+    mesh = bpy.context.object
+    mesh.name = 'SyntheticSkin'
+    data = bpy.data.armatures.new('SyntheticRig')
+    rig = bpy.data.objects.new('SyntheticRig', data)
+    bpy.context.collection.objects.link(rig)
+    rig.select_set(True)
+    bpy.context.view_layer.objects.active = rig
+    bpy.ops.object.mode_set(mode='EDIT')
+    bone = data.edit_bones.new('Root')
+    bone.head, bone.tail = (0, 0, 0), (0, 0, 1)
+    child = data.edit_bones.new('Child')
+    child.head, child.tail, child.parent = (0, 0, 1), (0, 0, 2), bone
+    bpy.ops.object.mode_set(mode='OBJECT')
+    mesh.vertex_groups.new(name='Root').add([0, 1, 2, 3], 1.0, 'REPLACE')
+    mesh.vertex_groups.new(name='Child').add([4, 5, 6, 7], 1.0, 'REPLACE')
+    mesh.modifiers.new('Skin', 'ARMATURE').object = rig
+    mesh.parent = rig
+    target = root / 'Assets/VapbSkinRoundtrip/Input.fbx'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    assert not target.exists()
+    assert bpy.ops.export_scene.fbx(filepath=str(target), use_selection=True,
+        object_types={'MESH', 'ARMATURE'}, add_leaf_bones=False, bake_anim=False,
+        use_custom_props=True, use_armature_deform_only=False) == {'FINISHED'}
+    print('SKIN_SOURCE_FBX_PASS')
+
+
+def main():
+    root = Path(sys.argv[sys.argv.index('--') + 1])
+    if '--prepare-fbx' in sys.argv:
+        prepare(root)
+        return
+    addon.register()
+    try:
+        bpy.ops.object.select_all(action='SELECT')
+        bpy.ops.object.delete(use_global=False)
+        assert bpy.ops.import_scene.unitypackage(filepath=str(root / 'Source.unitypackage'),
+            import_mode='RECONSTRUCT', keep_extracted=False,
+            source_storage_directory=str(root / 'BlenderSources')) == {'FINISHED'}
+        roots = [obj for obj in bpy.context.scene.objects if obj.get('_vapb_renderer_occurrences')]
+        assert len(roots) == 1
+        records = json.loads(roots[0]['_vapb_renderer_occurrences'])['records']
+        records = [record for record in records if record['renderer_class_id'] == 137]
+        assert len(records) == 1 and records[0]['skin']['status'] == 'EXACT'
+        native = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH'
+                  and obj.get('_vapb_root_context_id') == records[0]['root_context_id']]
+        assert len(native) == 1
+        mesh = native[0]
+        mesh.data = mesh.data.copy()
+        rig = next(mod.object for mod in mesh.modifiers if mod.type == 'ARMATURE')
+        scene = bpy.context.scene
+        scene.vapb_renderer_root, scene.vapb_renderer_mesh = roots[0], mesh
+        assert bpy.ops.vapb.confirm_renderer_binding(occurrence_id=records[0]['occurrence_id']) == {'FINISHED'}
+        assert bpy.ops.vapb.load_skin_mappings() == {'FINISHED'}
+        source = json.loads((root / 'SourceInfo.json').read_text(encoding='utf-8-sig'))
+        explicit_fixture_choices = {row['target_transform_file_id']: row['name'] for row in source['bones']}
+        for row in scene.vapb_skin_mapping.rows:
+            # This reproduces the user's explicit fixture choice, not a
+            # production name-based correspondence algorithm.
+            row.target_name = explicit_fixture_choices[row.target_transform_file_id]
+            row.confirmed = True
+        assert bpy.ops.vapb.confirm_skin_binding() == {'FINISHED'}
+        binding_before = json.loads(mesh['_vapb_skin_binding'])
+        original_vertex_count = len(mesh.data.vertices)
+        bm = bmesh.new()
+        try:
+            bm.from_mesh(mesh.data)
+            bmesh.ops.subdivide_edges(bm, edges=list(bm.edges), cuts=1, use_grid_fill=True)
+            bm.to_mesh(mesh.data)
+        finally:
+            bm.free()
+        mesh.data.update()
+        assert len(mesh.data.vertices) > original_vertex_count
+        for vertex in mesh.data.vertices:
+            vertex.co *= 1.2
+        indices = list(range(len(mesh.data.vertices)))
+        mesh.vertex_groups['Root'].add(indices, 0.25, 'REPLACE')
+        mesh.vertex_groups['Child'].add(indices, 0.75, 'REPLACE')
+        for old in ('Root', 'Child'):
+            group = mesh.vertex_groups[old]
+            rig.data.bones[old].name = 'Renamed_' + old
+            group.name = 'Renamed_' + old
+        mesh.name = 'Renamed edited skin'
+        for obj in bpy.context.selected_objects:
+            obj.select_set(False)
+        mesh.select_set(True)
+        bpy.context.view_layer.objects.active = mesh
+        bpy.ops.wm.save_as_mainfile(filepath=str(root / 'SkinRoundtrip.blend'))
+        bpy.ops.wm.open_mainfile(filepath=str(root / 'SkinRoundtrip.blend'))
+        mesh = bpy.context.active_object
+        assert json.loads(mesh['_vapb_skin_binding']) == binding_before
+        before = (len(bpy.data.scenes), len(bpy.data.objects), len(bpy.data.meshes), len(bpy.data.armatures))
+        geometry = [tuple(vertex.co) for vertex in mesh.data.vertices]
+        output = root / (sys.argv[sys.argv.index('--output') + 1] if '--output' in sys.argv else 'Output.unitypackage')
+        assert bpy.ops.export_scene.vapb_unitypackage(filepath=str(output)) == {'FINISHED'}
+        assert before == (len(bpy.data.scenes), len(bpy.data.objects), len(bpy.data.meshes), len(bpy.data.armatures))
+        assert geometry == [tuple(vertex.co) for vertex in mesh.data.vertices]
+        assert output.is_file()
+        print('SKIN_PACKAGE_EXPORT_PASS topology=1 weights=1 renamed_bones=1 reload=1 source_unchanged=1')
+    finally:
+        addon.unregister()
+
+
+if __name__ == '__main__':
+    main()

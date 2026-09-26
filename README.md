@@ -6,7 +6,13 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 
 ## 現在の製品化状況
 
-今回指定されたVRCアバター改変仕様全体は開発中です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Merge、直接Prefabの静的MeshのUnityPackage往復を合成データで検証しました。SkinのUnity復元、Unity/VRC参照を含む編集機能全体、private実データ回帰、最終配布ZIPの検証は完了していません。全仕様の正本と現状は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。
+今回指定されたVRCアバター改変仕様全体は開発中です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Merge、直接Prefabの静的Meshと既存骨SkinのUnityPackage往復を合成データで検証しました。次の最優先は複数private実VRC PackageのImport・実編集・Unity復元です。全面的なUnity/VRC参照復元、private実データ回帰、最終配布ZIPの検証は未完了です。全仕様の正本と現状は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。
+
+### 既存骨Skinの限定往復
+
+直接PrefabのSkinnedMeshRendererを **VAPB → Renderer対応** で確認し、Skinの骨対応を読み込み、各Unity骨の対応先をArmatureのBone選択欄で明示確認します。対応を保存した後、Meshの頂点・面・ウェイトを編集し、上記UnityPackage出力とUnity側Manifest適用を使用します。対応は名前と独立した保存IDで保持され、改名と.blend保存・再読込を検証済みです。
+
+この経路は元Unity骨階層・rest・名前と元FBXを保持します。Blender側の骨改名は対応を壊しませんが、Unity骨の改名としては出力しません。新規骨、Nested、未対応Componentや外部依存は未対応として停止します。2骨のsyntheticで頂点構成・ウェイト変更とUnityでの変形を検証済みですが、実Avatarの全面対応はまだ主張しません。
 
 ### Cleanup / Bone Merge の手動操作
 
@@ -19,7 +25,7 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 
 1. PackageをPrefab再構築モードで取り込み、**VAPB → Renderer対応** でRendererとnative Meshの対応を確定します。
 2. 対象Meshの頂点・面や素材割当を編集し、そのMeshをアクティブにします。
-3. **File → Export → VAPB UnityPackage（静的Mesh）** を選び、新しい出力名を指定します。
+3. **File → Export → VAPB UnityPackage（Mesh / Skin）** を選び、新しい出力名を指定します。
 4. 新規Unity Projectへ生成PackageをImportします。コンパイル完了後、`Assets/VAPBExport/manifest.json` を選択し、**Tools → VAPB → Apply Selected Export Manifest** を実行します。
 
 この経路は、元FBXにMeshが一つあり、直接Prefabの一つのMeshRendererだけが参照する場合の形状・素材割当が対象です。元PrefabのTransformとUnity Material/Shader設定は保持します。Shape Key、Modifier、Skin、Nested Prefab、追加のモデル参照、欠落依存、未対応serialized stateがある場合は停止します。GUIで未対応と表示される範囲を、VRCアバター全体の往復対応と解釈しないでください。
@@ -204,9 +210,9 @@ for separate scene attachments retain their Empty representation.
 
 複数UnityPackageを同一Sceneへ順次importする場合も、Material、Texture、Prefab Renderer slotはPackage identityを境界に解決します。同名や同一filenameは自動mergeせず、Prefab Object名がBlenderの`.###`重複suffixで変化した場合は一意なbase名だけを安全にfallbackします。
 
-### UnityPackage Exporter (planned)
+### UnityPackage Exporter（実装中）
 
-UnityPackageの再梱包Exporterとreachability pruningは将来仕様です。現在のアドオンはimport/editを提供し、ExporterやUnity Finalizer roundtripは実装していません。
+直接Prefabの静的Meshと既存骨Skinの限定往復経路を実装しています。全Compositionのreachability、Nested Prefab、複数PackageやVRC stateを含む全面的な往復は実装中です。
 ### Cross-Package Dependencies
 
 Geometry-only、Material-only、Texture-onlyのUnityPackageを同一Sceneへ順次importできます。Prefab Renderer→Material、Material→TextureはPackage-scoped GUIDを正本にScene-wide resolverでlate bindし、未解決・曖昧参照は`unitypackage_dependency_registry`へ保存します。静的Mesh向けExporter/Unity Finalizerは上記の限定範囲に対応します。Skin・複数Packageの全面的な往復は未完成です。
