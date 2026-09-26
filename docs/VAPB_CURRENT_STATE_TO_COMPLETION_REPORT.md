@@ -1,3 +1,76 @@
+# Current product campaign checkpoint — 2026-09-26
+
+This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
+
+## Current state and authority
+
+- Branch: `feature/multi-package-identity`.
+- Starting code HEAD: `c7dcb1b38dd63f1e5af366d538c818878f2ddd9f`; worktree was clean.
+- Live remote branch query confirmed the same HEAD on 2026-09-26. Plain Git lacked usable credentials; a command-scoped `gh auth git-credential` helper used the existing authenticated GitHub CLI successfully. No credential or global config changes.
+- Existing semantic contract/synthetic adapter, provenance/FBX receipt, export graph/planner/staging/writer are committed. Historical statements below about dirty/uncommitted modules are superseded.
+- Historical 238 Python PASS and Blender integration PASS are retained as historical evidence, not a new campaign run. The semantic-occurrence/native-skin edge is not established by separate existence assertions.
+- Current delivery status: **IN PROGRESS; requested specification not complete**. No new distribution artifact yet.
+- Requirements have two independent axes: development status (未着手 / 実装中 / 実装済み未検証 / 検証済み / 阻害要因あり) and input coverage (Supported / Partial / Unsupported / Unknown / Ambiguous). Entries below are campaign acceptance status, not claims that all legacy code is absent.
+
+## Requirements and acceptance tracking
+
+All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0–22. Each row groups those clauses; grouped rows cannot be marked complete with an omitted sub-clause.
+
+| ID / spec sections | Requirement / user operation | Existing or intended implementation boundary | Acceptance / required evidence | Development | Input coverage / result / remaining work |
+|---|---|---|---|---|---|
+| IN-01 / 4 | GUI import one/multiple packages, choose Composition | operators/import_unitypackage.py, package_reader | No Unity dependency; supported user paths work from installed ZIP | 実装中 | Partial; legacy paths exist; final product flow unverified |
+| IN-02 / 4 | Prefab/Variant/nested/inherited occurrences | effective_prefab, semantic_contract | Enumerate actual model children without overrides or artificial cross-product | 実装中 | Partial; Stage 1A gap; production adapter pending |
+| IN-03 / 4 | Cross-package providers, collisions, bounded discovery | package_identity, asset_database, sibling_discovery | Exact provider evidence; ambiguous choice UI; missing/cycle/corrupt input diagnostics | 実装中 | Partial; campaign multi-package matrix pending |
+| ID-01 / 5 | Package/revision/source/occurrence/realization/export identities | provenance_model, identity, semantic_contract | Scope retained, signed IDs, no name/order join; insufficient evidence stays unresolved | 実装中 | Partial; conversion boundaries pending |
+| ID-02 / 5,6 | RAW preservation and persistent source storage | package_reader, Blender metadata | Save/reopen and temporary-directory loss do not erase required source | 未着手 | Unknown; durable storage audit pending |
+| BL-01 / 6 | Separate editable instances with safe sharing | importer, hierarchy_builder, fbx_receipt | Independent transform/material and explicit shared/individual edit scope | 実装中 | Partial; repeated source and shared-data runtime matrix pending |
+| BL-02 / 6 | Renderer occurrence -> semantic Object -> skin/Armature/slots | provenance_bridge, material_builder | Authoritative persisted edge survives rename/save/reopen; ambiguity rejected | 実装中 | Unknown; first execution block |
+| BL-03 / 6 | Mesh/bone/weight/UV/normal/shape/animation/image/material/hierarchy edits | native Blender + edit/export adapters | Rename/duplicate/delete/join/split/merge tracked with actual edits | 未着手 | Partial native editing; complete export continuity unverified |
+| ST-01 / 7 | Shader identity/properties/keywords/queue/texture preservation | material_parser/model, export | Approximate preview cannot overwrite Unity source; provider reported | 実装中 | Partial; complete roundtrip pending |
+| ST-02 / 7 | Prefab source/override and generic serialized state preservation | parser, source snapshot, Finalizer | Capture/reference restore/behavior results separated; unknown state retained | 未着手 | Unknown; restoration pending |
+| ST-03 / 7 | Avatar Descriptor/view/lipsync/eyes/playable layers | snapshot and Finalizer | Edits rebind exact renderer/bone/shape targets, report missing/ambiguous | 未着手 | Unknown |
+| ST-04 / 7 | Expressions/parameters/menus/controller/clips/masks/bindings | graph, snapshot and Finalizer | Reachable assets included; changed target references restored | 未着手 | Unknown |
+| ST-05 / 7 | PhysBone/collider/contact/constraint state | physbone_parser, graph, Finalizer | Preserved source and edited-reference restoration; no preview substitution | 実装中 | Partial capture; full requested restore pending |
+| ST-06 / 7 | MA/NDMF/other MonoBehaviour/ScriptableObject | source preservation and dependency declarations | Concrete preserved state/dependency/unsupported reasons; no arbitrary execution | 未着手 | Unknown |
+| EX-01 / 8 | Edit delta and reachability from final Composition | export/semantic_graph, asset_plan | All specified operations distinguished, unknown references protected | 実装中 | Partial planning; Blender extraction not closed |
+| EX-02 / 8 | GUID continuity/remap/collision handling | asset_plan, manifest | Preserve logical identity; new/duplicate/split/merge refs explicit | 実装中 | Partial; production allocation/remap pending |
+| EX-03 / 8 | Export actual self-contained unitypackage | staging, package_writer, export operator | Atomic success, scene/source untouched, declared external deps, fresh import | 実装中 | Partial writer tests; product export pending |
+| EX-04 / 8 | Idempotent Unity Finalizer and MRUS | unity_editor/Editor | Public API post-import identity; exact mesh/material/skin/Prefab/VRC rebind | 未着手 | Partial legacy material tool; general finalizer pending |
+| CL-01 / 9 | Export Cleanup of unused Bone/Material | graph + export staging | Exclude only proven unused; exported skin/references valid; scene unchanged | 未着手 | Unknown |
+| CL-02 / 9 | Edit Cleanup preview/apply | Blender operator/UI | Scope/reasons/unknown visible, Undo/recovery, shared users protected | 未着手 | Unknown |
+| WT-01 / 10 | Explicit Weight Transfer source/armature/target/preview/apply | Blender operator/UI + transfer core | Different topology; REPLACE/MERGE/FILL_MISSING with declared rules | 未着手 | Unknown |
+| WT-02 / 10 | Transfer protections and quality feedback | transfer core | B-only/locked weights preserved, grounded distance indicators, deformation/Undo | 未着手 | Unknown |
+| BM-01 / 11 | Explicit Semantic Bone Merge mapping/classification | Blender operator/UI + remap core | EQUIVALENT/B_ONLY/AMBIGUOUS; provenance or confirmed mapping | 未着手 | Unknown |
+| BM-02 / 11 | Rest/skin/reference-preserving transplant and remap | bone transform, reference graph, Finalizer | Roll/rest/world transform, all listed refs, collisions/sharing; verified deletion | 未着手 | Unknown |
+| UI-01 / 12 | Japanese GUI for all operations | ui, operators | No console/GUID entry in normal flow; targets/progress/outcomes explained | 実装中 | Partial legacy GUI; new editing/export controls pending |
+| UI-02 / 12 | Recovery and independent operation selection | operators, docs | Undo/retry/reopen, no unselected destructive operation chains | 未着手 | Unknown |
+| QA-01 / 13–15 | Python/Blender/Unity integrated synthetic matrix | tests, tools, public API Oracle | Identity/rename/reopen/multi-instance/sharing/ambiguity and actual deformation | 実装中 | Historical tests only; full product matrix pending |
+| QA-02 / 14,15 | Representative private regression | external corpus/catalog | Read-only originals, bounded safe copies; publish only synthetic findings | 未着手 | Unknown; no new private scan |
+| PK-01 / 1,21 | Build/install/use final addon ZIP | tools/build_distribution_zip.py | Exact commit/hash; clean Blender GUI install and all major user operations | 実装中 | Legacy builder exists; final artifact unbuilt |
+| GH-01 / 17,18,21 | GitHub reproducible checkpoints/handoff | this document, PRODUCT_SPEC, tests | All needed helpers tracked; fresh checkout; remote SHA verified; no private data | 実装中 | Remote access restored; checkpoint pending |
+
+## Execution sequence and current block
+
+1. Close production occurrence/skin/slot provenance using existing contract and receipt.
+2. Connect actual Blender edit delta -> export plan/staging -> fresh Unity import -> minimal idempotent restore. This V1 is intermediate.
+3. Extend requested Unity/VRC preservation/restoration and reference coverage.
+4. Implement all Cleanup, Weight Transfer, Bone Merge cores and practical GUI, with protected references, preview and recovery.
+5. Integrate synthetic/private regression and verify a commit-bound distributable ZIP.
+
+First block: trace the existing member realization/receipt path, add a failing public synthetic regression for the actual missing edge, implement the smallest evidence-backed mapping, verify Python and Blender. Do not infer Unity-generated localID from names or FBX UID. No full-source/context cross-product. Independent scope review before code completion.
+
+## Decisions / evidence / next action
+
+- DERIVED: contract adapter is reference-only; do not rebuild it or call it production-complete.
+- UNKNOWN: input-independent authoritative Unity Renderer -> FBX primitive mapping. Resolve from production code and supported serialized evidence; unsupported roots cannot silently succeed.
+- First remote probe failed due absent Git username; existing GitHub CLI authentication succeeded through command-scoped helper. No persistent Git configuration change.
+- Resource policy: use official shared-account usage readings; protect final-window 30% remaining. Three earned resets confirmed available at campaign start, zero used. Do not purchase credits or change plan. Detailed account values stay outside the repository.
+- NEXT ACTION: complete the bounded production mapping investigation and introduce its failing regression before the minimal production change.
+
+---
+
+# Historical investigation (superseded where current checkpoint differs)
+
 # VAPB 現在地点から最終目的までの完了工程
 
 この文書は、会話履歴を読まなくても VAPB の目的、現在の実装状態、観測事実、未確定事項、次の一手を理解できるようにした公開安全な handoff 文書である。
