@@ -4,7 +4,7 @@ This is continuing work. The current original request in PRODUCT_SPEC.md is auth
 
 ## Updated resource instruction — 2026-09-26
 
-The user explicitly changed the next reset trigger: **use an earned reset when the remaining eligible usage window reaches approximately 10%**. One authorized reset has already been used; two remain. Keep saving verified checkpoints regularly so the next reset does not endanger unsaved work. The original final-window reserve of at least 30% still applies after the available resets are exhausted; the new instruction changes when remaining reset tickets are used.
+The user explicitly changed the next reset trigger: **use an earned reset when the remaining eligible usage window reaches approximately 10%**. Two authorized resets have now been used; one remains. The second reset was consumed through the official Codex app-server at 10% remaining, after checkpoint `5118980496c58114fe0a1bbdb1841b62f7039d15` was pushed with a clean worktree. The official usage read subsequently confirmed 100% remaining and one available reset. No credits were purchased. Keep saving verified checkpoints regularly so the next reset does not endanger unsaved work. The original final-window reserve of at least 30% still applies after the available resets are exhausted; the new instruction changes when remaining reset tickets are used.
 
 ## Current state and authority
 
