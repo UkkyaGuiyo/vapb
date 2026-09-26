@@ -112,6 +112,15 @@ First block: trace the existing member realization/receipt path, add a failing p
 - Full Python 3.14.6 repository-parent discovery: **288 PASS**, 0 FAIL/ERROR. Blender 5.2.1 integrated synthetic import/confirm/export/save/reopen PASS, exit0. Scope_guard PASS.
 - Prior committed binding checkpoint `aef6e60af2eb0895aa4953b53a4e043879f6ca74`: fresh HEAD-only checkout **280 PASS**, live remote query matched after push. Binding review scope_guard PASS.
 
+## Checkpoint: Unity public-API marker persistence gate
+
+- Added only public synthetic probe sources: Blender skin fixture generator plus Unity runtime marker component and Editor probe. A fresh dedicated Unity **2022.3.22f1** project was created outside the VAPB repository. Private/commercial data and existing Oracle projects were not used or changed.
+- Blender **5.2.1** exports the explicitly generated Mesh's `_vapb_fbx_realization_id` custom property. Unity's documented `OnPostprocessGameObjectWithUserProperties` callback observes it and attaches a marker component. After model import, the probe retrieves the marked GameObject and its directly attached Renderer/Mesh, then calls public `AssetDatabase.TryGetGUIDAndLocalFileIdentifier` with signed `long` IDs. No name/path/order selects the Renderer; the known asset path selects only the test resource.
+- Actual Unity result: **PASS, process exit0**, version2022.3.22f1, callback observed twice, marker count1 in both imports, Renderer/Mesh and nonempty geometry observed, GameObject/Renderer/Mesh IDs available and stable across two unchanged forced imports. During the probe Run: **0 error logs, 0 warnings**. This is not a whole-Editor historical Console count or proof IDs survive arbitrary edits.
+- Initial Blender generator accessed an EditBone handle after leaving Edit Mode; fixed. Scope_guard identified an unused bone marker, which was removed; final exact fixture/probe rerun PASS. No production identity fallback was introduced. This establishes one required public-API observation mechanism, not completed Unity finalizer/MRUS.
+- Reproduce in an empty synthetic project: copy `tests/unity_marker_probe/VapbSyntheticMarker.cs` to `Assets/VapbProbe/`, and `tests/unity_marker_probe/Editor/VapbMarkerProbe.cs` to `Assets/VapbProbe/Editor/`. Generate the FBX with `blender --factory-startup --background --python-exit-code 1 --python tests/blender_unity_marker_fixture.py -- <project>/Assets/VapbProbe/Synthetic.fbx`. Then run Unity2022.3.22f1 `-batchmode -projectPath <project> -executeMethod VapbMarkerProbe.Run -logFile <local-log>`. Do not reuse a private project. The fixed-enum/boolean/count report is `<project>/VapbMarkerProbeResult.json`; failures exit1.
+- Public API references: [user-properties callback](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/AssetPostprocessor.OnPostprocessGameObjectWithUserProperties.html), [signed localID observation](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/AssetDatabase.TryGetGUIDAndLocalFileIdentifier.html).
+
 ## Decisions / evidence / next action (latest)
 
 - DERIVED: contract adapter is reference-only; do not rebuild it or call it production-complete.
