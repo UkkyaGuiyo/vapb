@@ -120,6 +120,10 @@ Blender's 4 Mesh Objects / 0 Armatures for this package is a confirmed Core Impo
 
 **Current next action:** reproduce the model-instance and inherited-Variant paths using a Unity-generated public-safe synthetic package, correct bounded dependency extraction/attachment, then recheck private B. Keep exact Unity Renderer identity coverage and missing VRC dependencies explicitly unresolved until independently proven.
 
+Public repro fixture is now committed in `tests/unity_model_instance_fixture/Editor/VapbModelInstanceFixture.cs`: it preserves a nested FBX Model Prefab in a base Prefab and a true Variant, and includes an unrelated second FBX so the old single-FBX fallback cannot mask selection errors. Unity 2022.3.22f1 confirms one Renderer/one skin/two bones per Prefab, source-chain depths one/two, one class1001 document and zero directly serialized Renderers per Prefab. Source package contains only the two Prefabs and two synthetic FBXs, no executable assets. This proves the source fixture, not the pending Blender correction.
+
+The generic public-API observer is `tests/unity_private_structure_probe/Editor/VapbPrivateStructureProbe.cs`. In a dedicated project with an already-reviewed `Input.unitypackage`, run `VapbPrivateStructureProbe.Run` in batchmode without -quit. Its summary separates model and Prefab asset counts; detailed source/occurrence IDs are written at the local project root and must remain outside Git. Both new helpers passed read-only scope review; both were compiled/executed in Unity with exit 0. A separate Blender run during in-progress dependency changes is not recorded as an immutable before/after result.
+
 ## Checkpoint: observed FBX Object-copy lineage
 
 - Change: production composition-member copies now call `copy_with_receipt`. A validated same-session source receipt is explicitly transferred to the observed copy, with a fresh persistent realization ID and its source realization ID. Shared Mesh/source metadata is untouched. Unobserved copies lose inherited receipt authority; Renderer occurrence bindings are never copied across Objects.
