@@ -10,6 +10,24 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 
 最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性、最終配布ZIPの検証は未完了です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
 
+## 開発について / Development
+
+### 日本語
+
+VAPBは個人開発のオープンソースプロジェクトです。設計、実装、テスト、デバッグ、調査、文書化に **OpenAI ChatGPT および Codex** を積極的に使用しています。
+
+製品の目的、仕様、優先順位、受入条件、ライセンス判断、公開判断などの最終決定は人間が行います。AIが生成・提案したコードや変更は、それだけを理由に正しいものとして扱わず、自動テスト、Blender / Unityの統合テスト、公開synthetic fixture、利用可能なprivate実UnityPackageでの回帰検証などを通して確認します。
+
+このREADMEやGit履歴には、AIを利用した開発であることを隠さず記載します。同時に、AIを使用したこと自体を品質保証とはせず、**何が実装済みか、何が実際に検証済みか、何が未確認か**を区別して記録することを方針としています。
+
+### English
+
+VAPB is an individually developed open-source project built with extensive use of **OpenAI ChatGPT and Codex** for architecture, implementation, testing, debugging, research, and documentation.
+
+Human judgment remains authoritative for product goals, specifications, priorities, acceptance criteria, licensing decisions, publication decisions, and other final decisions. Code and changes generated or proposed with AI assistance are not considered correct merely because they were AI-generated; they are validated through automated tests, Blender / Unity integration tests, public synthetic fixtures, and regression testing with available private real-world UnityPackages where appropriate.
+
+This README and the Git history intentionally disclose the use of AI in development. At the same time, AI assistance is not treated as a quality guarantee: the project explicitly distinguishes **what is implemented, what has actually been verified, and what remains unverified**.
+
 ### 既存骨Skinの限定往復
 
 直接PrefabのSkinnedMeshRendererを **VAPB → Renderer対応** で確認し、Skinの骨対応を読み込み、各Unity骨の対応先をArmatureのBone選択欄で明示確認します。対応を保存した後、Meshの頂点・面・ウェイトを編集し、上記UnityPackage出力とUnity側Manifest適用を使用します。対応は名前と独立した保存IDで保持され、改名と.blend保存・再読込を検証済みです。
