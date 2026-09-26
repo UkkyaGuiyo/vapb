@@ -22,6 +22,22 @@ from tools.build_distribution_zip import (
 
 
 class DistributionZipTests(unittest.TestCase):
+    def test_export_finalizer_sources_are_packaged(self):
+        helpers = {
+            'unity_editor/VapbRealizationMarker.cs',
+            'unity_editor/Editor/VapbReferenceFinalizer.cs',
+            'unity_editor/Editor/VapbModelSkinFinalizer.cs',
+        }
+        members = git_files(ROOT, 'HEAD')
+        self.assertTrue(helpers <= set(members))
+        self.assertFalse(any(path.startswith('tests/') for path in members))
+        with tempfile.TemporaryDirectory() as temp:
+            output = Path(temp) / 'addon.zip'
+            build(ROOT, 'HEAD', output)
+            with zipfile.ZipFile(output) as archive:
+                for path in helpers:
+                    self.assertGreater(len(archive.read(f'unitypackage_blender_importer/{path}')), 0)
+
     def test_source_runtime_set_contains_preferences(self):
         members = git_files(ROOT, "HEAD")
         self.assertIn("preferences.py", members)

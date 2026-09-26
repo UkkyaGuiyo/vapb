@@ -28,6 +28,16 @@ Exact next action after the current skin checkpoint: select heterogeneous repres
 - Current delivery status: **IN PROGRESS; requested specification not complete**. No new distribution artifact yet.
 - Requirements have two independent axes: development status (未着手 / 実装中 / 実装済み未検証 / 検証済み / 阻害要因あり) and input coverage (Supported / Partial / Unsupported / Unknown / Ambiguous). Entries below are campaign acceptance status, not claims that all legacy code is absent.
 
+## Installed ZIP export support checkpoint — 2026-09-26
+
+The distribution builder omitted the three first-party Unity C# helpers consumed by package export. Source-checkout tests therefore did not establish that an installed add-on could export. The builder now includes exactly those three runtime support files; tests, tools and private data remain excluded.
+
+**PROVEN:** the new packaging regression failed before the change and passes afterward. A candidate ZIP containing the current committed runtime was extracted into an isolated temporary installation. Blender 5.2.1 imported the add-on from that installation, imported the synthetic two-skin package, edited one skin, renamed it, saved/reopened, rejected two corrupted receipt controls, and exported through the actual UnityPackage operator: PASS, exit 0. Register/unregister PASS. Repository-parent Python: **328 tests PASS**, zero failures/errors; compileall and diff checks PASS. Independent read-only scope review PASS; no additional changes requested.
+
+This is an intermediate installed-runtime export check, not final product delivery or private Core roundtrip completion. The representative-avatar Oracle remains in its first import; exact target bone/rest and edited source-layout comparisons are still UNKNOWN. The separate D source witness also passes raw/meta restoration and per-ID parity, with one exact native receipt join; no full D package or VRC usability claim follows from it.
+
+**Next action:** finish the representative-avatar Oracle import or establish its concrete startup blocker, then verify the selected skin's exact target bone identities/rest matrices and edited layout before implementing deferred direct-skin restoration.
+
 ## Requirements and acceptance tracking
 
 All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0–22. Each row groups those clauses; grouped rows cannot be marked complete with an omitted sub-clause.

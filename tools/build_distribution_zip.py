@@ -21,6 +21,11 @@ DOCS = (
     "CHANGELOG.md",
 )
 EXCLUDED_RUNTIME_PREFIXES = ("tests/", "tools/", "experiment_logs/")
+UNITY_EXPORT_SUPPORT = (
+    "unity_editor/VapbRealizationMarker.cs",
+    "unity_editor/Editor/VapbReferenceFinalizer.cs",
+    "unity_editor/Editor/VapbModelSkinFinalizer.cs",
+)
 
 
 def is_runtime_python(path: str) -> bool:
@@ -42,7 +47,7 @@ def git_files(repo: Path, revision: str) -> list[str]:
     )
     files = [line.strip() for line in result.stdout.splitlines() if line.strip()]
     runtime = sorted(runtime_python_paths(files))
-    return runtime + [path for path in DOCS if path in files]
+    return runtime + [path for path in (*UNITY_EXPORT_SUPPORT, *DOCS) if path in files]
 
 
 def revision_sha(repo: Path, revision: str) -> str:

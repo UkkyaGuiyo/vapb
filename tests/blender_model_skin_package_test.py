@@ -6,11 +6,23 @@ input_blend. Private paths and output packages must remain outside the repo.
 import json
 from pathlib import Path
 import sys
+import tempfile
+import zipfile
 
 import bpy
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+installation = None
+if '--addon-zip' in sys.argv:
+    installation = tempfile.TemporaryDirectory(prefix='vapb_model_skin_install_')
+    archive_path = Path(sys.argv[sys.argv.index('--addon-zip') + 1]).resolve()
+    with zipfile.ZipFile(archive_path) as archive:
+        archive.extractall(installation.name)
+    sys.path.insert(0, installation.name)
+else:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import unitypackage_blender_importer as addon
+if installation:
+    assert Path(addon.__file__).resolve().is_relative_to(Path(installation.name).resolve())
 
 
 def main():
@@ -86,4 +98,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    finally:
+        if installation:
+            installation.cleanup()
