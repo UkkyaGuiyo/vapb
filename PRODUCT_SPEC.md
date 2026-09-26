@@ -804,6 +804,10 @@ GitHubだけでpublicな開発・synthetic再現が可能にし、privateデー�
 - 20%付近：新しい大規模並列処理や長時間の探索を必要性ベースで絞る。
 - 15%付近：未保存成果を優先してcheckpoint化し、残作業の完了可能性を再評価する。
 - **10%付近：新規の高消費作業を止め、検証・保存・引継ぎへ収束し、10%を大きく割り込む前に終了する。**
+- その最終収束作業の一部として、**その時点のPublic開発HEADからインストール可能なVAPB ZIPを生成・検証し、GitHubへ保存する。** ZIPは正確なcommit SHAとSHA-256を記録し、clean Blender 5.2.1でインストール・有効化・register/unregisterを確認する。可能なら代表的な公開synthetic import/export smokeも行う。
+- GitHubへの保存は、generated ZIPを通常のsource treeへ恒常的にcommitするより、**Experimental / Alpha のGitHub prerelease asset**として掲載することを優先する。このユーザー指示は、その最終ZIPを保存するために必要な**prereleaseと対応tagの作成を明示的に許可する**。mainへのmerge、stable release表記、完成宣言は別途許可されていない。
+- Release名・説明にはExperimental / Alpha、対象Blender版、検証済みcommit、SHA-256、既知の未対応範囲を明記し、未完成のCoreやVRC runtimeを完成済みと表現しない。
+- ZIP生成またはGitHub uploadが失敗した場合、成功と偽らず、失敗理由・ローカル成果物path/hash・再開手順をcheckpointへ残す。
 
 大きな処理では、次の確認時に安全線を越えないよう先に余裕を取る。
 親・子agent、別作業との共有、反映遅延、保存用の消費を考慮する。
