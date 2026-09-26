@@ -82,6 +82,12 @@ First block: trace the existing member realization/receipt path, add a failing p
 - This preserves serialized evidence needed by production occurrence traversal. It does not turn the existing source-key-only effective resolver into an occurrence resolver.
 - Regression first failed on missing fields; parser and Stage 1A suites then **18 PASS** on Python 3.14.6. Command from repository parent: `python -m unittest unitypackage_blender_importer.tests.test_prefab_parser unitypackage_blender_importer.tests.test_stage1a_synthetic_projection -q`. Scope_guard PASS. An earlier combined invocation named a nonexistent Stage 1B test module and failed discovery; the corrected invocation above is the recorded result.
 
+## Checkpoint: source-preserving model package materialization
+
+`export/model_package.py` connects the existing semantic graph, asset plan, staging tree, export manifest and atomic writer. It validates the archived package and original model SHA256, rejects duplicate tar fields and provider/path collisions, preserves continued FBX GUID/meta/path, and marks changed model bytes as MODIFY with post-import rebind required. Other original assets are retained verbatim as a **conservative whole-source closure**, not a minimal reachability claim. Folder assets retain their metadata without invented payloads.
+
+Python focused validation: `test_model_package` plus `test_export_materialization`: **24 PASS**. Read-only scope review found no production scope issue. This adapter alone does not prove a Unity roundtrip. The pending GUI/finalizer integration targets direct static MeshRenderer first; skin/nested/VRC restoration remains required later. First Unity fresh-import attempt exposed asynchronous ImportPackage completion in the probe; after correcting that, the current integration gate is resolving loaded Prefab contents back to signed source component IDs using documented public APIs. No name/order mapping is accepted.
+
 ## Checkpoint: declared Weight Transfer boundary
 
 The optional boundary guard treats reference Armature local X=0 as a user-declared plane, with 1e-5 local-unit tolerance. It protects cross-plane hits and includes them in explicit warning selection; it does not infer anatomical identity. A rotated-rig fixture proves that the check uses rig-local rather than world X.
