@@ -13,8 +13,27 @@ import unitypackage_blender_importer as addon
 def prepare(root):
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
-    bpy.ops.mesh.primitive_cube_add()
-    mesh = bpy.context.object
+    uv_shape_split = '--uv-shape-split' in sys.argv
+    if uv_shape_split:
+        data = bpy.data.meshes.new('SyntheticSplitQuad')
+        data.from_pydata([(-1, -1, 0), (1, -1, 0), (1, 1, 0), (-1, 1, 0)], [],
+                         [(0, 1, 2), (0, 2, 3)])
+        data.update()
+        mesh = bpy.data.objects.new('SyntheticSkin', data)
+        bpy.context.collection.objects.link(mesh)
+        mesh.select_set(True)
+        uv = data.uv_layers.new(name='UVMap')
+        coordinates = ((0, 0), (1, 0), (1, 1), (0, 1))
+        for loop in data.loops:
+            uv.data[loop.index].uv = coordinates[loop.vertex_index]
+        for polygon in data.polygons:
+            polygon.use_smooth = True
+        mesh.shape_key_add(name='Basis')
+        mesh.shape_key_add(name='ShapeA').data[0].co.z += 0.1
+        mesh.shape_key_add(name='ShapeB').data[1].co.z += 0.1
+    else:
+        bpy.ops.mesh.primitive_cube_add()
+        mesh = bpy.context.object
     mesh.name = 'SyntheticSkin'
     data = bpy.data.armatures.new('SyntheticRig')
     rig = bpy.data.objects.new('SyntheticRig', data)
@@ -32,8 +51,10 @@ def prepare(root):
     bpy.ops.object.mode_set(mode='OBJECT')
     if '--skin-bone-subset' in sys.argv:
         rig.pose.bones['OtherBranch']['_vapb_fixture_unused_skin_bone'] = 'yes'
-    mesh.vertex_groups.new(name='Root').add([0, 1, 2, 3], 1.0, 'REPLACE')
-    mesh.vertex_groups.new(name='Child').add([4, 5, 6, 7], 1.0, 'REPLACE')
+    mesh.vertex_groups.new(name='Root').add([0, 1] if uv_shape_split else [0, 1, 2, 3],
+                                            1.0, 'REPLACE')
+    mesh.vertex_groups.new(name='Child').add([2, 3] if uv_shape_split else [4, 5, 6, 7],
+                                             1.0, 'REPLACE')
     mesh.modifiers.new('Skin', 'ARMATURE').object = rig
     mesh.parent = rig
     if '--two-model-skins' in sys.argv:
@@ -49,6 +70,7 @@ def prepare(root):
     assert bpy.ops.export_scene.fbx(filepath=str(target), use_selection=True,
         object_types={'MESH', 'ARMATURE'}, add_leaf_bones=False, bake_anim=False,
         use_custom_props=True, use_armature_deform_only=False,
+        use_mesh_modifiers=not uv_shape_split,
         apply_scale_options=('FBX_SCALE_ALL' if '--source-units-in-fbx' in sys.argv
                              else 'FBX_SCALE_NONE')) == {'FINISHED'}
     if '--skin-bone-subset' in sys.argv:

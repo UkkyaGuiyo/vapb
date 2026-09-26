@@ -64,7 +64,21 @@ def main():
         realization = mesh['_vapb_fbx_realization_id']
         mesh.data = mesh.data.copy()
         if not config.get('already_edited'):
-            if mesh.data.shape_keys:
+            if config.get('uv_shape_split'):
+                assert len(mesh.data.vertices) == 4 and len(mesh.data.polygons) == 2
+                keys = mesh.data.shape_keys.key_blocks
+                assert len(keys) == 3 and mesh.data.uv_layers.active is not None
+                rings = [tuple(mesh.data.loops[index].vertex_index for index in polygon.loop_indices)
+                         for polygon in mesh.data.polygons]
+                for key in keys:
+                    key.data[0].co.x += 0.002
+                keys[1].data[0].co.z += 0.003
+                split_loop = next(index for index in mesh.data.polygons[1].loop_indices
+                                  if mesh.data.loops[index].vertex_index == 0)
+                mesh.data.uv_layers.active.data[split_loop].uv.x += 0.25
+                assert rings == [tuple(mesh.data.loops[index].vertex_index for index in polygon.loop_indices)
+                                 for polygon in mesh.data.polygons]
+            elif mesh.data.shape_keys:
                 for key in mesh.data.shape_keys.key_blocks:
                     key.data[0].co.x += 0.002
             else:
