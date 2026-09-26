@@ -2,6 +2,10 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Updated resource instruction — 2026-09-26
+
+The user explicitly changed the next reset trigger: **use an earned reset when the remaining eligible usage window reaches approximately 10%**. One authorized reset has already been used; two remain. Keep saving verified checkpoints regularly so the next reset does not endanger unsaved work. The original final-window reserve of at least 30% still applies after the available resets are exhausted; the new instruction changes when remaining reset tickets are used.
+
 ## Current state and authority
 
 - Branch: `feature/multi-package-identity`.
