@@ -19,10 +19,13 @@ def main():
     bpy.context.scene.collection.objects.link(b)
     mat_a = bpy.data.materials.new("Material_A")
     mat_b = bpy.data.materials.new("Material_B")
-    a.material_slots[0].link = "OBJECT"
-    b.material_slots[0].link = "OBJECT"
-    a.material_slots[0].material = mat_a
-    b.material_slots[0].material = mat_b
+    from unitypackage_blender_importer.blender.material_builder import _assign_object_material
+    original_shared = mesh.materials[0]
+    _assign_object_material(a, 0, mat_a)
+    assert mesh.materials[0] == original_shared
+    assert b.material_slots[0].material == original_shared
+    _assign_object_material(b, 0, mat_b)
+    assert mesh.materials[0] == original_shared
     assert a.data is b.data
     assert a.material_slots[0].link == "OBJECT"
     assert b.material_slots[0].link == "OBJECT"
@@ -88,6 +91,18 @@ def main():
     )
     assert "_vapb_renderer_bindings" not in fake_a
     assert "_vapb_renderer_bindings" not in fake_b
+    # A Renderer localID is not a GameObject localID, even when one object
+    # happens to have an equal integer. This old false-positive must stay closed.
+    fake_a['unity_prefab_file_id'] = '99'
+    apply_prefab_modification_materials(
+        FakePrefab(), {fake_a: fake_a}, FakeDB(), {"Material": mat_a}
+    )
+    assert fake_a.data.materials == []
+    assert "_vapb_renderer_bindings" not in fake_a
+    from unitypackage_blender_importer.blender.dependency_resolver import _bind_material
+    deferred = {'requires_occurrence_binding': True}
+    assert not _bind_material(deferred, mat_a)
+    assert deferred['status'] == 'MISSING_CONSUMER'
     print("EFFECTIVE_MEMBER_OBJECT_LINKS=PASS")
     print("RENDERER_PROVENANCE_SAVE_RELOAD=PASS")
     print("RENDERER_PROVENANCE_AMBIGUOUS_FAIL_CLOSED=PASS")

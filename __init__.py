@@ -28,6 +28,12 @@ if bpy is not None:
         unregister_weight_transfer_properties,
     )
     from .ui.weight_transfer_panel import WEIGHT_TRANSFER_PANEL_CLASSES
+    from .operators.renderer_binding import CLASSES as RENDERER_OPERATOR_CLASSES
+    from .ui.renderer_binding_panel import (
+        CLASSES as RENDERER_PANEL_CLASSES,
+        register_scene_properties as register_renderer_properties,
+        unregister_scene_properties as unregister_renderer_properties,
+    )
 
     def register():
         for cls in PREFERENCES_CLASSES:
@@ -44,12 +50,18 @@ if bpy is not None:
         for cls in WEIGHT_TRANSFER_CLASSES + WEIGHT_TRANSFER_PANEL_CLASSES:
             bpy.utils.register_class(cls)
         register_weight_transfer_properties()
+        for cls in RENDERER_OPERATOR_CLASSES + RENDERER_PANEL_CLASSES:
+            bpy.utils.register_class(cls)
+        register_renderer_properties()
         for cls in UNITYPACKAGE_FILE_HANDLER_CLASSES:
             bpy.utils.register_class(cls)
         bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
         bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
     def unregister():
+        unregister_renderer_properties()
+        for cls in reversed(RENDERER_OPERATOR_CLASSES + RENDERER_PANEL_CLASSES):
+            bpy.utils.unregister_class(cls)
         unregister_weight_transfer_properties()
         for cls in reversed(WEIGHT_TRANSFER_CLASSES + WEIGHT_TRANSFER_PANEL_CLASSES):
             bpy.utils.unregister_class(cls)

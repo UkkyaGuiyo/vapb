@@ -45,6 +45,7 @@ class UnityMaterialData:
     keywords: list[str] = field(default_factory=list)
     invalid_keywords: list[str] = field(default_factory=list)
     texture_slots: set[str] = field(default_factory=set)
+    file_id: int | None = None
 
     def tex(self, *names: str) -> Optional[UnityTextureRef]:
         for name in names:

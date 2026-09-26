@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from types import SimpleNamespace
 
 from unitypackage_blender_importer.blender.roundtrip_manifest import (
     MANIFEST_TYPE,
@@ -40,6 +41,19 @@ class FakeObject:
 
 
 class RoundTripManifestTests(unittest.TestCase):
+    def test_object_material_slots_override_shared_mesh_and_preserve_empty_slot(self):
+        shared = FakeMaterial("Shared", unity_material_guid="a" * 32)
+        override = FakeMaterial("Occurrence", unity_material_guid="b" * 32)
+        data = FakeData(shared, shared)
+        first, second = FakeObject("First", data), FakeObject("Second", data)
+        first.material_slots = [SimpleNamespace(material=override), SimpleNamespace(material=None)]
+        second.material_slots = [SimpleNamespace(material=shared), SimpleNamespace(material=shared)]
+        manifest = build_material_manifest([first, second], Path("Instances.fbx"))
+        self.assertEqual("unity-guid:" + "b" * 32, manifest["bindings"][0]["material_key"])
+        self.assertEqual("empty_slot", manifest["bindings"][1]["status"])
+        self.assertEqual("unity-guid:" + "a" * 32, manifest["bindings"][2]["material_key"])
+        self.assertEqual([shared, shared], data.materials)
+
     def test_schema_duplicate_guid_and_multiple_slots(self):
         body = FakeMaterial(
             "Body",

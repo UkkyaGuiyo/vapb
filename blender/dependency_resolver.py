@@ -39,6 +39,7 @@ def _record_key(record: dict[str, Any]) -> tuple[Any, ...]:
     return tuple(record.get(key, "") for key in (
         "dependency_type", "consumer_package_id", "consumer_asset_path",
         "consumer_file_id", "consumer_game_object_file_id", "consumer_slot_index",
+        "consumer_prefab_instance_file_id",
         "target_guid", "target_file_id",
     ))
 
@@ -94,6 +95,9 @@ def _find_consumer(record: dict[str, Any]) -> Any | None:
 
 
 def _bind_material(record: dict[str, Any], material: Any) -> bool:
+    if record.get("requires_occurrence_binding"):
+        record["status"] = MISSING_CONSUMER
+        return False
     consumer = _find_consumer(record)
     if consumer is None or not getattr(consumer, "data", None) or not hasattr(consumer.data, "materials"):
         record["status"] = MISSING_CONSUMER

@@ -19,7 +19,8 @@ from bpy_extras.io_utils import ImportHelper  # type: ignore
 from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 
 from ..blender.fbx_importer import apply_import_options, import_fbx_files
-from ..blender.fbx_receipt import copy_with_receipt
+from ..blender.fbx_receipt import copy_with_receipt, source_sha256
+from ..blender.renderer_binding import semantic_owner_id
 from ..blender.hierarchy_builder import build_prefab_hierarchy
 from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package, save_scene_registry
 from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, apply_prefab_modification_materials, build_material_library
@@ -35,6 +36,7 @@ from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab
 from ..unity.effective_prefab import EffectivePrefabResolver, ModelSourceSemanticIndex
+from ..unity.occurrence_projection import PrefabSource, project_occurrences
 from ..unity.physbone_parser import extract_physbone_snapshot
 from ..unity.prefab_candidate_analyzer import (
     PackageCompositionPlan,
@@ -1407,6 +1409,28 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     for prefab, _ in prefabs
                     if prefab.asset_guid
                 }
+                projection_sources = {}
+
+                def projection_source(package_id, guid):
+                    # This import owns one package database. Never select a
+                    # different provider from a package-wide name/GUID search.
+                    if package_id != package_key.source_package_id:
+                        return None
+                    if guid not in projection_sources:
+                        entry = asset_db.find_guid(guid)
+                        if entry is None or not entry.path.is_file():
+                            return None
+                        parsed = prefab_by_guid.get(guid)
+                        if parsed is None and entry.path.suffix.lower() == '.prefab':
+                            parsed = parse_prefab(entry.path)
+                        projection_sources[guid] = (
+                            PrefabSource.from_prefab(parsed, entry.source_package_id, guid)
+                            if parsed is not None else PrefabSource(
+                                None, entry.source_package_id, guid,
+                                source_sha256(entry.path), guid,
+                            )
+                        )
+                    return projection_sources[guid]
                 model_source_index = ModelSourceSemanticIndex.from_prefabs(
                     prefab for prefab, _ in prefabs
                 )
@@ -1498,6 +1522,29 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     for member_object in member_objects:
                         member_object["unity_composition_member_id"] = member_id
                         member_object["unity_composition_classification"] = classification
+                    root_context_id = str(uuid4())
+                    prefab_root['_vapb_root_context_id'] = root_context_id
+                    projection = project_occurrences(
+                        PrefabSource.from_prefab(prefab, package_key.source_package_id, member_id),
+                        root_context_id, projection_source,
+                    )
+                    for record in projection.records:
+                        mesh_entry = asset_db.find_guid(record['mesh']['mesh_guid'])
+                        if mesh_entry is not None and mesh_entry.path.is_file():
+                            record['mesh']['source_package_id'] = mesh_entry.source_package_id
+                            record['mesh']['source_sha256'] = source_sha256(mesh_entry.path)
+                        # Nested semantic owners need their own realization;
+                        # do not map them onto same-fileID root GameObjects.
+                        if not record['instance_edge_path']:
+                            owner = prefab_object_map.get(record['owner']['owner_game_object_id'])
+                            if owner is not None:
+                                owner['_vapb_semantic_owner_id'] = semantic_owner_id(record)
+                                owner['_vapb_root_context_id'] = root_context_id
+                    prefab_root['_vapb_renderer_occurrences'] = json.dumps(projection.to_dict(), sort_keys=True)
+                    for member_object in member_objects:
+                        member_object['_vapb_root_context_id'] = root_context_id
+                        member_object['_vapb_native_object_id'] = str(uuid4())
+                        member_object['unity_source_package_id'] = package_key.source_package_id
                     if self.use_materials:
                         self._performance.measure(
                             "material_mapping", apply_prefab_materials,

@@ -46,6 +46,7 @@ class UNITYPACKAGE_OT_export_roundtrip(bpy.types.Operator, ExportHelper):
             return {"CANCELLED"}
 
         try:
+            manifest = build_material_manifest(objects, fbx_path, reference_objects=bpy.data.objects)
             bpy.ops.export_scene.fbx(
                 filepath=str(fbx_path),
                 check_existing=True,
@@ -62,7 +63,6 @@ class UNITYPACKAGE_OT_export_roundtrip(bpy.types.Operator, ExportHelper):
             )
             if not fbx_path.is_file():
                 raise RuntimeError("Blender FBX export did not create the requested file")
-            manifest = build_material_manifest(objects, fbx_path)
             write_material_manifest(objects, fbx_path, manifest)
         except (OSError, RuntimeError, ValueError) as exc:
             self.report({"ERROR"}, f"Round-trip export failed: {exc}")

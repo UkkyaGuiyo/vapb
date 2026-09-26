@@ -21,6 +21,14 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 3. 複数のPrefabがある場合、既定の **Automatic (Recommended)** はPackage全体をRenderer構造とvisual dependency closureでmetadata-first解析します。互換するBody variant、衣装、アクセサリーは一つに絞らず、編集可能なComposition memberとして同時に取り込みます。同じFBX/skeleton representationは一度だけ読み込み、共有データとして再利用します。視覚を持たないhelperはidentity・anchor関係のメタデータだけを保持します。Providerが曖昧、または同一identityの構造解釈が競合する場合だけ候補Chooserを表示します。AutomaticはPrefab配列順・ファイル名・archive順を選択根拠にしません。詳細は`docs/PACKAGE_COMPOSITION.md`を参照してください。
 4. **Reconstruct Prefab** または **Import Raw FBX** と各オプションを確認して実行する。
 
+### Rendererとskinの明示的な対応確認
+
+取り込んだPrefabの意味上のObject（Empty等）と、FBX由来のskin Meshは別の対象です。自動対応の根拠がない場合は、3Dビューの **VAPB → Renderer対応** でPrefabルートと実際のMeshを選び、対象Rendererの **このRendererを確定** を押して確認します。
+
+対応先は同じ取り込み個体・元FBX・原本ハッシュを持つObjectに限定します。名前だけで確定しません。曖昧なObject複製、対応不明の素材、別個体や版の混在は停止します。共有Meshに素材スロットを追加する必要がある場合は、Blenderで対象Meshを明示的にシングルユーザー化してから再実行してください。素材割当はObjectごとに保持し、対応は.blend保存・再読込後とFBX出力前に再検証します。
+
+現時点で実機検証したのは、PrefabにRendererが直接serializedされている合成入力です。Nested Prefabの参照経路は解析しますが、その全所有Objectの実体化やbinaryモデル内の全Rendererの自動対応は未完成です。ユーザー確認済み対応は、自動判別による対応と区別して記録します。FBX sidecarは対応根拠を保持しますが、Unityでの自動復元までの全面成功を意味しません。
+
 ### 手動ウェイト転送
 
 3Dビューのサイドバー（Nキー）→ **VAPB → Weight Transfer** を開きます。

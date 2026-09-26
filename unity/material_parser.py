@@ -109,6 +109,8 @@ def parse_material(path: Path, asset_db: AssetDatabase) -> UnityMaterialData:
         keywords=_parse_keyword_list(text, "m_ValidKeywords"),
         invalid_keywords=_parse_keyword_list(text, "m_InvalidKeywords"),
     )
+    material_ids = re.findall(r"(?m)^---\s+!u!21\s+&(-?\d+)\b", text)
+    data.file_id = int(material_ids[0]) if len(material_ids) == 1 else None
     data.floats.update({key: float(value) for key, value in _parse_number_collection(text, "m_Floats").items()})
     data.ints.update({key: int(value) for key, value in _parse_number_collection(text, "m_Ints", integer=True).items()})
     for keyword in _parse_keyword_list(text, "m_ShaderKeywords"):

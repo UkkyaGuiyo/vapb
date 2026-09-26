@@ -121,6 +121,7 @@ def _set_surface_mode(material, normalized: NormalizedMaterial) -> None:
 def _save_metadata(material, data: UnityMaterialData, normalized: NormalizedMaterial, source_package_id: str = "") -> None:
     material["unity_source_material"] = str(data.path)
     material["unity_material_guid"] = data.guid
+    material["unity_material_file_id"] = str(data.file_id) if data.file_id is not None else ""
     material["unity_material_path"] = data.unity_path
     if source_package_id:
         material["unity_source_package_id"] = source_package_id
@@ -520,76 +521,29 @@ def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.O
 
 
 def apply_prefab_modification_materials(prefab: PrefabData, source_to_member, asset_db, material_library, scene=None, member_id="") -> None:
-    """Apply PrefabInstance overrides using semantic IDs only."""
-    if hasattr(source_to_member, "items"):
-        source_to_member = dict(source_to_member)
-    else:
-        source_to_member = {obj: obj for obj in source_to_member}
-    source_objects = list(source_to_member)
+    """Capture overrides that still require an occurrence-scoped realization.
+
+    A source Renderer localID cannot be compared with an Object's GameObject
+    localID. The scoped projection/confirmation path performs actual assignment.
+    This compatibility entry point records dependencies without guessing a join.
+    """
+    if scene is None:
+        return
     for override in prefab.modification_materials():
-        object_name = str(override.get("object_name", ""))
-        target_file_id = str(override.get("target_file_id", ""))
-        identity_candidates = [
-            obj for obj in source_objects
-            if str(obj.get("unity_prefab_file_id", "")) == target_file_id
-            and getattr(obj, "data", None) and hasattr(obj.data, "materials")
-        ]
-        mapping_confidence = "SEMANTIC_ID" if len(identity_candidates) == 1 else "UNKNOWN"
-        candidates = identity_candidates
-        if len(candidates) != 1:
-            if scene and override.get("material_guid"):
-                capture_dependency(scene, {
-                    "dependency_type": "PREFAB_RENDERER_MATERIAL",
-                    "consumer_package_id": asset_db.source_package_id,
-                    "consumer_asset_path": str(prefab.path),
-                    "consumer_object_path": str(prefab.path),
-                    "consumer_object_name": object_name,
-                    "consumer_game_object_file_id": str(override.get("target_file_id", "")),
-                    "consumer_slot_index": int(override.get("slot_index", 0)),
-                    "target_guid": str(override["material_guid"]),
-                    "target_file_id": str(override.get("target_file_id", "")),
-                    "source_prefab_asset_path": str(prefab.path),
-                })
-            continue
-        source_obj = candidates[0]
-        obj = source_to_member[source_obj]
-        guid = str(override.get("material_guid", ""))
-        entry = asset_db.find_guid(guid)
-        material = material_library.get(str(entry.path)) if entry else None
-        if material is None:
-            if scene and guid:
-                capture_dependency(scene, {
-                    "dependency_type": "PREFAB_RENDERER_MATERIAL",
-                    "consumer_package_id": asset_db.source_package_id,
-                    "consumer_asset_path": str(prefab.path),
-                    "consumer_object_path": str(prefab.path),
-                    "consumer_object_name": object_name,
-                    "consumer_game_object_file_id": str(override.get("target_file_id", "")),
-                    "consumer_slot_index": int(override.get("slot_index", 0)),
-                    "target_guid": guid,
-                    "target_file_id": str(override.get("target_file_id", "")),
-                    "source_prefab_asset_path": str(prefab.path),
-                })
-            continue
-        slot = int(override.get("slot_index", 0))
-        while len(obj.data.materials) <= slot:
-            obj.data.materials.append(None)
-        _assign_object_material(obj, slot, material)
-        _append_renderer_provenance(
-            obj,
-            member_id or obj.get("unity_composition_member_id", ""),
-            override.get("target_source_guid", ""),
-            override.get("target_file_id", ""),
-            obj.get("unity_prefab_file_id", ""),
-            1001,
-            {"guid": str(override.get("target_source_guid", "")), "fileID": ""},
-            [{**_renderer_slot_records(
-                [{"guid": guid, "fileID": ref_file_id({"fileID": override.get("target_file_id", "")})}],
-                material_library, asset_db,
-            )[0], "slot": slot}],
-            "MODEL_SOURCE_MODIFICATION",
-            mapping_confidence,
-        )
+        if override.get("material_guid"):
+            capture_dependency(scene, {
+                "dependency_type": "PREFAB_RENDERER_MATERIAL",
+                "consumer_package_id": asset_db.source_package_id,
+                "consumer_asset_path": str(prefab.path),
+                "consumer_object_path": str(prefab.path),
+                "consumer_file_id": str(override['target_file_id']),
+                "consumer_prefab_instance_file_id": str(override['prefab_instance_file_id']),
+                "requires_occurrence_binding": True,
+                "consumer_slot_index": int(override["slot_index"]),
+                "target_guid": str(override["material_guid"]),
+                "target_file_id": str(override.get("material_file_id", "")),
+                "source_prefab_asset_path": str(prefab.path),
+            })
 
 
 def _assign_object_material(obj, index: int, material) -> None:
@@ -598,16 +552,8 @@ def _assign_object_material(obj, index: int, material) -> None:
         return
     while len(obj.data.materials) <= index:
         obj.data.materials.append(None)
-    if not obj.get("_vapb_use_object_material_slots", False):
-        obj.data.materials[index] = material
-        return
-    try:
-        # Ensure the Object has a slot before switching that slot away from
-        # the shared Mesh table.  Blender may defer slot materialization for a
-        # copied object whose source Mesh had no material slots.
-        obj.data.materials[index] = material
-        slot = obj.material_slots[index]
-        slot.link = "OBJECT"
-        slot.material = material
-    except (AttributeError, IndexError, TypeError):
-        obj.data.materials[index] = material
+    # Renderer state belongs to the Object occurrence, even when a current
+    # composition has only one member. Never use the shared Mesh as a fallback.
+    slot = obj.material_slots[index]
+    slot.link = "OBJECT"
+    slot.material = material

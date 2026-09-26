@@ -24,7 +24,7 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | ID-01 / 5 | Package/revision/source/occurrence/realization/export identities | provenance_model, identity, semantic_contract | Scope retained, signed IDs, no name/order join; insufficient evidence stays unresolved | 実装中 | Partial; conversion boundaries pending |
 | ID-02 / 5,6 | RAW preservation and persistent source storage | package_reader, Blender metadata | Save/reopen and temporary-directory loss do not erase required source | 未着手 | Unknown; durable storage audit pending |
 | BL-01 / 6 | Separate editable instances with safe sharing | importer, hierarchy_builder, fbx_receipt | Independent transform/material and explicit shared/individual edit scope | 実装中 | Partial; repeated source and shared-data runtime matrix pending |
-| BL-02 / 6 | Renderer occurrence -> semantic Object -> skin/Armature/slots | provenance_bridge, material_builder | Authoritative persisted edge survives rename/save/reopen; ambiguity rejected | 実装中 | Unknown; first execution block |
+| BL-02 / 6 | Renderer occurrence -> semantic Object -> skin/Armature/slots | occurrence_projection, renderer_binding, material_builder | Authoritative persisted edge survives rename/save/reopen; ambiguity rejected | 実装中 | Partial: direct serialized Prefab + USER_CONFIRMED native skin/armature/material link PASS; nested realization and automatic binary-model mapping pending |
 | BL-03 / 6 | Mesh/bone/weight/UV/normal/shape/animation/image/material/hierarchy edits | native Blender + edit/export adapters | Rename/duplicate/delete/join/split/merge tracked with actual edits | 未着手 | Partial native editing; complete export continuity unverified |
 | ST-01 / 7 | Shader identity/properties/keywords/queue/texture preservation | material_parser/model, export | Approximate preview cannot overwrite Unity source; provider reported | 実装中 | Partial; complete roundtrip pending |
 | ST-02 / 7 | Prefab source/override and generic serialized state preservation | parser, source snapshot, Finalizer | Capture/reference restore/behavior results separated; unknown state retained | 未着手 | Unknown; restoration pending |
@@ -82,8 +82,6 @@ First block: trace the existing member realization/receipt path, add a failing p
 - This preserves serialized evidence needed by production occurrence traversal. It does not turn the existing source-key-only effective resolver into an occurrence resolver.
 - Regression first failed on missing fields; parser and Stage 1A suites then **18 PASS** on Python 3.14.6. Command from repository parent: `python -m unittest unitypackage_blender_importer.tests.test_prefab_parser unitypackage_blender_importer.tests.test_stage1a_synthetic_projection -q`. Scope_guard PASS. An earlier combined invocation named a nonexistent Stage 1B test module and failed discovery; the corrected invocation above is the recorded result.
 
-## Decisions / evidence / next action
-
 ## Checkpoint: explicit surface Weight Transfer
 
 - Added numerical interpolation, three declared modes, Japanese sidebar and explicit preview/apply; integrated addon registration. Confirmed group mappings clear when A/rig/B changes and confirmation clears on mapping edit. No automatic transfer and no claimed bone identity from names.
@@ -92,6 +90,17 @@ First block: trace the existing member realization/receipt path, add a failing p
 - `blender --factory-startup --background --python-exit-code 1 --python tests/blender_weight_transfer_test.py` emits `WEIGHT_TRANSFER_RUNTIME_PASS`. Full addon integration still PASS including register/unregister, receipt rename/save/reopen and existing fail-closed entrypoint. Compileall PASS. Scope_guard PASS; accepted without extra abstraction.
 - First working-tree full discovery encountered the concurrently developing occurrence test before its module existed (248 passing tests plus one discovery error). This is not recorded as full-suite PASS; commit-only full suite is the checkpoint criterion.
 - Remaining WT coverage: left/right caution visualization, representative private fitting quality, final installed GUI use. Original mesh only, not evaluated pose/modifier surface. Instructions in README.
+- Code `238f80cabfb46c69e22fd2646f7354aa55605f50` only, clean checkout: **248 PASS**, 0 FAIL/ERROR. Remote branch live query matched this SHA after push.
+
+## Checkpoint: actual occurrences and confirmed native skin binding
+
+- Production traversal follows actual serialized PrefabInstance documents, including signed instance edges, source package/member/revision and Renderer owner membership. Repeated nested instances remain distinct. Missing/cyclic/binary/duplicate sources and incomplete material overrides are diagnostics, not inferred renderers. No reference-adapter Cartesian product.
+- Import persists this projection on each root and identifies directly realized semantic owners. A small Japanese GUI explicitly confirms one scoped Renderer -> unique native mesh receipt -> Armature relationship. Root/source revision, package, GUID, signed IDs and receipt lineage must agree. Confirmation is persisted as USER_CONFIRMED; it is not automatic Unity model localID -> FBX UID proof. Ordinary duplicate metadata is rejected.
+- Material localID is parsed from its class-21 document; absent/multiple documents remain unproven. Material assignments use the exact package/GUID/fileID, all slots validated before writing, OBJECT links preserve shared Mesh values. A shared mesh needing additional slots requires explicit single-user action. Undo/rollback supported. The old Renderer-fileID == GameObject-fileID override join is disabled; deferred dependencies cannot bypass occurrence confirmation.
+- Legacy FBX export reads effective Object material slots and validates persisted Renderer links before writing; the sidecar carries confirmed provenance. No new claim of Unity rebind/restore is made.
+- Focused tests: occurrence traversal 19 PASS; binding core 11 PASS; material parser 8 PASS; material manifest 4 PASS. Material parser and Object-slot regressions initially failed and then passed. Full working-tree discovery passed 280 checkpoint tests but exposed a separate uncommitted source-storage test failure; that source-storage WIP is excluded from this checkpoint and is being corrected.
+- Blender 5.2.1: full addon integration exit 0, `OCCURRENCE_SKIN_LINK=USER_CONFIRMED_PASS`, `CONFIRMED_BINDING_RENAME_SAVE_RELOAD=PASS`, `BLENDER_INTEGRATION_OK`. Probe explicitly makes its test mesh single-user, confirms via the real operator, verifies unchanged original shared mesh, duplicate rejection, exact material and preserved sidecar evidence. Initial integration found invalid Blender collection membership syntax in the new operator; corrected and rerun. Shared-member material probe PASS for untouched shared values, independent Object slots, save/reload and false identity rejection. Compileall PASS.
+- Still incomplete: semantic owner realization for nested/model children, automatic source evidence, cross-package provider selection in this bridge, Unity finalizer/MRUS, full unitypackage export and final installed/private workflows. No input coverage was generalized from this synthetic success.
 
 ## Decisions / evidence / next action (current)
 
@@ -99,7 +108,7 @@ First block: trace the existing member realization/receipt path, add a failing p
 - UNKNOWN: input-independent authoritative Unity Renderer -> FBX primitive mapping. Resolve from production code and supported serialized evidence; unsupported roots cannot silently succeed.
 - First remote probe failed due absent Git username; existing GitHub CLI authentication succeeded through command-scoped helper. No persistent Git configuration change.
 - Resource policy: use official shared-account usage readings; protect final-window 30% remaining. Three earned resets confirmed available at campaign start, zero used. Do not purchase credits or change plan. Detailed account values stay outside the repository.
-- NEXT ACTION: harden Material override joins against Renderer-vs-GameObject fileID and source-scope conflation, while evaluating explicit authoritative mapping for the remaining source-to-skin edge.
+- NEXT ACTION: integrate verified durable RAW-source storage, then connect scoped edit/export semantics to a fresh Unity public-API roundtrip. Continue the remaining mandatory requirements afterward.
 
 ---
 

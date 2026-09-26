@@ -254,16 +254,41 @@ SkinnedMeshRenderer:
         assert output_node.is_active_output, "Material Output is not active"
         assert sum(node.type == "OUTPUT_MATERIAL" for node in assigned.node_tree.nodes) == 1, "Duplicate Material Output was generated"
         assert sum(node.type == "BSDF_PRINCIPLED" for node in assigned.node_tree.nodes) == 1, "Duplicate Principled BSDF was generated"
-        renderer_bindings = json.loads(str(skin_mesh.get("_vapb_renderer_bindings", "{}"))).get("renderers", [])
-        body_renderer_bindings = [
-            record for record in renderer_bindings
-            if record.get("game_object_file_id") == str(large_file_id)
-            and record.get("renderer_file_id") == "200"
-            and record.get("mesh_guid") == fbx_guid
-        ]
-        occurrence_skin_link = "PROVEN" if len(body_renderer_bindings) == 1 else "LINK_NOT_YET_PROVEN"
-        print(f"OCCURRENCE_SKIN_LINK={occurrence_skin_link}")
-        skin_materials = [material for material in skin_mesh.data.materials if material]
+        # No automatic Unity localID -> FBX UID assertion is possible here.
+        # Exercise the GUI operator's explicitly confirmed pairing instead.
+        assert not skin_mesh.get('_vapb_renderer_binding')
+        binding_root = placement.parent
+        projection = json.loads(binding_root['_vapb_renderer_occurrences'])
+        assert len(projection['records']) == 1 and not projection['issues']
+        occurrence = projection['records'][0]
+        assert occurrence['source_key']['renderer_file_id'] == 200
+        assert occurrence['owner']['owner_game_object_id'] == large_file_id
+        assert occurrence['material_status'] == 'EXACT'
+        # Equivalent to Blender's explicit Make Single User Mesh action; the
+        # confirmation operator must not silently alter shared slot capacity.
+        original_shared_mesh = skin_mesh.data
+        original_shared_slots = list(original_shared_mesh.materials)
+        skin_mesh.data = skin_mesh.data.copy()
+        bpy.context.scene.vapb_renderer_root = binding_root
+        bpy.context.scene.vapb_renderer_mesh = skin_mesh
+        assert bpy.ops.vapb.confirm_renderer_binding(occurrence_id=occurrence['occurrence_id']) == {'FINISHED'}
+        assert list(original_shared_mesh.materials) == original_shared_slots
+        confirmed = json.loads(skin_mesh['_vapb_renderer_binding'])
+        assert confirmed['evidence'] == 'USER_CONFIRMED'
+        from unitypackage_blender_importer.blender.renderer_binding import BindingError, validate_existing_binding
+        assert validate_existing_binding(confirmed, binding_root, skin_mesh, bpy.data.objects) == confirmed
+        duplicate = skin_mesh.copy()
+        bpy.context.scene.collection.objects.link(duplicate)
+        try:
+            validate_existing_binding(confirmed, binding_root, skin_mesh, bpy.data.objects)
+        except BindingError:
+            pass
+        else:
+            raise AssertionError('Duplicated realization authority was accepted')
+        bpy.data.objects.remove(duplicate, do_unlink=True)
+        root_context = binding_root['_vapb_root_context_id']
+        print('OCCURRENCE_SKIN_LINK=USER_CONFIRMED_PASS')
+        skin_materials = [slot.material for slot in skin_mesh.material_slots if slot.material]
         if skin_materials:
             assert any(
                 material.get("unity_material_guid") == material_guid
@@ -285,6 +310,8 @@ SkinnedMeshRenderer:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         assert manifest["schema_version"] == 1
         assert manifest["manifest_type"] == "unitypackage_blender_material_map"
+        assert len(manifest['renderer_bindings']) == 1
+        assert manifest['renderer_bindings'][0] == confirmed
         realized_skin_material_guids = {
             str(material.get("unity_material_guid", ""))
             for material in skin_materials
@@ -308,6 +335,12 @@ SkinnedMeshRenderer:
         assert reloaded[0].parent.type == "ARMATURE"
         assert any(modifier.type == "ARMATURE" and modifier.object == reloaded[0].parent
                    for modifier in reloaded[0].modifiers)
+        reloaded_root = next(obj for obj in bpy.data.objects
+                             if obj.get('_vapb_root_context_id') == root_context and obj.get('_vapb_renderer_occurrences'))
+        assert validate_existing_binding(json.loads(reloaded[0]['_vapb_renderer_binding']),
+                                         reloaded_root, reloaded[0], bpy.data.objects)
+        assert reloaded[0].material_slots[0].material.get('unity_material_guid') == material_guid
+        print('CONFIRMED_BINDING_RENAME_SAVE_RELOAD=PASS')
         print("MEMBER_RECEIPT_RENAME_SAVE_RELOAD=PASS")
         addon.unregister()
     print("BLENDER_INTEGRATION_OK")

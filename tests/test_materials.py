@@ -34,6 +34,15 @@ Material:
 
 
 class MaterialParserTests(unittest.TestCase):
+    def test_material_local_id_is_signed_and_never_assumed(self):
+        text = material_text("Synthetic", "{fileID: 0}", "")
+        for header, expected in (("--- !u!21 &-9223372036854775808", -9223372036854775808),
+                                 ("", None),
+                                 ("--- !u!21 &1\n--- !u!21 &2", None)):
+            with self.subTest(header=header):
+                path = self.write_material("Identity.mat", "a" * 32, text.replace("--- !u!21 &2100000", header))
+                self.assertEqual(expected, parse_material(path, self.db()).file_id)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix="unity_material_test_")
         self.root = Path(self.temp.name)

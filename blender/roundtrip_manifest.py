@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
+from .renderer_binding import BindingError, validate_existing_binding
+
 
 SCHEMA_VERSION = 1
 MANIFEST_TYPE = "unitypackage_blender_material_map"
@@ -66,19 +68,40 @@ def _new_material_record(material: Any, material_key: str) -> dict[str, Any]:
     }
 
 
-def build_material_manifest(objects: Iterable[Any], fbx_path: Path) -> dict[str, Any]:
+def build_material_manifest(objects: Iterable[Any], fbx_path: Path, *, reference_objects=None) -> dict[str, Any]:
     """Build a versioned manifest from Blender mesh objects and material slots."""
     materials: list[dict[str, Any]] = []
     bindings: list[dict[str, Any]] = []
     material_keys: dict[int, str] = {}
     used_keys: set[str] = set()
     warnings: list[str] = []
+    objects = tuple(objects)
+    reference_objects = tuple(reference_objects) if reference_objects is not None else objects
+    renderer_bindings = []
+
+    for obj in objects:
+        raw = _prop(obj, '_vapb_renderer_binding')
+        if not raw:
+            continue
+        try:
+            binding = json.loads(raw)
+            roots = [root for root in reference_objects
+                     if _prop(root, '_vapb_root_context_id') == binding.get('root_context_id')
+                     and _prop(root, '_vapb_renderer_occurrences')]
+            if len(roots) != 1:
+                raise BindingError('Renderer binding root is missing or ambiguous')
+            renderer_bindings.append(validate_existing_binding(binding, roots[0], obj, reference_objects))
+        except (TypeError, AttributeError, ValueError) as exc:
+            raise ValueError('Confirmed Renderer binding is no longer valid; resolve it before export') from exc
 
     for obj in objects:
         data = getattr(obj, "data", None)
         slots = getattr(data, "materials", None) if data is not None else None
         if slots is None:
             continue
+        object_slots = getattr(obj, "material_slots", None)
+        if object_slots is not None:
+            slots = [slot.material for slot in object_slots]
         object_path = _object_path(obj)
         renderer_type = _renderer_type(obj)
         for slot_index, material in enumerate(slots):
@@ -134,6 +157,7 @@ def build_material_manifest(objects: Iterable[Any], fbx_path: Path) -> dict[str,
         "fbx_file": Path(fbx_path).name,
         "materials": materials,
         "bindings": bindings,
+        "renderer_bindings": renderer_bindings,
         "warnings": warnings,
     }
 
