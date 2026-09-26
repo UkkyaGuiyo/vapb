@@ -120,6 +120,8 @@ public static class VapbReferenceFinalizer
 
     public static bool Apply(string manifestAssetPath)
     {
+        if (VapbModelSkinFinalizer.Handles(manifestAssetPath))
+            return VapbModelSkinFinalizer.Apply(manifestAssetPath);
         var plans = new Dictionary<string, PrefabPlan>(StringComparer.Ordinal);
         try
         {

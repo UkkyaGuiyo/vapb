@@ -1,0 +1,1073 @@
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.RegularExpressions;
+using UnityEditor;
+using UnityEngine;
+
+// Only the manifest-authorized edited model and the synchronous source witness may create markers.
+public sealed class VapbModelSkinPostprocessor : AssetPostprocessor
+{
+    private void OnPostprocessGameObjectWithUserProperties(GameObject node, string[] names, object[] values)
+    {
+        if (names == null || values == null || names.Length != values.Length) return;
+        bool witness = VapbModelSkinFinalizer.IsWitnessImport(assetPath);
+        bool edited = !witness && VapbModelSkinFinalizer.IsAuthorizedEditedModel(assetPath);
+        if (!witness && !edited) return;
+        for (int i = 0; i < names.Length; i++)
+        {
+            if (witness && names[i] == "_vapb_source_fbx_model_uid" &&
+                !(values[i] is string supplied && VapbModelSkinFinalizer.IsExpectedWitnessUid(supplied)))
+                VapbModelSkinFinalizer.MarkUnexpectedWitnessUid();
+            string value = values[i] as string;
+            if (String.IsNullOrEmpty(value)) continue;
+            bool sourceUid = witness && names[i] == "_vapb_source_fbx_model_uid" &&
+                VapbModelSkinFinalizer.IsExpectedWitnessUid(value);
+            bool realization = edited && names[i] == "_vapb_fbx_realization_id" &&
+                VapbModelSkinFinalizer.IsAuthorizedRealization(assetPath, value);
+            bool bone = edited && names[i] == "_vapb_fbx_bone_realization_id" &&
+                VapbModelSkinFinalizer.IsAuthorizedBone(assetPath, value);
+            if (!sourceUid && !realization && !bone) continue;
+            VapbRealizationMarker marker = node.GetComponent<VapbRealizationMarker>();
+            if (marker == null) marker = node.AddComponent<VapbRealizationMarker>();
+            if (sourceUid) marker.sourceModelUid = value;
+            if (realization) marker.realizationId = value;
+            if (bone) marker.boneRealizationId = value;
+            if (sourceUid) VapbModelSkinFinalizer.CountWitnessCallback(value);
+        }
+    }
+}
+
+public static class VapbModelSkinFinalizer
+{
+    private const string Kind = "RESTORE_MODEL_SKIN_VARIANT_V1";
+    private const string Schema = "vapb-export-manifest-1";
+    private static string witnessPath;
+    private static HashSet<string> witnessUids;
+    private static bool unexpectedWitnessUid;
+    private static readonly Dictionary<string, int> callbackCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+
+    [Serializable] private sealed class Manifest { public string schema_version; public Task[] reference_rebind_tasks; }
+    [Serializable] private sealed class Task
+    {
+        public string kind;
+        public string prefab_guid;
+        public string prefab_source_sha256;
+        public string source_model_guid;
+        public string source_model_sha256;
+        public string source_model_uid;
+        public InstanceEdge[] instance_edges;
+        public string model_guid;
+        public string model_sha256;
+        public string realization_id;
+        public BoneMapping[] bone_mappings;
+        public string variant_path;
+        public string witness_noop_path;
+        public string witness_noop_sha256;
+        public string witness_path;
+        public string witness_sha256;
+        public string[] source_model_uids;
+    }
+    [Serializable] private sealed class InstanceEdge
+    {
+        public string container_guid;
+        public string container_sha256;
+        public string instance_file_id;
+        public string source_guid;
+    }
+    [Serializable] private sealed class BoneMapping
+    {
+        public string edited_bone_realization_id;
+        public string source_model_uid;
+    }
+    private sealed class SourceIdentity
+    {
+        public SkinnedMeshRenderer renderer;
+        public readonly Dictionary<string, Transform> bonesByUid = new Dictionary<string, Transform>(StringComparer.Ordinal);
+        public string[] sourceBoneUids;
+        public string rootUid;
+    }
+    private sealed class EditedIdentity
+    {
+        public SkinnedMeshRenderer renderer;
+        public Mesh mesh;
+        public string[] editedBoneUids;
+        public string rootUid;
+    }
+    private sealed class Snapshot
+    {
+        public string guid;
+        public readonly Dictionary<long, string> transforms = new Dictionary<long, string>();
+        public readonly Dictionary<long, string> meshes = new Dictionary<long, string>();
+        public readonly Dictionary<long, string> renderers = new Dictionary<long, string>();
+        public bool Same(Snapshot other)
+        {
+            return other != null && guid == other.guid && SameMap(transforms, other.transforms) &&
+                SameMap(meshes, other.meshes) && SameMap(renderers, other.renderers);
+        }
+    }
+    private sealed class WitnessResult
+    {
+        public readonly Dictionary<string, long> transformIds = new Dictionary<string, long>(StringComparer.Ordinal);
+        public long rendererId;
+        public long meshId;
+        public MeshLayout sourceLayout;
+    }
+    private sealed class MeshLayout
+    {
+        public int vertexCount;
+        public MeshTopology[] topologies;
+        public int[][] indices;
+        public string[] shapeNames;
+        public float[][] frameWeights;
+    }
+
+    public static bool Handles(string manifestAssetPath)
+    {
+        try
+        {
+            Manifest manifest = ReadManifest(manifestAssetPath);
+            return manifest != null && manifest.schema_version == Schema &&
+                manifest.reference_rebind_tasks != null && manifest.reference_rebind_tasks.Length == 1 &&
+                manifest.reference_rebind_tasks[0] != null &&
+                manifest.reference_rebind_tasks[0].kind == Kind;
+        }
+        catch { return false; }
+    }
+
+    public static bool Apply(string manifestAssetPath)
+    {
+        try
+        {
+            Manifest manifest = ReadManifest(manifestAssetPath);
+            if (manifest == null || manifest.schema_version != Schema || manifest.reference_rebind_tasks == null ||
+                manifest.reference_rebind_tasks.Length != 1 || manifest.reference_rebind_tasks[0] == null)
+                Reject("MANIFEST_UNSUPPORTED");
+            Task task = manifest.reference_rebind_tasks[0];
+            ValidateTask(task);
+            ApplyTask(task);
+            Debug.Log("VAPB_MODEL_SKIN_VARIANT_APPLIED=1");
+            return true;
+        }
+        catch (Exception error)
+        {
+            Debug.LogError("VAPB_MODEL_SKIN_VARIANT_REJECTED=" + SafeError(error));
+            return false;
+        }
+    }
+
+    internal static bool IsWitnessImport(string path) { return !String.IsNullOrEmpty(witnessPath) && path == witnessPath; }
+    internal static bool IsExpectedWitnessUid(string uid) { return witnessUids != null && witnessUids.Contains(uid); }
+    internal static void MarkUnexpectedWitnessUid() { unexpectedWitnessUid = true; }
+    internal static void CountWitnessCallback(string uid)
+    {
+        callbackCounts[uid] = callbackCounts.TryGetValue(uid, out int count) ? count + 1 : 1;
+    }
+    internal static bool IsAuthorizedEditedModel(string path)
+    {
+        string guid = AssetDatabase.AssetPathToGUID(path);
+        if (!ValidGuid(guid) || !path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)) return false;
+        foreach (Task task in AuthorizedTasks()) if (task.model_guid == guid) return true;
+        return false;
+    }
+    internal static bool IsAuthorizedRealization(string path, string id)
+    {
+        string guid = AssetDatabase.AssetPathToGUID(path);
+        foreach (Task task in AuthorizedTasks())
+            if (task.model_guid == guid && task.realization_id == id) return true;
+        return false;
+    }
+    internal static bool IsAuthorizedBone(string path, string id)
+    {
+        string guid = AssetDatabase.AssetPathToGUID(path);
+        foreach (Task task in AuthorizedTasks())
+            if (task.model_guid == guid)
+                foreach (BoneMapping bone in task.bone_mappings)
+                    if (bone.edited_bone_realization_id == id) return true;
+        return false;
+    }
+    private static List<Task> AuthorizedTasks()
+    {
+        const string folder = "Assets/VAPBExport";
+        var authorized = new List<Task>();
+        if (!AssetDatabase.IsValidFolder(folder)) return authorized;
+        foreach (string guid in AssetDatabase.FindAssets("t:TextAsset", new[] { folder }))
+        {
+            string path = AssetDatabase.GUIDToAssetPath(guid);
+            try
+            {
+                Manifest manifest = ReadManifest(path);
+                if (manifest == null || manifest.schema_version != Schema ||
+                    manifest.reference_rebind_tasks == null || manifest.reference_rebind_tasks.Length != 1)
+                    continue;
+                Task task = manifest.reference_rebind_tasks[0];
+                ValidateTask(task);
+                string modelPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
+                if (FbxPath(modelPath) && FileHash(Disk(modelPath)).Equals(task.model_sha256,
+                    StringComparison.OrdinalIgnoreCase)) authorized.Add(task);
+            }
+            catch { /* Unreadable manifest does not authorize an import. */ }
+        }
+        return authorized;
+    }
+
+    private static void ApplyTask(Task task)
+    {
+        string prefabPath = AssetDatabase.GUIDToAssetPath(task.prefab_guid);
+        string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
+        string editedPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
+        if (!PrefabPath(prefabPath) || !FbxPath(sourcePath) || !FbxPath(editedPath) ||
+            sourcePath == editedPath || !FileHash(Disk(sourcePath)).Equals(task.source_model_sha256,
+                StringComparison.OrdinalIgnoreCase) || !FileHash(Disk(editedPath)).Equals(task.model_sha256,
+                StringComparison.OrdinalIgnoreCase)) Reject("SOURCE_HASH_OR_PATH_MISMATCH");
+        if (!FileHash(Disk(prefabPath)).Equals(task.prefab_source_sha256, StringComparison.OrdinalIgnoreCase))
+            Reject("STALE_PREFAB_SOURCE");
+        byte[] sourceBytes = File.ReadAllBytes(Disk(sourcePath));
+        byte[] sourceMeta = File.ReadAllBytes(Disk(sourcePath) + ".meta");
+        var edgeHashes = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (InstanceEdge edge in task.instance_edges)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(edge.container_guid);
+            if (!PrefabPath(path) || !FileHash(Disk(path)).Equals(edge.container_sha256,
+                StringComparison.OrdinalIgnoreCase)) Reject("STALE_INSTANCE_EDGE");
+            edgeHashes.Add(edge.container_guid, edge.container_sha256);
+        }
+        if (task.instance_edges[0].container_guid != task.prefab_guid ||
+            task.instance_edges[task.instance_edges.Length - 1].source_guid != task.source_model_guid)
+            Reject("EDGE_CHAIN_INVALID");
+        for (int i = 1; i < task.instance_edges.Length; i++)
+            if (task.instance_edges[i - 1].source_guid != task.instance_edges[i].container_guid)
+                Reject("EDGE_CHAIN_INVALID");
+
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (prefab == null || HasMissingScripts(prefab)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
+        SkinnedMeshRenderer target = ResolveOccurrence(prefab, task);
+        if (target.sharedMesh == null || target.bones == null || target.bones.Length == 0 ||
+            target.rootBone == null) Reject("SOURCE_SKIN_UNSUPPORTED");
+        string sourceGuid = task.source_model_guid;
+        SkinnedMeshRenderer sourceRenderer = SourceLeaf(target, task, out string[] targetBoneIds);
+        if (sourceRenderer == null || sourceRenderer.sharedMesh == null) Reject("SOURCE_SKIN_UNSUPPORTED");
+        long sourceRendererId = LocalId(sourceRenderer, sourceGuid);
+        long sourceMeshId = LocalId(sourceRenderer.sharedMesh, sourceGuid);
+        SourceIdentity source = ResolveSourceIdentity(target, sourceRenderer, sourceGuid, targetBoneIds);
+        byte[] noop = Payload(task.witness_noop_path, task.witness_noop_sha256);
+        byte[] witness = Payload(task.witness_path, task.witness_sha256);
+        WitnessResult mapping = RunWitness(sourcePath, task, sourceBytes, sourceMeta, noop, witness,
+            sourceRendererId, sourceMeshId);
+        prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+        if (prefab == null || HasMissingScripts(prefab)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
+        target = ResolveOccurrence(prefab, task);
+        sourceRenderer = SourceLeaf(target, task, out targetBoneIds);
+        if (LocalId(sourceRenderer, sourceGuid) != sourceRendererId ||
+            LocalId(sourceRenderer.sharedMesh, sourceGuid) != sourceMeshId)
+            Reject("SOURCE_ID_DRIFT");
+        source = ResolveSourceIdentity(target, sourceRenderer, sourceGuid, targetBoneIds);
+        if (!mapping.transformIds.TryGetValue(task.source_model_uid, out long mappedRendererTransform) ||
+            mappedRendererTransform != LocalId(sourceRenderer.transform, sourceGuid) ||
+            mapping.rendererId != sourceRendererId || mapping.meshId != sourceMeshId)
+            Reject("WITNESS_RENDERER_MISMATCH");
+        var uidByTransform = new Dictionary<long, string>();
+        foreach (KeyValuePair<string, long> row in mapping.transformIds)
+        {
+            if (uidByTransform.ContainsKey(row.Value)) Reject("WITNESS_UID_AMBIGUOUS");
+            uidByTransform.Add(row.Value, row.Key);
+        }
+        for (int i = 0; i < source.sourceBoneUids.Length; i++)
+        {
+            long id = ParseId(source.sourceBoneUids[i]);
+            if (!uidByTransform.TryGetValue(id, out string uid)) Reject("WITNESS_BONE_MISSING");
+            source.sourceBoneUids[i] = uid;
+        }
+        if (!uidByTransform.TryGetValue(ParseId(source.rootUid), out string rootUid))
+            Reject("WITNESS_BONE_MISSING");
+        source.rootUid = rootUid;
+        source.bonesByUid.Clear();
+        for (int i = 0; i < source.sourceBoneUids.Length; i++)
+            source.bonesByUid.Add(source.sourceBoneUids[i], target.bones[i]);
+        if (!source.bonesByUid.ContainsKey(source.rootUid))
+            source.bonesByUid.Add(source.rootUid, target.rootBone);
+        EditedIdentity edited = ResolveEdited(task, editedPath, mapping, source);
+        CheckSkinCompatibility(mapping.sourceLayout, target, edited, source);
+        if (!EqualBytes(sourceBytes, File.ReadAllBytes(Disk(sourcePath))) ||
+            !EqualBytes(sourceMeta, File.ReadAllBytes(Disk(sourcePath) + ".meta")))
+            Reject("SOURCE_RESTORE_FAILED");
+        SaveVariant(task, prefab, target, edited, source);
+    }
+
+    private static void ValidateTask(Task task)
+    {
+        if (task.kind != Kind || !ValidGuid(task.prefab_guid) || !ValidGuid(task.source_model_guid) ||
+            !ValidGuid(task.model_guid) || !ValidSha(task.prefab_source_sha256) ||
+            !ValidSha(task.source_model_sha256) || !ValidSha(task.model_sha256) ||
+            !ValidSha(task.witness_noop_sha256) || !ValidSha(task.witness_sha256) ||
+            !ValidUid(task.source_model_uid) || String.IsNullOrEmpty(task.realization_id) ||
+            task.instance_edges == null || task.instance_edges.Length == 0 ||
+            task.bone_mappings == null || task.bone_mappings.Length == 0 ||
+            task.source_model_uids == null || task.source_model_uids.Length == 0 ||
+            !PayloadPath(task.witness_noop_path) || !PayloadPath(task.witness_path) ||
+            !VariantPath(task.variant_path)) Reject("TASK_INVALID");
+        var allUids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string uid in task.source_model_uids)
+            if (!ValidUid(uid) || !allUids.Add(uid)) Reject("SOURCE_UID_SET_INVALID");
+        if (!allUids.Contains(task.source_model_uid)) Reject("SOURCE_UID_SET_INVALID");
+        var receipts = new HashSet<string>(StringComparer.Ordinal);
+        var boneUids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (BoneMapping bone in task.bone_mappings)
+            if (bone == null || String.IsNullOrEmpty(bone.edited_bone_realization_id) ||
+                !ValidUid(bone.source_model_uid) || !allUids.Contains(bone.source_model_uid) ||
+                !receipts.Add(bone.edited_bone_realization_id) || !boneUids.Add(bone.source_model_uid))
+                Reject("BONE_MAPPING_INVALID");
+        for (int i = 0; i < task.instance_edges.Length; i++)
+        {
+            InstanceEdge edge = task.instance_edges[i];
+            if (edge == null || !ValidGuid(edge.container_guid) || !ValidGuid(edge.source_guid) ||
+                !ValidSha(edge.container_sha256)) Reject("EDGE_INVALID");
+            ParseId(edge.instance_file_id);
+        }
+    }
+
+    private static Manifest ReadManifest(string path)
+    {
+        if (String.IsNullOrEmpty(path) || !path.StartsWith("Assets/VAPBExport/", StringComparison.Ordinal) ||
+            !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || path.Contains("..") ||
+            AssetDatabase.LoadAssetAtPath<TextAsset>(path) == null) Reject("MANIFEST_UNAVAILABLE");
+        return JsonUtility.FromJson<Manifest>(File.ReadAllText(Disk(path)));
+    }
+
+    private static bool PrefabPath(string path) { return !String.IsNullOrEmpty(path) && path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase); }
+    private static bool FbxPath(string path) { return !String.IsNullOrEmpty(path) && path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase); }
+    private static bool PayloadPath(string path) { return !String.IsNullOrEmpty(path) && path.StartsWith("Assets/VAPBExport/", StringComparison.Ordinal) && path.EndsWith(".bytes", StringComparison.OrdinalIgnoreCase) && !path.Contains(".."); }
+    private static bool VariantPath(string path) { return !String.IsNullOrEmpty(path) && path.StartsWith("Assets/VAPBExport/EditedVariant_", StringComparison.Ordinal) && path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase) && !path.Contains(".."); }
+    private static bool ValidGuid(string value) { return value != null && Regex.IsMatch(value, "^[0-9a-fA-F]{32}$"); }
+    private static bool ValidSha(string value) { return value != null && Regex.IsMatch(value, "^[0-9a-fA-F]{64}$"); }
+    private static bool ValidUid(string value) { return value != null && Int64.TryParse(value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out long id) && id != 0 && id.ToString(CultureInfo.InvariantCulture) == value; }
+    private static long ParseId(string value) { if (!ValidUid(value)) Reject("LOCAL_ID_INVALID"); return Int64.Parse(value, CultureInfo.InvariantCulture); }
+    private static string Disk(string path) { if (String.IsNullOrEmpty(path) || !path.StartsWith("Assets/", StringComparison.Ordinal) || path.Contains("..")) Reject("PATH_INVALID"); return Path.Combine(Application.dataPath, path.Substring(7).Replace('/', Path.DirectorySeparatorChar)); }
+    private static byte[] Payload(string path, string hash) { byte[] bytes = File.ReadAllBytes(Disk(path)); if (bytes.Length == 0 || !HashBytes(bytes).Equals(hash, StringComparison.OrdinalIgnoreCase)) Reject("PAYLOAD_HASH_MISMATCH"); return bytes; }
+    private static string FileHash(string path) { return HashBytes(File.ReadAllBytes(path)); }
+    private static string HashBytes(byte[] bytes) { using (SHA256 sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant(); }
+    private static void Reject(string code) { throw new InvalidOperationException(code); }
+    private static string SafeError(Exception error) { return error is InvalidOperationException && Regex.IsMatch(error.Message, "^[A-Z_]+$") ? error.Message : "UNEXPECTED_EXCEPTION"; }
+
+    private static SkinnedMeshRenderer ResolveOccurrence(GameObject prefab, Task task)
+    {
+        SkinnedMeshRenderer found = null;
+        foreach (SkinnedMeshRenderer skin in prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (MatchesOccurrence(skin, task))
+            {
+                if (found != null) Reject("OCCURRENCE_AMBIGUOUS");
+                found = skin;
+            }
+        }
+        if (found == null) Reject("OCCURRENCE_NOT_FOUND");
+        return found;
+    }
+
+    private static bool MatchesOccurrence(SkinnedMeshRenderer renderer, Task task)
+    {
+        UnityEngine.Object current = renderer;
+        for (int i = 0; i < task.instance_edges.Length; i++)
+        {
+            InstanceEdge edge = task.instance_edges[i];
+            string path = AssetDatabase.GetAssetPath(current);
+            if (AssetDatabase.AssetPathToGUID(path) != edge.container_guid) return false;
+            UnityEngine.Object source = PrefabUtility.GetCorrespondingObjectFromSource(current);
+            if (!(source is SkinnedMeshRenderer) || source == current ||
+                AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(source)) != edge.source_guid)
+                return false;
+            UnityEngine.Object handle = PrefabUtility.GetPrefabInstanceHandle(current);
+            if (handle == null || LocalId(handle, edge.container_guid) != ParseId(edge.instance_file_id) ||
+                !SerializedEdgeMatches(path, ParseId(edge.instance_file_id), edge.source_guid)) return false;
+            current = source;
+        }
+        return AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(current)) == task.source_model_guid &&
+            PrefabUtility.GetCorrespondingObjectFromSource(current) == null &&
+            current is SkinnedMeshRenderer;
+    }
+
+    private static SkinnedMeshRenderer SourceLeaf(SkinnedMeshRenderer renderer, Task task, out string[] targetBoneIds)
+    {
+        var chain = new List<SkinnedMeshRenderer>();
+        UnityEngine.Object current = renderer;
+        chain.Add(renderer);
+        for (int i = 0; i < task.instance_edges.Length; i++)
+        {
+            current = PrefabUtility.GetCorrespondingObjectFromSource(current);
+            SkinnedMeshRenderer skin = current as SkinnedMeshRenderer;
+            if (skin == null) Reject("SOURCE_CHAIN_INVALID");
+            chain.Add(skin);
+        }
+        var leaf = (SkinnedMeshRenderer)current;
+        if (leaf.bones.Length != renderer.bones.Length || leaf.rootBone == null) Reject("SOURCE_BONES_MISMATCH");
+        targetBoneIds = new string[renderer.bones.Length];
+        for (int i = 0; i < renderer.bones.Length; i++)
+        {
+            Transform source = FollowSource(renderer.bones[i], task.instance_edges.Length);
+            if (source == null || source != leaf.bones[i]) Reject("SOURCE_BONES_MISMATCH");
+            targetBoneIds[i] = LocalId(source, task.source_model_guid).ToString(CultureInfo.InvariantCulture);
+        }
+        if (FollowSource(renderer.rootBone, task.instance_edges.Length) != leaf.rootBone)
+            Reject("SOURCE_ROOT_MISMATCH");
+        return leaf;
+    }
+
+    private static Transform FollowSource(Transform target, int hops)
+    {
+        UnityEngine.Object current = target;
+        for (int i = 0; i < hops; i++)
+        {
+            if (current == null) return null;
+            current = PrefabUtility.GetCorrespondingObjectFromSource(current);
+        }
+        return current as Transform;
+    }
+
+    private static bool SerializedEdgeMatches(string path, long id, string sourceGuid)
+    {
+        string yaml = File.ReadAllText(Disk(path));
+        MatchCollection headings = Regex.Matches(yaml, @"(?m)^--- !u!(\d+) &(-?\d+)\s*$");
+        int matches = 0;
+        for (int i = 0; i < headings.Count; i++)
+        {
+            if (headings[i].Groups[1].Value != "1001" || headings[i].Groups[2].Value !=
+                id.ToString(CultureInfo.InvariantCulture)) continue;
+            int start = headings[i].Index + headings[i].Length;
+            int end = i + 1 < headings.Count ? headings[i + 1].Index : yaml.Length;
+            Match source = Regex.Match(yaml.Substring(start, end - start),
+                @"m_SourcePrefab:\s*\{[^}]*\bguid:\s*([0-9a-fA-F]{32})\b", RegexOptions.Singleline);
+            if (source.Success && source.Groups[1].Value.Equals(sourceGuid, StringComparison.OrdinalIgnoreCase))
+                matches++;
+        }
+        return matches == 1;
+    }
+
+    private static SourceIdentity ResolveSourceIdentity(SkinnedMeshRenderer target,
+        SkinnedMeshRenderer sourceRenderer, string guid, string[] sourceBoneIds)
+    {
+        var result = new SourceIdentity { renderer = sourceRenderer, sourceBoneUids = sourceBoneIds };
+        if (target.bones.Length != sourceRenderer.bones.Length || target.rootBone == null)
+            Reject("SOURCE_SKIN_UNSUPPORTED");
+        if (sourceRenderer.sharedMesh.bindposes.Length != target.bones.Length ||
+            target.sharedMesh != sourceRenderer.sharedMesh) Reject("SOURCE_MESH_MISMATCH");
+        for (int i = 0; i < target.bones.Length; i++)
+            if (target.bones[i] == null || sourceRenderer.bones[i] == null ||
+                !SameMatrix(sourceRenderer.sharedMesh.bindposes[i],
+                    target.bones[i].worldToLocalMatrix * target.transform.localToWorldMatrix, 0.001f))
+                Reject("SOURCE_REST_MISMATCH");
+        result.rootUid = LocalId(sourceRenderer.rootBone, guid).ToString(CultureInfo.InvariantCulture);
+        return result;
+    }
+
+    private static WitnessResult RunWitness(string sourcePath, Task task, byte[] original,
+        byte[] originalMeta, byte[] noop, byte[] witness, long sourceRendererId, long sourceMeshId)
+    {
+        byte[] comparisonMeta = null;
+        Snapshot baseline = null;
+        WitnessResult result = null;
+        bool equivalentAfterRestore = false;
+        bool metaStable = false;
+        bool restored = false;
+        try
+        {
+            ModelImporter importer = AssetImporter.GetAtPath(sourcePath) as ModelImporter;
+            if (importer == null) Reject("SOURCE_IMPORTER_MISSING");
+            if (!importer.isReadable)
+            {
+                importer.isReadable = true;
+                importer.SaveAndReimport();
+            }
+            comparisonMeta = File.ReadAllBytes(Disk(sourcePath) + ".meta");
+            baseline = Capture(sourcePath, task.source_model_guid);
+            MeshLayout sourceLayout = CaptureLayout(SourceMeshById(sourcePath, task.source_model_guid,
+                sourceMeshId));
+            File.WriteAllBytes(Disk(sourcePath), noop);
+            AssetDatabase.ImportAsset(sourcePath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            if (!baseline.Same(Capture(sourcePath, task.source_model_guid)) ||
+                !EqualBytes(comparisonMeta, File.ReadAllBytes(Disk(sourcePath) + ".meta")))
+                Reject("NOOP_SEMANTIC_DRIFT");
+            callbackCounts.Clear();
+            unexpectedWitnessUid = false;
+            witnessPath = sourcePath;
+            witnessUids = new HashSet<string>(task.source_model_uids, StringComparer.Ordinal);
+            File.WriteAllBytes(Disk(sourcePath), witness);
+            AssetDatabase.ImportAsset(sourcePath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            if (!baseline.Same(Capture(sourcePath, task.source_model_guid)) ||
+                !EqualBytes(comparisonMeta, File.ReadAllBytes(Disk(sourcePath) + ".meta")))
+                Reject("WITNESS_SEMANTIC_DRIFT");
+            result = InspectWitness(sourcePath, task, sourceRendererId, sourceMeshId);
+            result.sourceLayout = sourceLayout;
+        }
+        finally
+        {
+            witnessPath = null;
+            witnessUids = null;
+            unexpectedWitnessUid = false;
+            callbackCounts.Clear();
+            try
+            {
+                File.WriteAllBytes(Disk(sourcePath), original);
+                File.WriteAllBytes(Disk(sourcePath) + ".meta", comparisonMeta ?? originalMeta);
+                AssetDatabase.ImportAsset(sourcePath,
+                    ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                equivalentAfterRestore = baseline != null && baseline.Same(Capture(sourcePath, task.source_model_guid));
+                metaStable = comparisonMeta != null &&
+                    EqualBytes(comparisonMeta, File.ReadAllBytes(Disk(sourcePath) + ".meta"));
+                File.WriteAllBytes(Disk(sourcePath) + ".meta", originalMeta);
+                AssetDatabase.ImportAsset(sourcePath,
+                    ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                restored = EqualBytes(original, File.ReadAllBytes(Disk(sourcePath))) &&
+                    EqualBytes(originalMeta, File.ReadAllBytes(Disk(sourcePath) + ".meta"));
+            }
+            catch { Reject("SOURCE_RESTORE_FAILED"); }
+            if (!equivalentAfterRestore || !metaStable || !restored) Reject("SOURCE_RESTORE_FAILED");
+        }
+        return result;
+    }
+
+    private static WitnessResult InspectWitness(string sourcePath, Task task,
+        long sourceRendererId, long sourceMeshId)
+    {
+        GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
+        var result = new WitnessResult();
+        var expected = new HashSet<string>(task.source_model_uids, StringComparer.Ordinal);
+        foreach (VapbRealizationMarker marker in model.GetComponentsInChildren<VapbRealizationMarker>(true))
+        {
+            string uid = marker.sourceModelUid;
+            if (!expected.Remove(uid) || !callbackCounts.TryGetValue(uid, out int count) || count != 1 ||
+                result.transformIds.ContainsKey(uid))
+                Reject("WITNESS_UID_AMBIGUOUS");
+            result.transformIds.Add(uid, LocalId(marker.transform, task.source_model_guid));
+            if (uid != task.source_model_uid) continue;
+            SkinnedMeshRenderer[] skins = marker.GetComponents<SkinnedMeshRenderer>();
+            if (skins.Length != 1 || marker.GetComponents<Renderer>().Length != 1)
+                Reject("WITNESS_RENDERER_AMBIGUOUS");
+            result.rendererId = LocalId(skins[0], task.source_model_guid);
+            result.meshId = LocalId(skins[0].sharedMesh, task.source_model_guid);
+        }
+        if (unexpectedWitnessUid || expected.Count != 0 || callbackCounts.Count != task.source_model_uids.Length ||
+            result.rendererId != sourceRendererId || result.meshId != sourceMeshId)
+            Reject("WITNESS_UID_SET_MISMATCH");
+        return result;
+    }
+
+    private static EditedIdentity ResolveEdited(Task task, string editedPath, WitnessResult witness,
+        SourceIdentity source)
+    {
+        ModelImporter importer = AssetImporter.GetAtPath(editedPath) as ModelImporter;
+        if (importer == null) Reject("EDITED_IMPORTER_MISSING");
+        if (!importer.isReadable)
+        {
+            importer.isReadable = true;
+            importer.SaveAndReimport();
+        }
+        else AssetDatabase.ImportAsset(editedPath,
+            ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+        GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(editedPath);
+        if (root == null) Reject("EDITED_MODEL_UNAVAILABLE");
+        SkinnedMeshRenderer found = null;
+        var markerCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (VapbRealizationMarker marker in root.GetComponentsInChildren<VapbRealizationMarker>(true))
+        {
+            if (!String.IsNullOrEmpty(marker.boneRealizationId))
+                markerCounts[marker.boneRealizationId] = markerCounts.TryGetValue(marker.boneRealizationId,
+                    out int count) ? count + 1 : 1;
+            if (marker.realizationId != task.realization_id) continue;
+            if (found != null || marker.GetComponents<Renderer>().Length != 1)
+                Reject("EDITED_RENDERER_AMBIGUOUS");
+            found = marker.GetComponent<SkinnedMeshRenderer>();
+            if (found == null || found.sharedMesh == null) Reject("EDITED_RENDERER_AMBIGUOUS");
+        }
+        if (found == null || found.bones == null || found.bones.Length != source.sourceBoneUids.Length ||
+            found.rootBone == null) Reject("EDITED_BONES_INVALID");
+        var receiptToUid = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (BoneMapping bone in task.bone_mappings)
+            receiptToUid.Add(bone.edited_bone_realization_id, bone.source_model_uid);
+        var edited = new EditedIdentity { renderer = found, mesh = found.sharedMesh,
+            editedBoneUids = new string[found.bones.Length] };
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < found.bones.Length; i++)
+        {
+            string receipt = found.bones[i] == null ? null :
+                found.bones[i].GetComponent<VapbRealizationMarker>()?.boneRealizationId;
+            string uid = null;
+            if (receipt == null || !receiptToUid.TryGetValue(receipt, out uid) ||
+                !markerCounts.TryGetValue(receipt, out int count) || count != 1 ||
+                !source.bonesByUid.ContainsKey(uid) || !seen.Add(uid)) Reject("EDITED_BONES_INVALID");
+            edited.editedBoneUids[i] = uid;
+        }
+        string rootReceipt = found.rootBone.GetComponent<VapbRealizationMarker>()?.boneRealizationId;
+        string rootUid = null;
+        if (rootReceipt == null || !receiptToUid.TryGetValue(rootReceipt, out rootUid) ||
+            rootUid != source.rootUid || !markerCounts.TryGetValue(rootReceipt, out int rootCount) ||
+            rootCount != 1) Reject("EDITED_ROOT_INVALID");
+        edited.rootUid = rootUid;
+        seen.Add(rootUid);
+        if (seen.Count != receiptToUid.Count) Reject("BONE_MAPPING_INVALID");
+        for (int i = 0; i < found.bones.Length; i++)
+        {
+            Transform sourceBone = source.bonesByUid[edited.editedBoneUids[i]];
+            string sourceParentUid = null;
+            foreach (KeyValuePair<string, Transform> row in source.bonesByUid)
+                if (row.Value == sourceBone.parent) sourceParentUid = row.Key;
+            string editedParentReceipt = found.bones[i].parent == null ? null :
+                found.bones[i].parent.GetComponent<VapbRealizationMarker>()?.boneRealizationId;
+            string editedParentUid = editedParentReceipt != null &&
+                receiptToUid.TryGetValue(editedParentReceipt, out string parentUid) ? parentUid : null;
+            if (sourceParentUid != editedParentUid) Reject("BONE_HIERARCHY_CHANGED");
+            if (sourceParentUid == null &&
+                (edited.editedBoneUids[i] != source.rootUid || found.bones[i] != found.rootBone))
+                Reject("BONE_HIERARCHY_UNSUPPORTED");
+        }
+        return edited;
+    }
+
+    private static void CheckSkinCompatibility(MeshLayout old,
+        SkinnedMeshRenderer target, EditedIdentity edited, SourceIdentity source)
+    {
+        Mesh mesh = edited.mesh;
+        if (old == null || old.vertexCount != mesh.vertexCount ||
+            old.topologies.Length != mesh.subMeshCount || mesh.bindposes.Length != edited.editedBoneUids.Length ||
+            !SameBlendShapes(old, mesh)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+        for (int i = 0; i < old.topologies.Length; i++)
+        {
+            if (old.topologies[i] != mesh.GetTopology(i)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+            int[] a = old.indices[i];
+            int[] b = mesh.GetIndices(i);
+            if (a.Length != b.Length) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+            for (int j = 0; j < a.Length; j++) if (a[j] != b[j]) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+        }
+        for (int i = 0; i < edited.editedBoneUids.Length; i++)
+        {
+            Transform bone = source.bonesByUid[edited.editedBoneUids[i]];
+            Matrix4x4 expected = bone.worldToLocalMatrix * target.transform.localToWorldMatrix;
+            if (!SameMatrix(mesh.bindposes[i], expected, 0.001f)) Reject("EDITED_REST_MISMATCH");
+        }
+        ValidateWeights(mesh, edited.editedBoneUids.Length);
+    }
+
+    private static void SaveVariant(Task task, GameObject original, SkinnedMeshRenderer originalTarget,
+        EditedIdentity edited, SourceIdentity source)
+    {
+        string path = task.variant_path;
+        string disk = Disk(path);
+        if (File.Exists(disk) || File.Exists(disk + ".meta") || AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
+        {
+            GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (existing == null || PrefabUtility.GetPrefabAssetType(existing) != PrefabAssetType.Variant ||
+                AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(existing)) !=
+                    AssetDatabase.GetAssetPath(original)) Reject("VARIANT_PATH_OCCUPIED");
+            VerifyVariant(existing, original, originalTarget, edited, source);
+            return;
+        }
+        GameObject instance = PrefabUtility.InstantiatePrefab(original) as GameObject;
+        if (instance == null) Reject("VARIANT_INSTANCE_FAILED");
+        bool saved = false;
+        try
+        {
+            SkinnedMeshRenderer target = null;
+            foreach (SkinnedMeshRenderer skin in instance.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (PrefabUtility.GetCorrespondingObjectFromSource(skin) == originalTarget)
+                {
+                    if (target != null) Reject("VARIANT_AMBIGUOUS");
+                    target = skin;
+                }
+            if (target == null || HasMissingScripts(instance) || target.rootBone == null)
+                Reject("VARIANT_TARGET_MISSING");
+            var bones = new Transform[edited.editedBoneUids.Length];
+            for (int i = 0; i < bones.Length; i++)
+            {
+                Transform sourceBone = source.bonesByUid[edited.editedBoneUids[i]];
+                foreach (Transform transform in instance.GetComponentsInChildren<Transform>(true))
+                    if (PrefabUtility.GetCorrespondingObjectFromSource(transform) == sourceBone)
+                    {
+                        if (bones[i] != null) Reject("VARIANT_BONE_AMBIGUOUS");
+                        bones[i] = transform;
+                    }
+                if (bones[i] == null) Reject("VARIANT_BONE_MISSING");
+            }
+            target.sharedMesh = edited.mesh;
+            target.bones = bones;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(target);
+            GameObject variant = PrefabUtility.SaveAsPrefabAsset(instance, path);
+            if (variant == null) Reject("VARIANT_SAVE_FAILED");
+            GameObject reloaded = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (reloaded == null || PrefabUtility.GetPrefabAssetType(reloaded) != PrefabAssetType.Variant)
+                Reject("VARIANT_RELOAD_FAILED");
+            VerifyVariant(reloaded, original, originalTarget, edited, source);
+            saved = true;
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(instance);
+            if (!saved && (File.Exists(disk) || File.Exists(disk + ".meta")))
+            {
+                AssetDatabase.DeleteAsset(path);
+                if (File.Exists(disk) || File.Exists(disk + ".meta")) Reject("VARIANT_ROLLBACK_FAILED");
+            }
+        }
+    }
+
+    private static void VerifyVariant(GameObject variant, GameObject original,
+        SkinnedMeshRenderer originalTarget, EditedIdentity edited, SourceIdentity source)
+    {
+        if (HasMissingScripts(variant)) Reject("VARIANT_MISSING_SCRIPT");
+        if (PrefabUtility.GetAddedComponents(variant).Count != 0 ||
+            PrefabUtility.GetRemovedComponents(variant).Count != 0 ||
+            PrefabUtility.GetAddedGameObjects(variant).Count != 0 ||
+            PrefabUtility.GetRemovedGameObjects(variant).Count != 0)
+            Reject("VARIANT_STRUCTURE_CHANGED");
+        PropertyModification[] modifications = PrefabUtility.GetPropertyModifications(variant);
+        if (modifications == null) Reject("VARIANT_MODIFICATIONS_UNAVAILABLE");
+        foreach (PropertyModification mod in modifications)
+        {
+            if (mod == null || mod.target == null || String.IsNullOrEmpty(mod.propertyPath))
+                Reject("VARIANT_MODIFICATION_UNKNOWN");
+            bool skinBinding = mod.target == originalTarget &&
+                (mod.propertyPath == "m_Mesh" || mod.propertyPath == "m_Bones.Array.size" ||
+                 mod.propertyPath.StartsWith("m_Bones.Array.data[", StringComparison.Ordinal));
+            bool rootDefault = PrefabUtility.IsDefaultOverride(mod) &&
+                (mod.target == original || mod.target == original.transform);
+            if (!skinBinding && !rootDefault) Reject("VARIANT_MODIFICATION_UNKNOWN");
+        }
+        Transform[] sourceTransforms = original.GetComponentsInChildren<Transform>(true);
+        Transform[] variantTransforms = variant.GetComponentsInChildren<Transform>(true);
+        if (sourceTransforms.Length != variantTransforms.Length) Reject("VARIANT_STRUCTURE_CHANGED");
+        foreach (Transform transform in variantTransforms)
+        {
+            Transform corresponding = PrefabUtility.GetCorrespondingObjectFromSource(transform) as Transform;
+            if (corresponding == null || transform.localPosition != corresponding.localPosition ||
+                transform.localRotation != corresponding.localRotation ||
+                transform.localScale != corresponding.localScale ||
+                (transform != variant.transform && transform.name != corresponding.name))
+                Reject("VARIANT_TRANSFORM_CHANGED");
+        }
+        Renderer[] sourceRenderers = original.GetComponentsInChildren<Renderer>(true);
+        Renderer[] variantRenderers = variant.GetComponentsInChildren<Renderer>(true);
+        if (sourceRenderers.Length != variantRenderers.Length) Reject("VARIANT_STRUCTURE_CHANGED");
+        SkinnedMeshRenderer match = null;
+        foreach (Renderer renderer in variantRenderers)
+        {
+            Renderer corresponding = PrefabUtility.GetCorrespondingObjectFromSource(renderer) as Renderer;
+            if (corresponding == null || renderer.GetType() != corresponding.GetType() ||
+                !SameMaterials(renderer.sharedMaterials, corresponding.sharedMaterials) ||
+                renderer.enabled != corresponding.enabled) Reject("VARIANT_RENDERER_CHANGED");
+            if (corresponding == originalTarget)
+            {
+                SkinnedMeshRenderer skin = renderer as SkinnedMeshRenderer;
+                if (match != null || skin == null)
+                    Reject("VARIANT_AMBIGUOUS");
+                match = skin;
+            }
+            else if (renderer is SkinnedMeshRenderer otherSkin)
+            {
+                SkinnedMeshRenderer otherSource = (SkinnedMeshRenderer)corresponding;
+                if (otherSkin.sharedMesh != otherSource.sharedMesh ||
+                    FollowSource(otherSkin.rootBone, 1) != otherSource.rootBone ||
+                    otherSkin.bones.Length != otherSource.bones.Length)
+                    Reject("VARIANT_SIBLING_CHANGED");
+                for (int i = 0; i < otherSkin.bones.Length; i++)
+                    if (FollowSource(otherSkin.bones[i], 1) != otherSource.bones[i])
+                        Reject("VARIANT_SIBLING_CHANGED");
+            }
+            else if (renderer is MeshRenderer direct)
+            {
+                MeshFilter filter = direct.GetComponent<MeshFilter>();
+                MeshFilter originalFilter = corresponding.GetComponent<MeshFilter>();
+                if (filter == null || originalFilter == null || filter.sharedMesh != originalFilter.sharedMesh)
+                    Reject("VARIANT_SIBLING_CHANGED");
+            }
+        }
+        if (match == null || match.sharedMesh != edited.mesh ||
+            match.rootBone == null || FollowSource(match.rootBone, 1) != originalTarget.rootBone ||
+            match.bones.Length != edited.editedBoneUids.Length) Reject("VARIANT_MISMATCH");
+        for (int i = 0; i < match.bones.Length; i++)
+            if (FollowSource(match.bones[i], 1) != source.bonesByUid[edited.editedBoneUids[i]])
+                Reject("VARIANT_MISMATCH");
+    }
+
+    private static bool HasMissingScripts(GameObject root)
+    {
+        foreach (Transform transform in root.GetComponentsInChildren<Transform>(true))
+            if (GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(transform.gameObject) != 0)
+                return true;
+        return false;
+    }
+
+    private static long LocalId(UnityEngine.Object value, string guid)
+    {
+        long id = 0;
+        if (value == null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value,
+                out string actual, out id) || actual != guid || id == 0) Reject("PUBLIC_ID_UNAVAILABLE");
+        return id;
+    }
+
+    private static Mesh SourceMeshById(string path, string guid, long id)
+    {
+        Mesh found = null;
+        foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+            if (asset is Mesh mesh && LocalId(mesh, guid) == id)
+            {
+                if (found != null) Reject("SOURCE_MESH_AMBIGUOUS");
+                found = mesh;
+            }
+        if (found == null) Reject("SOURCE_MESH_MISSING");
+        return found;
+    }
+
+    private static MeshLayout CaptureLayout(Mesh mesh)
+    {
+        var layout = new MeshLayout { vertexCount = mesh.vertexCount,
+            topologies = new MeshTopology[mesh.subMeshCount], indices = new int[mesh.subMeshCount][],
+            shapeNames = new string[mesh.blendShapeCount], frameWeights = new float[mesh.blendShapeCount][] };
+        for (int i = 0; i < mesh.subMeshCount; i++)
+        {
+            layout.topologies[i] = mesh.GetTopology(i);
+            layout.indices[i] = mesh.GetIndices(i);
+        }
+        for (int i = 0; i < mesh.blendShapeCount; i++)
+        {
+            layout.shapeNames[i] = mesh.GetBlendShapeName(i);
+            layout.frameWeights[i] = new float[mesh.GetBlendShapeFrameCount(i)];
+            for (int j = 0; j < layout.frameWeights[i].Length; j++)
+                layout.frameWeights[i][j] = mesh.GetBlendShapeFrameWeight(i, j);
+        }
+        return layout;
+    }
+
+    private static bool SameBlendShapes(MeshLayout a, Mesh b)
+    {
+        if (a.shapeNames.Length != b.blendShapeCount) return false;
+        for (int i = 0; i < a.shapeNames.Length; i++)
+        {
+            if (a.shapeNames[i] != b.GetBlendShapeName(i) ||
+                a.frameWeights[i].Length != b.GetBlendShapeFrameCount(i)) return false;
+            for (int j = 0; j < a.frameWeights[i].Length; j++)
+                if (Mathf.Abs(a.frameWeights[i][j] - b.GetBlendShapeFrameWeight(i, j)) > 0.0001f)
+                    return false;
+        }
+        return true;
+    }
+
+    private static bool SameMaterials(Material[] a, Material[] b)
+    {
+        if (a.Length != b.Length) return false;
+        for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) return false;
+        return true;
+    }
+
+    private static bool SameMatrix(Matrix4x4 a, Matrix4x4 b, float tolerance)
+    {
+        for (int i = 0; i < 16; i++)
+            if (float.IsNaN(a[i]) || float.IsInfinity(a[i]) || float.IsNaN(b[i]) ||
+                float.IsInfinity(b[i]) || Mathf.Abs(a[i] - b[i]) > tolerance) return false;
+        return true;
+    }
+
+    private static void ValidateWeights(Mesh mesh, int boneCount)
+    {
+        try
+        {
+            var counts = mesh.GetBonesPerVertex();
+            var weights = mesh.GetAllBoneWeights();
+            try
+            {
+                if (counts.Length != mesh.vertexCount) Reject("WEIGHTS_INVALID");
+                int offset = 0;
+                for (int vertex = 0; vertex < counts.Length; vertex++)
+                {
+                    int count = counts[vertex];
+                    if (count == 0 || offset + count > weights.Length) Reject("WEIGHTS_INVALID");
+                    float sum = 0;
+                    for (int i = 0; i < count; i++)
+                    {
+                        var weight = weights[offset + i];
+                        if (weight.boneIndex < 0 || weight.boneIndex >= boneCount ||
+                            float.IsNaN(weight.weight) || float.IsInfinity(weight.weight) || weight.weight <= 0)
+                            Reject("WEIGHTS_INVALID");
+                        sum += weight.weight;
+                    }
+                    if (Mathf.Abs(sum - 1f) > 0.01f) Reject("WEIGHTS_INVALID");
+                    offset += count;
+                }
+                if (offset != weights.Length) Reject("WEIGHTS_INVALID");
+            }
+            finally { counts.Dispose(); weights.Dispose(); }
+        }
+        catch (InvalidOperationException) { throw; }
+        catch { Reject("WEIGHTS_INVALID"); }
+    }
+
+    private static Snapshot Capture(string path, string guid)
+    {
+        GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+        if (root == null) Reject("SOURCE_IMPORT_FAILED");
+        var snapshot = new Snapshot { guid = guid };
+        foreach (Transform transform in root.GetComponentsInChildren<Transform>(true))
+        {
+            long id = LocalId(transform, guid);
+            if (snapshot.transforms.ContainsKey(id)) Reject("DUPLICATE_SOURCE_ID");
+            snapshot.transforms.Add(id, Hash(writer =>
+            {
+                writer.Write(transform.name);
+                writer.Write(transform.parent == null ? 0L : LocalId(transform.parent, guid));
+                Write(writer, transform.localPosition);
+                Write(writer, transform.localRotation);
+                Write(writer, transform.localScale);
+                Write(writer, transform.localToWorldMatrix);
+            }));
+        }
+        foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+        {
+            if (!(asset is Mesh mesh)) continue;
+            long id = LocalId(mesh, guid);
+            if (snapshot.meshes.ContainsKey(id)) Reject("DUPLICATE_SOURCE_ID");
+            snapshot.meshes.Add(id, MeshSignature(mesh));
+        }
+        foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+        {
+            if (!(renderer is SkinnedMeshRenderer) && !(renderer is MeshRenderer))
+                Reject("SOURCE_RENDERER_UNSUPPORTED");
+            long id = LocalId(renderer, guid);
+            if (snapshot.renderers.ContainsKey(id)) Reject("DUPLICATE_SOURCE_ID");
+            snapshot.renderers.Add(id, RendererSignature(renderer, guid));
+        }
+        if (snapshot.transforms.Count == 0 || snapshot.meshes.Count == 0 || snapshot.renderers.Count == 0)
+            Reject("SOURCE_STRUCTURE_INVALID");
+        return snapshot;
+    }
+
+    private static string MeshSignature(Mesh mesh)
+    {
+        return Hash(writer =>
+        {
+            writer.Write(mesh.vertexCount);
+            Write(writer, mesh.bounds.center); Write(writer, mesh.bounds.extents);
+            writer.Write((int)mesh.indexFormat);
+            writer.Write(mesh.subMeshCount);
+            for (int sub = 0; sub < mesh.subMeshCount; sub++)
+            {
+                writer.Write((int)mesh.GetTopology(sub));
+                int[] indices = mesh.GetIndices(sub);
+                writer.Write(indices.Length);
+                foreach (int index in indices) writer.Write(index);
+            }
+            foreach (Vector3 value in mesh.vertices) Write(writer, value);
+            foreach (Vector3 value in mesh.normals) Write(writer, value);
+            foreach (Vector4 value in mesh.tangents) Write(writer, value);
+            foreach (Color value in mesh.colors) Write(writer, value);
+            foreach (Color32 value in mesh.colors32)
+            { writer.Write(value.r); writer.Write(value.g); writer.Write(value.b); writer.Write(value.a); }
+            for (int channel = 0; channel < 8; channel++)
+            {
+                var uv = new List<Vector4>();
+                mesh.GetUVs(channel, uv);
+                writer.Write(uv.Count);
+                foreach (Vector4 value in uv) Write(writer, value);
+            }
+            foreach (Matrix4x4 value in mesh.bindposes) Write(writer, value);
+            var counts = mesh.GetBonesPerVertex();
+            var weights = mesh.GetAllBoneWeights();
+            try
+            {
+                writer.Write(counts.Length);
+                for (int i = 0; i < counts.Length; i++) writer.Write(counts[i]);
+                writer.Write(weights.Length);
+                for (int i = 0; i < weights.Length; i++)
+                { writer.Write(weights[i].boneIndex); writer.Write(weights[i].weight); }
+            }
+            finally { counts.Dispose(); weights.Dispose(); }
+            writer.Write(mesh.blendShapeCount);
+            for (int i = 0; i < mesh.blendShapeCount; i++)
+            {
+                writer.Write(mesh.GetBlendShapeName(i));
+                int frames = mesh.GetBlendShapeFrameCount(i);
+                writer.Write(frames);
+                for (int j = 0; j < frames; j++)
+                {
+                    writer.Write(mesh.GetBlendShapeFrameWeight(i, j));
+                    var positions = new Vector3[mesh.vertexCount];
+                    var normals = new Vector3[mesh.vertexCount];
+                    var tangents = new Vector3[mesh.vertexCount];
+                    mesh.GetBlendShapeFrameVertices(i, j, positions, normals, tangents);
+                    foreach (Vector3 value in positions) Write(writer, value);
+                    foreach (Vector3 value in normals) Write(writer, value);
+                    foreach (Vector3 value in tangents) Write(writer, value);
+                }
+            }
+        });
+    }
+
+    private static string RendererSignature(Renderer renderer, string guid)
+    {
+        return Hash(writer =>
+        {
+            writer.Write(renderer is SkinnedMeshRenderer ? 137 : 23);
+            writer.Write(LocalId(renderer.transform, guid));
+            Mesh mesh = renderer is SkinnedMeshRenderer skin ? skin.sharedMesh :
+                renderer.GetComponent<MeshFilter>()?.sharedMesh;
+            writer.Write(LocalId(mesh, guid));
+            writer.Write(renderer.enabled);
+            writer.Write((int)renderer.shadowCastingMode);
+            writer.Write(renderer.receiveShadows);
+            Material[] materials = renderer.sharedMaterials;
+            writer.Write(materials.Length);
+            foreach (Material material in materials)
+            {
+                if (material == null) { writer.Write(0L); continue; }
+                if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material, out string materialGuid,
+                    out long materialId) || !ValidGuid(materialGuid) || materialId == 0)
+                    Reject("MATERIAL_ID_UNAVAILABLE");
+                writer.Write(materialGuid); writer.Write(materialId);
+            }
+            if (renderer is SkinnedMeshRenderer skinned)
+            {
+                writer.Write(skinned.rootBone == null ? 0L : LocalId(skinned.rootBone, guid));
+                Transform[] bones = skinned.bones;
+                writer.Write(bones.Length);
+                foreach (Transform bone in bones) writer.Write(LocalId(bone, guid));
+                writer.Write(skinned.sharedMesh.blendShapeCount);
+                for (int i = 0; i < skinned.sharedMesh.blendShapeCount; i++)
+                    writer.Write(skinned.GetBlendShapeWeight(i));
+            }
+        });
+    }
+
+    private static bool SameMap(Dictionary<long, string> a, Dictionary<long, string> b)
+    {
+        if (a.Count != b.Count) return false;
+        foreach (KeyValuePair<long, string> row in a)
+            if (!b.TryGetValue(row.Key, out string value) || value != row.Value) return false;
+        return true;
+    }
+    private static string Hash(Action<BinaryWriter> write)
+    {
+        using (var stream = new MemoryStream())
+        using (var writer = new BinaryWriter(stream))
+        using (SHA256 sha = SHA256.Create())
+        {
+            write(writer);
+            writer.Flush();
+            return Convert.ToBase64String(sha.ComputeHash(stream.ToArray()));
+        }
+    }
+    private static void Write(BinaryWriter writer, Vector3 value)
+    { writer.Write(value.x); writer.Write(value.y); writer.Write(value.z); }
+    private static void Write(BinaryWriter writer, Vector4 value)
+    { writer.Write(value.x); writer.Write(value.y); writer.Write(value.z); writer.Write(value.w); }
+    private static void Write(BinaryWriter writer, Color value)
+    { writer.Write(value.r); writer.Write(value.g); writer.Write(value.b); writer.Write(value.a); }
+    private static void Write(BinaryWriter writer, Quaternion value)
+    { writer.Write(value.x); writer.Write(value.y); writer.Write(value.z); writer.Write(value.w); }
+    private static void Write(BinaryWriter writer, Matrix4x4 value)
+    { for (int i = 0; i < 16; i++) writer.Write(value[i]); }
+    private static bool EqualBytes(byte[] a, byte[] b)
+    {
+        if (a == null || b == null || a.Length != b.Length) return false;
+        for (int i = 0; i < a.Length; i++) if (a[i] != b[i]) return false;
+        return true;
+    }
+}

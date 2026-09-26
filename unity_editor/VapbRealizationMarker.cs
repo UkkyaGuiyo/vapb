@@ -5,4 +5,5 @@ public sealed class VapbRealizationMarker : MonoBehaviour
 {
     public string realizationId;
     public string boneRealizationId;
+    public string sourceModelUid;
 }

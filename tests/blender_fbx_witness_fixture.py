@@ -5,65 +5,11 @@ Uses installed Blender GPL FBX APIs; no third-party implementation is copied.
 """
 from pathlib import Path
 import sys
-import array
-import struct
-
 import bpy
 from io_scene_fbx import encode_bin, parse_fbx
-from io_scene_fbx.fbx_utils import elem_props_set
 
-
-PROPERTY = b'_vapb_source_fbx_model_uid'
-METHODS = {
-    ord('B'): 'add_bool', ord('C'): 'add_char', ord('Z'): 'add_int8',
-    ord('Y'): 'add_int16', ord('I'): 'add_int32', ord('L'): 'add_int64',
-    ord('F'): 'add_float32', ord('D'): 'add_float64', ord('R'): 'add_bytes',
-    ord('S'): 'add_string', ord('i'): 'add_int32_array', ord('l'): 'add_int64_array',
-    ord('f'): 'add_float32_array', ord('d'): 'add_float64_array',
-    ord('b'): 'add_bool_array', ord('c'): 'add_byte_array',
-}
-
-
-def encode_node(node, witness):
-    encoded = encode_bin.FBXElem(node.id)
-    for kind, value in zip(node.props_type, node.props):
-        getattr(encoded, METHODS[kind])(value)
-    encoded.elems.extend(encode_node(child, witness) for child in node.elems)
-    if witness and node.id == b'Model':
-        containers = [child for child in encoded.elems if child.id == b'Properties70']
-        if len(containers) > 1:
-            raise ValueError('DUPLICATE_PROPERTY_CONTAINER')
-        properties = containers[0] if containers else encode_bin.FBXElem(b'Properties70')
-        old = [child for child in node.elems if child.id == b'Properties70']
-        if old and any(p.props and p.props[0] == PROPERTY for p in old[0].elems):
-            raise ValueError('EXISTING_WITNESS_PROPERTY')
-        if not containers:
-            encoded.elems.append(properties)
-        elem_props_set(properties, 'p_string', PROPERTY, str(node.props[0]), custom=True)
-    return encoded
-
-
-def canonical(node, path=()):
-    path = path + ((node.id,) if node.id else ())
-    # The official encoder rewrites these two header metadata fields. They
-    # are explicitly excluded; no geometry, object UID or connection is.
-    if path in {(b'FileId',), (b'CreationTime',)}:
-        return None
-    if node.id == b'P' and node.props and node.props[0] == PROPERTY:
-        return None
-    properties = []
-    for kind, value in zip(node.props_type, node.props):
-        if isinstance(value, array.array):
-            value = value.tobytes()
-        elif kind == ord('F'):
-            value = struct.pack('<f', value)
-        elif kind == ord('D'):
-            value = struct.pack('<d', value)
-        properties.append((kind, value))
-    children = tuple(item for child in node.elems if (item := canonical(child, path)) is not None)
-    if node.id == b'Properties70' and not properties and not children:
-        return None
-    return node.id, tuple(properties), children
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from unitypackage_blender_importer.blender.fbx_witness import PROPERTY, canonical, encode_node
 
 
 def main():
