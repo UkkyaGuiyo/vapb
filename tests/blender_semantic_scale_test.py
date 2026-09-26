@@ -12,8 +12,9 @@ from unitypackage_blender_importer.unity.prefab_parser import PrefabData, Prefab
 
 
 def main():
-    # Unity (x,y,z) becomes Blender (x,z,-y). The scale signs stay on their axes.
-    basis = Matrix(((1, 0, 0, 0), (0, 0, 1, 0), (0, -1, 0, 0), (0, 0, 0, 1)))
+    # Independently calibrated by the asymmetric FBX/public Unity API probe.
+    # Unity (x,y,z) becomes Blender (-x,-z,y); scale signs stay on their axes.
+    basis = Matrix(((-1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))
     inverse = basis.inverted()
     cases = [
         ((1, 2, 3), (1, 0, 0, 0), (2, 3, 5)),

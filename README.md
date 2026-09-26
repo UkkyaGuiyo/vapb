@@ -8,9 +8,9 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 
 **Experimental / Alpha — 製品仕様全体は開発中です。** 複数のprivate実VRC Packageで、選択した既存骨Skinの編集・保存再開・UnityPackage出力・UnityでのVariant復元を検証しています。Shape Key付きSkinでは、意図したベース頂点とShapeの編集、他のShape・骨・素材・VRC参照の保持を新規Unity Oracleで確認しました。これはAvatar全体の往復対応やVRChat上でのビルド・実行成功を意味しません。
 
-選択した既存Skinに結び付くTextureでは、出所を確認できるpacked PNGの実編集・save/reopen・UnityPackage出力・新規Unity Projectでの画素変化とGUID/meta/Material参照の保持を、異なる実データ2ケースで確認しています。同じPrefab個体に属する複数のモデル由来Skinを一つのVariantへ復元する経路も、公開syntheticの2 Meshで検証しました。複数Meshを同時編集した実Avatar全体の往復、任意のMaterial node graphのUnity Shader変換、全画像形式への対応は未検証です。
+選択した既存Skinに結び付くTextureでは、出所を確認できるpacked PNGの実編集・save/reopen・UnityPackage出力・新規Unity Projectでの画素変化とGUID/meta/Material参照の保持を、異なる実データ2ケースで確認しています。同じPrefab個体に属する複数のモデル由来Skinを一つのVariantへ復元する経路は、公開syntheticと実データの各2 Meshで検証しました。実データでは34 Renderer中の意図した2件を独立した出所情報で特定し、他32件と元アセットの保持も確認しています。実Avatar全体の往復、任意のMaterial node graphのUnity Shader変換、全画像形式への対応は未検証です。
 
-最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性、最終配布ZIPの検証は未完了です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
+最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性は未完了です。特にsemantic Objectとnative Mesh/Armatureの統合、Prefab配置やSkin変形の全面的一致は未解決です。座標系の回帰修正は新規Importに適用され、既存の保存済みBlendを自動変換しません。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。配布ZIPごとの検証済みcommit・SHA-256・インストール結果はExperimental / Alpha prereleaseの説明で確認してください。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
 
 ## 開発について / Development
 

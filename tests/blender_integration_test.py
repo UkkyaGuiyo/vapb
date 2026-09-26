@@ -207,7 +207,7 @@ SkinnedMeshRenderer:
         assert body_occurrence.type == "EMPTY", "AvatarBody occurrence was not kept as a semantic object"
         assert body_occurrence.parent == placement, "AvatarBody occurrence parent differs from serialized Transform"
         bpy.context.view_layer.update()
-        assert tuple(round(value, 3) for value in body_occurrence.matrix_world.translation) == (1.0, 3.0, -2.0), body_occurrence.matrix_world
+        assert tuple(round(value, 3) for value in body_occurrence.matrix_world.translation) == (-1.0, -3.0, 2.0), body_occurrence.matrix_world
         assert placement.parent in roots, "ScenePlacement occurrence is not under the prefab root"
 
         member_objects = [

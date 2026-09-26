@@ -12,7 +12,9 @@ from mathutils import Matrix, Quaternion, Vector  # type: ignore
 from ..unity.prefab_parser import PrefabData
 
 
-_UNITY_TO_BLENDER = Matrix(((1.0, 0.0, 0.0), (0.0, 0.0, 1.0), (0.0, -1.0, 0.0)))
+# Match native FBX import: Unity is left-handed Y-up, Blender is right-handed
+# Z-up. The asymmetric cross-runtime fixture verifies (-x, -z, y).
+_UNITY_TO_BLENDER = Matrix(((-1.0, 0.0, 0.0), (0.0, 0.0, -1.0), (0.0, 1.0, 0.0)))
 _BLENDER_DUPLICATE_SUFFIX = re.compile(r"\.\d{3}$")
 
 
