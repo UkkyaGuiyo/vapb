@@ -30,7 +30,7 @@ def apply_transform(obj, transform) -> None:
     obj.location = unity_position(transform.position)
     obj.rotation_mode = "QUATERNION"
     obj.rotation_quaternion = unity_rotation(transform.rotation)
-    obj.scale = (transform.scale["x"], transform.scale["y"], transform.scale["z"])
+    obj.scale = (transform.scale["x"], transform.scale["z"], transform.scale["y"])
 
 
 def build_prefab_hierarchy(
