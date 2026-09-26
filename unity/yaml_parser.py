@@ -40,6 +40,51 @@ def _split_top_level(text: str) -> list[str]:
     return [part for part in result if part]
 
 
+_DOUBLE_QUOTED_ESCAPES = {
+    "0": "\0", "a": "\a", "b": "\b", "t": "\t", "n": "\n", "v": "\v",
+    "f": "\f", "r": "\r", "e": "\x1b", " ": " ", '"': '"',
+    "/": "/", "\\": "\\", "N": "\u0085", "_": "\u00a0",
+    "L": "\u2028", "P": "\u2029",
+}
+
+
+def _decode_double_quoted(value: str) -> str:
+    result: list[str] = []
+    index = 0
+    while index < len(value):
+        char = value[index]
+        if char != "\\":
+            result.append(char)
+            index += 1
+            continue
+        if index + 1 >= len(value):
+            raise ValueError("Incomplete YAML quoted escape")
+        escape = value[index + 1]
+        if escape in "xuU":
+            digits = {"x": 2, "u": 4, "U": 8}[escape]
+            end = index + 2 + digits
+            hex_value = value[index + 2:end]
+            if len(hex_value) != digits or not re.fullmatch(r"[0-9a-fA-F]+", hex_value):
+                raise ValueError("Invalid YAML quoted Unicode escape")
+            point = int(hex_value, 16)
+            if 0xD800 <= point <= 0xDBFF and escape == "u":
+                pair = value[end:end + 6]
+                if not re.fullmatch(r"\\u[dD][c-fC-F][0-9a-fA-F]{2}", pair):
+                    raise ValueError("Unpaired YAML Unicode surrogate")
+                point = 0x10000 + ((point - 0xD800) << 10) + (int(pair[2:], 16) - 0xDC00)
+                end += 6
+            if point > 0x10FFFF or 0xD800 <= point <= 0xDFFF:
+                raise ValueError("Invalid YAML Unicode code point")
+            result.append(chr(point))
+            index = end
+            continue
+        if escape not in _DOUBLE_QUOTED_ESCAPES:
+            raise ValueError("Unsupported YAML quoted escape")
+        result.append(_DOUBLE_QUOTED_ESCAPES[escape])
+        index += 2
+    return "".join(result)
+
+
 def parse_scalar(value: str) -> Any:
     value = value.strip()
     if not value:
@@ -59,8 +104,10 @@ def parse_scalar(value: str) -> Any:
         return False
     if value in {"null", "Null", "~"}:
         return None
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in "'\"":
-        return value[1:-1].replace("\\'", "'").replace('\\"', '"')
+    if len(value) >= 2 and value[0] == value[-1] == '"':
+        return _decode_double_quoted(value[1:-1])
+    if len(value) >= 2 and value[0] == value[-1] == "'":
+        return value[1:-1].replace("''", "'")
     if re.fullmatch(r"[-+]?\d+", value):
         return int(value)
     if re.fullmatch(r"[-+]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][-+]?\d+)?", value):

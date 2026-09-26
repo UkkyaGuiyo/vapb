@@ -163,6 +163,9 @@ def build_material(
     material.use_backface_culling = normalized.cull_backface
     _set_surface_mode(material, normalized)
     _save_metadata(material, data, normalized, source_package_id)
+    # A provider package can arrive before its consumer. Keep its Material
+    # datablock in the .blend so save/reopen does not erase the pending source.
+    material.use_fake_user = True
 
     nodes = material.node_tree.nodes
     links = material.node_tree.links

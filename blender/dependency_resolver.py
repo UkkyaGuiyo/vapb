@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from typing import Any, Iterable
 
 import bpy  # type: ignore
@@ -17,6 +18,8 @@ RESOLVED_LOCAL = "RESOLVED_LOCAL"
 RESOLVED_CROSS_PACKAGE = "RESOLVED_CROSS_PACKAGE"
 AMBIGUOUS_PROVIDER = "AMBIGUOUS_PROVIDER"
 MISSING_CONSUMER = "MISSING_CONSUMER"
+USER_EDIT_PRESERVED = "USER_EDIT_PRESERVED"
+UNVERIFIED_SLOT_STATE = "UNVERIFIED_SLOT_STATE"
 UNSUPPORTED = "UNSUPPORTED"
 
 
@@ -52,6 +55,12 @@ def capture_dependency(scene: Any, record: dict[str, Any]) -> dict[str, Any]:
     existing = next((item for item in dependencies if _record_key(item) == key), None)
     if existing is None:
         existing = dict(record)
+        if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"}:
+            consumer = _find_consumer(record)
+            if consumer is not None and getattr(consumer, "data", None) and hasattr(consumer.data, "materials"):
+                slot = int(record.get("consumer_slot_index", 0))
+                if slot >= 0:
+                    existing["initial_slot_state"] = _slot_signature(consumer, slot)
         existing.setdefault("status", UNRESOLVED)
         existing.setdefault("resolved_provider_package_id", "")
         existing.setdefault("resolved_provider_guid", "")
@@ -76,22 +85,35 @@ def _providers(target_guid: str, provider_type: str) -> list[Any]:
 def _find_consumer(record: dict[str, Any]) -> Any | None:
     package_id = record.get("consumer_package_id", "")
     file_id = str(record.get("consumer_game_object_file_id", ""))
-    path = str(record.get("consumer_object_path", ""))
-    object_name = str(record.get("consumer_object_name", ""))
+    path = str(record.get("consumer_asset_path") or record.get("consumer_object_path", ""))
+    if not package_id or not file_id or not path:
+        return None
     candidates = [obj for obj in bpy.data.objects if obj.get("unity_source_package_id") == package_id]
-    if object_name:
-        candidates = [obj for obj in candidates if obj.name == object_name]
-    if path:
-        candidates = [obj for obj in candidates if obj.get("unity_asset_path", "") == path]
-    if file_id:
-        exact = [obj for obj in candidates if str(obj.get("unity_prefab_file_id", "")) == file_id]
-        if len(exact) == 1:
-            return exact[0]
-        if len(exact) > 1:
-            return None
-    if len(candidates) == 1:
-        return candidates[0]
-    return None
+    exact = [obj for obj in candidates
+             if obj.get("unity_asset_path", "") == path
+             and str(obj.get("unity_prefab_file_id", "")) == file_id]
+    return exact[0] if len(exact) == 1 else None
+
+
+def _material_token(material: Any) -> str | None:
+    token = str(material.get("_vapb_dependency_material_token", ""))
+    if not token:
+        token = uuid.uuid4().hex
+        material["_vapb_dependency_material_token"] = token
+    return token if sum(str(item.get("_vapb_dependency_material_token", "")) == token
+                        for item in bpy.data.materials) == 1 else None
+
+
+def _slot_signature(consumer: Any, index: int) -> dict[str, Any] | None:
+    """Persist a Blender Material datablock identity across save/reopen."""
+    if index >= len(consumer.material_slots):
+        return {"link": "ABSENT", "material": None}
+    slot = consumer.material_slots[index]
+    material = slot.material
+    token = _material_token(material) if material is not None else None
+    if material is not None and token is None:
+        return None
+    return {"link": slot.link, "material": token}
 
 
 def _bind_material(record: dict[str, Any], material: Any) -> bool:
@@ -103,9 +125,27 @@ def _bind_material(record: dict[str, Any], material: Any) -> bool:
         record["status"] = MISSING_CONSUMER
         return False
     slot = int(record.get("consumer_slot_index", 0))
-    while len(consumer.data.materials) <= slot:
-        consumer.data.materials.append(None)
-    consumer.data.materials[slot] = material
+    if slot < 0:
+        record["status"] = MISSING_CONSUMER
+        return False
+    current_state = _slot_signature(consumer, slot)
+    if current_state is None:
+        record["status"] = UNVERIFIED_SLOT_STATE
+        return False
+    expected_state = record.get("applied_slot_state") or record.get("initial_slot_state")
+    if expected_state is None:
+        record["status"] = MISSING_CONSUMER
+        return False
+    if current_state != expected_state:
+        record["status"] = USER_EDIT_PRESERVED
+        return False
+    if _material_token(material) is None:
+        record["status"] = UNVERIFIED_SLOT_STATE
+        return False
+    from .material_builder import _assign_object_material
+
+    _assign_object_material(consumer, slot, material)
+    record["applied_slot_state"] = _slot_signature(consumer, slot)
     record["binding_source"] = "dependency_resolver"
     return True
 
@@ -151,10 +191,15 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
             links.remove(link)
         links.new(output, socket)
 
-    def material_color(key, default):
+    def material_color(default):
         try:
+            normalized = json.loads(str(material.get("unity_normalized", "{}")))
+            value = normalized.get("base_color")
+            if isinstance(value, list) and len(value) == 4:
+                return tuple(value)
             props = json.loads(str(material.get("unity_props", "{}")))
-            value = props.get("colors", {}).get(key)
+            colors = props.get("colors", {})
+            value = colors.get("_Color", colors.get("_BaseColor"))
             return tuple(value) if value is not None else default
         except (TypeError, ValueError, json.JSONDecodeError):
             return default
@@ -164,7 +209,7 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
         mix.name = mix.label = f"Unity Base Color Mix {material.name}"
         mix.blend_type = "MULTIPLY"
         mix.inputs[0].default_value = 1.0
-        mix.inputs[1].default_value = material_color("_Color", (1.0, 1.0, 1.0, 1.0))
+        mix.inputs[1].default_value = material_color((1.0, 1.0, 1.0, 1.0))
         replace_input(mix.inputs.get("Color2"), tex.outputs.get("Color"))
         replace_input(bsdf.inputs.get("Base Color"), mix.outputs.get("Color"))
     elif label == "Normal":
@@ -191,7 +236,7 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
         provider_provenance = json.loads(str(scene.get("unitypackage_provider_provenance", "{}")))
     except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
         provider_provenance = {}
-    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "late_bindings_applied": 0}
+    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "late_bindings_applied": 0}
     changed = False
     for record in registry.get("dependencies", []):
         provider_type = "Material" if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"} else "Image"
@@ -229,13 +274,15 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                 counts["late_bindings_applied"] += 1
                 changed = True
                 continue
-            record["status"] = MISSING_CONSUMER
-            record["binding_status"] = MISSING_CONSUMER
+            blocked_status = record.get("status") if record.get("status") in {USER_EDIT_PRESERVED, UNVERIFIED_SLOT_STATE} else MISSING_CONSUMER
+            record["status"] = blocked_status
+            record["binding_status"] = blocked_status
             record["resolution_provenance"] = provider_provenance.get(
                 provider.get("unity_source_package_id", ""),
                 "AUTO_LOCAL" if status == RESOLVED_LOCAL else "AUTO_BOUNDED_DISCOVERY",
             )
-            counts["missing_consumer"] += 1
+            blocked_key = {USER_EDIT_PRESERVED: "user_edit_preserved", UNVERIFIED_SLOT_STATE: "unverified_slot_state"}.get(blocked_status, "missing_consumer")
+            counts[blocked_key] += 1
             changed = True
             continue
         if status in {AMBIGUOUS_PROVIDER, UNRESOLVED} and record.get("binding_source") == "dependency_resolver":
@@ -264,12 +311,21 @@ def _unbind_dependency(record: dict[str, Any]) -> None:
     if consumer is None or not getattr(consumer, "data", None) or not hasattr(consumer.data, "materials"):
         return
     slot = int(record.get("consumer_slot_index", 0))
-    if slot >= len(consumer.data.materials):
+    if slot < 0 or slot >= len(consumer.material_slots):
         return
-    current = consumer.data.materials[slot]
-    if current is not None and current.get("unity_source_package_id") == record.get("resolved_provider_package_id") and current.get("unity_material_guid") == record.get("resolved_provider_guid"):
-        consumer.data.materials[slot] = None
-    record["binding_source"] = ""
+    material_slot = consumer.material_slots[slot]
+    current = material_slot.material
+    if (record.get("applied_slot_state") is not None
+            and _slot_signature(consumer, slot) == record["applied_slot_state"]
+            and current is not None
+            and current.get("unity_source_package_id") == record.get("resolved_provider_package_id")
+            and current.get("unity_material_guid") == record.get("resolved_provider_guid")):
+        if material_slot.link == "OBJECT":
+            material_slot.material = None
+        else:
+            consumer.data.materials[slot] = None
+        record["binding_source"] = ""
+        record.pop("applied_slot_state", None)
 
 
 def resolve_after_import(scene: Any) -> dict[str, int]:
