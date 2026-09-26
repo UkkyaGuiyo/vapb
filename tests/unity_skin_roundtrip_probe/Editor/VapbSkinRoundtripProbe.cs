@@ -148,8 +148,11 @@ public static class VapbSkinRoundtripProbe
             Material material = new Material(shader) { name = "SkinOriginal" };
             if (textured)
             {
-                var pixels = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                pixels.SetPixels(new[] { Color.red, Color.green, Color.blue, Color.white });
+                var pixels = new Texture2D(4, 3, TextureFormat.RGBA32, false);
+                pixels.SetPixels(new[] {
+                    Color.red, Color.green, Color.blue, Color.white,
+                    Color.red, Color.green, Color.blue, Color.white,
+                    Color.red, Color.green, Color.blue, Color.white });
                 pixels.Apply();
                 File.WriteAllBytes(AssetFile(TexturePath), pixels.EncodeToPNG());
                 UnityEngine.Object.DestroyImmediate(pixels);

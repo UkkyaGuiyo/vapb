@@ -8,6 +8,8 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 
 **Experimental / Alpha — 製品仕様全体は開発中です。** 複数のprivate実VRC Packageで、選択した既存骨Skinの編集・保存再開・UnityPackage出力・UnityでのVariant復元を検証しています。Shape Key付きSkinでは、意図したベース頂点とShapeの編集、他のShape・骨・素材・VRC参照の保持を新規Unity Oracleで確認しました。これはAvatar全体の往復対応やVRChat上でのビルド・実行成功を意味しません。
 
+選択した既存Skinに結び付くTextureでは、出所を確認できるpacked PNGの実編集・save/reopen・UnityPackage出力・新規Unity Projectでの画素変化とGUID/meta/Material参照の保持を、実データ1ケースで確認しています。任意のMaterial node graphのUnity Shader変換や、全画像形式・Avatar全体の往復を保証するものではありません。
+
 最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性、最終配布ZIPの検証は未完了です。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
 
 ### 既存骨Skinの限定往復

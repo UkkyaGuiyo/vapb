@@ -45,9 +45,10 @@ public static class VapbTextureApiProbe
             var edited = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             try
             {
-                ImageConversion.LoadImage(original, File.ReadAllBytes(Project("OriginalTexture.png")));
-                ImageConversion.LoadImage(edited, editedBytes);
-                report.pixel_changed = original.width == 2 && original.height == 2 && edited.width == 2 && edited.height == 2 &&
+                bool originalLoaded = ImageConversion.LoadImage(original, File.ReadAllBytes(Project("OriginalTexture.png")));
+                bool editedLoaded = ImageConversion.LoadImage(edited, editedBytes);
+                report.pixel_changed = originalLoaded && editedLoaded && original.width > 0 && original.height > 0 &&
+                    original.width == edited.width && original.height == edited.height &&
                     Math.Abs(original.GetPixel(0, 0).r - edited.GetPixel(0, 0).r) > 0.1f;
             }
             finally { UnityEngine.Object.DestroyImmediate(original); UnityEngine.Object.DestroyImmediate(edited); }
