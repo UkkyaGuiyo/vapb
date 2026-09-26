@@ -23,6 +23,11 @@ if bpy is not None:
     from .operators.texture_editing import TEXTURE_EDITING_CLASSES
     from .ui.texture_panel import TEXTURE_PANEL_CLASSES
     from .ui.physics_preview_panel import PHYSICS_PREVIEW_CLASSES, register_properties, unregister_properties
+    from .operators.weight_transfer import (
+        WEIGHT_TRANSFER_CLASSES, register_weight_transfer_properties,
+        unregister_weight_transfer_properties,
+    )
+    from .ui.weight_transfer_panel import WEIGHT_TRANSFER_PANEL_CLASSES
 
     def register():
         for cls in PREFERENCES_CLASSES:
@@ -36,12 +41,18 @@ if bpy is not None:
         for cls in PHYSICS_PREVIEW_CLASSES:
             bpy.utils.register_class(cls)
         register_properties()
+        for cls in WEIGHT_TRANSFER_CLASSES + WEIGHT_TRANSFER_PANEL_CLASSES:
+            bpy.utils.register_class(cls)
+        register_weight_transfer_properties()
         for cls in UNITYPACKAGE_FILE_HANDLER_CLASSES:
             bpy.utils.register_class(cls)
         bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
         bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
     def unregister():
+        unregister_weight_transfer_properties()
+        for cls in reversed(WEIGHT_TRANSFER_CLASSES + WEIGHT_TRANSFER_PANEL_CLASSES):
+            bpy.utils.unregister_class(cls)
         unregister_properties()
         for cls in reversed(PHYSICS_PREVIEW_CLASSES):
             bpy.utils.unregister_class(cls)

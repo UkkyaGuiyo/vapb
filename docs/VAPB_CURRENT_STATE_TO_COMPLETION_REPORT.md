@@ -38,8 +38,8 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | EX-04 / 8 | Idempotent Unity Finalizer and MRUS | unity_editor/Editor | Public API post-import identity; exact mesh/material/skin/Prefab/VRC rebind | 未着手 | Partial legacy material tool; general finalizer pending |
 | CL-01 / 9 | Export Cleanup of unused Bone/Material | graph + export staging | Exclude only proven unused; exported skin/references valid; scene unchanged | 未着手 | Unknown |
 | CL-02 / 9 | Edit Cleanup preview/apply | Blender operator/UI | Scope/reasons/unknown visible, Undo/recovery, shared users protected | 未着手 | Unknown |
-| WT-01 / 10 | Explicit Weight Transfer source/armature/target/preview/apply | Blender operator/UI + transfer core | Different topology; REPLACE/MERGE/FILL_MISSING with declared rules | 未着手 | Unknown |
-| WT-02 / 10 | Transfer protections and quality feedback | transfer core | B-only/locked weights preserved, grounded distance indicators, deformation/Undo | 未着手 | Unknown |
+| WT-01 / 10 | Explicit Weight Transfer source/armature/target/preview/apply | operators/weight_transfer, ui/weight_transfer_panel, blender/weight_transfer | Different topology; REPLACE/MERGE/FILL_MISSING with declared rules | 検証済み | Supported synthetic original-mesh surface, ALL/SELECTED range; private quality and installed ZIP flow pending |
+| WT-02 / 10 | Transfer protections and quality feedback | transfer core | B-only/locked weights preserved, grounded distance indicators, deformation/Undo | 実装中 | Partial: distance/locks/shared data, explicit unresolved selection, actual Undo/rollback and posed deformation PASS; left/right caution and private quality pending |
 | BM-01 / 11 | Explicit Semantic Bone Merge mapping/classification | Blender operator/UI + remap core | EQUIVALENT/B_ONLY/AMBIGUOUS; provenance or confirmed mapping | 未着手 | Unknown |
 | BM-02 / 11 | Rest/skin/reference-preserving transplant and remap | bone transform, reference graph, Finalizer | Roll/rest/world transform, all listed refs, collisions/sharing; verified deletion | 未着手 | Unknown |
 | UI-01 / 12 | Japanese GUI for all operations | ui, operators | No console/GUID entry in normal flow; targets/progress/outcomes explained | 実装中 | Partial legacy GUI; new editing/export controls pending |
@@ -83,6 +83,17 @@ First block: trace the existing member realization/receipt path, add a failing p
 - Regression first failed on missing fields; parser and Stage 1A suites then **18 PASS** on Python 3.14.6. Command from repository parent: `python -m unittest unitypackage_blender_importer.tests.test_prefab_parser unitypackage_blender_importer.tests.test_stage1a_synthetic_projection -q`. Scope_guard PASS. An earlier combined invocation named a nonexistent Stage 1B test module and failed discovery; the corrected invocation above is the recorded result.
 
 ## Decisions / evidence / next action
+
+## Checkpoint: explicit surface Weight Transfer
+
+- Added numerical interpolation, three declared modes, Japanese sidebar and explicit preview/apply; integrated addon registration. Confirmed group mappings clear when A/rig/B changes and confirmation clears on mapping edit. No automatic transfer and no claimed bone identity from names.
+- Original-mesh world-space triangles support different topology. ALL/SELECTED scope, distance limit, locked/unmapped weights and shared Object/Mesh protection. Preview does not alter weights/geometry; a separate explicit button isolates B and selects unresolved vertices. No normalization/pruning or armature mutation.
+- Numeric suite: 3 PASS, including a regression initially reproducing zero division on a degenerate triangle. Blender 5.2.1 background probe PASS/exit 0 verifies modes, selected range, locks/B-only weights, source preservation, shared mesh/scene rejection, confirmation invalidation, real posed deformation, injected apply failure rollback, and actual Blender Undo with explicit scripted undo boundaries.
+- `blender --factory-startup --background --python-exit-code 1 --python tests/blender_weight_transfer_test.py` emits `WEIGHT_TRANSFER_RUNTIME_PASS`. Full addon integration still PASS including register/unregister, receipt rename/save/reopen and existing fail-closed entrypoint. Compileall PASS. Scope_guard PASS; accepted without extra abstraction.
+- First working-tree full discovery encountered the concurrently developing occurrence test before its module existed (248 passing tests plus one discovery error). This is not recorded as full-suite PASS; commit-only full suite is the checkpoint criterion.
+- Remaining WT coverage: left/right caution visualization, representative private fitting quality, final installed GUI use. Original mesh only, not evaluated pose/modifier surface. Instructions in README.
+
+## Decisions / evidence / next action (current)
 
 - DERIVED: contract adapter is reference-only; do not rebuild it or call it production-complete.
 - UNKNOWN: input-independent authoritative Unity Renderer -> FBX primitive mapping. Resolve from production code and supported serialized evidence; unsupported roots cannot silently succeed.
