@@ -12,3 +12,5 @@ def draw_import_options(layout, operator) -> None:
     options.prop(operator, "use_textures")
     options.prop(operator, "apply_prefab_transforms")
     options.prop(operator, "keep_extracted")
+    options.prop(operator, "source_storage_directory")
+    options.label(text="原本は一時展開先とは別に保管します")

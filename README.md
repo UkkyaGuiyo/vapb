@@ -21,6 +21,8 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 3. 複数のPrefabがある場合、既定の **Automatic (Recommended)** はPackage全体をRenderer構造とvisual dependency closureでmetadata-first解析します。互換するBody variant、衣装、アクセサリーは一つに絞らず、編集可能なComposition memberとして同時に取り込みます。同じFBX/skeleton representationは一度だけ読み込み、共有データとして再利用します。視覚を持たないhelperはidentity・anchor関係のメタデータだけを保持します。Providerが曖昧、または同一identityの構造解釈が競合する場合だけ候補Chooserを表示します。AutomaticはPrefab配列順・ファイル名・archive順を選択根拠にしません。詳細は`docs/PACKAGE_COMPOSITION.md`を参照してください。
 4. **Reconstruct Prefab** または **Import Raw FBX** と各オプションを確認して実行する。
 
+取り込み時にはUnityPackageの原bytesを **原本の保管先** に保存します。空欄ではBlenderユーザーデータ内の `vapb/sources/` を使用し、内容のSHA-256ごとに一つ保存します。一時展開を削除してもこの原本は残り、.blend内のPackage台帳に保管先を記録します。容量が必要なため、別ドライブを使う場合は取り込み時に保管先を指定してください。別PCへ移すときは.blendだけでなく保管先も保全してください。既存原本の内容が壊れている場合は上書きせず停止します。
+
 ### Rendererとskinの明示的な対応確認
 
 取り込んだPrefabの意味上のObject（Empty等）と、FBX由来のskin Meshは別の対象です。自動対応の根拠がない場合は、3Dビューの **VAPB → Renderer対応** でPrefabルートと実際のMeshを選び、対象Rendererの **このRendererを確定** を押して確認します。

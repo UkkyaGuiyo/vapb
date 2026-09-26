@@ -174,8 +174,15 @@ SkinnedMeshRenderer:
             use_materials=True,
             use_textures=True,
             keep_extracted=False,
+            source_storage_directory=str(temp_path / 'source_archive'),
         )
         assert "FINISHED" in result, result
+        source_archive = Path(bpy.context.scene['unitypackage_source_archive'])
+        assert source_archive.read_bytes() == package_path.read_bytes()
+        assert not Path(bpy.context.scene['unitypackage_extracted_root']).exists()
+        # The original and temporary extraction can disappear without losing
+        # RAW data. Only this generated fixture is deleted, never user input.
+        package_path.unlink()
         meshes = [obj for obj in bpy.data.objects if obj.type == "MESH"]
         armatures = [obj for obj in bpy.data.objects if obj.type == "ARMATURE"]
         assert meshes, "No mesh imported"
@@ -328,6 +335,7 @@ SkinnedMeshRenderer:
         saved_scene = temp_path / "receipt_roundtrip.blend"
         bpy.ops.wm.save_as_mainfile(filepath=str(saved_scene))
         bpy.ops.wm.open_mainfile(filepath=str(saved_scene))
+        assert Path(bpy.context.scene['unitypackage_source_archive']).read_bytes() == source_archive.read_bytes()
         reloaded = [obj for obj in bpy.data.objects
                     if obj.get("_vapb_fbx_realization_id") == realization_id]
         assert len(reloaded) == 1, "Persistent realization identity lost or duplicated"

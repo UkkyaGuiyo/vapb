@@ -22,7 +22,7 @@ All detailed constraints and modes remain binding in PRODUCT_SPEC.md, sections 0
 | IN-02 / 4 | Prefab/Variant/nested/inherited occurrences | effective_prefab, semantic_contract | Enumerate actual model children without overrides or artificial cross-product | 実装中 | Partial; Stage 1A gap; production adapter pending |
 | IN-03 / 4 | Cross-package providers, collisions, bounded discovery | package_identity, asset_database, sibling_discovery | Exact provider evidence; ambiguous choice UI; missing/cycle/corrupt input diagnostics | 実装中 | Partial; campaign multi-package matrix pending |
 | ID-01 / 5 | Package/revision/source/occurrence/realization/export identities | provenance_model, identity, semantic_contract | Scope retained, signed IDs, no name/order join; insufficient evidence stays unresolved | 実装中 | Partial; conversion boundaries pending |
-| ID-02 / 5,6 | RAW preservation and persistent source storage | package_reader, Blender metadata | Save/reopen and temporary-directory loss do not erase required source | 未着手 | Unknown; durable storage audit pending |
+| ID-02 / 5,6 | RAW preservation and persistent source storage | source_store, importer, Scene package registry | Save/reopen and temporary-directory loss do not erase required source | 検証済み | Supported local immutable original archive; cross-PC relocation UI and export consumption pending |
 | BL-01 / 6 | Separate editable instances with safe sharing | importer, hierarchy_builder, fbx_receipt | Independent transform/material and explicit shared/individual edit scope | 実装中 | Partial; repeated source and shared-data runtime matrix pending |
 | BL-02 / 6 | Renderer occurrence -> semantic Object -> skin/Armature/slots | occurrence_projection, renderer_binding, material_builder | Authoritative persisted edge survives rename/save/reopen; ambiguity rejected | 実装中 | Partial: direct serialized Prefab + USER_CONFIRMED native skin/armature/material link PASS; nested realization and automatic binary-model mapping pending |
 | BL-03 / 6 | Mesh/bone/weight/UV/normal/shape/animation/image/material/hierarchy edits | native Blender + edit/export adapters | Rename/duplicate/delete/join/split/merge tracked with actual edits | 未着手 | Partial native editing; complete export continuity unverified |
@@ -103,6 +103,16 @@ First block: trace the existing member realization/receipt path, add a failing p
 - Still incomplete: semantic owner realization for nested/model children, automatic source evidence, cross-package provider selection in this bridge, Unity finalizer/MRUS, full unitypackage export and final installed/private workflows. No input coverage was generalized from this synthetic success.
 
 ## Decisions / evidence / next action (current)
+
+## Checkpoint: durable original package storage
+
+- Import now retains exact source UnityPackage bytes at the user-selected directory or Blender DATAFILES/vapb/sources. Complete SHA-256 filenames, streaming copy and verification, same-directory atomic non-overwriting publication, corrupt-existing refusal and failure cleanup. Originals are not edited; identical verified snapshots are reused. Parent/child package imports retain the same configured archive directory.
+- Existing Scene package registry stores each original archive path independently of temporary extraction. Synthetic Blender probe deletes only its generated incoming package after import and confirms cached bytes survive extraction removal and .blend reopen. Other-PC relocation still requires preserving the external archive directory; do not call the .blend self-contained.
+- Source-store suite **8 PASS**. Initial full-suite failure was traced to Windows `fstat` vs `Path.stat` creation-time drift, not different bytes. The final comparison retains file identity/size/mtime and SHA-256; creation time is not a content signal. A synthetic 300-attempt reproduction went from 42 false rejections to zero after correction; a focused regression covers that drift. No private input used.
+- Full Python 3.14.6 repository-parent discovery: **288 PASS**, 0 FAIL/ERROR. Blender 5.2.1 integrated synthetic import/confirm/export/save/reopen PASS, exit0. Scope_guard PASS.
+- Prior committed binding checkpoint `aef6e60af2eb0895aa4953b53a4e043879f6ca74`: fresh HEAD-only checkout **280 PASS**, live remote query matched after push. Binding review scope_guard PASS.
+
+## Decisions / evidence / next action (latest)
 
 - DERIVED: contract adapter is reference-only; do not rebuild it or call it production-complete.
 - UNKNOWN: input-independent authoritative Unity Renderer -> FBX primitive mapping. Resolve from production code and supported serialized evidence; unsupported roots cannot silently succeed.

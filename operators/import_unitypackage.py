@@ -31,6 +31,7 @@ from ..blender.progress_overlay import ImportProgressOverlay
 from ..ui.import_panel import draw_import_options
 from ..unity.asset_database import AssetDatabase
 from ..unity.package_identity import PackageIdentity
+from ..unity.source_store import archive_source
 from ..unity.package_reader import PackageIndex, UnityPackageError, UnityPackageReader, is_unitypackage
 from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
@@ -286,6 +287,10 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         name="Keep Extracted Files",
         default=True,
         description="Keep the extracted source so external texture paths remain available",
+    )
+    source_storage_directory: StringProperty(
+        name="原本の保管先", subtype="DIR_PATH", default="",
+        description="UnityPackage原本を保管します。空欄ならBlenderユーザーデータ内のVAPB保管先を使用",
     )
     group_child: BoolProperty(options={"HIDDEN"}, default=False)
 
@@ -1239,6 +1244,13 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             package_key = self._prepared_package_key
             if package_key is None:
                 raise UnityPackageError("Package identity is unavailable")
+            storage_root = (
+                Path(bpy.path.abspath(self.source_storage_directory))
+                if self.source_storage_directory else
+                Path(bpy.utils.user_resource('DATAFILES')) / 'vapb' / 'sources'
+            )
+            self._set_phase(context, "UnityPackage原本を保管中")
+            archived_source = archive_source(package_path, storage_root, package_key.sha256)
 
             planning_prefabs = []
             planning_unity_paths: list[str] = []
@@ -1574,6 +1586,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     "package_sha256": package_key.sha256,
                     "source_package_path": package_key.path,
                     "source_package_name": package_key.package_name,
+                    "source_archive_path": str(archived_source),
                     "import_sequence": len(existing_registry.packages) + 1,
                     "selected_prefab": str(prefab.path) if prefab else "",
                     "asset_counts": {
@@ -1590,6 +1603,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             if package_status != "NO_COLLISION":
                 self.report({"WARNING"}, package_status)
             scene["unitypackage_source"] = str(package_path)
+            scene["unitypackage_source_archive"] = str(archived_source)
             scene["unitypackage_source_package_id"] = package_key.source_package_id
             scene["unitypackage_package_sha256"] = package_key.sha256
             scene["unitypackage_extracted_root"] = str(extraction_dir)
@@ -1693,6 +1707,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             use_textures=self.use_textures,
                             apply_prefab_transforms=self.apply_prefab_transforms,
                             keep_extracted=self.keep_extracted,
+                            source_storage_directory=self.source_storage_directory,
                             group_child=True,
                         )
                         if "FINISHED" not in result:
