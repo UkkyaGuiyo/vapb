@@ -95,6 +95,8 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 
 開発用の生成経路は、repo内の `tests/blender_fbx_source_witness.py` と `tests/unity_bone_witness_probe` を使い、隔離したUnity 2022.3.22f1 Projectで元モデルとnoop/marker付きFBXをpublic APIで照合した後、Blender backgroundから `tools/build_model_identity_witness.py` に元UnityPackage・probe結果・出力先を渡します。商用Assetのprobe結果とsidecarはrepo外に保存してください。witnessが提供するのはUnity-generated subasset IDとnative FBX実体の橋渡しだけです。Material参照とPrefab overrideはUnityPackageのserialized dataから読み、元モデルのMaterial slot内容など未証明部分は保留します。実Avatar全体のHierarchy、Export、Unity/VRC復元の完成を意味しません。
 
+分割Packageのbinaryモデルでは、元FBXにMaterial slotがあっても、Packageの`.meta`に外部Material remapや生成subasset IDの対応がない場合があります。この場合、Material名・並び・候補数から自動割当しません。上記model witnessを指定しても元モデルのMaterial基本slotまで証明するものではなく、白いslotが残ることがあります。Blenderで一時的にMaterialを手動変更できても、それだけでVAPBのidentityやUnityへの復元が証明されたとは扱わないでください。確認済みの範囲と現行の制限は[Case Bの公開安全な調査記録](docs/CASE_B_PACKAGE_ONLY_MATERIAL_BOUNDARY.md)を参照してください。
+
 ### 手動ウェイト転送
 
 3Dビューのサイドバー（Nキー）→ **VAPB → Weight Transfer** を開きます。
