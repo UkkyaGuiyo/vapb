@@ -144,6 +144,29 @@ class PrefabMaterialAliasTests(unittest.TestCase):
         self.assertEqual(self.identity(oracle_rows["other_R1"]["slotZeroMaterial"]),
                          self.identity(oracle_rows["sibling_R2"]["slotZeroMaterial"]))
 
+    def test_unity_authored_orphan_stays_unresolved_without_guessing(self):
+        expected_path = ORACLE.with_name("s3_expected.json")
+        expected = json.loads(expected_path.read_text(encoding="utf-8"))
+        self.assertEqual("2022.3.22f1", expected["unity_version"])
+        self.assertEqual(1, expected["active_before"])
+        self.assertEqual(0, expected["source_renderers_after"])
+        self.assertEqual(0, expected["variant_renderers_after"])
+        self.assertEqual(1, expected["serialized_material_modifications_after"])
+        self.assertTrue(expected["public_api_modification_target_lost"])
+        self.assertEqual("NOT_OBSERVED", expected["unused_overrides_inspector"])
+        base = source("S3_Source.prefab")
+        orphan = source("S3_Orphan.prefab")
+        self.assertEqual([], base.prefab.renderer_documents())
+        modification = self.material_override(orphan)
+        self.assertEqual(base.asset_guid, modification.target_guid)
+        self.assertFalse(any(document.file_id == modification.target_file_id
+                             for document in base.prefab.documents))
+        projection = project_occurrences(
+            orphan, "S3", lambda _package, guid: base if guid == base.asset_guid else None)
+        self.assertEqual([], projection.records)
+        self.assertEqual(["UNRESOLVED_OVERRIDE"],
+                         [issue["code"] for issue in projection.issues])
+
     def test_machine_readable_graph_marks_serialized_identity_break(self):
         graph = json.loads(GRAPH.read_text(encoding="utf-8"))
         self.assertEqual("2022.3.22f1", graph["unity_version"])

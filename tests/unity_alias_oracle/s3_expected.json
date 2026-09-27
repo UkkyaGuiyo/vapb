@@ -1,0 +1,11 @@
+{
+  "unity_version": "2022.3.22f1",
+  "authoring": "Unity public Prefab API saved an active Material override, then removed its source MeshRenderer",
+  "active_before": 1,
+  "source_renderers_after": 0,
+  "variant_renderers_after": 0,
+  "serialized_material_modifications_after": 1,
+  "public_api_modification_target_lost": true,
+  "renderer_population": "GetComponentsInChildren<Renderer>(true)",
+  "unused_overrides_inspector": "NOT_OBSERVED"
+}
