@@ -2,6 +2,19 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Case B residual override causal result — 2026-09-27
+
+Unity 2022.3.22f1 compared a copied private Prefab with one residual Material
+override (U), with only U removed, restored, or pointed at a distinct synthetic
+Material. All 107 expanded Renderer occurrences across 8 Prefabs retained the
+same observed state; changing a separately proven active override changed one
+Material slot. Thus U is `INERT_ONLY_KNOWN_VIA_UNITY` for this exact revision
+and observed Renderer/Material state. Package/witness evidence does not prove
+that an unmatched target is generally orphaned, so VAPB keeps
+`UNRESOLVED_OVERRIDE`. Production and UI behavior did not change. The
+[sanitized causal audit](CASE_B_RESIDUAL_OVERRIDE_CAUSAL_AUDIT.md) records
+hypotheses, controls, synthetic coverage, and limits.
+
 ## B-QA-001 fail-explained Import guidance — 2026-09-27
 
 Fresh User QA of the prior Alpha reproduced the UX gap: a split-package Import

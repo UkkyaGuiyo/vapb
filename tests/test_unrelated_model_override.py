@@ -203,6 +203,31 @@ class UnrelatedModelOverrideTests(unittest.TestCase):
                          {(dep["consumer_native_realization_id"], dep["target_guid"])
                           for dep in plan_witness_material_dependencies(bindings, PACKAGE_SHA)})
 
+    def test_unmatched_override_sentinel_does_not_guess_a_renderer(self):
+        # A conspicuously different Material on U still supplies no Renderer
+        # identity. A change on a proven direct target must remain observable.
+        valid = [(-20, MATERIAL_A, MODEL, 10), (-21, MATERIAL_B, MODEL, 10)]
+        snapshots = []
+        for operations in (valid,
+                           valid + [(-999, MATERIAL_U, MODEL, 10)],
+                           valid + [(-999, MATERIAL_B, MODEL, 10)],
+                           [(-20, MATERIAL_U, MODEL, 10), valid[1]]):
+            projection, witness = fixture(self.temp.name, operations=operations)
+            bindings, issues = plan_witness_realizations(
+                projection.records, [native(row) for row in projection.records], witness)
+            self.assertEqual([], issues)
+            dependencies = plan_witness_material_dependencies(bindings, PACKAGE_SHA)
+            snapshots.append((
+                {(dep["consumer_native_realization_id"], dep["target_guid"])
+                 for dep in dependencies},
+                sum(issue["code"] == "UNRESOLVED_OVERRIDE" for issue in projection.issues),
+            ))
+        self.assertEqual(snapshots[0][0], snapshots[1][0])
+        self.assertEqual(snapshots[0][0], snapshots[2][0])
+        self.assertEqual([0, 1, 1, 0], [snapshot[1] for snapshot in snapshots])
+        self.assertNotEqual(snapshots[0][0], snapshots[3][0])
+        self.assertIn(("native-0", MATERIAL_U), snapshots[3][0])
+
     def test_counterfactual_instance_source_and_direct_invalid_target(self):
         # E5: U is on the same instance, a second occurrence of the same
         # source, or a different source GUID. Instance edges remain explicit.
