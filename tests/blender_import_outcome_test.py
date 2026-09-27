@@ -32,6 +32,7 @@ def main():
     target, mode = sys.argv[sys.argv.index("--") + 1:]
     addon.register()
     try:
+        assert VAPB_PT_import_outcome.bl_category == "VAPB Result"
         if mode == "write":
             root = bpy.data.objects.new("Synthetic import root", None)
             bpy.context.scene.collection.objects.link(root)

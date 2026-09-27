@@ -83,7 +83,7 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 
 ### Import後に白い部分や未解決の項目がある場合
 
-3Dビューで **Nキー → VAPB → Import結果** を開いてください。Import時に一部を安全に復元できなかった場合は警告も表示します。この一覧はPrefab/Rendererの解析記録と依存関係の結果から作られ、`.blend`を保存して開き直しても確認できます。件数は証拠記録の数であり、白いMeshの数ではありません。Material/Texture不足、対応するMeshを証明できない状態、候補が複数ある状態を分けて表示します。対象Objectを証拠から確定できない項目はObject選択を提示しません。
+3Dビューで **Nキー → VAPB Result → Import結果** を開いてください。Import時に一部を安全に復元できなかった場合は警告も表示します。この一覧はPrefab/Rendererの解析記録と依存関係の結果から作られ、`.blend`を保存して開き直しても確認できます。件数は証拠記録の数であり、白いMeshの数ではありません。Material/Texture不足、対応するMeshを証明できない状態、候補が複数ある状態を分けて表示します。対象Objectを証拠から確定できない項目はObject選択を提示しません。
 
 `Import結果` が未解決なしでも、Avatar全体の再現やUnityへの往復成功を保証するものではありません。白い見た目だけで問題を断定しません。Materialを手で割り当てた見た目上の変更も、Unity上のRenderer identityが確定したことにはなりません。通常のImportにUnityやwitnessは不要です。特定のbinaryモデルで対応証拠が足りない場合のみ、同一revision用のmodel witnessが役立つ可能性があります。現行のwitness生成は開発者向け手順で、アドオン内に一般ユーザー用の生成ボタンはありません。
 

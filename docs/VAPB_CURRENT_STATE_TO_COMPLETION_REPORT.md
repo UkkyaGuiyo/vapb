@@ -2,6 +2,40 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## B-QA-001 fail-explained Import guidance — 2026-09-27
+
+Fresh User QA of the prior Alpha reproduced the UX gap: a split-package Import
+without a model witness completed and survived save/reopen, but the reopened
+Blender view gave no explanation for unbound Material slots or safe next step.
+The semantic projection already recorded unresolved model-source and override
+issues, and the dependency registry recorded binding outcomes. The new 3D View
+`VAPB Result > Import結果` panel reads those persisted records without
+inferring an Object from its name, order, or white appearance. It separates proven bound
+Material dependencies from unresolved Renderer identity, missing assets,
+ambiguous references, unsupported structures, and errors. Counts describe
+evidence records, not distinct Meshes or a complete Avatar. Import now warns
+users to inspect that panel when the Scene contains unresolved records.
+
+The ordinary UnityPackage-to-Blender Import remains independent of Unity. An
+exact-revision Unity model witness can help some missing model identities, but
+its generation remains a developer workflow; the UI does not offer a
+nonexistent one-click operation. The existing manual Renderer binding UI
+requires an exact occurrence and realization receipt, so visual Material
+selection does not establish round-trip identity when that occurrence is
+absent. Persisted report inputs survive `.blend` save/reopen. Private real
+assets and raw identity evidence remain outside Git.
+
+Public synthetic tests cover fully resolved, partially resolved, missing
+model-source, missing provider, ambiguous provider, alias uncertainty,
+witness-assisted and no-witness controls, plus unknown issues. The Blender
+5.2.1 synthetic panel/save/reopen probe and isolated ZIP
+install/enable/disable probe passed. The Python suite passed 383 tests and
+`compileall` passed on the candidate runtime. Fresh private installed-ZIP
+checks are recorded in the
+[sanitized Case B QA section](CASE_B_PACKAGE_ONLY_MATERIAL_BOUNDARY.md).
+They do not establish package-only model identity, export, fresh Unity
+re-import, or VRC use.
+
 ## Nested/stripped Material alias safety — 2026-09-27
 
 Unity 2022.3.22f1 authored a fully public synthetic nested Variant with two

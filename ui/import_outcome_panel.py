@@ -36,12 +36,11 @@ def _label_lines(layout, value, *, icon="NONE"):
 
 
 class VAPB_PT_import_outcome(bpy.types.Panel):
-    bl_label = "VAPB Import結果"
+    bl_label = "Import結果"
     bl_idname = "VAPB_PT_import_outcome"
     bl_space_type = "VIEW_3D"
     bl_region_type = "UI"
-    bl_category = "VAPB"
-    bl_order = -1
+    bl_category = "VAPB Result"
 
     def draw(self, context):
         layout = self.layout

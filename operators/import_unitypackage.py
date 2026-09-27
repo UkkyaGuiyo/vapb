@@ -1846,7 +1846,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             if outcome["overall"] == "PARTIAL":
                 self.report({"WARNING"},
                     "Scene内のImport記録に未解決項目があります。"
-                    "3DビューのNキー > VAPB > Import結果を確認してください")
+                    "3DビューのNキー > VAPB Result > Import結果を確認してください")
             collisions = load_scene_registry(scene).detect_collisions()
             if collisions:
                 self.report({"WARNING"}, f"Detected {len(collisions)} cross-package identity collision(s)")

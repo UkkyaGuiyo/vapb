@@ -4,6 +4,39 @@ This is a sanitized finding from local commercial data. No asset, path, raw
 log, screenshot, GUID, or fileID from that corpus is included. It does not
 claim full Avatar fidelity or VRChat round-trip success.
 
+## B-QA-001 Fresh User Import guidance check
+
+A clean installed candidate ZIP in Blender 5.2.1 was used for three fresh
+Imports and separate-process save/reopen checks. Without a model witness, the
+split-package case imported 2,247 Objects and 125 Meshes, but none of its 141
+Mesh Material slots had Unity Material provenance or an image node. The
+persisted report classified the Scene as partial: one unresolved model source,
+three unresolved Material overrides, three Material dependencies with no
+proven receiving Object/slot, and 12 unresolved Normal Texture dependency
+records. It states that the model Renderer-to-Blender Mesh identity is unproven, rather
+than claiming the Material asset is absent or guessing by appearance.
+
+With the exact-revision witness, the same fresh Import and reopen kept 114
+provenance-tagged Object Material slots and 107 image-node slots among the
+same 141 Mesh slots. A separate receipt-to-actual-Object-slot check found
+114/114 exact Material identity matches after reopen and re-resolution.
+The unresolved model-source issue disappeared, while one
+unrelated override remained unresolved; the report did not mark the entire
+Scene fully resolved. The normal no-witness control imported 577 Objects and
+103 Meshes; after reopen, 147 of 148 Mesh Material slots retained Unity
+Material provenance and 144 had image nodes. It had no unresolved source or
+override issue and received no witness-required warning. These are aggregate
+local observations, not a private identity list or a proof of complete
+Unity/VRChat round-trip fidelity.
+
+The saved report uses existing projection and dependency records. Its counts
+are evidence records, not distinct Meshes. The optional witness generation
+path is still developer-only; manual visual Material selection is not an
+authoritative identity bridge for an absent occurrence. Fresh GUI inspection
+confirmed that a dedicated `VAPB Result` sidebar tab exposes the partial
+reason on the saved split-package Scene, while the normal control shows no
+unresolved-record warning.
+
 ## Decision
 
 **Package-only proof for the two model-source base Material rows: NOT PROVEN.**

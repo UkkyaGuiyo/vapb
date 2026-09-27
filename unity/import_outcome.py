@@ -59,7 +59,7 @@ def summarize_import_outcome(projections: list[dict], dependencies: list[dict]) 
     def add(category: str, code: str, scope: str, reason: str, action: str) -> None:
         counts[category] += 1
         items.append({"category": category, "code": code, "scope": scope,
-                      "reason": reason, "action": action, "object_known": False})
+                      "reason": reason, "action": action})
 
     for number, projection in enumerate(projections, 1):
         for issue in projection.get("issues", ()):

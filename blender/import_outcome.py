@@ -23,5 +23,4 @@ def scene_import_outcome(scene):
             projections.append({"records": [], "issues": [{"code": "INVALID_SAVED_PROJECTION"}]})
     dependencies = load_dependency_registry(scene).get("dependencies", [])
     outcome = summarize_import_outcome(projections, dependencies)
-    outcome["root_count"] = len(projections)
     return outcome

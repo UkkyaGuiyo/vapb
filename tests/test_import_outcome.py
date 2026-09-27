@@ -33,7 +33,6 @@ class ImportOutcomeTests(unittest.TestCase):
         self.assertEqual(result["overall"], "PARTIAL")
         self.assertEqual(result["counts"]["UNRESOLVED_IDENTITY"], 1)
         self.assertEqual(result["counts"]["MISSING_DEPENDENCY"], 0)
-        self.assertFalse(result["items"][0]["object_known"])
         self.assertIn("UnityPackage", result["items"][0]["reason"])
 
     def test_c_ambiguous_native_candidate_is_not_resolved(self):
@@ -51,7 +50,6 @@ class ImportOutcomeTests(unittest.TestCase):
         result = summarize_import_outcome([projection(issues=[issue])], [])
         self.assertEqual(result["counts"]["UNRESOLVED_IDENTITY"], 1)
         self.assertEqual(result["items"][0]["scope"], "Importルート 1 の入れ子Prefab個体")
-        self.assertFalse(result["items"][0]["object_known"])
 
     def test_f_exact_witness_binding_is_counted_not_required(self):
         result = summarize_import_outcome(
