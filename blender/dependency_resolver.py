@@ -20,6 +20,7 @@ AMBIGUOUS_PROVIDER = "AMBIGUOUS_PROVIDER"
 MISSING_CONSUMER = "MISSING_CONSUMER"
 USER_EDIT_PRESERVED = "USER_EDIT_PRESERVED"
 UNVERIFIED_SLOT_STATE = "UNVERIFIED_SLOT_STATE"
+UNVERIFIED_TEXTURE_STATE = "UNVERIFIED_TEXTURE_STATE"
 UNSUPPORTED = "UNSUPPORTED"
 
 
@@ -39,13 +40,17 @@ def save_dependency_registry(scene: Any, registry: dict[str, Any]) -> None:
 
 
 def _record_key(record: dict[str, Any]) -> tuple[Any, ...]:
-    return tuple(record.get(key, "") for key in (
+    key = tuple(record.get(field, "") for field in (
         "dependency_type", "consumer_package_id", "consumer_asset_path",
         "consumer_file_id", "consumer_game_object_file_id", "consumer_slot_index",
         "consumer_prefab_instance_file_id",
         "consumer_occurrence_id", "consumer_native_realization_id",
         "target_guid", "target_file_id",
     ))
+    if record.get("dependency_type") == "MATERIAL_TEXTURE":
+        return key + (record.get("texture_label", ""),
+                      (record.get("texture_ref") or {}).get("property_name", ""))
+    return key
 
 
 def capture_dependency(scene: Any, record: dict[str, Any]) -> dict[str, Any]:
@@ -120,6 +125,42 @@ def _slot_signature(consumer: Any, index: int) -> dict[str, Any] | None:
     return {"link": slot.link, "material": token}
 
 
+def _image_token(image: Any, *, create: bool = False) -> str | None:
+    if image is None:
+        return None
+    token = str(image.get("_vapb_dependency_image_token", ""))
+    if not token:
+        if not create:
+            return None
+        token = uuid.uuid4().hex
+        image["_vapb_dependency_image_token"] = token
+    return token if sum(str(item.get("_vapb_dependency_image_token", "")) == token
+                        for item in bpy.data.images) == 1 else None
+
+
+def _texture_signature(record: dict[str, Any], material: Any) -> dict[str, Any] | None:
+    """Snapshot only the managed texture node and its role's output connection."""
+    tree = material.node_tree
+    if tree is None:
+        return None
+    node = tree.nodes.get(str(record.get("texture_node_name", "")))
+    if node is None or node.type != "TEX_IMAGE" or node.get("unity_dependency_binding_source") != "dependency_resolver":
+        return None
+    image = node.image
+    image_token = _image_token(image)
+    if image is not None and image_token is None:
+        return None
+    edges = sorted([link.from_node.name, link.from_socket.identifier,
+                    link.to_node.name, link.to_socket.identifier]
+                   for link in tree.links if link.from_node == node or link.to_node == node)
+    bsdf = next((item for item in tree.nodes if item.type == "BSDF_PRINCIPLED"), None)
+    socket_name = {"Base Color": "Base Color", "Normal": "Normal", "Emission": "Emission Color",
+                   "Metallic": "Metallic", "Roughness": "Roughness"}.get(str(record.get("texture_label", "")))
+    output_edges = sorted([link.from_node.name, link.from_socket.identifier]
+                          for link in (bsdf.inputs.get(socket_name).links if bsdf is not None and socket_name and bsdf.inputs.get(socket_name) else []))
+    return {"node": node.name, "image": image_token, "edges": edges, "output_edges": output_edges}
+
+
 def _bind_material(record: dict[str, Any], material: Any) -> bool:
     if record.get("requires_occurrence_binding"):
         record["status"] = MISSING_CONSUMER
@@ -164,12 +205,28 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
     if material is None:
         record["status"] = MISSING_CONSUMER
         return False
-    nodes = material.node_tree.nodes
-    links = material.node_tree.links
     label = str(record.get("texture_label", "Base Color"))
     if label == TextureRole.PRESERVE_ONLY.value:
         record["binding_source"] = "preserve_only"
         return True
+    if record.get("binding_status") in {"BOUND", UNVERIFIED_TEXTURE_STATE} and not record.get("applied_texture_state"):
+        record["status"] = UNVERIFIED_TEXTURE_STATE
+        return False
+    if record.get("applied_texture_state") is not None and _texture_signature(record, material) != record["applied_texture_state"]:
+        record["status"] = USER_EDIT_PRESERVED
+        return False
+    if _image_token(image, create=True) is None:
+        record["status"] = UNVERIFIED_TEXTURE_STATE
+        return False
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    existing_node = nodes.get(f"Unity {label} {material.name}")
+    if (existing_node is not None
+            and existing_node.get("unity_dependency_binding_source") != "dependency_resolver"
+            and (existing_node.type != "TEX_IMAGE"
+                 or (existing_node.image is not None and existing_node.image != image))):
+        record["status"] = USER_EDIT_PRESERVED
+        return False
     texture_data = record.get("texture_ref") or {}
     try:
         from .material_builder import _texture_node
@@ -189,8 +246,11 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
         tex.image = image
     tex["unity_dependency_binding_source"] = "dependency_resolver"
     tex["unity_dependency_provider_guid"] = image.get("unity_guid", "")
+    record["texture_node_name"] = tex.name
     bsdf = next((node for node in nodes if node.type == "BSDF_PRINCIPLED"), None)
     if bsdf is None:
+        record["applied_texture_state"] = _texture_signature(record, material)
+        record["binding_source"] = "dependency_resolver"
         return True
 
     def replace_input(socket, output):
@@ -236,6 +296,8 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
         invert.inputs[0].default_value = 1.0
         replace_input(invert.inputs[1], tex.outputs.get("Alpha"))
         replace_input(bsdf.inputs.get("Roughness"), invert.outputs.get("Value"))
+    record["applied_texture_state"] = _texture_signature(record, material)
+    record["binding_source"] = "dependency_resolver"
     return True
 
 
@@ -245,7 +307,7 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
         provider_provenance = json.loads(str(scene.get("unitypackage_provider_provenance", "{}")))
     except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
         provider_provenance = {}
-    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "late_bindings_applied": 0}
+    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "unverified_texture_state": 0, "late_bindings_applied": 0}
     changed = False
     for record in registry.get("dependencies", []):
         provider_type = "Material" if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"} else "Image"
@@ -283,23 +345,25 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                 counts["late_bindings_applied"] += 1
                 changed = True
                 continue
-            blocked_status = record.get("status") if record.get("status") in {USER_EDIT_PRESERVED, UNVERIFIED_SLOT_STATE} else MISSING_CONSUMER
+            blocked_status = record.get("status") if record.get("status") in {USER_EDIT_PRESERVED, UNVERIFIED_SLOT_STATE, UNVERIFIED_TEXTURE_STATE} else MISSING_CONSUMER
             record["status"] = blocked_status
             record["binding_status"] = blocked_status
             record["resolution_provenance"] = provider_provenance.get(
                 provider.get("unity_source_package_id", ""),
                 "AUTO_LOCAL" if status == RESOLVED_LOCAL else "AUTO_BOUNDED_DISCOVERY",
             )
-            blocked_key = {USER_EDIT_PRESERVED: "user_edit_preserved", UNVERIFIED_SLOT_STATE: "unverified_slot_state"}.get(blocked_status, "missing_consumer")
+            blocked_key = {USER_EDIT_PRESERVED: "user_edit_preserved", UNVERIFIED_SLOT_STATE: "unverified_slot_state", UNVERIFIED_TEXTURE_STATE: "unverified_texture_state"}.get(blocked_status, "missing_consumer")
             counts[blocked_key] += 1
             changed = True
             continue
         if status in {AMBIGUOUS_PROVIDER, UNRESOLVED} and record.get("binding_source") == "dependency_resolver":
             _unbind_dependency(record)
-        record["status"] = status
-        record["binding_status"] = status
+        blocked_status = record.get("status") if record.get("status") in {USER_EDIT_PRESERVED, UNVERIFIED_TEXTURE_STATE} else status
+        record["status"] = blocked_status
+        record["binding_status"] = blocked_status
         record["resolution_provenance"] = "AMBIGUOUS" if status == AMBIGUOUS_PROVIDER else "UNRESOLVED"
-        counts["ambiguous" if status == AMBIGUOUS_PROVIDER else "unresolved"] += 1
+        counts[{USER_EDIT_PRESERVED: "user_edit_preserved", UNVERIFIED_TEXTURE_STATE: "unverified_texture_state"}.get(
+            blocked_status, "ambiguous" if status == AMBIGUOUS_PROVIDER else "unresolved")] += 1
         changed = True
     if changed:
         save_dependency_registry(scene, registry)
@@ -311,10 +375,27 @@ def _unbind_dependency(record: dict[str, Any]) -> None:
         material = next((item for item in bpy.data.materials if item.get("unity_material_guid") == record.get("consumer_asset_guid") and item.get("unity_source_package_id") == record.get("consumer_package_id")), None)
         if material is None:
             return
-        provider_guid = record.get("resolved_provider_guid", "")
-        for node in list(material.node_tree.nodes):
-            if node.get("unity_dependency_binding_source") == "dependency_resolver" and node.get("unity_dependency_provider_guid") == provider_guid:
-                node.image = None
+        expected = record.get("applied_texture_state")
+        if expected is None:
+            record["status"] = UNVERIFIED_TEXTURE_STATE
+            return
+        current = _texture_signature(record, material)
+        if current != expected:
+            provider_image_removed = (current is not None and current.get("image") is None
+                                      and expected.get("image")
+                                      and not any(item.get("_vapb_dependency_image_token") == expected["image"]
+                                                  for item in bpy.data.images)
+                                      and {key: value for key, value in current.items() if key != "image"}
+                                      == {key: value for key, value in expected.items() if key != "image"})
+            if not provider_image_removed:
+                record["status"] = USER_EDIT_PRESERVED
+                return
+        node = material.node_tree.nodes.get(str(record.get("texture_node_name", "")))
+        node.image = None
+        node["unity_dependency_binding_source"] = ""
+        node["unity_dependency_provider_guid"] = ""
+        record["binding_source"] = ""
+        record.pop("applied_texture_state", None)
         return
     consumer = _find_consumer(record)
     if consumer is None or not getattr(consumer, "data", None) or not hasattr(consumer.data, "materials"):
@@ -357,21 +438,26 @@ def capture_material_texture_dependencies(scene: Any, materials: Iterable[Any]) 
         family = str(material.get("unity_shader_family", ""))
         shader_name = str(material.get("unity_shader_name", ""))
         canonical = canonical_texture_properties(textures, family, shader_name)
-        canonical_guids = {
-            str((textures.get(property_name) or {}).get("guid", "")): role
-            for role, property_name in canonical.items()
-        }
-        normalized_guids = {
-            str((normalized.get(key) or {}).get("guid", "")): role
-            for key, role in (("base_color_tex", TextureRole.BASE_COLOR), ("normal_tex", TextureRole.NORMAL), ("emission_tex", TextureRole.EMISSION), ("metallic_tex", TextureRole.METALLIC))
-            if normalized.get(key)
-        }
+        canonical_properties = {property_name: role for role, property_name in canonical.items()}
+        roles_by_guid: dict[str, set[TextureRole]] = {}
+        for role, property_name in canonical.items():
+            guid = str((textures.get(property_name) or {}).get("guid", ""))
+            if guid:
+                roles_by_guid.setdefault(guid, set()).add(role)
+        for key, role in (("base_color_tex", TextureRole.BASE_COLOR), ("normal_tex", TextureRole.NORMAL), ("emission_tex", TextureRole.EMISSION), ("metallic_tex", TextureRole.METALLIC)):
+            guid = str((normalized.get(key) or {}).get("guid", ""))
+            if guid:
+                roles_by_guid.setdefault(guid, set()).add(role)
         seen_roles: set[TextureRole] = set()
         for property_name, texture in textures.items():
             target_guid = str((texture or {}).get("guid", ""))
             if not target_guid:
                 continue
-            role = normalized_guids.get(target_guid) or canonical_guids.get(target_guid) or classify_texture_property(family, shader_name, property_name)
+            role = canonical_properties.get(property_name) or classify_texture_property(family, shader_name, property_name)
+            if role == TextureRole.PRESERVE_ONLY:
+                candidates = roles_by_guid.get(target_guid, set())
+                if len(candidates) == 1:
+                    role = next(iter(candidates))
             if role in {TextureRole.BASE_COLOR, TextureRole.NORMAL, TextureRole.EMISSION, TextureRole.METALLIC, TextureRole.ROUGHNESS, TextureRole.OCCLUSION}:
                 if role in seen_roles:
                     continue
