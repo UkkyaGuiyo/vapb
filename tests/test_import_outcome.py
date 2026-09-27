@@ -1,0 +1,76 @@
+"""Public, synthetic user-facing import outcome controls."""
+
+import unittest
+
+from unitypackage_blender_importer.unity.import_outcome import summarize_import_outcome
+
+
+def projection(*, records=(), issues=()):
+    return {"records": list(records), "issues": list(issues)}
+
+
+def dependency(status, *, kind="PREFAB_RENDERER_MATERIAL", label=""):
+    return {"dependency_type": kind, "status": status,
+            "binding_status": "BOUND" if status == "RESOLVED_LOCAL" else status,
+            "texture_label": label}
+
+
+class ImportOutcomeTests(unittest.TestCase):
+    def test_a_resolved_has_no_false_warning(self):
+        result = summarize_import_outcome(
+            [projection(records=[{"material_status": "EXACT"}])],
+            [dependency("RESOLVED_LOCAL"), dependency("UNRESOLVED", kind="MATERIAL_TEXTURE", label="Preserve Only")],
+        )
+        self.assertEqual(result["overall"], "SUCCESS")
+        self.assertEqual(result["counts"]["RESOLVED"], 1)
+        self.assertEqual(result["counts"]["MISSING_DEPENDENCY"], 0)
+
+    def test_b_model_source_is_unknown_object_not_missing_material(self):
+        result = summarize_import_outcome(
+            [projection(issues=[{"code": "UNRESOLVED_SOURCE", "instance_edge_path": [{}]}])],
+            [dependency("RESOLVED_LOCAL")],
+        )
+        self.assertEqual(result["overall"], "PARTIAL")
+        self.assertEqual(result["counts"]["UNRESOLVED_IDENTITY"], 1)
+        self.assertEqual(result["counts"]["MISSING_DEPENDENCY"], 0)
+        self.assertFalse(result["items"][0]["object_known"])
+        self.assertIn("UnityPackage", result["items"][0]["reason"])
+
+    def test_c_ambiguous_native_candidate_is_not_resolved(self):
+        result = summarize_import_outcome([projection(issues=[{"code": "NATIVE_AMBIGUOUS"}])], [])
+        self.assertEqual(result["counts"]["AMBIGUOUS"], 1)
+        self.assertEqual(result["counts"]["RESOLVED"], 0)
+
+    def test_d_missing_provider_is_distinct_from_identity(self):
+        result = summarize_import_outcome([], [dependency("UNRESOLVED")])
+        self.assertEqual(result["counts"]["MISSING_DEPENDENCY"], 1)
+        self.assertEqual(result["counts"]["UNRESOLVED_IDENTITY"], 0)
+
+    def test_e_alias_uncertainty_keeps_nested_scope_without_guessing_object(self):
+        issue = {"code": "UNRESOLVED_ALIAS_OVERRIDE", "uncertainty_scope": "NESTED_INSTANCE"}
+        result = summarize_import_outcome([projection(issues=[issue])], [])
+        self.assertEqual(result["counts"]["UNRESOLVED_IDENTITY"], 1)
+        self.assertEqual(result["items"][0]["scope"], "Importルート 1 の入れ子Prefab個体")
+        self.assertFalse(result["items"][0]["object_known"])
+
+    def test_f_exact_witness_binding_is_counted_not_required(self):
+        result = summarize_import_outcome(
+            [projection(records=[{"material_status": "PARTIAL"}])],
+            [dependency("RESOLVED_LOCAL")],
+        )
+        self.assertEqual(result["overall"], "SUCCESS")
+        self.assertEqual(result["counts"]["RESOLVED"], 1)
+
+    def test_missing_consumer_is_not_a_missing_provider(self):
+        result = summarize_import_outcome([], [dependency("MISSING_CONSUMER")])
+        self.assertEqual(result["counts"]["UNRESOLVED_IDENTITY"], 1)
+        self.assertEqual(result["counts"]["MISSING_DEPENDENCY"], 0)
+
+    def test_unknown_issue_fails_explained_not_success(self):
+        result = summarize_import_outcome([projection(issues=[{"code": "FUTURE_CODE"}])], [])
+        self.assertEqual(result["counts"]["ERROR"], 1)
+        self.assertEqual(result["overall"], "PARTIAL")
+
+
+if __name__ == "__main__":
+    unittest.main()

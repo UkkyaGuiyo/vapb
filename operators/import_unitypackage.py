@@ -31,6 +31,7 @@ from ..blender.dependency_resolver import capture_dependency, capture_material_t
 from ..blender.performance import PerformanceTimer, diagnostic_add, reset_diagnostic_stats
 from ..blender.progress_overlay import ImportProgressOverlay
 from ..ui.import_panel import draw_import_options
+from ..blender.import_outcome import scene_import_outcome
 from ..unity.asset_database import AssetDatabase
 from ..unity.package_identity import PackageIdentity
 from ..unity.source_store import archive_source
@@ -1841,6 +1842,11 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 current_package.update(dependency_counts)
                 save_scene_registry(scene, current_registry)
             self.report({"INFO"}, f"Dependency resolution: local={dependency_counts['resolved_local']} cross-package={dependency_counts['resolved_cross_package']} unresolved={dependency_counts['unresolved']} ambiguous={dependency_counts['ambiguous']}")
+            outcome = scene_import_outcome(scene)
+            if outcome["overall"] == "PARTIAL":
+                self.report({"WARNING"},
+                    "Scene内のImport記録に未解決項目があります。"
+                    "3DビューのNキー > VAPB > Import結果を確認してください")
             collisions = load_scene_registry(scene).detect_collisions()
             if collisions:
                 self.report({"WARNING"}, f"Detected {len(collisions)} cross-package identity collision(s)")

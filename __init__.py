@@ -47,6 +47,7 @@ if bpy is not None:
         register_scene_properties as register_renderer_properties,
         unregister_scene_properties as unregister_renderer_properties,
     )
+    from .ui.import_outcome_panel import CLASSES as IMPORT_OUTCOME_PANEL_CLASSES
 
     def register():
         for cls in PREFERENCES_CLASSES:
@@ -71,7 +72,7 @@ if bpy is not None:
         for cls in SEMANTIC_CLEANUP_CLASSES + SEMANTIC_CLEANUP_PANEL_CLASSES:
             bpy.utils.register_class(cls)
         register_semantic_cleanup_properties()
-        for cls in RENDERER_OPERATOR_CLASSES + RENDERER_PANEL_CLASSES:
+        for cls in RENDERER_OPERATOR_CLASSES + RENDERER_PANEL_CLASSES + IMPORT_OUTCOME_PANEL_CLASSES:
             bpy.utils.register_class(cls)
         register_renderer_properties()
         for cls in UNITYPACKAGE_FILE_HANDLER_CLASSES:
@@ -91,7 +92,7 @@ if bpy is not None:
         for cls in reversed(PACKAGE_EXPORT_CLASSES):
             bpy.utils.unregister_class(cls)
         unregister_renderer_properties()
-        for cls in reversed(RENDERER_OPERATOR_CLASSES + RENDERER_PANEL_CLASSES):
+        for cls in reversed(RENDERER_OPERATOR_CLASSES + RENDERER_PANEL_CLASSES + IMPORT_OUTCOME_PANEL_CLASSES):
             bpy.utils.unregister_class(cls)
         unregister_weight_transfer_properties()
         for cls in reversed(WEIGHT_TRANSFER_CLASSES + WEIGHT_TRANSFER_PANEL_CLASSES):

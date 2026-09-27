@@ -81,6 +81,12 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 
 取り込み時にはUnityPackageの原bytesを **原本の保管先** に保存します。空欄ではBlenderユーザーデータ内の `vapb/sources/` を使用し、内容のSHA-256ごとに一つ保存します。一時展開を削除してもこの原本は残り、.blend内のPackage台帳に保管先を記録します。容量が必要なため、別ドライブを使う場合は取り込み時に保管先を指定してください。別PCへ移すときは.blendだけでなく保管先も保全してください。既存原本の内容が壊れている場合は上書きせず停止します。
 
+### Import後に白い部分や未解決の項目がある場合
+
+3Dビューで **Nキー → VAPB → Import結果** を開いてください。Import時に一部を安全に復元できなかった場合は警告も表示します。この一覧はPrefab/Rendererの解析記録と依存関係の結果から作られ、`.blend`を保存して開き直しても確認できます。件数は証拠記録の数であり、白いMeshの数ではありません。Material/Texture不足、対応するMeshを証明できない状態、候補が複数ある状態を分けて表示します。対象Objectを証拠から確定できない項目はObject選択を提示しません。
+
+`Import結果` が未解決なしでも、Avatar全体の再現やUnityへの往復成功を保証するものではありません。白い見た目だけで問題を断定しません。Materialを手で割り当てた見た目上の変更も、Unity上のRenderer identityが確定したことにはなりません。通常のImportにUnityやwitnessは不要です。特定のbinaryモデルで対応証拠が足りない場合のみ、同一revision用のmodel witnessが役立つ可能性があります。現行のwitness生成は開発者向け手順で、アドオン内に一般ユーザー用の生成ボタンはありません。
+
 ### Rendererとskinの明示的な対応確認
 
 取り込んだPrefabの意味上のObject（Empty等）と、FBX由来のskin Meshは別の対象です。自動対応の根拠がない場合は、3Dビューの **VAPB → Renderer対応** でPrefabルートと実際のMeshを選び、対象Rendererの **このRendererを確定** を押して確認します。
