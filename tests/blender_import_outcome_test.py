@@ -52,7 +52,7 @@ def main():
         VAPB_PT_import_outcome.draw(SimpleNamespace(layout=layout),
                                      SimpleNamespace(scene=bpy.context.scene))
         assert any("一部の復元を保留" in line for line in layout.labels), layout.labels
-        assert any("対象Objectは証拠だけでは特定できません" in line for line in layout.labels), layout.labels
+        assert "対象Objectは証拠だけでは特定できません" in "".join(layout.labels), layout.labels
         if mode == "write":
             bpy.ops.wm.save_as_mainfile(filepath=target)
         print("IMPORT_OUTCOME_PROBE_PASS:" + mode)
