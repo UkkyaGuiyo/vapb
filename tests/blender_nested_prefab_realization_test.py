@@ -11,7 +11,11 @@ import bpy
 
 
 FIXTURES = Path(__file__).with_name("unity_alias_oracle")
-EXPECTED = json.loads((FIXTURES / "null_pair_expected.json").read_text(encoding="utf-8"))
+TRANSFORM_ORACLE = os.environ.get("VAPB_TRANSFORM_ORACLE") == "1"
+EXPECTED = json.loads((FIXTURES / ("transform_expected.json" if TRANSFORM_ORACLE else
+                                  "null_pair_expected.json")).read_text(encoding="utf-8"))
+PAIR_FILE = "Transform_TwoInstances.prefab" if TRANSFORM_ORACLE else "Null_TwoInstances.prefab"
+SOURCE_FILE = "Transform_Source.prefab" if TRANSFORM_ORACLE else "Null_Source.prefab"
 MAPPING = json.loads((FIXTURES / "null_fbx_witness_mapping.json").read_text(encoding="utf-8"))
 REPORT = json.loads((FIXTURES / "null_fbx_witness_result.json").read_text(encoding="utf-8"))
 PACKAGE_MODULE = "unitypackage_blender_importer"
@@ -48,7 +52,7 @@ def create_witness(package, output):
         assert model is not None and pair is not None
         assert model.path.suffix.lower() == ".fbx" and pair.path.suffix.lower() == ".prefab"
         assert source_sha256(pair.path) == source_sha256(
-            FIXTURES / "Assets" / "Oracle" / "Null_TwoInstances.prefab")
+            FIXTURES / "Assets" / "Oracle" / PAIR_FILE)
         fbx_sha = source_sha256(model.path)
         meta_sha = source_sha256(Path(str(model.path) + ".meta"))
         assert (fbx_sha, meta_sha) == (
@@ -65,6 +69,10 @@ def check_scene(renamed=False, root_context_id=None):
     from unitypackage_blender_importer.blender.dependency_resolver import load_dependency_registry
     from unitypackage_blender_importer.blender.import_outcome import scene_import_outcome
     from unitypackage_blender_importer.blender.model_witness_bridge import find_witness_consumer
+    if TRANSFORM_ORACLE:
+        from unitypackage_blender_importer.unity.prefab_parser import parse_prefab
+        source_prefab = parse_prefab(FIXTURES / "Assets" / "Oracle" / SOURCE_FILE)
+        EXPECTED["sourceRendererFileId"] = str(source_prefab.renderer_documents()[0].file_id)
 
     roots = []
     for obj in bpy.context.scene.objects:
@@ -116,7 +124,7 @@ def check_scene(renamed=False, root_context_id=None):
     assert semantic_parent is not None and semantic_parent is null_obj.parent.parent
     assert semantic_parent.parent is root
     from unitypackage_blender_importer.unity.prefab_parser import parse_prefab
-    pair = parse_prefab(FIXTURES / "Assets" / "Oracle" / "Null_TwoInstances.prefab")
+    pair = parse_prefab(FIXTURES / "Assets" / "Oracle" / PAIR_FILE)
     pair_root, = pair.root_game_objects()
     assert semantic_parent["unity_prefab_file_id"] == str(pair_root.file_id)
     assert source_obj.parent.get("_vapb_model_parent_status") == "EXACT"
@@ -131,6 +139,36 @@ def check_scene(renamed=False, root_context_id=None):
     # binding, so the shared DATA table must stay at its original None value.
     assert source_obj.data.materials[0] is None
     assert scene_import_outcome(bpy.context.scene)["overall"] == "SUCCESS"
+    from mathutils import Matrix
+    from unitypackage_blender_importer.blender.hierarchy_builder import unity_position
+    bpy.context.view_layer.update()
+    native = source_template[0].matrix_world.copy()
+    if TRANSFORM_ORACLE:
+        basis = Matrix(((-1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))
+        def converted(values):
+            matrix = Matrix(tuple(tuple(values[row * 4 + col] for col in range(4))
+                                  for row in range(4)))
+            return basis @ matrix @ basis.inverted()
+        expected_parent = converted(EXPECTED["parentLocal"])
+        assert max(abs(semantic_parent.matrix_world[i][j] - expected_parent[i][j])
+                   for i in range(4) for j in range(4)) < 1e-5
+        cases = ((source_obj, converted(EXPECTED["aLocal"]), converted(EXPECTED["aWorld"])),
+                 (null_obj, converted(EXPECTED["bLocal"]), converted(EXPECTED["bWorld"])))
+    else:
+        cases = tuple((member, Matrix.Translation(unity_position(position)), None)
+                      for member, position in ((source_obj, EXPECTED["materialALocalPosition"]),
+                                               (null_obj, EXPECTED["nullLocalPosition"])))
+    for member, instance_local, unity_world in cases:
+        expected_world = ((unity_world if unity_world is not None else
+                           semantic_parent.matrix_world @ instance_local) @ native)
+        local_error = max(abs(member.parent.matrix_local[i][j] - instance_local[i][j])
+                          for i in range(4) for j in range(4))
+        member_local_error = max(abs(member.matrix_local[i][j] - native[i][j])
+                                 for i in range(4) for j in range(4))
+        world_error = max(abs(member.matrix_world[i][j] - expected_world[i][j])
+                          for i in range(4) for j in range(4))
+        print("NESTED_MATRIX_ERROR", local_error, member_local_error, world_error)
+        assert local_error < 1e-5 and member_local_error < 1e-5 and world_error < 1e-5
     if renamed:
         assert source_template[0].name == "Renamed Native Source"
         assert source_obj.name == "Renamed Material Occurrence"

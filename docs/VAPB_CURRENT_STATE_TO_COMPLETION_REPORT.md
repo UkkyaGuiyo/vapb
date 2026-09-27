@@ -2,6 +2,55 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Nested PrefabInstance Transform checkpoint — 2026-09-28
+
+**First loss boundary:** the normal Import already parsed Unity-authored root
+Transform modifications and retained each ordered instance edge, but created
+identity PrefabInstance Empties and preserved each member's old world matrix
+when reparenting. The two public occurrences therefore both remained at native
+world X `-1.5`. A pre-fix 4×4 matrix assertion failed with node-local and
+member-world maximum errors of `1.0`.
+
+| Layer | Local / parent / world evidence | Authority | Status |
+| --- | --- | --- | --- |
+| source Prefab root Transform | Serialized nonidentity position `(0.25,-0.5,0.75)`, quaternion and scale `(1.2,0.8,-1.1)`; no parent | source Prefab exact revision | PROVEN |
+| containing Prefab root | Serialized position `(2,-1,3)`, rotation and nonuniform scale `(1.5,0.7,1.1)` | containing Prefab Transform | PROVEN |
+| PrefabInstance modifications | Per instance fileID, source GUID and source root Transform fileID; A position X `10`, B rotation and scale Y `1.4` | Unity-authored YAML and Unity 2022.3.22f1 public API | PROVEN |
+| effective instance TRS | Complete source local TRS with matching root-target properties overlaid by component; EulerAnglesHint ignored | exact source/default plus scoped modifications | DERIVED; Unity matrix parity PROVEN for fixture |
+| instance edge path | Ordered container/source GUID, revisions and instance fileID | occurrence projection | PROVEN |
+| Blender instance Empty | local matrix from existing Unity-to-Blender basis and effective TRS; parent is exact semantic Transform Empty | serialized parent plus converted effective TRS | PROVEN for depth 1 |
+| native FBX source Object | Imported once; its matrix is native FBX placement, not source Prefab default | FBX receipt | PROVEN |
+| member Object | local matrix remains native; world is semantic parent × instance local × native local | fresh member receipt and verified parent | PROVEN for the witnessed MeshRenderer fixture |
+
+The native receipt and all attached roots must validate before an instance node
+or member is marked `_vapb_model_transform_status = EXACT`. Missing or malformed
+source defaults, wrong root-target GUID, nonnumeric override, incomplete parent
+chain, missing revision or native receipt remain `UNRESOLVED`; descendant
+Transform overrides are not applied to the whole instance. Depth > 1 remains
+`CONTAINER_EDGE_ONLY` and does not gain an `EXACT` Transform claim.
+
+The existing two-instance public package now has Blender member world X
+`-0.5`/`-2.5` after converting Unity local X `-1`/`+1`, with distinct Object
+realizations, shared Mesh and independent Material A/explicit-null Object slots.
+The independent [Unity matrix oracle](../tests/unity_alias_oracle/transform_expected.json)
+uses a nonidentity source root, transformed parent and negative scale. Normal
+Blender Import and new-process `.blend` reopen agree with its converted 4×4
+matrices: maximum instance-local error `7.2e-7`, native member-local error
+`9.6e-7`, and final world error `4.8e-7`. Rename and repeated Material resolve
+preserve the matrices. Four scratch-only mutations (skip instance transform,
+discard source defaults, restore old world after reparent, reuse sibling TRS)
+each failed the matrix assertion with nonzero Blender exit.
+
+Python **402 PASS** and compileall PASS. The prior direct semantic-scale
+regression passes its six local/world matrix checks. The separate
+`blender_hierarchy_transform_test.py` still fails its `TR-005` total Empty
+count: current FBX import yields additional native Empty objects. This test and
+`hierarchy_builder.py` were not changed in this checkpoint; the test's bone
+identity assertion also fails if only that count assertion is bypassed. Its
+current Blender 5.2.1 expectation needs separate diagnosis. `Import Outcome`
+`SUCCESS` summarizes projection/Material evidence, not complete Avatar or
+Transform fidelity. Export, VRC runtime, Skin and private corpus are unverified.
+
 ## Nested Prefab native realization checkpoint — 2026-09-27
 
 The pre-change normal-operator RED used a Unity 2022.3.22f1 exported public

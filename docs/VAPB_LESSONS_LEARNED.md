@@ -23,6 +23,7 @@ VAPB開発で得た一般化可能な失敗知識、反証、設計原則を記�
 | LESSON-013 | PreviewとUnity stateを分ける | MATERIAL / UNITY |
 | LESSON-014 | Preserveと再生成を分ける | EXPORT |
 | LESSON-015 | 仮説を分ける実験を選ぶ | DEBUGGING |
+| LESSON-019 | PrefabInstance identityとplacementを分ける | PREFAB / TRANSFORM |
 
 ## LESSON-001 — 表示名はidentityではない
 
@@ -509,6 +510,36 @@ Rendererとmodel Rendererのclassが異なる正当な使用、複数Meshが一�
 [Unity source-chain oracle](../tests/unity_alias_oracle/Assets/Editor/VapbNullChainOracle.cs)、
 [repeated-instance oracle](../tests/unity_alias_oracle/Assets/Editor/VapbNullRepeatedOracle.cs)、
 [normal operator Blender probe](../tests/blender_nested_prefab_realization_test.py)。
+
+## LESSON-019 — PrefabInstance identityだけではplacementは再現されない
+
+**Status:** ACTIVE · **Domain:** PREFAB / TRANSFORM
+
+**以前の考え:** ordered instance edgeと別Object realizationを作れば、source
+FBXのnative matrixを維持したまま配置も自然に再現される。
+
+**何が違ったか:** UnityがserializeしたPrefabInstance root Transform overrideを
+Emptyへ反映しておらず、memberの再親子付け時には旧world matrixを復元していた。
+公開の2個体でidentityとMaterialは別でも、world位置は同じだった。
+
+**現在の原則:** source Prefab rootのposition/quaternion/scaleをexact revisionで
+読み、instance fileIDとsource root Transform identityが一致するpropertyだけを
+component単位でoverlayする。既存basis変換を通してinstance Emptyへ一度だけ
+適用し、native FBX matrixはmember localとして保つ。root以外のTransform
+override、曖昧なsource/parent、無効な値やreceiptは推測せず`UNRESOLVED`。
+`EXACT`は親、source、native receiptまで揃った後に付ける。
+
+**適用範囲:** 公開Unity 2022.3.22f1のMeshRenderer、depth-1 PrefabInstance。
+非identity source、回転、非一様/負scale、変換済み親、2個体、改名とsave/reopenで
+4×4 matrix parityを確認。depth > 1、Skin、Export/VRCは未証明。
+
+**再調査条件:** Unityが部分quaternion overrideを非unitのまま有効化する例、
+semantic親がnative Objectである例、depth > 1のlocal placement証拠が得られた場合。
+
+**根拠:** [Current State](VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md)、
+[Unity-authored Transform Oracle](../tests/unity_alias_oracle/Assets/Editor/VapbTransformOracle.cs)、
+[effective TRS tests](../tests/test_prefab_instance_transform.py)、
+[normal operator matrix probe](../tests/blender_nested_prefab_realization_test.py)。
 
 ## How to use this document
 

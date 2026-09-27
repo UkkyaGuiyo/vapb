@@ -16,6 +16,7 @@ from typing import Any
 from uuid import uuid4
 
 import bpy  # type: ignore
+from mathutils import Matrix  # type: ignore
 from bpy_extras.io_utils import ImportHelper  # type: ignore
 from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 
@@ -23,7 +24,7 @@ from ..blender.fbx_importer import apply_import_options, import_fbx_files
 from ..blender.fbx_receipt import copy_with_receipt, source_sha256, validate_receipt_continuity
 from ..blender.model_witness_bridge import matches_witnessed_source, plan_witness_realizations, plan_witness_material_dependencies, reserve_witness_slots
 from ..blender.renderer_binding import semantic_owner_id
-from ..blender.hierarchy_builder import build_prefab_hierarchy
+from ..blender.hierarchy_builder import apply_transform, build_prefab_hierarchy
 from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package, save_scene_registry
 from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, apply_prefab_modification_materials, build_material_library
 from ..blender.texture_loader import load_textures_from_database
@@ -41,6 +42,7 @@ from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab, ref_guid
 from ..unity.effective_prefab import EffectivePrefabResolver, ModelSourceSemanticIndex
 from ..unity.occurrence_projection import PrefabSource, project_occurrences, model_instance_plans
+from ..unity.prefab_instance_transform import has_complete_transform, resolve_instance_transform
 from ..unity.model_identity_witness import load_model_witness
 from ..unity.physbone_parser import extract_physbone_snapshot
 from ..unity.prefab_candidate_analyzer import (
@@ -1581,6 +1583,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     prefab_roots.append(prefab_root)
                     prefab_object_maps.append(prefab_object_map)
                     instance_nodes = {}
+                    resolved_instance_nodes = set()
+                    attached_native = {}
                     for edge_path, copied in model_instances:
                         parent = prefab_root
                         for depth, step in enumerate(edge_path, 1):
@@ -1602,9 +1606,27 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                                         owner_id = (prefab.transforms[transform_id].game_object_id
                                                     if transform_id in prefab.transforms else None)
                                         mapped = prefab_object_map.get(owner_id)
-                                        if transform_id == 0 or mapped is not None:
+                                        if transform_id == 0 or (mapped is not None and mapped.type == "EMPTY"
+                                                                 and has_complete_transform(prefab, transform_id)):
                                             parent = mapped or prefab_root
                                             node["_vapb_model_parent_status"] = "EXACT"
+                                            source = projection_source(step["source_package_id"],
+                                                                       step["source_prefab_guid"])
+                                            if (source is not None and source.prefab is not None
+                                                    and step["container_asset_guid"] == prefab.asset_guid
+                                                    and step["container_package_id"] == package_key.source_package_id
+                                                    and step["container_revision_sha256"] == source_sha256(prefab.path)
+                                                    and source.revision_sha256 == step["source_revision_sha256"]
+                                                    and source_sha256(source.prefab.path) == source.revision_sha256
+                                                    and source.prefab.asset_guid == step["source_prefab_guid"]
+                                                    and source.package_id == step["source_package_id"]):
+                                                effective = resolve_instance_transform(
+                                                    prefab, step["prefab_instance_file_id"], source.prefab)
+                                                if effective is not None:
+                                                    apply_transform(node, effective)
+                                                    resolved_instance_nodes.add(node)
+                                                    node["_vapb_source_root_transform_id"] = str(
+                                                        effective.source_transform_id)
                                 else:
                                     node["_vapb_model_parent_status"] = "CONTAINER_EDGE_ONLY"
                                 node.parent = parent
@@ -1612,9 +1634,26 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             parent = node
                         for source_object, member_object in copied.items():
                             if source_object.parent not in copied:
-                                world = member_object.matrix_world.copy()
-                                member_object.parent = parent
-                                member_object.matrix_world = world
+                                proven = (len(edge_path) == 1 and parent in resolved_instance_nodes
+                                          and validate_receipt_continuity(source_object)
+                                          and validate_receipt_continuity(member_object)
+                                          and member_object.get("_vapb_fbx_source_realization_id")
+                                          == source_object.get("_vapb_fbx_realization_id"))
+                                attached_native.setdefault(parent, []).append(proven)
+                                if proven:
+                                    bpy.context.view_layer.update()
+                                    native_local = member_object.matrix_local.copy()
+                                    member_object.parent = parent
+                                    member_object.matrix_parent_inverse = Matrix.Identity(4)
+                                    member_object.matrix_basis = native_local
+                                    member_object["_vapb_model_transform_status"] = "EXACT"
+                                else:
+                                    world = member_object.matrix_world.copy()
+                                    member_object.parent = parent
+                                    member_object.matrix_world = world
+                    for node, results in attached_native.items():
+                        if node in resolved_instance_nodes and results and all(results):
+                            node["_vapb_model_transform_status"] = "EXACT"
                     composition_member = next(
                         (item for item in self._composition_plan.members
                          if item.unity_path == prefab_unity_path),
