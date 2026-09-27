@@ -124,14 +124,14 @@ class UnrelatedModelOverrideTests(unittest.TestCase):
                               key=lambda row: row["source_key"]["renderer_file_id"], reverse=True)
         self.objects = [native(record) for record in self.records]
 
-    def test_unrelated_unknown_cannot_poison_two_proven_renderer_slots(self):
+    def test_unrelated_null_and_orphan_cannot_poison_two_proven_renderer_slots(self):
         self.assertEqual([-20, -21, -22],
                          [record["source_key"]["renderer_file_id"] for record in self.records])
-        self.assertEqual(["PARTIAL", "PARTIAL", "UNKNOWN"],
+        self.assertEqual(["PARTIAL", "PARTIAL", "PARTIAL"],
                          [record["material_status"] for record in self.records])
-        self.assertEqual(["UNRESOLVED_OVERRIDE", "UNRESOLVED_OVERRIDE"],
+        self.assertEqual(["UNRESOLVED_OVERRIDE"],
                          [issue["code"] for issue in self.projection.issues])
-        self.assertEqual(-999, self.projection.issues[1]["target_renderer_file_id"])
+        self.assertEqual(-999, self.projection.issues[0]["target_renderer_file_id"])
         bindings, issues = plan_witness_realizations(self.records, self.objects, self.witness)
         self.assertEqual([], issues)
         dependencies = plan_witness_material_dependencies(bindings, PACKAGE_SHA)
@@ -139,7 +139,7 @@ class UnrelatedModelOverrideTests(unittest.TestCase):
                          [dependency["target_guid"] for dependency in dependencies])
         self.assertEqual(["native-0", "native-1"],
                          [dependency["consumer_native_realization_id"] for dependency in dependencies])
-        self.assertEqual({}, self.records[2]["materials"])
+        self.assertEqual({0: None}, self.records[2]["materials"])
         root = {"_vapb_root_context_id": "root-context",
                 "_vapb_witness_package_sha256": PACKAGE_SHA,
                 "_vapb_renderer_occurrences": json.dumps(self.projection.to_dict())}
@@ -246,11 +246,13 @@ class UnrelatedModelOverrideTests(unittest.TestCase):
                     self.assertEqual("PARTIAL", row["material_status"])
                     self.assertEqual({-20: MATERIAL_A, -21: MATERIAL_B}.get(renderer_id),
                                      row["materials"].get(0, {}).get("guid"))
-        # E6: a genuinely matching invalid reference must stop only R1.
+        # E6: a matching explicit null is known, but native slot realization
+        # remains partial for a model source with no serialized slot count.
         projection, witness = fixture(
             self.temp.name, operations=valid[:2] + [(-20, None, MODEL, 10)])
         rows = {row["source_key"]["renderer_file_id"]: row for row in projection.records}
-        self.assertEqual("UNKNOWN", rows[-20]["material_status"])
+        self.assertEqual("PARTIAL", rows[-20]["material_status"])
+        self.assertEqual({0: None}, rows[-20]["materials"])
         self.assertEqual("PARTIAL", rows[-21]["material_status"])
         bindings, issues = plan_witness_realizations(
             projection.records, [native(row) for row in projection.records], witness)

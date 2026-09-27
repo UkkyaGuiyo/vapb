@@ -311,7 +311,10 @@ def project_occurrences(
                            if record["source_key"]["source_asset_guid"] == modification.target_guid.lower()
                            and record["source_key"]["renderer_file_id"] == modification.target_file_id]
                 material = _reference(modification.object_reference)
-                if len(matches) != 1 or material is None:
+                explicit_null = (isinstance(modification.object_reference, dict)
+                                 and ref_file_id(modification.object_reference) == 0
+                                 and not ref_guid(modification.object_reference))
+                if len(matches) != 1 or (material is None and not explicit_null):
                     # A stripped component in the child asset can alias a
                     # Renderer below one of its nested Prefab instances. The
                     # next source local ID may be Unity-generated and absent
@@ -365,7 +368,8 @@ def project_occurrences(
                           target_source_guid=modification.target_guid,
                           target_renderer_file_id=modification.target_file_id, slot_index=slot)
                     continue
-                matches[0]["materials"][slot] = {**material, "source_package_id": source.package_id}
+                matches[0]["materials"][slot] = (
+                    None if explicit_null else {**material, "source_package_id": source.package_id})
             records.extend(child_records)
         return records
 

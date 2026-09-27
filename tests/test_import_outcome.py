@@ -69,6 +69,34 @@ class ImportOutcomeTests(unittest.TestCase):
         self.assertEqual(result["counts"]["ERROR"], 1)
         self.assertEqual(result["overall"], "PARTIAL")
 
+    def test_texture_state_without_receipt_is_unverified_not_an_unknown_error(self):
+        result = summarize_import_outcome([], [dependency(
+            "UNVERIFIED_TEXTURE_STATE", kind="MATERIAL_TEXTURE", label="Base Color")])
+        self.assertEqual(result["counts"]["UNRESOLVED_IDENTITY"], 1)
+        self.assertEqual(result["counts"]["ERROR"], 0)
+
+    def test_preserved_texture_edit_explains_texture_not_material_slot(self):
+        result = summarize_import_outcome([], [dependency(
+            "USER_EDIT_PRESERVED", kind="MATERIAL_TEXTURE", label="Base Color")])
+        self.assertEqual(result["counts"]["PARTIAL"], 1)
+        self.assertIn("Texture", result["items"][0]["reason"])
+
+    def test_known_null_material_is_not_reported_as_fully_realized(self):
+        result = summarize_import_outcome([projection(records=[{
+            "material_status": "EXACT", "material_slot_count": 1,
+            "materials": {"0": None},
+        }])], [])
+        self.assertEqual(result["overall"], "PARTIAL")
+        self.assertEqual(result["counts"]["PARTIAL"], 1)
+        self.assertEqual(result["items"][0]["code"], "NULL_MATERIAL_REALIZATION_UNVERIFIED")
+
+    def test_partial_material_source_with_known_null_is_not_fully_realized(self):
+        result = summarize_import_outcome([projection(records=[{
+            "material_status": "PARTIAL", "materials": {0: None},
+        }])], [])
+        self.assertEqual(result["overall"], "PARTIAL")
+        self.assertEqual(result["items"][0]["code"], "NULL_MATERIAL_REALIZATION_UNVERIFIED")
+
 
 if __name__ == "__main__":
     unittest.main()

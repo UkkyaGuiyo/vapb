@@ -230,13 +230,32 @@ Transform:
         self.assertIsNone(record["material_slot_count"])
         self.assertEqual([(CHILD, record["instance_edge_path"])], model_instance_sources(result))
 
-    def test_null_override_marks_material_unknown(self):
+    def test_explicit_null_override_is_known_null(self):
         root = self.source(ROOT, instance(ids=(10,), target=-20).replace(
             f"objectReference: {{fileID: 2100000, guid: {OVERRIDE}, type: 2}}",
             "objectReference: {fileID: 0}",
         ))
         result = self.project(root, self.source(CHILD, direct()))
         self.assertEqual(1, len(result.records))
+        self.assertEqual("EXACT", result.records[0]["material_status"])
+        self.assertEqual({0: None}, result.records[0]["materials"])
+        self.assertEqual([], result.issues)
+
+    def test_malformed_override_without_guid_stays_unknown(self):
+        root = self.source(ROOT, instance(ids=(10,), target=-20).replace(
+            f"objectReference: {{fileID: 2100000, guid: {OVERRIDE}, type: 2}}",
+            "objectReference: {fileID: 2100000}",
+        ))
+        result = self.project(root, self.source(CHILD, direct()))
+        self.assertEqual("UNKNOWN", result.records[0]["material_status"])
+        self.assertEqual("UNRESOLVED_OVERRIDE", result.issues[0]["code"])
+
+    def test_malformed_zero_reference_with_invalid_guid_stays_unknown(self):
+        root = self.source(ROOT, instance(ids=(10,), target=-20).replace(
+            f"objectReference: {{fileID: 2100000, guid: {OVERRIDE}, type: 2}}",
+            "objectReference: {fileID: 0, guid: invalid}",
+        ))
+        result = self.project(root, self.source(CHILD, direct()))
         self.assertEqual("UNKNOWN", result.records[0]["material_status"])
         self.assertEqual("UNRESOLVED_OVERRIDE", result.issues[0]["code"])
 

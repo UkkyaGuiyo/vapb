@@ -141,15 +141,19 @@ class PrefabData:
                 if not target or not prop:
                     continue
                 value_match = re.search(r"\n\s*value:\s*(.*?)(?=\n\s*objectReference:|\n\s*- target:|\Z)", chunk, re.DOTALL)
-                ref_match = re.search(
-                    r"objectReference:\s*\{\s*fileID:\s*(-?\d+).*?guid:\s*([0-9a-fA-F]{32}).*?(?:type:\s*(-?\d+))?\s*\}",
-                    chunk, re.DOTALL,
-                )
+                ref_match = re.search(r"objectReference:\s*\{([^}]*)\}", chunk)
                 reference = None
                 if ref_match:
-                    reference = {"fileID": int(ref_match.group(1)), "guid": ref_match.group(2).lower()}
-                    if ref_match.group(3) is not None:
-                        reference["type"] = int(ref_match.group(3))
+                    fields = ref_match.group(1)
+                    file_id = re.search(r"\bfileID:\s*(-?\d+)\b", fields)
+                    ref_guid_match = re.search(r"\bguid:\s*([0-9a-fA-F]{32})\b", fields)
+                    ref_type = re.search(r"\btype:\s*(-?\d+)\b", fields)
+                    if re.fullmatch(r"\s*fileID:\s*0\s*", fields):
+                        reference = {"fileID": 0}
+                    elif file_id and ref_guid_match:
+                        reference = {"fileID": int(file_id.group(1)), "guid": ref_guid_match.group(1).lower()}
+                        if ref_type:
+                            reference["type"] = int(ref_type.group(1))
                 result.append(PrefabModification(
                     int(target.group(1)), target.group(2).lower(), int(target.group(3)) if target.group(3) else None,
                     prop.group(1).strip(), (value_match.group(1).strip() if value_match else None), reference, chunk,

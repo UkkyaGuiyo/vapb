@@ -76,6 +76,14 @@ def summarize_import_outcome(projections: list[dict], dependencies: list[dict]) 
                 reason = "未分類のImport問題が記録されています。"
                 action = "復元済みと扱わず、VAPB開発者へ報告してください。"
             add(category, code, scope, reason, action)
+        for record in projection.get("records", ()):
+            materials = record.get("materials", {})
+            if (record.get("material_status") in {"EXACT", "PARTIAL"}
+                    and isinstance(materials, dict)
+                    and any(value is None for value in materials.values())):
+                add("PARTIAL", "NULL_MATERIAL_REALIZATION_UNVERIFIED", _scope(record, number),
+                    "UnityのMaterialなし指定は確定していますが、Blenderスロットへの反映は未確認です。",
+                    "対応するRendererとMeshのスロットを確認してください。")
 
     for record in dependencies:
         kind = str(record.get("dependency_type", ""))
@@ -105,9 +113,14 @@ def summarize_import_outcome(projections: list[dict], dependencies: list[dict]) 
             add("UNRESOLVED_IDENTITY", status, scope,
                 "BlenderのMaterialスロットの状態を安全に確認できません。",
                 "スロットを調べてから、明示的に対応を確認してください。")
+        elif status == "UNVERIFIED_TEXTURE_STATE":
+            add("UNRESOLVED_IDENTITY", status, scope,
+                "保存済みTexture接続の編集有無を確認できません。",
+                "BlenderのTexture接続を確認してください。")
         elif status == "USER_EDIT_PRESERVED":
             add("PARTIAL", status, scope,
-                "ユーザーが編集したMaterialスロットを上書きせず保持しました。",
+                "ユーザーが編集したTexture接続を上書きせず保持しました。" if kind == "MATERIAL_TEXTURE"
+                else "ユーザーが編集したMaterialスロットを上書きせず保持しました。",
                 "見た目の変更とUnity上の識別情報を別々に確認してください。")
         elif status == "UNSUPPORTED":
             add("UNSUPPORTED", status, scope,
