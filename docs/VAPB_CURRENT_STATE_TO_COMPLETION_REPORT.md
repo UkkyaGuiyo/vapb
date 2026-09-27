@@ -2,6 +2,28 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Unknown Boundary / Texture dependency checkpoint — 2026-09-27
+
+Unity-authored public S3 confirms that removing a source Renderer can leave a
+serialized Material modification with no expanded Renderer target. VAPB keeps
+that override unresolved; the Unity Inspector's Unused Overrides label was
+not observed. Synthetic Blender RED/GREEN identified two separate defects:
+same-Image Texture roles collapsed into one dependency, and re-resolution
+overwrote a user's Image or node connection. Role-specific records and
+applied-state checks now pass focused save/reopen and edit sequences. A saved
+private split-package scene's earlier 243→102 `BOUND` drift consists of 141
+`Preserve Only` records whose providers are absent after reopen; populated
+Image node count did not change. Existing scenes lacking a Texture edit receipt
+are now reported `UNVERIFIED_TEXTURE_STATE` on re-resolution without changing
+their nodes. [Evidence, limits, and next validation](UNKNOWN_BOUNDARY_FAULT_DISCOVERY_20260927.md).
+
+A Unity 2022.3.22f1 authored explicit-null Variant proved another boundary:
+`objectReference: {fileID: 0}` is a known null Material, whereas the old parser
+discarded it and projection reported an unresolved override. Projection now
+keeps the known null slot; Import Outcome remains `PARTIAL` until native Blender
+slot clearing is verified. Material array-size and precedence cases remain
+unexecuted.
+
 ## Case B residual override causal result — 2026-09-27
 
 Unity 2022.3.22f1 compared a copied private Prefab with one residual Material

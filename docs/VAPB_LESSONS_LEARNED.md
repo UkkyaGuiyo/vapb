@@ -418,6 +418,61 @@ Unity Shaderの正本として逆出力しない。
 [residual U causal audit](CASE_B_RESIDUAL_OVERRIDE_CAUSAL_AUDIT.md)、
 [synthetic counterfactual test](../tests/test_unrelated_model_override.py)。
 
+## LESSON-016 — Texture provider identity and binding role are different
+
+**Status:** ACTIVE · **Domain:** DEPENDENCY / USER EDIT
+
+**以前の考え:** 同じMaterialとImage GUIDなら、Texture依存は一件として
+扱えるように見えた。再解決で同じproviderを見つければ、既存nodeへ安全に
+再適用できるとも考えられた。
+
+**何が違ったか:** 一つのImageをBase ColorとEmissionへ使う公開fixtureでは、
+GUIDだけのkeyとrole推定が一方の用途を消した。また、ユーザーがImageや
+node接続を編集した後の再解決は、その編集を上書きした。保存済みの依存
+statusだけでは、nodeを現在もVAPBが管理している証拠にならない。
+
+**現在の原則:** Texture依存はMaterial、Unity property、semantic role、
+provider identityを区別する。自動再適用・解除の前に、VAPBが適用した
+Imageと対象node接続の状態を照合する。照合receiptが無い旧Sceneや
+編集済みnodeは推測で上書きしない。registryの`BOUND`件数は表示中の
+Image node数やExport成功の代理指標にしない。
+
+**適用範囲:** Blender 5.2.1での公開synthetic Texture resolverと、
+保存済みprivate Sceneの集計観測。全Shader graph編集やfresh private
+round-tripの保証ではない。
+
+**再調査条件:** 同じrole/propertyでも別occurrenceごとに異なるTextureが
+必要な反例、または編集判定の取りこぼしが見つかった場合。
+
+**根拠:** [Unknown Boundary checkpoint](UNKNOWN_BOUNDARY_FAULT_DISCOVERY_20260927.md)、
+[dual-role test](../tests/blender_texture_role_collision_test.py)、
+[edit sequence test](../tests/blender_texture_user_edit_test.py)。
+
+## LESSON-017 — 明示的なnull参照と解析不能を分ける
+
+**Status:** ACTIVE · **Domain:** UNITY PREFAB SEMANTICS
+
+**以前の考え:** PrefabのMaterial overrideにGUIDが無い場合は、対象Materialを
+解析できないので一律にUNKNOWNとするのが安全に見えた。
+
+**何が違ったか:** Unity 2022.3.22f1が作った公開Variantでは、
+`m_Materials.Array.data[0]` の `objectReference: {fileID: 0}` は有効な
+「Materialなし」という最終値だった。これを捨てると、元Materialを残す
+可能性がある。GUID欠落の非zero参照は引き続き解析不能だった。
+
+**現在の原則:** Unityが明示的にserializeしたnullを既知の値として記録し、
+不完全な非null参照とは区別する。ただしUnity意味の確定とBlender Object
+slotへの実適用は別の証明であり、後者が未確認ならImport成功を宣言しない。
+
+**適用範囲:** 公開Unity-authored一slot VariantのParser/Projection。
+Native Blender realization、配列長変更、多段Variant precedenceは未証明。
+
+**再調査条件:** Unityが別形式のnull Material overrideをserializeする例、
+またはslot実現との相違が見つかった場合。
+
+**根拠:** [Unknown Boundary checkpoint](UNKNOWN_BOUNDARY_FAULT_DISCOVERY_20260927.md)、
+[Unity-authored null fixture test](../tests/test_unity_null_material_oracle.py)。
+
 ## How to use this document
 
 1. 新しい仮説を立てる前に、該当DomainのLessonと根拠・適用範囲を確認する。
