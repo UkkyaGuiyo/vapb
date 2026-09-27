@@ -96,12 +96,16 @@ def plan_witness_material_dependencies(bindings, package_sha256):
         if record.get("material_status") not in {"EXACT", "PARTIAL"}:
             continue
         for slot, reference in record.get("materials", {}).items():
-            if not isinstance(reference, dict) or not reference.get("guid"):
+            if not isinstance(slot, int) or slot < 0:
                 continue
-            if not isinstance(slot, int) or slot < 0 or not reference.get("file_id"):
+            explicit_null = (reference is None and record.get("material_status") == "EXACT"
+                             and isinstance(record.get("material_slot_count"), int)
+                             and slot < record["material_slot_count"])
+            if not explicit_null and (not isinstance(reference, dict)
+                                      or not reference.get("guid") or not reference.get("file_id")):
                 continue
-            dependencies.append({
-                "dependency_type": "PREFAB_RENDERER_MATERIAL",
+            dependency = {
+                "dependency_type": "CLEAR_MATERIAL_SLOT" if explicit_null else "PREFAB_RENDERER_MATERIAL",
                 "consumer_package_id": record["mesh"]["source_package_id"],
                 "consumer_root_context_id": record["root_context_id"],
                 "consumer_occurrence_id": record["occurrence_id"],
@@ -114,10 +118,12 @@ def plan_witness_material_dependencies(bindings, package_sha256):
                 "consumer_fbx_object_receipt_id": str(obj["_vapb_fbx_object_receipt_id"]),
                 "consumer_fbx_mesh_receipt_id": str(obj["_vapb_fbx_mesh_receipt_id"]),
                 "consumer_slot_index": slot,
-                "target_guid": str(reference["guid"]).lower(),
-                "target_file_id": str(reference["file_id"]),
                 "identity_bridge": "UNITY_MODEL_WITNESS",
-            })
+            }
+            if not explicit_null:
+                dependency["target_guid"] = str(reference["guid"]).lower()
+                dependency["target_file_id"] = str(reference["file_id"])
+            dependencies.append(dependency)
     return dependencies
 
 
@@ -147,11 +153,22 @@ def find_witness_consumer(record, objects):
                 or projected_mesh["source_sha256"] != record["consumer_fbx_sha256"]):
             return None
         materials = matching[0]["materials"]
-        reference = materials.get(str(record["consumer_slot_index"]),
-                                  materials.get(record["consumer_slot_index"]))
-        if (not isinstance(reference, dict)
-                or str(reference.get("guid", "")).lower() != str(record.get("target_guid", "")).lower()
-                or str(reference.get("file_id", "")) != str(record.get("target_file_id", ""))):
+        slot = record["consumer_slot_index"]
+        if str(slot) in materials:
+            reference = materials[str(slot)]
+        elif slot in materials:
+            reference = materials[slot]
+        else:
+            return None
+        if record.get("dependency_type") == "CLEAR_MATERIAL_SLOT":
+            if (reference is not None or matching[0].get("material_status") != "EXACT"
+                    or not isinstance(matching[0].get("material_slot_count"), int)
+                    or not isinstance(slot, int) or slot < 0
+                    or slot >= matching[0]["material_slot_count"]):
+                return None
+        elif (not isinstance(reference, dict)
+              or str(reference.get("guid", "")).lower() != str(record.get("target_guid", "")).lower()
+              or str(reference.get("file_id", "")) != str(record.get("target_file_id", ""))):
             return None
     except (KeyError, TypeError, ValueError, AttributeError):
         return None

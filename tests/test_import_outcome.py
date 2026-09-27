@@ -97,6 +97,23 @@ class ImportOutcomeTests(unittest.TestCase):
         self.assertEqual(result["overall"], "PARTIAL")
         self.assertEqual(result["items"][0]["code"], "NULL_MATERIAL_REALIZATION_UNVERIFIED")
 
+    def test_null_slot_requires_scoped_live_proof(self):
+        row = {"root_context_id": "root", "occurrence_id": "occurrence",
+               "material_status": "EXACT", "material_slot_count": 1,
+               "materials": {0: None}}
+        projected = [projection(records=[row])]
+        key = ("root", "occurrence", 0)
+        self.assertEqual("PARTIAL", summarize_import_outcome(projected, [])["overall"])
+        self.assertEqual("PARTIAL", summarize_import_outcome(
+            projected, [], verified_null_slots={("other", "occurrence", 0)})["overall"])
+        self.assertEqual("SUCCESS", summarize_import_outcome(
+            projected, [], verified_null_slots={key})["overall"])
+        edited = summarize_import_outcome(projected, [{
+            "dependency_type": "CLEAR_MATERIAL_SLOT", "status": "USER_EDIT_PRESERVED",
+        }], edited_null_slots={key})
+        self.assertEqual("PARTIAL", edited["overall"])
+        self.assertEqual(["USER_EDIT_PRESERVED"], [item["code"] for item in edited["items"]])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -104,6 +104,35 @@ def root(current):
 
 
 class ModelWitnessBridgeTests(unittest.TestCase):
+    def test_explicit_null_is_typed_clear_only_with_exact_slot_evidence(self):
+        current = record()
+        current["materials"] = {0: None}
+        obj = native()
+        bindings, issues = plan_witness_realizations([current], [obj], witness())
+        self.assertEqual([], issues)
+        operations = plan_witness_material_dependencies(bindings, PACKAGE_SHA)
+        self.assertEqual(["CLEAR_MATERIAL_SLOT"], [item["dependency_type"] for item in operations])
+        self.assertNotIn("target_guid", operations[0])
+        self.assertIs(obj, find_witness_consumer(operations[0], [root(current), obj]))
+        for field, wrong in (("consumer_occurrence_id", "other"),
+                             ("consumer_native_realization_id", "other"),
+                             ("consumer_root_context_id", "other"),
+                             ("consumer_package_id", "other"),
+                             ("consumer_source_package_sha256", "0" * 64),
+                             ("consumer_fbx_object_receipt_id", "other")):
+            changed = {**operations[0], field: wrong}
+            with self.subTest(field=field):
+                self.assertIsNone(find_witness_consumer(changed, [root(current), obj]))
+        self.assertIsNone(find_witness_consumer(operations[0], [root(current), obj, native()]))
+        for status, count, reference in (("UNKNOWN", 1, None), ("EXACT", None, None),
+                                         ("EXACT", 0, None), ("EXACT", 1, {"file_id": 2100000}),
+                                         ("EXACT", 1, {"fileID": 0, "guid": "invalid"})):
+            changed = copy.deepcopy(current)
+            changed["material_status"] = status
+            changed["material_slot_count"] = count
+            changed["materials"] = {0: reference}
+            self.assertEqual([], plan_witness_material_dependencies([(changed, obj)], PACKAGE_SHA))
+
     def test_projected_renderer_joins_one_native_mesh(self):
         bindings, issues = plan_witness_realizations([record()], [native()], witness())
         self.assertEqual([], issues)

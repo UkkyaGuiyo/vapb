@@ -461,17 +461,22 @@ round-tripの保証ではない。
 可能性がある。GUID欠落の非zero参照は引き続き解析不能だった。
 
 **現在の原則:** Unityが明示的にserializeしたnullを既知の値として記録し、
-不完全な非null参照とは区別する。ただしUnity意味の確定とBlender Object
-slotへの実適用は別の証明であり、後者が未確認ならImport成功を宣言しない。
+不完全な非null参照とは区別する。exact Renderer occurrenceとnative Mesh
+receiptを証明できた場合だけ、provider探索とは別のclear operationで
+Blender **Object** slotを空にする。適用後のユーザー編集は再resolveで守る。
+Import成功は保存されたprojectionだけでなくlive Object slotから判断する。
 
-**適用範囲:** 公開Unity-authored一slot VariantのParser/Projection。
-Native Blender realization、配列長変更、多段Variant precedenceは未証明。
+**適用範囲:** 公開Unity-authored一slot VariantのParser/Projectionと、
+exact FBX witnessで特定したnative Objectへの直接realization、save/reopen。
+通常の`.unitypackage` operatorではnested Variantのnative sourceが
+`NATIVE_MISSING`のため未成立。配列長変更、多段Variant precedence、Exportは未証明。
 
 **再調査条件:** Unityが別形式のnull Material overrideをserializeする例、
 またはslot実現との相違が見つかった場合。
 
-**根拠:** [Unknown Boundary checkpoint](UNKNOWN_BOUNDARY_FAULT_DISCOVERY_20260927.md)、
-[Unity-authored null fixture test](../tests/test_unity_null_material_oracle.py)。
+**根拠:** [Current State](VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md)、
+[Unity-authored null fixture test](../tests/test_unity_null_material_oracle.py)、
+[native FBX realization probe](../tests/blender_unity_null_fbx_test.py)。
 
 ## How to use this document
 

@@ -1,8 +1,11 @@
 {
-  "unityVersion": "2022.3.22f1",
-  "sourceSlots": 1,
-  "sourceHasMaterial": true,
-  "variantSlots": 1,
-  "variantIsNull": true,
-  "nullModifications": 1
+    "unityVersion": "2022.3.22f1",
+    "sourceSlots": 1,
+    "sourceHasMaterial": true,
+    "variantSlots": 1,
+    "variantIsNull": true,
+    "nullModifications": 1,
+    "sharedMeshSame": true,
+    "meshGuid": "f541e92add760c94f8a680387bf92122",
+    "meshFileId": "1644867115675099630"
 }

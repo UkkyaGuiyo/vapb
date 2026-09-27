@@ -29,6 +29,11 @@ class UnityNullMaterialOracleTests(unittest.TestCase):
         self.assertEqual(1, observed["variantSlots"])
         self.assertTrue(observed["variantIsNull"])
         self.assertEqual(1, observed["nullModifications"])
+        self.assertTrue(observed["sharedMeshSame"])
+        model_guid = next(line.split(":", 1)[1].strip() for line in
+                          (ASSETS / "Model.fbx.meta").read_text(encoding="utf-8").splitlines()
+                          if line.startswith("guid:"))
+        self.assertEqual(model_guid, observed["meshGuid"])
         base = source("Null_Source.prefab")
         variant = source("Null_Override.prefab")
         modifications = [item for item in variant.prefab.modifications()
@@ -42,6 +47,8 @@ class UnityNullMaterialOracleTests(unittest.TestCase):
         self.assertEqual(1, projection.records[0]["material_slot_count"])
         self.assertEqual({0: None}, projection.records[0]["materials"])
         self.assertEqual("EXACT", projection.records[0]["material_status"])
+        self.assertEqual(model_guid, projection.records[0]["mesh"]["mesh_guid"])
+        self.assertEqual(int(observed["meshFileId"]), projection.records[0]["mesh"]["mesh_file_id"])
 
 
 if __name__ == "__main__":

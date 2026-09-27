@@ -22,8 +22,8 @@ from unitypackage_blender_importer.tests.test_unrelated_model_override import ( 
 
 def check_scene():
     rows = json.loads(bpy.data.objects["SyntheticRoot"]["_vapb_renderer_occurrences"])
-    assert [row["material_status"] for row in rows["records"]] == ["PARTIAL", "PARTIAL", "UNKNOWN"]
-    assert len(rows["issues"]) == 2
+    assert [row["material_status"] for row in rows["records"]] == ["PARTIAL", "PARTIAL", "PARTIAL"]
+    assert len(rows["issues"]) == 1
     registry = load_dependency_registry(bpy.context.scene)["dependencies"]
     assert len(registry) == 2
     assert {item["target_guid"] for item in registry} == {MATERIAL_A, MATERIAL_B}
@@ -54,7 +54,7 @@ def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     with tempfile.TemporaryDirectory(prefix="vapb_synthetic_override_") as temp:
         projection, witness = fixture(temp)
-    assert [item["code"] for item in projection.issues] == ["UNRESOLVED_OVERRIDE"] * 2
+    assert [item["code"] for item in projection.issues] == ["UNRESOLVED_OVERRIDE"]
     root = bpy.data.objects.new("SyntheticRoot", None)
     bpy.context.scene.collection.objects.link(root)
     root["_vapb_root_context_id"] = "root-context"

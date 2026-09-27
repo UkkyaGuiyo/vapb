@@ -2,6 +2,40 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Explicit-null Material realization checkpoint — 2026-09-27
+
+The prior loss boundary was `plan_witness_material_dependencies()`: it planned
+provider dependencies for GUID references but dropped `materials[slot] = None`.
+An explicit, exact null now plans a `CLEAR_MATERIAL_SLOT` operation, scoped to
+the proven Renderer occurrence, root, package revision, witnessed FBX
+Model/Geometry identity, and native Object receipt. It clears only the
+**Object** Material slot after reserving its capacity. A null is not a missing
+Material provider. Re-resolve preserves a later user Material edit.
+
+Public Unity 2022.3.22f1 authored a source/Variant pair sharing an FBX Mesh:
+source slot count 1 with Material, Variant slot count 1 with explicit null.
+The first-party Unity model witness matched the exact public FBX and `.meta`
+revision and signed Mesh local ID. Blender 5.2.1 verified source Material A,
+Variant `OBJECT` slot 0 `None`, shared Mesh data still Material A, two resolves,
+new-process save/reopen, and Import Outcome `SUCCESS` only after live native
+proof. Separate controls covered A/null/C slot isolation, wrong identity,
+unresolved identity, malformed references, and user edit preservation. Before
+the fix the Blender probe failed because the Variant retained Material A;
+isolated mutations that skipped the clear or cleared shared DATA instead also
+failed the probe.
+
+The normal `.unitypackage` operator was also tried with a Unity-exported,
+entirely public synthetic package and exact-revision witness. It safely
+returned `NATIVE_MISSING` / `NULL_MATERIAL_REALIZATION_UNVERIFIED` and left the
+slot untouched: the nested Variant projection has `PREFAB_LOCAL` source kind,
+while `model_instance_sources()` currently creates native model instances only
+for `MODEL_SOURCE`. This is a separate nested-Prefab source realization boundary;
+the direct witnessed-native probe does **not** prove the full operator Import
+path. No name/order fallback was added. `EXPORT_NULL_ROUNDTRIP=UNVERIFIED`.
+The next Core action is to establish the native model instance for this public
+nested Variant from serialized source relations, then rerun the same exact
+package Import through the installable add-on.
+
 ## Unknown Boundary / Texture dependency checkpoint — 2026-09-27
 
 Unity-authored public S3 confirms that removing a source Renderer can leave a

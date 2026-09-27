@@ -1,0 +1,34 @@
+{
+    "schema_version": "vapb-source-fbx-model-witness-1",
+    "source_fbx_sha256": "7123dad66d3a4c0ec138a33363f9e6a315ad76a020a9206b949d2b1db3a9501a",
+    "source_meta_sha256": "f03a7d4f5019fcd723148784aeb466fa923715b6a2c2b9d39d617d1020c39e2b",
+    "model_guid": "f541e92add760c94f8a680387bf92122",
+    "unity_version": "2022.3.22f1",
+    "importer_readability_changed": true,
+    "models": [
+        {
+            "model_uid": "217920941",
+            "transform_local_id": "-3429068724803565643",
+            "game_object_local_id": "4361033162551527945",
+            "renderers": [
+                {
+                    "class_id": "23",
+                    "renderer_local_id": "-5277769136950918531",
+                    "mesh_local_id": "1644867115675099630"
+                }
+            ]
+        },
+        {
+            "model_uid": "182359999",
+            "transform_local_id": "4867340868722583869",
+            "game_object_local_id": "1994239195629690909",
+            "renderers": [
+                {
+                    "class_id": "23",
+                    "renderer_local_id": "94586058172442283",
+                    "mesh_local_id": "-5462180051159159439"
+                }
+            ]
+        }
+    ]
+}

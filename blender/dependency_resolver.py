@@ -61,7 +61,7 @@ def capture_dependency(scene: Any, record: dict[str, Any]) -> dict[str, Any]:
     existing = next((item for item in dependencies if _record_key(item) == key), None)
     if existing is None:
         existing = dict(record)
-        if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"}:
+        if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL", "CLEAR_MATERIAL_SLOT"}:
             consumer = _find_consumer(record)
             if consumer is not None and getattr(consumer, "data", None) and hasattr(consumer.data, "materials"):
                 slot = int(record.get("consumer_slot_index", 0))
@@ -301,15 +301,58 @@ def _bind_texture(record: dict[str, Any], image: Any) -> bool:
     return True
 
 
+def _clear_material_slot(record: dict[str, Any]) -> bool:
+    consumer = _find_consumer(record)
+    slot = record.get("consumer_slot_index")
+    if (consumer is None or not isinstance(slot, int) or slot < 0
+            or slot >= len(consumer.material_slots)):
+        record["status"] = MISSING_CONSUMER
+        return False
+    material_slot = consumer.material_slots[slot]
+    applied_null = record.get("applied_slot_state") == {"link": "OBJECT", "material": None}
+    if applied_null and (material_slot.link != "OBJECT" or material_slot.material is not None):
+        record["status"] = USER_EDIT_PRESERVED
+        return False
+    current = ({"link": "OBJECT", "material": None} if applied_null
+               else _slot_signature(consumer, slot))
+    expected = record.get("applied_slot_state") or record.get("initial_slot_state")
+    if current is None or expected is None:
+        record["status"] = UNVERIFIED_SLOT_STATE
+        return False
+    if current != expected:
+        record["status"] = USER_EDIT_PRESERVED
+        return False
+    material_slot.link = "OBJECT"
+    material_slot.material = None
+    record["applied_slot_state"] = _slot_signature(consumer, slot)
+    record["binding_source"] = "dependency_resolver"
+    return True
+
+
 def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
     registry = load_dependency_registry(scene)
     try:
         provider_provenance = json.loads(str(scene.get("unitypackage_provider_provenance", "{}")))
     except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
         provider_provenance = {}
-    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "unverified_texture_state": 0, "late_bindings_applied": 0}
+    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "unverified_texture_state": 0, "null_realized": 0, "late_bindings_applied": 0}
     changed = False
     for record in registry.get("dependencies", []):
+        if record.get("dependency_type") == "CLEAR_MATERIAL_SLOT":
+            record["provider_status"] = "NOT_REQUIRED"
+            applied = _clear_material_slot(record)
+            record["binding_status"] = "BOUND" if applied else record["status"]
+            if applied:
+                record["status"] = "NULL_REALIZED"
+                counts["null_realized"] += 1
+                counts["late_bindings_applied"] += 1
+            else:
+                counts[{USER_EDIT_PRESERVED: "user_edit_preserved",
+                        UNVERIFIED_SLOT_STATE: "unverified_slot_state"}.get(
+                            record["status"], "missing_consumer")] += 1
+            record["resolution_provenance"] = "SERIALIZED_EXPLICIT_NULL"
+            changed = True
+            continue
         provider_type = "Material" if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"} else "Image"
         candidates = _providers(record.get("target_guid", ""), provider_type)
         local = [item for item in candidates if item.get("unity_source_package_id") == record.get("consumer_package_id")]

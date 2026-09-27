@@ -31,7 +31,7 @@ _UNSUPPORTED_ISSUES = {
     "UNRESOLVED_SKIN_OVERRIDE",
 }
 
-_MATERIAL_TYPES = {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"}
+_MATERIAL_TYPES = {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL", "CLEAR_MATERIAL_SLOT"}
 
 
 def _scope(issue: dict, root_number: int) -> str:
@@ -44,7 +44,8 @@ def _scope(issue: dict, root_number: int) -> str:
     return f"Importルート {root_number}"
 
 
-def summarize_import_outcome(projections: list[dict], dependencies: list[dict]) -> dict:
+def summarize_import_outcome(projections: list[dict], dependencies: list[dict],
+                             verified_null_slots=(), edited_null_slots=()) -> dict:
     """Classify existing projection issues and dependency outcomes only.
 
     `RESOLVED` is the number of bound Material dependency records, not an
@@ -55,6 +56,8 @@ def summarize_import_outcome(projections: list[dict], dependencies: list[dict]) 
         "AMBIGUOUS", "UNSUPPORTED", "ERROR",
     )}
     items: list[dict] = []
+    verified_null_slots = set(verified_null_slots)
+    edited_null_slots = set(edited_null_slots)
 
     def add(category: str, code: str, scope: str, reason: str, action: str) -> None:
         counts[category] += 1
@@ -78,17 +81,21 @@ def summarize_import_outcome(projections: list[dict], dependencies: list[dict]) 
             add(category, code, scope, reason, action)
         for record in projection.get("records", ()):
             materials = record.get("materials", {})
-            if (record.get("material_status") in {"EXACT", "PARTIAL"}
-                    and isinstance(materials, dict)
-                    and any(value is None for value in materials.values())):
-                add("PARTIAL", "NULL_MATERIAL_REALIZATION_UNVERIFIED", _scope(record, number),
-                    "UnityのMaterialなし指定は確定していますが、Blenderスロットへの反映は未確認です。",
-                    "対応するRendererとMeshのスロットを確認してください。")
+            if record.get("material_status") in {"EXACT", "PARTIAL"} and isinstance(materials, dict):
+                for slot, value in materials.items():
+                    slot_number = int(slot) if str(slot).lstrip("-").isdigit() else slot
+                    key = (record.get("root_context_id"), record.get("occurrence_id"), slot_number)
+                    if value is None and key not in verified_null_slots | edited_null_slots:
+                        add("PARTIAL", "NULL_MATERIAL_REALIZATION_UNVERIFIED", _scope(record, number),
+                            "UnityのMaterialなし指定は確定していますが、Blenderスロットへの反映は未確認です。",
+                            "対応するRendererとMeshのスロットを確認してください。")
 
     for record in dependencies:
         kind = str(record.get("dependency_type", ""))
         status = str(record.get("status", ""))
         if kind not in _MATERIAL_TYPES | {"MATERIAL_TEXTURE"}:
+            continue
+        if kind == "CLEAR_MATERIAL_SLOT" and status == "NULL_REALIZED":
             continue
         if kind == "MATERIAL_TEXTURE" and record.get("texture_label") == "Preserve Only":
             continue
