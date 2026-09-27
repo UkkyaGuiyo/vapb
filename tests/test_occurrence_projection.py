@@ -271,11 +271,12 @@ Transform:
         self.assertEqual([], result.issues)
         self.assertEqual(1, len(result.records))
 
-    def test_missing_override_target_marks_subtree_material_unknown(self):
+    def test_missing_override_target_does_not_poison_unrelated_renderer(self):
         root = self.source(ROOT, instance(ids=(10,), target=-999))
         result = self.project(root, self.source(CHILD, direct()))
         self.assertEqual(1, len(result.records))
-        self.assertEqual("UNKNOWN", result.records[0]["material_status"])
+        self.assertEqual("EXACT", result.records[0]["material_status"])
+        self.assertEqual(MAT, result.records[0]["materials"][0]["guid"])
         self.assertEqual("UNRESOLVED_OVERRIDE", result.issues[0]["code"])
 
     def test_material_slot_count_and_explicit_null(self):

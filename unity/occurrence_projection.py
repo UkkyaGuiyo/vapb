@@ -312,7 +312,9 @@ def project_occurrences(
                            and record["source_key"]["renderer_file_id"] == modification.target_file_id]
                 material = _reference(modification.object_reference)
                 if len(matches) != 1 or material is None:
-                    for record in matches if matches else child_records:
+                    # An override for an unprojected Renderer has no proven
+                    # effect on independently identified sibling Renderers.
+                    for record in matches:
                         record["material_status"] = "UNKNOWN"
                     issue("AMBIGUOUS_OVERRIDE_TARGET" if len(matches) > 1 else "UNRESOLVED_OVERRIDE",
                           child_path, target_source_guid=modification.target_guid,
