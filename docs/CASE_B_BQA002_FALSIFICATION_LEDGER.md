@@ -51,6 +51,14 @@ the existing witness tests. The two same-source nested occurrences are checked
 separately. Mutation tests prove no guessed binding on malformed inputs; they
 are not claims about Unity's behavior on those malformed inputs.
 
+At the `ea0dca4` checkpoint, the exact-commit ZIP passed isolated Blender
+5.2.1 install/enable/disable. Fresh private Case B witness-assisted Import,
+save/reopen, and identity-bound Object-slot re-resolution preserved the prior
+validated binding scope; its unrelated override remains unresolved. The
+normal Case A control also preserved its prior Material result after fresh
+Import and reopen. Only aggregate success status is recorded publicly;
+commercial input, local scene, raw logs, and identities stay outside Git.
+
 ## Discriminating experiments
 
 The fixed synthetic base has two identified Renderer components, distinct

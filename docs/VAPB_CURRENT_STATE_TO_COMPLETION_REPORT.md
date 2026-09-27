@@ -17,6 +17,13 @@ the override by name/order. This preserves the earlier exact Case B unrelated-U
 rule; it does not establish exact R1/R2 attribution in an alias instance.
 Public Oracle, RED/GREEN tests, limitations, and controls are recorded in the
 [B-QA-002 falsification ledger](CASE_B_BQA002_FALSIFICATION_LEDGER.md).
+The public Python suite passed 375 tests, `compileall` passed, and the Blender
+synthetic unrelated-override probe passed import and new-process reopen. The
+exact checkpoint ZIP passed isolated install/enable/disable. Fresh private
+Case B witness-assisted Import/reopen retained its validated Object-slot
+bindings, and the normal Case A control retained its Material result. These
+checks do not prove exact package-only R1/R2 alias attribution, UnityPackage
+export, or VRC round-trip.
 
 **Next action after this checkpoint:** investigate B-QA-001 no-witness Import
 guidance while retaining the new alias uncertainty boundary.
