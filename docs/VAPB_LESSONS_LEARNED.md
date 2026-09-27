@@ -478,6 +478,38 @@ exact FBX witnessで特定したnative Objectへの直接realization、save/reop
 [Unity-authored null fixture test](../tests/test_unity_null_material_oracle.py)、
 [native FBX realization probe](../tests/blender_unity_null_fbx_test.py)。
 
+## LESSON-018 — Prefab-local Rendererとmodel resourceを別のidentityとして橋渡しする
+
+**Status:** ACTIVE · **Domain:** NESTED PREFAB / NATIVE REALIZATION
+
+**以前の考え:** Native model instance候補は`MODEL_SOURCE`のrecordだけから列挙すれば
+十分であり、`PREFAB_LOCAL`はPrefab内のsemantic Rendererとして保持すればよい。
+
+**何が違ったか:** 公開Unity 2022.3.22f1 Variantでは、source Rendererはsource
+Prefabに属する`PREFAB_LOCAL`だが、MeshFilterは別のFBX model assetのMeshを
+exact GUID/signed local IDで参照していた。`MODEL_SOURCE`だけを列挙すると、
+projectionは正しくてもnative member Objectが作られず`NATIVE_MISSING`になる。
+
+**現在の原則:** source Renderer identity、Mesh resource identity、occurrence
+identity、native realization identityを分ける。serialized PrefabInstance chainと
+Mesh参照が揃い、optional witnessでFBX revisionとModel/Geometry UIDを検証できる
+場合だけ、既存のnative source Objectからinstance pathごとに別Objectをcopyする。
+名前、順序、候補数はidentity根拠にしない。証拠が欠ければ作らない。
+
+**適用範囲:** 公開のMeshRenderer/二重nested instance、exact witness付き通常
+UnityPackage Import。Material Aとexplicit nullのObject slot独立性、保存後再読込、
+別root、改名後のbindingを確認。Unity `-1/+1` に対しBlender Meshは両方`-1.5`で
+Transformは未解決。Skin/Armature、Export、VRC runtimeは未証明。
+
+**再調査条件:** witnessなしのpackage-only Mesh local ID bridge、Prefab-local
+Rendererとmodel Rendererのclassが異なる正当な使用、複数Meshが一つのRendererへ
+対応する実例が見つかった場合。
+
+**根拠:** [Current State](VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md)、
+[Unity source-chain oracle](../tests/unity_alias_oracle/Assets/Editor/VapbNullChainOracle.cs)、
+[repeated-instance oracle](../tests/unity_alias_oracle/Assets/Editor/VapbNullRepeatedOracle.cs)、
+[normal operator Blender probe](../tests/blender_nested_prefab_realization_test.py)。
+
 ## How to use this document
 
 1. 新しい仮説を立てる前に、該当DomainのLessonと根拠・適用範囲を確認する。

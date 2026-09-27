@@ -33,29 +33,76 @@ class ProjectionResult:
         return {"records": self.records, "issues": self.issues}
 
 
-def model_instance_sources(projection: ProjectionResult) -> list[tuple[str, list[dict]]]:
-    """Return each binary model edge once, whether witness resolved it or not."""
-    result = []
-    seen = set()
+def _witnessed_prefab_model(record: dict, witness):
+    """Prove a Prefab-local Renderer reaches a witnessed model Mesh through its source chain."""
+    if witness is None:
+        return None
+    try:
+        if record["occurrence_id"] != occurrence_identity(record):
+            return None
+        path = record["instance_edge_path"]
+        if not path or record["source_key"]["source_kind"] != "PREFAB_LOCAL":
+            return None
+        expected = (record["root_package_id"], record["root_asset_guid"],
+                    record["root_revision_sha256"])
+        for edge in path:
+            if (edge["container_package_id"], edge["container_asset_guid"],
+                    edge["container_revision_sha256"]) != expected:
+                return None
+            expected = (edge["source_package_id"], edge["source_prefab_guid"],
+                        edge["source_revision_sha256"])
+        if expected != (record["source_package_id"],
+                        record["source_key"]["source_asset_guid"],
+                        record["source_revision_sha256"]):
+            return None
+        mesh = record["mesh"]
+        guid = mesh["mesh_guid"].lower()
+        if witness.source_shas.get(guid) != mesh["source_sha256"].lower():
+            return None
+        row = witness.mesh(guid, mesh["mesh_file_id"])
+        if row is None or row.asset_guid != guid or row.class_id != record["renderer_class_id"]:
+            return None
+        return row
+    except (KeyError, TypeError, ValueError, AttributeError):
+        return None
+
+
+def model_instance_plans(projection: ProjectionResult, model_witness=None) -> list[tuple[str, list[dict], tuple | None]]:
+    """Return model edges with exact native targets for witnessed Prefab renderers."""
+    result = {}
     for record in projection.records:
-        if record.get("source_key", {}).get("source_kind") != "MODEL_SOURCE":
-            continue
-        guid = record["source_key"]["source_asset_guid"]
+        if record.get("source_key", {}).get("source_kind") == "MODEL_SOURCE":
+            guid = record["source_key"]["source_asset_guid"]
+            target = None
+        else:
+            row = _witnessed_prefab_model(record, model_witness)
+            if row is None:
+                continue
+            guid = row.asset_guid
+            target = (row.model_uid, row.geometry_uid)
         path = record["instance_edge_path"]
         key = (guid, json.dumps(path, sort_keys=True))
-        if key not in seen:
-            seen.add(key)
-            result.append((guid, path))
+        if key not in result:
+            result[key] = (path, set() if target is not None else None)
+        if target is None:
+            result[key] = (path, None)
+        elif result[key][1] is not None:
+            result[key][1].add(target)
     for issue in projection.issues:
         if issue.get("code") != "UNRESOLVED_SOURCE":
             continue
         guid = issue["source_asset_guid"]
         path = issue["instance_edge_path"]
         key = (guid, json.dumps(path, sort_keys=True))
-        if key not in seen:
-            seen.add(key)
-            result.append((guid, path))
-    return result
+        if key not in result:
+            result[key] = (path, None)
+    return [(guid, path, None if targets is None else tuple(sorted(targets)))
+            for (guid, _), (path, targets) in result.items()]
+
+
+def model_instance_sources(projection: ProjectionResult, model_witness=None) -> list[tuple[str, list[dict]]]:
+    """Return each model edge once; Prefab-local edges require an exact witness."""
+    return [(guid, path) for guid, path, _ in model_instance_plans(projection, model_witness)]
 
 
 def occurrence_identity(record: dict) -> str:

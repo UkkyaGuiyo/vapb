@@ -12,6 +12,17 @@ from ..unity.occurrence_projection import occurrence_identity
 from .fbx_receipt import RECEIPT_VERSION
 
 
+def matches_witnessed_source(obj, asset_guid, source_sha, target_uids):
+    """Select only an FBX Object with the witnessed Model/Geometry receipt."""
+    return (getattr(obj, "type", None) == "MESH"
+            and str(obj.get("_vapb_fbx_source_asset_guid", "")).lower() == asset_guid
+            and str(obj.get("_vapb_fbx_source_asset_sha256", "")).lower() == source_sha
+            and (str(obj.get("_vapb_fbx_model_uid", "")),
+                 str(obj.get("_vapb_fbx_geometry_uid", "")))
+            in {(str(model_uid), str(geometry_uid))
+                for model_uid, geometry_uid in target_uids})
+
+
 def _edge_path(obj):
     raw = obj.get("_vapb_model_instance_edge_path")
     if raw is None:

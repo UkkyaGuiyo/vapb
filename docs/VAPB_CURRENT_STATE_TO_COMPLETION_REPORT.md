@@ -2,6 +2,65 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Nested Prefab native realization checkpoint — 2026-09-27
+
+The pre-change normal-operator RED used a Unity 2022.3.22f1 exported public
+`.unitypackage`: its nested Variant projected one `PREFAB_LOCAL` Renderer with
+exact Mesh GUID/signed local ID and explicit-null slot, but no member Object was
+created. `model_instance_sources()` enumerated only `MODEL_SOURCE`; the live
+Import ended `NATIVE_MISSING` and `NULL_MATERIAL_REALIZATION_UNVERIFIED`.
+
+Independent Unity public APIs observed the Variant Renderer’s immediate and
+original source as the Renderer in the serialized source Prefab, its owning
+GameObject, the FBX Mesh GUID/signed local ID, and the final one-slot null.
+The public source chain is:
+
+| Edge | Evidence |
+| --- | --- |
+| Variant → PrefabInstance → source Prefab | PROVEN: serialized source GUID, instance fileID and exact source revision |
+| source Prefab → Renderer/owner → MeshFilter Mesh | PROVEN: component/owner records and Unity public API comparison |
+| Mesh GUID/local ID → FBX Model/Geometry UID | PROVEN only with the optional exact package/FBX/meta witness |
+| FBX UID → native source Object | PROVEN: native import receipt |
+| source Object → member Object per ordered instance path | PROVEN for this Import: observed `copy_with_receipt`, shared Mesh and fresh realization ID |
+| Unity local/world transform → member placement | UNRESOLVED; see below |
+
+The bounded change admits a `PREFAB_LOCAL` model instance only when the saved
+occurrence identity, every source-chain edge, exact Mesh reference, witness FBX
+revision and Renderer class agree. It does not promote every Prefab-local Mesh,
+choose a unique candidate by count, or use Object names. Without a witness the
+same public package creates no model member from this path and reports the null
+slot unverified. The ordinary Import remains independent of Unity/MCP.
+The selected native Object must also match the witnessed FBX Model and Geometry
+UID receipts; another Mesh in that FBX is excluded.
+
+An additional Unity-authored Prefab contains two instances of the same source
+Renderer, one with Material A and one with explicit null. Its normal package
+Import now creates one native source Object for the relevant FBX primitive and
+two distinct member Objects with one shared Mesh, distinct occurrence paths and
+realization IDs, and independent `OBJECT` Material slots (A / `None`). A second
+Import of the same package creates a separate root context and two more distinct
+member realizations. Object/Material renaming, two resolves, `.blend` save and
+new-process reopen preserve the receipt-based binding. For this public FBX the
+shared DATA slot is **initially `None` and stays `None`**; Material A originates
+in the source Prefab and belongs to its member Object. The earlier direct
+explicit-null control with an A-valued DATA slot also remains a separate
+regression probe.
+
+**Separate structural issue:** Unity public API observed the two instance
+local X positions at `-1` and `+1`; Blender places both target Mesh Objects at
+`-1.5`. Their parent semantic GameObject and separate PrefabInstance nodes are
+identified, but `_vapb_model_transform_status` is `UNRESOLVED`. This checkpoint
+does not claim Transform fidelity or fix coordinate mapping. The fixture uses
+`MeshRenderer`, so Armature/Skin validation is not applicable. Full Export and
+VRC runtime remain unverified.
+
+Public Python suite: **397 PASS**; `compileall` PASS. Blender 5.2.1 normal
+operator Import, two-root control, no-witness negative, renamed save/reopen and
+repeated resolve PASS for the recorded identity/Material scope. Isolated
+mutations dropping one instance path or returning the source Object instead of
+copying it both caused nonzero Blender exits. The repeated-instance Transform
+discrepancy remains `UNRESOLVED` and is outside this checkpoint.
+
 ## Explicit-null Material realization checkpoint — 2026-09-27
 
 The prior loss boundary was `plan_witness_material_dependencies()`: it planned

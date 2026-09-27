@@ -21,7 +21,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 
 from ..blender.fbx_importer import apply_import_options, import_fbx_files
 from ..blender.fbx_receipt import copy_with_receipt, source_sha256, validate_receipt_continuity
-from ..blender.model_witness_bridge import plan_witness_realizations, plan_witness_material_dependencies, reserve_witness_slots
+from ..blender.model_witness_bridge import matches_witnessed_source, plan_witness_realizations, plan_witness_material_dependencies, reserve_witness_slots
 from ..blender.renderer_binding import semantic_owner_id
 from ..blender.hierarchy_builder import build_prefab_hierarchy
 from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package, save_scene_registry
@@ -40,7 +40,7 @@ from ..unity.material_mapping import parse_external_objects
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import parse_prefab, ref_guid
 from ..unity.effective_prefab import EffectivePrefabResolver, ModelSourceSemanticIndex
-from ..unity.occurrence_projection import PrefabSource, project_occurrences, model_instance_sources
+from ..unity.occurrence_projection import PrefabSource, project_occurrences, model_instance_plans
 from ..unity.model_identity_witness import load_model_witness
 from ..unity.physbone_parser import extract_physbone_snapshot
 from ..unity.prefab_candidate_analyzer import (
@@ -1502,20 +1502,29 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         PrefabSource.from_prefab(prefab, package_key.source_package_id, member_id),
                         root_context_id, projection_source, model_witness=model_witness,
                     )
+                    for record in projection.records:
+                        mesh_entry = asset_db.find_guid(record['mesh']['mesh_guid'])
+                        if mesh_entry is not None and mesh_entry.path.is_file():
+                            record['mesh']['source_package_id'] = mesh_entry.source_package_id
+                            record['mesh']['source_sha256'] = source_sha256(mesh_entry.path)
                     member_objects = []
                     member_object_map = {}
                     model_instances = []
-                    direct_sources = [(guid.lower(), None) for guid in sorted({
+                    direct_sources = [(guid.lower(), None, None) for guid in sorted({
                         ref_guid(document.data.get("m_Mesh"))
                         for document in prefab.renderer_documents() + prefab.mesh_filter_documents()
                         if ref_guid(document.data.get("m_Mesh"))
                     })]
-                    model_sources = model_instance_sources(projection)
-                    for guid, edge_path in direct_sources + model_sources:
+                    model_sources = model_instance_plans(projection, model_witness)
+                    for guid, edge_path, target_uids in direct_sources + model_sources:
                         entry = asset_db.find_guid(guid)
                         if entry is None or entry.path.suffix.lower() != ".fbx" or not entry.path.is_file():
                             continue
                         candidates = representation_paths.get(entry.unity_path, [])
+                        if target_uids is not None:
+                            source_sha = model_witness.source_shas[guid]
+                            candidates = [obj for obj in candidates
+                                          if matches_witnessed_source(obj, guid, source_sha, target_uids)]
                         instance_object_map = {}
                         for source_object in candidates:
                             if source_object.name not in shared_collection.objects:
@@ -1627,10 +1636,6 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     if model_witness is not None:
                         prefab_root['_vapb_witness_package_sha256'] = package_key.sha256
                     for record in projection.records:
-                        mesh_entry = asset_db.find_guid(record['mesh']['mesh_guid'])
-                        if mesh_entry is not None and mesh_entry.path.is_file():
-                            record['mesh']['source_package_id'] = mesh_entry.source_package_id
-                            record['mesh']['source_sha256'] = source_sha256(mesh_entry.path)
                         # Nested semantic owners need their own realization;
                         # do not map them onto same-fileID root GameObjects.
                         if not record['instance_edge_path']:

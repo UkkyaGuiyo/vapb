@@ -1,0 +1,34 @@
+{
+    "unityVersion": "2022.3.22f1",
+    "variantGuid": "5b230109f15e76d48b8398250b717e67",
+    "sourceGuid": "80bc6135807de784e9c30256b9ce24eb",
+    "immediateRendererGuid": "80bc6135807de784e9c30256b9ce24eb",
+    "immediateRendererFileId": "3318121134957692183",
+    "originalRendererGuid": "80bc6135807de784e9c30256b9ce24eb",
+    "originalRendererFileId": "3318121134957692183",
+    "sourceOwnerGuid": "80bc6135807de784e9c30256b9ce24eb",
+    "sourceOwnerFileId": "5473688490524526258",
+    "meshGuid": "f541e92add760c94f8a680387bf92122",
+    "meshFileId": "1644867115675099630",
+    "modelAssetPath": "Assets/Oracle/Model.fbx",
+    "nearestInstanceAssetPath": "Assets/Oracle/Null_Source.prefab",
+    "rendererType": "MeshRenderer",
+    "finalSlotCount": 1,
+    "finalNull": true,
+    "localPosition": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "localRotation": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0,
+        "w": 1.0
+    },
+    "localScale": {
+        "x": 1.0,
+        "y": 1.0,
+        "z": 1.0
+    }
+}

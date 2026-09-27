@@ -1,0 +1,26 @@
+{
+    "unityVersion": "2022.3.22f1",
+    "pairGuid": "a793fdd1e553bd141a5d9decec7950da",
+    "sourceGuid": "80bc6135807de784e9c30256b9ce24eb",
+    "sourceRendererFileId": "3318121134957692183",
+    "meshGuid": "f541e92add760c94f8a680387bf92122",
+    "meshFileId": "1644867115675099630",
+    "rendererCount": 2,
+    "sameSourceRenderer": true,
+    "sameMesh": true,
+    "distinctInstanceRoots": true,
+    "materialASlots": 1,
+    "materialA": true,
+    "nullSlots": 1,
+    "explicitNull": true,
+    "materialALocalPosition": {
+        "x": -1.0,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "nullLocalPosition": {
+        "x": 1.0,
+        "y": 0.0,
+        "z": 0.0
+    }
+}
