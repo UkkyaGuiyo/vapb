@@ -89,6 +89,12 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 
 現時点で実機検証したのは、PrefabにRendererが直接serializedされている合成入力です。Nested Prefabの参照経路は解析しますが、その全所有Objectの実体化やbinaryモデル内の全Rendererの自動対応は未完成です。ユーザー確認済み対応は、自動判別による対応と区別して記録します。FBX sidecarは対応根拠を保持しますが、Unityでの自動復元までの全面成功を意味しません。
 
+### 任意のUnity Model Witness
+
+通常のImportではUnity Editorは不要です。UnityPackageだけでRendererとnative Meshを一意に結べない場合は、Import画面の **Unity Model Witness (optional)** に、同じUnityPackage・FBX・`.meta` revisionから生成したJSONを指定できます。VAPBはPackage SHA-256、FBX SHA-256、`.meta` SHA-256、Unity-generated GUID/signed local fileID、FBX Model/Geometry UIDを照合し、合わなければ使用を拒否します。対応候補が一意でない場合もMaterialを推測で割り当てません。
+
+開発用の生成経路は、repo内の `tests/blender_fbx_source_witness.py` と `tests/unity_bone_witness_probe` を使い、隔離したUnity 2022.3.22f1 Projectで元モデルとnoop/marker付きFBXをpublic APIで照合した後、Blender backgroundから `tools/build_model_identity_witness.py` に元UnityPackage・probe結果・出力先を渡します。商用Assetのprobe結果とsidecarはrepo外に保存してください。witnessが提供するのはUnity-generated subasset IDとnative FBX実体の橋渡しだけです。Material参照とPrefab overrideはUnityPackageのserialized dataから読み、元モデルのMaterial slot内容など未証明部分は保留します。実Avatar全体のHierarchy、Export、Unity/VRC復元の完成を意味しません。
+
 ### 手動ウェイト転送
 
 3Dビューのサイドバー（Nキー）→ **VAPB → Weight Transfer** を開きます。

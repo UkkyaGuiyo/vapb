@@ -33,6 +33,31 @@ class ProjectionResult:
         return {"records": self.records, "issues": self.issues}
 
 
+def model_instance_sources(projection: ProjectionResult) -> list[tuple[str, list[dict]]]:
+    """Return each binary model edge once, whether witness resolved it or not."""
+    result = []
+    seen = set()
+    for record in projection.records:
+        if record.get("source_key", {}).get("source_kind") != "MODEL_SOURCE":
+            continue
+        guid = record["source_key"]["source_asset_guid"]
+        path = record["instance_edge_path"]
+        key = (guid, json.dumps(path, sort_keys=True))
+        if key not in seen:
+            seen.add(key)
+            result.append((guid, path))
+    for issue in projection.issues:
+        if issue.get("code") != "UNRESOLVED_SOURCE":
+            continue
+        guid = issue["source_asset_guid"]
+        path = issue["instance_edge_path"]
+        key = (guid, json.dumps(path, sort_keys=True))
+        if key not in seen:
+            seen.add(key)
+            result.append((guid, path))
+    return result
+
+
 def occurrence_identity(record: dict) -> str:
     """Revision-independent identity of a selected root, edge path, and source Renderer."""
     scope = [record["root_context_id"], record["root_package_id"],
@@ -94,6 +119,8 @@ def project_occurrences(
     root: PrefabSource,
     root_context_id: str,
     source_loader: Callable[[str, str], PrefabSource | Sequence[PrefabSource] | None],
+    *,
+    model_witness=None,
 ) -> ProjectionResult:
     """Resolve one selected root; source_loader receives container package ID and GUID.
 
@@ -117,8 +144,37 @@ def project_occurrences(
             issue("CYCLE", path, source_package_id=source.package_id, source_asset_guid=guid)
             return []
         if source.prefab is None:
-            issue("UNRESOLVED_SOURCE", path, source_package_id=source.package_id, source_asset_guid=guid)
-            return []
+            rows = (model_witness.source_rows(guid) if model_witness is not None
+                    and model_witness.source_shas.get(guid) == source.revision_sha256 else ())
+            if not rows:
+                issue("UNRESOLVED_SOURCE", path, source_package_id=source.package_id, source_asset_guid=guid)
+                return []
+            records = []
+            for row in rows:
+                record = {
+                    "root_context_id": root_context_id,
+                    "root_package_id": root.package_id,
+                    "root_member_id": root.member_id,
+                    "root_asset_guid": _source_guid(root),
+                    "root_revision_sha256": root.revision_sha256,
+                    "instance_edge_path": [dict(step) for step in path],
+                    "source_package_id": source.package_id,
+                    "source_member_id": source.member_id,
+                    "source_revision_sha256": source.revision_sha256,
+                    "source_key": {"source_kind": "MODEL_SOURCE", "source_asset_guid": guid,
+                                   "renderer_file_id": row.renderer_local_id},
+                    "renderer_class_id": row.class_id,
+                    "owner": {"source_kind": "MODEL_SOURCE", "source_asset_guid": guid,
+                              "owner_game_object_id": row.game_object_local_id},
+                    "owner_name": "",
+                    "mesh": {"mesh_guid": guid, "mesh_file_id": row.mesh_local_id},
+                    "materials": {},
+                    "material_slot_count": None,
+                    "material_status": "PARTIAL",
+                }
+                record["occurrence_id"] = occurrence_identity(record)
+                records.append(record)
+            return records
         if not source.revision_sha256 or not source.member_id or not guid or guid != source.prefab.asset_guid.lower():
             issue("INVALID_SOURCE_SCOPE", path, source_package_id=source.package_id, source_asset_guid=guid)
             return []
@@ -262,7 +318,8 @@ def project_occurrences(
                           child_path, target_source_guid=modification.target_guid,
                           target_renderer_file_id=modification.target_file_id, slot_index=slot)
                     continue
-                if slot >= matches[0]["material_slot_count"]:
+                if (matches[0]["material_slot_count"] is not None
+                        and slot >= matches[0]["material_slot_count"]):
                     matches[0]["material_status"] = "UNKNOWN"
                     issue("OVERRIDE_SLOT_OUT_OF_RANGE", child_path,
                           target_source_guid=modification.target_guid,

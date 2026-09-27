@@ -43,6 +43,7 @@ def _record_key(record: dict[str, Any]) -> tuple[Any, ...]:
         "dependency_type", "consumer_package_id", "consumer_asset_path",
         "consumer_file_id", "consumer_game_object_file_id", "consumer_slot_index",
         "consumer_prefab_instance_file_id",
+        "consumer_occurrence_id", "consumer_native_realization_id",
         "target_guid", "target_file_id",
     ))
 
@@ -83,6 +84,9 @@ def _providers(target_guid: str, provider_type: str) -> list[Any]:
 
 
 def _find_consumer(record: dict[str, Any]) -> Any | None:
+    if record.get("identity_bridge") == "UNITY_MODEL_WITNESS":
+        from .model_witness_bridge import find_witness_consumer
+        return find_witness_consumer(record, bpy.data.objects)
     package_id = record.get("consumer_package_id", "")
     file_id = str(record.get("consumer_game_object_file_id", ""))
     path = str(record.get("consumer_asset_path") or record.get("consumer_object_path", ""))
@@ -122,6 +126,11 @@ def _bind_material(record: dict[str, Any], material: Any) -> bool:
         return False
     consumer = _find_consumer(record)
     if consumer is None or not getattr(consumer, "data", None) or not hasattr(consumer.data, "materials"):
+        record["status"] = MISSING_CONSUMER
+        return False
+    if (record.get("identity_bridge") == "UNITY_MODEL_WITNESS"
+            and (str(material.get("unity_material_file_id", "")) != str(record.get("target_file_id", ""))
+                 or str(material.get("unity_material_guid", "")).lower() != str(record.get("target_guid", "")).lower())):
         record["status"] = MISSING_CONSUMER
         return False
     slot = int(record.get("consumer_slot_index", 0))

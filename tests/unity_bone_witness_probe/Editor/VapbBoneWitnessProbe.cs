@@ -62,6 +62,7 @@ public static class VapbBoneWitnessProbe
         public bool readabilityChanged;
         public bool sourceMetaRestored;
         public bool sourceRawRestored;
+        public bool originalRevisionEquivalent;
         public bool mappingWritten;
     }
 
@@ -76,6 +77,7 @@ public static class VapbBoneWitnessProbe
     {
         public string model_uid;
         public string transform_local_id;
+        public string game_object_local_id;
         public RendererMapping[] renderers;
     }
 
@@ -83,7 +85,9 @@ public static class VapbBoneWitnessProbe
     {
         public string schema_version = "vapb-source-fbx-model-witness-1";
         public string source_fbx_sha256;
+        public string source_meta_sha256;
         public string model_guid;
+        public string unity_version;
         public bool importer_readability_changed;
         public ModelMapping[] models;
     }
@@ -127,6 +131,7 @@ public static class VapbBoneWitnessProbe
         byte[] originalMeta = null;
         byte[] comparisonMeta = null;
         Snapshot baseline = null;
+        HashSet<string> originalIdentity = null;
         Mapping mapping = null;
         try
         {
@@ -152,6 +157,7 @@ public static class VapbBoneWitnessProbe
             }
             AssetDatabase.ImportAsset(ModelPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             if (originalMeta == null) originalMeta = File.ReadAllBytes(metaFile);
+            originalIdentity = CaptureSourceIdentity();
             ModelImporter importer = AssetImporter.GetAtPath(ModelPath) as ModelImporter;
             if (importer == null)
                 throw new InvalidOperationException("MODEL_IMPORT_MISSING");
@@ -184,10 +190,11 @@ public static class VapbBoneWitnessProbe
             AssetDatabase.ImportAsset(ModelPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             Snapshot witnessed = Capture();
             report.witnessEquivalent = baseline.SameAs(witnessed);
+            report.originalRevisionEquivalent = originalIdentity.SetEquals(CaptureSourceIdentity());
             report.metaStable &= EqualBytes(comparisonMeta, File.ReadAllBytes(metaFile));
-            mapping = InspectMarkers(witnessed, report, original);
+            mapping = InspectMarkers(witnessed, report, original, originalMeta);
             if (!report.witnessEquivalent || !report.metaStable || !report.callbackExactlyOnce ||
-                !report.markerIdentityUnique || !report.allSkinBonesMarked ||
+                !report.originalRevisionEquivalent || !report.markerIdentityUnique || !report.allSkinBonesMarked ||
                 report.markedRendererCount != report.rendererCount)
                 throw new InvalidOperationException("WITNESS_DRIFT_OR_AMBIGUITY");
             report.error = "NONE";
@@ -220,13 +227,15 @@ public static class VapbBoneWitnessProbe
                     report.sourceMetaRestored = originalMeta != null &&
                         EqualBytes(originalMeta, File.ReadAllBytes(metaFile));
                     report.sourceRawRestored = EqualBytes(original, File.ReadAllBytes(assetFile));
+                    report.originalRevisionEquivalent &= originalIdentity != null &&
+                        originalIdentity.SetEquals(CaptureSourceIdentity());
                 }
                 catch { report.error = "RESTORE_FAILED"; }
             }
             report.pass = report.error == "NONE" && report.noopEquivalent && report.witnessEquivalent &&
                 report.restoredEquivalent && report.metaStable && report.callbackExactlyOnce &&
                 report.markerIdentityUnique && report.allSkinBonesMarked && report.sourceMetaRestored &&
-                report.sourceRawRestored &&
+                report.sourceRawRestored && report.originalRevisionEquivalent &&
                 report.markedRendererCount == report.rendererCount;
             if (!report.restoredEquivalent && baseline != null && report.error == "NONE")
                 report.error = "RESTORED_STATE_DRIFT";
@@ -290,6 +299,34 @@ public static class VapbBoneWitnessProbe
             else result.meshRendererCount++;
         }
         return result;
+    }
+
+    private static HashSet<string> CaptureSourceIdentity()
+    {
+        string guid = AssetDatabase.AssetPathToGUID(ModelPath);
+        GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
+        if (root == null || string.IsNullOrEmpty(guid))
+            throw new InvalidOperationException("MODEL_IMPORT_MISSING");
+        var rows = new HashSet<string>(StringComparer.Ordinal);
+        foreach (Transform transform in root.GetComponentsInChildren<Transform>(true))
+        {
+            string row = "T:" + LocalId(transform, guid) + ":" +
+                LocalId(transform.gameObject, guid) + ":" +
+                (transform.parent == null ? 0L : LocalId(transform.parent, guid));
+            if (!rows.Add(row)) throw new InvalidOperationException("SOURCE_IDENTITY_DUPLICATE");
+        }
+        foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
+        {
+            string row = "R:" + LocalId(renderer, guid) + ":" +
+                LocalId(renderer.gameObject, guid) + ":" +
+                LocalId(SharedMesh(renderer), guid) + ":" +
+                (renderer is SkinnedMeshRenderer ? 137 : renderer is MeshRenderer ? 23 : 0);
+            if (!rows.Add(row)) throw new InvalidOperationException("SOURCE_IDENTITY_DUPLICATE");
+        }
+        foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(ModelPath))
+            if (asset is Mesh mesh && !rows.Add("M:" + LocalId(mesh, guid)))
+                throw new InvalidOperationException("SOURCE_IDENTITY_DUPLICATE");
+        return rows;
     }
 
     private static long LocalId(UnityEngine.Object value, string expectedGuid)
@@ -424,7 +461,8 @@ public static class VapbBoneWitnessProbe
         throw new InvalidOperationException("RENDERER_MESH_UNAVAILABLE");
     }
 
-    private static Mapping InspectMarkers(Snapshot snapshot, Report report, byte[] originalBytes)
+    private static Mapping InspectMarkers(Snapshot snapshot, Report report,
+                                          byte[] originalBytes, byte[] originalMeta)
     {
         GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
         var uids = new HashSet<string>(StringComparer.Ordinal);
@@ -464,6 +502,8 @@ public static class VapbBoneWitnessProbe
             {
                 model_uid = marker.sourceModelUid,
                 transform_local_id = id.ToString(CultureInfo.InvariantCulture),
+                game_object_local_id = LocalId(marker.gameObject, snapshot.guid)
+                    .ToString(CultureInfo.InvariantCulture),
                 renderers = rendererRows.ToArray()
             });
         }
@@ -483,7 +523,9 @@ public static class VapbBoneWitnessProbe
         report.allSkinBonesMarked = report.missingSkinBoneMarkerCount == 0;
         return new Mapping
         {
-            source_fbx_sha256 = HashBytes(originalBytes), model_guid = snapshot.guid,
+            source_fbx_sha256 = HashBytes(originalBytes),
+            source_meta_sha256 = HashBytes(originalMeta),
+            model_guid = snapshot.guid, unity_version = Application.unityVersion,
             importer_readability_changed = report.readabilityChanged,
             models = rows.ToArray()
         };

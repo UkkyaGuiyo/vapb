@@ -198,6 +198,38 @@ Transform:
         self.assertEqual([], result.records)
         self.assertEqual("UNRESOLVED_SOURCE", result.issues[0]["code"])
 
+    def test_binary_model_witness_exposes_ids_but_only_serialized_material_override(self):
+        from unitypackage_blender_importer.blender.fbx_receipt import FbxModelLink, RawFbxSemanticIndex
+        from unitypackage_blender_importer.unity.model_identity_witness import ModelAssetRevision, validate_model_witness
+        from unitypackage_blender_importer.unity.occurrence_projection import model_instance_sources
+        document = {"schema_version": "vapb-model-identity-witness-v1",
+                    "source_unitypackage_sha256": "a" * 64,
+                    "unity_version": "2022.3.22f1",
+                    "source_validation": {"probe_pass": True, "original_revision_equivalent": True},
+                    "assets": [{"asset_guid": CHILD, "source_fbx_sha256": "b" * 64,
+                                "source_meta_sha256": "c" * 64,
+                                "models": [{"model_uid": "101", "geometry_uid": "202",
+                                            "transform_local_id": "-303", "game_object_local_id": "-404",
+                                            "renderers": [{"class_id": 137, "renderer_local_id": "-20",
+                                                           "mesh_local_id": "-606"}]}]}]}
+        witness = validate_model_witness(document, "a" * 64,
+            {CHILD: ModelAssetRevision("b" * 64, "c" * 64,
+                RawFbxSemanticIndex([FbxModelLink(101, 202)], [101]))})
+        model = PrefabSource(None, "pkg", "model-member", "b" * 64, CHILD)
+        root = self.source(ROOT, instance(ids=(10,), target=-20))
+        result = project_occurrences(root, "root-one", lambda _pkg, _guid: model,
+                                     model_witness=witness)
+        self.assertEqual([], result.issues)
+        self.assertEqual(1, len(result.records))
+        record = result.records[0]
+        self.assertEqual("MODEL_SOURCE", record["source_key"]["source_kind"])
+        self.assertEqual(-606, record["mesh"]["mesh_file_id"])
+        self.assertEqual(-404, record["owner"]["owner_game_object_id"])
+        self.assertEqual("PARTIAL", record["material_status"])
+        self.assertEqual(OVERRIDE, record["materials"][0]["guid"])
+        self.assertIsNone(record["material_slot_count"])
+        self.assertEqual([(CHILD, record["instance_edge_path"])], model_instance_sources(result))
+
     def test_null_override_marks_material_unknown(self):
         root = self.source(ROOT, instance(ids=(10,), target=-20).replace(
             f"objectReference: {{fileID: 2100000, guid: {OVERRIDE}, type: 2}}",

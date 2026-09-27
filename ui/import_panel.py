@@ -13,4 +13,5 @@ def draw_import_options(layout, operator) -> None:
     options.prop(operator, "apply_prefab_transforms")
     options.prop(operator, "keep_extracted")
     options.prop(operator, "source_storage_directory")
+    options.prop(operator, "model_witness_path")
     options.label(text="原本は一時展開先とは別に保管します")
