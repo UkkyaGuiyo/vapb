@@ -2,6 +2,79 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Hierarchy diagnosis and independent Geometry Oracle — 2026-09-28
+
+An isolated diagnostic ran the same fixed public FBX in Blender 5.2.1 with
+factory settings at baseline `267babee` and predecessor
+`04c3f7aeaa38e62b93fd9ee63691fe6741d4c211`. Both produced two native
+Objects (Armature and Mesh), **zero native Empties**, then five semantic
+Empties plus one VAPB wrapper/root. The earlier claim below that the FBX
+importer created extra Empties was incorrect. Direct `import_fbx()` output
+had no `unity_prefab_file_id` on the native Objects, so the hierarchy builder
+could not map Rig/Body. The old TR-005 total-Empty assertion, bone identity
+and attachment assertions tested a missing fixture precondition. With
+explicit fixture-only GO correspondence, both revisions passed placed=False
+and placed=True matrices, semantic Empty provenance, bone identity and
+attachment. Classification: `TEST_CONTRACT_MISMATCH`, not a new production
+hierarchy regression. The revised probe checks required semantic IDs and
+multiplicity: an unrelated Empty is ignored, but a missing or duplicate
+semantic Object fails. Fixture-only correspondence does not prove ordinary
+Import identity.
+
+The prior depth-1 matrix test established instance-local parity and
+composition with the observed native FBX Object matrix. Independent final
+geometry initially disagreed with Unity: bidirectional world-point-set errors
+for the two public occurrences were `3.6415` and `3.6484` Blender units.
+Unity 2022.3.22f1 public API recorded each Renderer world vertex from its
+`MeshFilter.sharedMesh.vertices` and `Renderer.localToWorldMatrix`, with
+Mesh/occurrence references and ModelImporter settings. Blender 5.2.1 recorded
+depsgraph-evaluated member world vertices. Unity world points were converted
+with the declared `(-x, -z, y)` basis; comparison did not assume equal vertex
+indices. An independent asymmetric four-point coordinate probe confirmed
+direct Mesh local conversion `(x, -z, y) * 0.01` with error `0.0`. The main cube fixture
+has 24 Unity vertices but eight unique positions, so the result proves
+point-set parity, not triangle-index parity.
+
+The source Prefab directly references an FBX Mesh subasset. For this exact
+fixture Unity's importer reports `useFileScale=true`, `fileScale=0.01`,
+`globalScale=1`, `bakeAxisConversion=false`. FBX axes and unit settings are
+checked as well. The native FBX Object translation `-1.5` belongs to the
+Model node, not the directly referenced Mesh subasset. The bounded production
+change applies the verified direct Mesh frame to the member local matrix,
+excluding that Model-node translation. It requires exact Prefab root
+MeshFilter/MeshRenderer evidence, exact Mesh signed local ID matching the
+witnessed occurrence and selected Model/Geometry IDs, native Object receipt,
+live FBX hash and the supported importer/FBX settings. Unsupported
+direct-Mesh settings stay
+`UNVERIFIED` and yield Import Outcome `PARTIAL`; the UI's `SUCCESS` wording
+now limits its claim to Material/reference evidence. This does not infer a
+general FBX frame.
+
+Normal public UnityPackage Import passes both occurrences' world geometry
+before and after rename/repeated Material resolve and separate-process
+save/reopen: maximum errors A `2.384e-7`, B `0`, tolerance `1e-5` Blender
+meters. Omitted instance transform, doubled native Model transform and
+missing file scale each fail. Synthetic changes to `useFileScale`,
+`bakeAxisConversion` or `globalScale` reject direct-Mesh verification.
+Material A/explicit null, distinct Object/shared Mesh, and no-witness
+fail-closed checks remain passing. Repository-parent Python discovery: 402
+tests, zero failures/errors; compileall PASS. This is limited to the public
+depth-1 MeshRenderer fixture. Skin pose isolation, depth > 1, alternate FBX
+settings, face topology, private corpus, Export and VRC runtime remain
+unverified. The optional two-Skin check was not started: the isolated
+hierarchy fixture's native Armature Object has no authoritative Unity
+occurrence receipt.
+
+Reproduction: Unity 2022.3.22f1 batch `VapbGeometryOracle.Run` in the public
+synthetic Oracle project; Blender 5.2.1
+`tests/blender_coordinate_frame_probe.py`,
+`tests/blender_hierarchy_transform_test.py`, and
+`tests/blender_nested_prefab_realization_test.py` with
+`VAPB_TRANSFORM_ORACLE=1` (create, then reopen). Independent Unity
+observations are checked into `tests/unity_alias_oracle/geometry_expected.json`.
+Unity's documented [ModelImporter.fileScale](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-fileScale.html)
+defines the FBX source-unit conversion used at this narrow boundary.
+
 ## Nested PrefabInstance Transform checkpoint — 2026-09-28
 
 **First loss boundary:** the normal Import already parsed Unity-authored root
@@ -43,11 +116,11 @@ each failed the matrix assertion with nonzero Blender exit.
 
 Python **402 PASS** and compileall PASS. The prior direct semantic-scale
 regression passes its six local/world matrix checks. The separate
-`blender_hierarchy_transform_test.py` still fails its `TR-005` total Empty
-count: current FBX import yields additional native Empty objects. This test and
-`hierarchy_builder.py` were not changed in this checkpoint; the test's bone
-identity assertion also fails if only that count assertion is bypassed. Its
-current Blender 5.2.1 expectation needs separate diagnosis. `Import Outcome`
+`blender_hierarchy_transform_test.py` failed its `TR-005` total Empty
+count. This test and `hierarchy_builder.py` were not changed in this earlier
+checkpoint; the test's bone identity assertion also failed if only that count
+assertion was bypassed. The later diagnosis above corrects the mistaken
+native-Empty attribution and closes the fixture contract issue. `Import Outcome`
 `SUCCESS` summarizes projection/Material evidence, not complete Avatar or
 Transform fidelity. Export, VRC runtime, Skin and private corpus are unverified.
 

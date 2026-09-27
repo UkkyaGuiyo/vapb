@@ -78,11 +78,18 @@ def main():
     bpy.context.view_layer.update()
     native = [list(mesh.matrix_world @ v.co) for v in mesh.data.vertices]
     unity = observed['world_positions']
+    assert observed['importer_use_file_scale'] and not observed['importer_bake_axis_conversion']
+    scale = observed['importer_file_scale'] * observed['importer_global_scale']
+    assert abs(scale - 0.01) < 1e-7
+    unity_local = [(-v['x'], -v['z'], v['y']) for v in observed['source_local_vertices']]
+    direct_mesh_local = [(v.co.x * scale, -v.co.z * scale, v.co.y * scale)
+                         for v in mesh.data.vertices]
     converted_native_basis = [(-v['x'], -v['z'], v['y']) for v in unity]
     converted_semantic_basis = [unity_position(v) for v in unity]
     result = dict(native_import_vs_authored=point_set_error(native, authored['world_positions']),
         unity_native_basis_vs_authored=point_set_error(converted_native_basis, authored['world_positions']),
         unity_semantic_basis_vs_native=point_set_error(converted_semantic_basis, native),
+        unity_direct_mesh_local_vs_blender=point_set_error(unity_local, direct_mesh_local),
         blender_vertex_count=len(native), unity_vertex_count=len(unity),
         input_unchanged=hashlib.sha256(path.read_bytes()).hexdigest() == before)
     (project / 'VapbCoordinateFrameComparison.json').write_text(json.dumps(result, indent=2))
@@ -90,6 +97,7 @@ def main():
     assert result['native_import_vs_authored'] < 1e-5
     assert result['unity_native_basis_vs_authored'] < 1e-5
     assert result['unity_semantic_basis_vs_native'] < 1e-5, 'SEMANTIC_NATIVE_BASIS_MISMATCH'
+    assert result['unity_direct_mesh_local_vs_blender'] < 1e-5, 'DIRECT_MESH_LOCAL_FRAME_MISMATCH'
     print('COORDINATE_FRAME_PASS', json.dumps(result))
 
 

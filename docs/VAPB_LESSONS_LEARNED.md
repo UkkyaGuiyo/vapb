@@ -24,6 +24,7 @@ VAPB開発で得た一般化可能な失敗知識、反証、設計原則を記�
 | LESSON-014 | Preserveと再生成を分ける | EXPORT |
 | LESSON-015 | 仮説を分ける実験を選ぶ | DEBUGGING |
 | LESSON-019 | PrefabInstance identityとplacementを分ける | PREFAB / TRANSFORM |
+| LESSON-020 | Model Object配置と直接参照Meshの形状座標を分ける | FBX / GEOMETRY |
 
 ## LESSON-001 — 表示名はidentityではない
 
@@ -525,7 +526,7 @@ Emptyへ反映しておらず、memberの再親子付け時には旧world matrix
 **現在の原則:** source Prefab rootのposition/quaternion/scaleをexact revisionで
 読み、instance fileIDとsource root Transform identityが一致するpropertyだけを
 component単位でoverlayする。既存basis変換を通してinstance Emptyへ一度だけ
-適用し、native FBX matrixはmember localとして保つ。root以外のTransform
+適用し、native frameは別途検証したmember localとして扱う。root以外のTransform
 override、曖昧なsource/parent、無効な値やreceiptは推測せず`UNRESOLVED`。
 `EXACT`は親、source、native receiptまで揃った後に付ける。
 
@@ -540,6 +541,39 @@ semantic親がnative Objectである例、depth > 1のlocal placement証拠が�
 [Unity-authored Transform Oracle](../tests/unity_alias_oracle/Assets/Editor/VapbTransformOracle.cs)、
 [effective TRS tests](../tests/test_prefab_instance_transform.py)、
 [normal operator matrix probe](../tests/blender_nested_prefab_realization_test.py)。
+
+## LESSON-020 — Model Object配置と直接参照Meshの形状座標を分ける
+
+**Status:** ACTIVE · **Domain:** FBX / GEOMETRY
+
+**以前の考え:** Unityのinstance matrixとBlenderのnative FBX Object matrixの
+合成が合えば、Rendererの最終形状も合う。
+
+**何が違ったか:** 公開depth-1 MeshRendererでは行列合成が通っても、Unity
+public APIで得た最終world頂点とBlender depsgraph評価後の頂点集合に3.64以上の
+差が出た。source PrefabがFBX Mesh subassetを直接参照し、UnityはFBX file unit
+scale `0.01`を適用する一方、native Model Objectの平行移動はそのMesh参照に
+含まれなかった。非対称な別fixtureでも軸変換と単位を独立に確認した。
+
+**現在の原則:** instance placement、native Model Objectの配置、直接参照
+Meshのlocal frame、評価後world geometryを別々に検証する。Mesh subassetの
+frameを確定するにはsource Prefab参照、FBX revision、importer設定とraw FBX
+軸・単位を揃え、未対応設定は`UNVERIFIED`にする。頂点番号やObject名で対応を
+推測せず、形状比較をRenderer identityの根拠にも転用しない。
+
+**適用範囲:** Unity 2022.3.22f1、Blender 5.2.1の公開synthetic
+MeshRenderer、depth-1、確認済みimporter設定。独立world点集合最大誤差
+`2.384e-7`、許容値`1e-5` Blender meters。Skin、他のFBX設定、面対応、
+Export/VRCは未証明。
+
+**再調査条件:** 異なるFBX unit/axis/bake設定、source PrefabがModel
+Objectを参照する場合、Mesh以外のRenderer、Skin/Armatureが必要な場合。
+
+**根拠:** [Current State](VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md)、
+[Unity Geometry Oracle](../tests/unity_alias_oracle/Assets/Editor/VapbGeometryOracle.cs)、
+[独立観測値](../tests/unity_alias_oracle/geometry_expected.json)、
+[通常Import Blender probe](../tests/blender_nested_prefab_realization_test.py)、
+[Unity ModelImporter.fileScale（2022.3）](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-fileScale.html)。
 
 ## How to use this document
 

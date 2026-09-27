@@ -22,6 +22,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 
 from ..blender.fbx_importer import apply_import_options, import_fbx_files
 from ..blender.fbx_receipt import copy_with_receipt, source_sha256, validate_receipt_continuity
+from ..blender.direct_mesh_frame import root_direct_mesh_file_id, verified_direct_mesh_frame
 from ..blender.model_witness_bridge import matches_witnessed_source, plan_witness_realizations, plan_witness_material_dependencies, reserve_witness_slots
 from ..blender.renderer_binding import semantic_owner_id
 from ..blender.hierarchy_builder import apply_transform, build_prefab_hierarchy
@@ -1556,7 +1557,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                                 if getattr(modifier, "object", None) in instance_object_map:
                                     modifier.object = instance_object_map[modifier.object]
                         if edge_path is not None and instance_object_map:
-                            model_instances.append((edge_path, instance_object_map))
+                            model_instances.append((edge_path, instance_object_map, entry, target_uids))
                     for source_object, member_object in member_object_map.items():
                         if source_object.parent in member_object_map:
                             member_object.parent = member_object_map[source_object.parent]
@@ -1585,7 +1586,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     instance_nodes = {}
                     resolved_instance_nodes = set()
                     attached_native = {}
-                    for edge_path, copied in model_instances:
+                    for edge_path, copied, model_entry, target_uids in model_instances:
                         parent = prefab_root
                         for depth, step in enumerate(edge_path, 1):
                             prefix = json.dumps(edge_path[:depth], sort_keys=True)
@@ -1643,9 +1644,33 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                                 if proven:
                                     bpy.context.view_layer.update()
                                     native_local = member_object.matrix_local.copy()
+                                    source = projection_source(
+                                        edge_path[0]["source_package_id"],
+                                        edge_path[0]["source_prefab_guid"])
+                                    direct_file_id = (root_direct_mesh_file_id(source.prefab, model_entry.guid)
+                                                      if source is not None and source.prefab is not None else None)
+                                    direct_mesh = direct_file_id is not None
+                                    matching_records = [record for record in projection.records
+                                                        if record["instance_edge_path"] == edge_path
+                                                        and record["source_key"]["source_kind"] == "PREFAB_LOCAL"
+                                                        and record["mesh"]["mesh_guid"].lower() == model_entry.guid.lower()
+                                                        and record["mesh"]["mesh_file_id"] == direct_file_id]
+                                    witnessed_mesh = (model_witness.mesh(model_entry.guid, direct_file_id)
+                                                      if direct_mesh and model_witness is not None else None)
+                                    frame_proven = (direct_mesh and len(copied) == 1
+                                                    and target_uids is not None and len(target_uids) == 1
+                                                    and len(matching_records) == 1
+                                                    and witnessed_mesh is not None
+                                                    and (witnessed_mesh.model_uid, witnessed_mesh.geometry_uid)
+                                                    == target_uids[0])
+                                    frame = (verified_direct_mesh_frame(model_entry.path, source_object)
+                                             if frame_proven else None)
                                     member_object.parent = parent
                                     member_object.matrix_parent_inverse = Matrix.Identity(4)
-                                    member_object.matrix_basis = native_local
+                                    member_object.matrix_basis = frame if frame is not None else native_local
+                                    if direct_mesh:
+                                        member_object["_vapb_geometry_frame_status"] = (
+                                            "EXACT" if frame is not None else "UNVERIFIED")
                                     member_object["_vapb_model_transform_status"] = "EXACT"
                                 else:
                                     world = member_object.matrix_world.copy()

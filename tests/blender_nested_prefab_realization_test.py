@@ -18,6 +18,7 @@ PAIR_FILE = "Transform_TwoInstances.prefab" if TRANSFORM_ORACLE else "Null_TwoIn
 SOURCE_FILE = "Transform_Source.prefab" if TRANSFORM_ORACLE else "Null_Source.prefab"
 MAPPING = json.loads((FIXTURES / "null_fbx_witness_mapping.json").read_text(encoding="utf-8"))
 REPORT = json.loads((FIXTURES / "null_fbx_witness_result.json").read_text(encoding="utf-8"))
+GEOMETRY = json.loads((FIXTURES / "geometry_expected.json").read_text(encoding="utf-8"))
 PACKAGE_MODULE = "unitypackage_blender_importer"
 
 
@@ -63,6 +64,33 @@ def create_witness(package, output):
         document = build_model_witness_from_probe(MAPPING, REPORT, package_sha, revisions)
         output.write_text(json.dumps(document, sort_keys=True), encoding="utf-8")
         return f"PREFAB_{db.prefabs().index(pair.path)}"
+
+
+def world_geometry_error(obj, unity_flat, world_override=None):
+    """Compare independent Unity/Blender evaluated point sets without vertex indices."""
+    from mathutils import Vector
+
+    unity_points = [Vector((-unity_flat[i], -unity_flat[i + 2], unity_flat[i + 1]))
+                    for i in range(0, len(unity_flat), 3)]
+    evaluated = obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
+    mesh = evaluated.to_mesh()
+    try:
+        world = world_override if world_override is not None else evaluated.matrix_world
+        blender_points = [world @ vertex.co for vertex in mesh.vertices]
+    finally:
+        evaluated.to_mesh_clear()
+
+    def distinct(points):
+        unique = []
+        for point in points:
+            if not any((point - prior).length < 1e-7 for prior in unique):
+                unique.append(point)
+        return unique
+
+    left, right = distinct(unity_points), distinct(blender_points)
+    assert len(left) == len(right) == 8, (len(left), len(right))
+    return max(max(min((point - other).length for other in right) for point in left),
+               max(min((point - other).length for other in left) for point in right))
 
 
 def check_scene(renamed=False, root_context_id=None):
@@ -139,10 +167,47 @@ def check_scene(renamed=False, root_context_id=None):
     # binding, so the shared DATA table must stay at its original None value.
     assert source_obj.data.materials[0] is None
     assert scene_import_outcome(bpy.context.scene)["overall"] == "SUCCESS"
+    if TRANSFORM_ORACLE:
+        source_obj["_vapb_geometry_frame_status"] = "UNVERIFIED"
+        uncertain = scene_import_outcome(bpy.context.scene)
+        assert uncertain["overall"] == "PARTIAL"
+        assert "DIRECT_MESH_GEOMETRY_FRAME_UNVERIFIED" in {
+            item["code"] for item in uncertain["items"]}
+        source_obj["_vapb_geometry_frame_status"] = "EXACT"
+        assert scene_import_outcome(bpy.context.scene)["overall"] == "SUCCESS"
     from mathutils import Matrix
     from unitypackage_blender_importer.blender.hierarchy_builder import unity_position
     bpy.context.view_layer.update()
     native = source_template[0].matrix_world.copy()
+    assert (GEOMETRY["meshGuid"] == EXPECTED["meshGuid"]
+            and GEOMETRY["meshFileId"] == EXPECTED["meshFileId"])
+    assert GEOMETRY["importerUseFileScale"] and not GEOMETRY["importerBakeAxisConversion"]
+    scale = GEOMETRY["importerFileScale"] * GEOMETRY["importerGlobalScale"]
+    assert abs(scale - 0.01) < 1e-7
+    direct_mesh_frame = Matrix(((scale, 0, 0, 0), (0, 0, -scale, 0),
+                                (0, scale, 0, 0), (0, 0, 0, 1)))
+    # The native FBX source Object still carries its own Model placement.
+    # These source Prefabs reference only its Mesh subasset, so the member
+    # local frame is the verified Mesh unit/axis conversion instead.
+    assert max(abs(native[i][j] - Matrix.Translation((-1.5, 0, 0))[i][j])
+               for i in range(4) for j in range(4)) < 1e-5
+    if TRANSFORM_ORACLE:
+        from unitypackage_blender_importer.blender.direct_mesh_frame import verified_direct_mesh_frame
+
+        model_path = FIXTURES / "Assets" / "Oracle" / "Model.fbx"
+        meta_text = Path(str(model_path) + ".meta").read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory(prefix="vapb_frame_negative_") as temp:
+            candidate = Path(temp) / "Model.fbx"
+            candidate.write_bytes(model_path.read_bytes())
+            meta = Path(str(candidate) + ".meta")
+            meta.write_text(meta_text, encoding="utf-8")
+            assert verified_direct_mesh_frame(candidate, source_template[0]) is not None
+            for old, new in (("    useFileScale: 1", "    useFileScale: 0"),
+                             ("    bakeAxisConversion: 0", "    bakeAxisConversion: 1"),
+                             ("    globalScale: 1", "    globalScale: 2")):
+                assert old in meta_text
+                meta.write_text(meta_text.replace(old, new, 1), encoding="utf-8")
+                assert verified_direct_mesh_frame(candidate, source_template[0]) is None
     if TRANSFORM_ORACLE:
         basis = Matrix(((-1, 0, 0, 0), (0, 0, -1, 0), (0, 1, 0, 0), (0, 0, 0, 1)))
         def converted(values):
@@ -160,21 +225,41 @@ def check_scene(renamed=False, root_context_id=None):
                                                (null_obj, EXPECTED["nullLocalPosition"])))
     for member, instance_local, unity_world in cases:
         expected_world = ((unity_world if unity_world is not None else
-                           semantic_parent.matrix_world @ instance_local) @ native)
+                           semantic_parent.matrix_world @ instance_local) @ direct_mesh_frame)
         local_error = max(abs(member.parent.matrix_local[i][j] - instance_local[i][j])
                           for i in range(4) for j in range(4))
-        member_local_error = max(abs(member.matrix_local[i][j] - native[i][j])
+        member_local_error = max(abs(member.matrix_local[i][j] - direct_mesh_frame[i][j])
                                  for i in range(4) for j in range(4))
         world_error = max(abs(member.matrix_world[i][j] - expected_world[i][j])
                           for i in range(4) for j in range(4))
         print("NESTED_MATRIX_ERROR", local_error, member_local_error, world_error)
         assert local_error < 1e-5 and member_local_error < 1e-5 and world_error < 1e-5
+        assert member.get("_vapb_geometry_frame_status") == "EXACT"
+    if TRANSFORM_ORACLE:
+        assert (GEOMETRY["unityVersion"] == EXPECTED["unityVersion"]
+                and GEOMETRY["pairGuid"] == EXPECTED["pairGuid"]
+                and GEOMETRY["meshGuid"] == EXPECTED["meshGuid"]
+                and GEOMETRY["meshFileId"] == EXPECTED["meshFileId"])
+        for member, values in ((source_obj, GEOMETRY["aWorldVertices"]),
+                               (null_obj, GEOMETRY["bWorldVertices"])):
+            error = world_geometry_error(member, values)
+            print("NESTED_WORLD_GEOMETRY_ERROR", error)
+            assert error < 1e-5
+            # Independent Unity points must reject missing instance placement,
+            # doubled native FBX Model placement, and omitted file-unit scale.
+            assert world_geometry_error(
+                member, values, semantic_parent.matrix_world @ direct_mesh_frame) > 0.1
+            assert world_geometry_error(
+                member, values, member.parent.matrix_world @ native @ direct_mesh_frame) > 0.1
+            assert world_geometry_error(
+                member, values, member.parent.matrix_world @
+                direct_mesh_frame @ Matrix.Scale(100, 4)) > 0.1
     if renamed:
         assert source_template[0].name == "Renamed Native Source"
         assert source_obj.name == "Renamed Material Occurrence"
         assert null_obj.name == "Renamed Null Occurrence"
         assert base_material.name == "Renamed Material A"
-    print("NESTED_NATIVE_COUNTS source=1 occurrences=2 shared_mesh=1 distinct_realization_ids=1")
+    print("NESTED_NATIVE_COUNTS source=1 occurrences=2 shared_mesh=1 distinct_realization_ids=2")
     print("NESTED_TRANSFORM_OBSERVED", tuple(source_obj.matrix_world.translation),
           tuple(null_obj.matrix_world.translation),
           source_obj.get("_vapb_model_transform_status"),

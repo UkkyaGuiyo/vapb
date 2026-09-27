@@ -17,6 +17,22 @@ def close(a, b):
     assert max(abs(a[i][j] - b[i][j]) for i in range(4) for j in range(4)) < 2e-5, (a, b)
 
 
+def assert_semantic_objects(mapping, rig, body):
+    # The fixture supplies the native-to-Unity correspondence. An unrelated
+    # native/helper Empty is not a duplicate semantic GameObject.
+    for go_id, expected in ((1, mapping[1]), (2, rig), (3, body)):
+        matches = [obj for obj in bpy.data.objects
+                   if obj.get('unity_source_package_id') == 'synthetic-model'
+                   and obj.get('unity_asset_path') == 'Assets/Scene.prefab'
+                   and obj.get('unity_prefab_file_id') == str(go_id)]
+        assert matches == [expected], (go_id, matches)
+    for go_id in (4, 5):
+        assert not [obj for obj in bpy.data.objects
+                    if obj.get('unity_source_package_id') == 'synthetic-model'
+                    and obj.get('unity_asset_path') == 'Assets/Scene.prefab'
+                    and obj.get('unity_prefab_file_id') == str(go_id)]
+
+
 def make_model(path):
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
@@ -63,6 +79,10 @@ def main():
             parents = {o: o.parent for o in imported}
             rig = next(o for o in imported if o.type == 'ARMATURE')
             body = next(o for o in imported if o.type == 'MESH')
+            # Direct builder test: provide the correspondence which normal
+            # Import must establish from source identity before this call.
+            rig['unity_prefab_file_id'] = '2'
+            body['unity_prefab_file_id'] = '3'
             relative = before[rig].inverted() @ before[body]
             root, mapping = build_prefab_hierarchy(fixture(Path(temp)/'Scene.prefab', placed), imported, 'synthetic-model', 'Assets/Scene.prefab')
             bpy.context.view_layer.update()
@@ -73,7 +93,30 @@ def main():
                     assert o.parent == parents[o]
             close(rig.matrix_world.inverted() @ body.matrix_world, relative)  # TR-004
             assert tuple(mapping[1].location) == (unity_position(dict(x=1,y=2,z=3)) if placed else (0,0,0))  # TR-003
-            assert sum(o.type == 'EMPTY' for o in bpy.data.objects) == 2  # TR-005
+            assert_semantic_objects(mapping, rig, body)  # TR-005
+            unrelated = bpy.data.objects.new('Unrelated Helper', None)
+            bpy.context.scene.collection.objects.link(unrelated)
+            assert_semantic_objects(mapping, rig, body)
+            duplicate = bpy.data.objects.new('Duplicate Semantic Rig', None)
+            bpy.context.scene.collection.objects.link(duplicate)
+            duplicate['unity_source_package_id'] = 'synthetic-model'
+            duplicate['unity_asset_path'] = 'Assets/Scene.prefab'
+            duplicate['unity_prefab_file_id'] = '2'
+            try:
+                assert_semantic_objects(mapping, rig, body)
+            except AssertionError:
+                pass
+            else:
+                raise AssertionError('TR-005 failed to detect duplicate semantic Rig')
+            bpy.data.objects.remove(duplicate, do_unlink=True)
+            del body['unity_prefab_file_id']
+            try:
+                assert_semantic_objects(mapping, rig, body)
+            except AssertionError:
+                pass
+            else:
+                raise AssertionError('TR-005 failed to detect missing semantic Body')
+            body['unity_prefab_file_id'] = '3'
             assert set(json.loads(root['unity_prefab_bone_identities'])) == {'4','5'}
             assert rig.data.bones['Hips']['unity_prefab_file_id'] == '4'
             assert rig.data.bones['Hips']['_vapb_source_local_file_id'] == '4'
@@ -89,6 +132,9 @@ def main():
         imported = import_fbx(path)
         attachment = bpy.data.objects.new('Attachment', bpy.data.meshes.new('AttachmentData'))
         bpy.context.scene.collection.objects.link(attachment)
+        next(o for o in imported if o.type == 'ARMATURE')['unity_prefab_file_id'] = '2'
+        next(o for o in imported if o.type == 'MESH')['unity_prefab_file_id'] = '3'
+        attachment['unity_prefab_file_id'] = '6'
         data = fixture(Path(temp)/'Attached.prefab', False)
         data.game_objects[6] = PrefabGameObject(6, 'Attachment')
         data.transforms[106] = PrefabTransform(106, 6, 105, dict(x=0,y=0,z=0), dict(x=0,y=0,z=0,w=1), dict(x=1,y=1,z=1))

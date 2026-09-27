@@ -50,8 +50,8 @@ class VAPB_PT_import_outcome(bpy.types.Panel):
             layout.label(text="このSceneにImport判定記録はありません")
             return
         if outcome["overall"] == "SUCCESS":
-            _label_lines(layout, "このSceneに記録された未解決項目はありません", icon="CHECKMARK")
-            _label_lines(layout, "Avatar全体の再現保証ではありません")
+            _label_lines(layout, "記録されたMaterialと参照の未解決項目はありません", icon="CHECKMARK")
+            _label_lines(layout, "形状・Skin・Exportは別判定です")
             return
 
         layout.label(text="このSceneのImport記録")

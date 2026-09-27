@@ -19,6 +19,8 @@ public static class VapbCoordinateFrameProbe
         public string fbx_sha256_before, fbx_sha256_after;
         public string meta_sha256_before, meta_sha256_after;
         public int renderer_count, bone_count, vertex_count;
+        public float importer_file_scale, importer_global_scale;
+        public bool importer_use_file_scale, importer_bake_axis_conversion;
         public Vector3 root_position, root_scale;
         public Quaternion root_rotation;
         public float[] renderer_world_matrix;
@@ -58,6 +60,12 @@ public static class VapbCoordinateFrameProbe
             result.source_asset_guid = meshGuid;
             result.asset_guid = meshGuid;
             result.mesh_file_id = meshId.ToString(CultureInfo.InvariantCulture);
+            var importer = AssetImporter.GetAtPath(AssetPath) as ModelImporter;
+            if (importer == null) throw new InvalidOperationException("MODEL_IMPORTER_MISSING");
+            result.importer_file_scale = importer.fileScale;
+            result.importer_global_scale = importer.globalScale;
+            result.importer_use_file_scale = importer.useFileScale;
+            result.importer_bake_axis_conversion = importer.bakeAxisConversion;
             using (Mesh.MeshDataArray data = MeshUtility.AcquireReadOnlyMeshData(skin.sharedMesh))
             using (var vertices = new NativeArray<Vector3>(data[0].vertexCount, Allocator.Temp))
             {

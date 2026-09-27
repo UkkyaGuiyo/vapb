@@ -43,4 +43,15 @@ def scene_import_outcome(scene):
         elif record.get("status") == "USER_EDIT_PRESERVED" and current.material is not None:
             edited_null_slots.add(key)
     outcome = summarize_import_outcome(projections, dependencies, verified_null_slots, edited_null_slots)
+    for obj in scene.objects:
+        if obj.get("_vapb_geometry_frame_status") != "UNVERIFIED":
+            continue
+        outcome["counts"]["UNSUPPORTED"] += 1
+        outcome["items"].append({
+            "category": "UNSUPPORTED", "code": "DIRECT_MESH_GEOMETRY_FRAME_UNVERIFIED",
+            "scope": "直接参照されたモデルMesh",
+            "reason": "Unity Mesh資源の座標系と単位への対応は未確認です。",
+            "action": "元FBXとModelImporter設定を確認してください。",
+        })
+        outcome["overall"] = "PARTIAL"
     return outcome
