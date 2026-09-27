@@ -24,6 +24,13 @@ META_SHA = "d" * 64
 PACKAGE_SHA = "e" * 64
 MATERIAL_A = "1" * 32
 MATERIAL_B = "2" * 32
+MATERIAL_U = "3" * 32
+OTHER_SOURCE = "4" * 32
+NATIVE_IDS = {
+    -20: (101, 201, "native-0", "object-0", "mesh-0"),
+    -21: (102, 202, "native-1", "object-1", "mesh-1"),
+    -22: (103, 203, "native-2", "object-2", "mesh-2"),
+}
 
 
 class Native(dict):
@@ -37,7 +44,7 @@ class Native(dict):
                      "_vapb_fbx_mesh_receipt_id": str(kwargs["_vapb_fbx_mesh_receipt_id"])}
 
 
-def fixture(directory, model_revision=FBX_SHA):
+def fixture(directory, model_revision=FBX_SHA, operations=None):
     models = []
     links = []
     for index in range(3):
@@ -57,32 +64,31 @@ def fixture(directory, model_revision=FBX_SHA):
                     "source_meta_sha256": META_SHA, "models": models}],
     }, PACKAGE_SHA, {MODEL: ModelAssetRevision(
         FBX_SHA, META_SHA, RawFbxSemanticIndex(links, [101, 102, 103]))})
-    modifications = []
-    for renderer_id, material in ((-20, MATERIAL_A), (-21, MATERIAL_B)):
-        modifications.append(f"""    - target: {{fileID: {renderer_id}, guid: {MODEL}, type: 3}}
+    if operations is None:
+        operations = [(-20, MATERIAL_A, MODEL, 10), (-21, MATERIAL_B, MODEL, 10),
+                      (-22, None, MODEL, 10), (-999, MATERIAL_U, MODEL, 10)]
+    instances = sorted({10, *(instance for _, _, _, instance in operations)})
+    documents = []
+    for instance in instances:
+        modifications = []
+        for renderer_id, material, source_guid, target_instance in operations:
+            if target_instance != instance:
+                continue
+            reference = ("{fileID: 0}" if material is None else
+                         f"{{fileID: 2100000, guid: {material}, type: 2}}")
+            modifications.append(f"""    - target: {{fileID: {renderer_id}, guid: {source_guid}, type: 3}}
       propertyPath: m_Materials.Array.data[0]
       value:
-      objectReference: {{fileID: 2100000, guid: {material}, type: 2}}
+      objectReference: {reference}
 """)
-    # C has an identified Renderer but an invalid Material reference. A further
-    # unmatched target on the same model source must not poison A or B.
-    modifications.append(f"""    - target: {{fileID: -22, guid: {MODEL}, type: 3}}
-      propertyPath: m_Materials.Array.data[0]
-      value:
-      objectReference: {{fileID: 0}}
-    - target: {{fileID: -999, guid: {MODEL}, type: 3}}
-      propertyPath: m_Materials.Array.data[0]
-      value:
-      objectReference: {{fileID: 2100000, guid: {'3' * 32}, type: 2}}
-""")
-    path = Path(directory) / "root.prefab"
-    path.write_text(f"""%YAML 1.1
---- !u!1001 &10
+        documents.append(f"""--- !u!1001 &{instance}
 PrefabInstance:
   m_SourcePrefab: {{fileID: 1001, guid: {MODEL}, type: 3}}
   m_Modification:
     m_Modifications:
-{''.join(modifications)}""", encoding="utf-8")
+{''.join(modifications)}""")
+    path = Path(directory) / "root.prefab"
+    path.write_text("%YAML 1.1\n" + "".join(documents), encoding="utf-8")
     path.with_name(path.name + ".meta").write_text(f"guid: {ROOT}\n", encoding="utf-8")
     root = PrefabSource(parse_prefab(path), "pkg", "root-member", "root-revision")
     model = PrefabSource(None, "pkg", "model-member", model_revision, MODEL)
@@ -94,16 +100,19 @@ PrefabInstance:
 
 
 def native(record):
-    row_index = -int(record["source_key"]["renderer_file_id"]) - 20
+    renderer_id = int(record["source_key"]["renderer_file_id"])
+    model_uid, geometry_uid, realization_id, object_id, mesh_id = NATIVE_IDS[renderer_id]
+    instance_id = record["instance_edge_path"][-1]["prefab_instance_file_id"]
+    suffix = "" if instance_id == 10 else f"-instance-{instance_id}"
     return Native(_vapb_root_context_id="root-context", unity_source_package_id="pkg",
                   _vapb_fbx_source_asset_guid=MODEL, _vapb_fbx_source_asset_sha256=FBX_SHA,
-                  _vapb_fbx_model_uid=str(101 + row_index),
-                  _vapb_fbx_geometry_uid=str(201 + row_index),
+                  _vapb_fbx_model_uid=str(model_uid),
+                  _vapb_fbx_geometry_uid=str(geometry_uid),
                   _vapb_model_instance_edge_path=json.dumps(record["instance_edge_path"], sort_keys=True),
-                  _vapb_fbx_realization_id=f"native-{row_index}",
+                  _vapb_fbx_realization_id=realization_id + suffix,
                   _vapb_fbx_receipt_version="vapb_fbx_realization_receipt_v1",
-                  _vapb_fbx_object_receipt_id=f"object-{row_index}",
-                  _vapb_fbx_mesh_receipt_id=f"mesh-{row_index}")
+                  _vapb_fbx_object_receipt_id=object_id + suffix,
+                  _vapb_fbx_mesh_receipt_id=mesh_id + suffix)
 
 
 class UnrelatedModelOverrideTests(unittest.TestCase):
@@ -155,6 +164,87 @@ class UnrelatedModelOverrideTests(unittest.TestCase):
         wrong_revision, _ = fixture(self.temp.name, model_revision="0" * 64)
         self.assertEqual([], wrong_revision.records)
         self.assertEqual("UNRESOLVED_SOURCE", wrong_revision.issues[0]["code"])
+
+    def test_counterfactual_unmatched_override_removal_reinsertion_and_order(self):
+        # E0-E4: valid Renderer identities and references are fixed. Only U
+        # is removed, restored, or moved among independent target operations.
+        valid = [(-20, MATERIAL_A, MODEL, 10), (-21, MATERIAL_B, MODEL, 10)]
+        unknown = (-999, MATERIAL_U, MODEL, 10)
+        experiments = [valid, valid + [unknown], valid, valid + [unknown],
+                       [unknown] + valid]
+        for label, operations in zip(("E0", "E1", "E2", "E3", "E4"), experiments):
+            with self.subTest(label=label):
+                projection, witness = fixture(self.temp.name, operations=operations)
+                rows = {row["source_key"]["renderer_file_id"]: row
+                        for row in projection.records}
+                self.assertEqual({-20, -21, -22}, set(rows))
+                self.assertEqual(["PARTIAL", "PARTIAL", "PARTIAL"],
+                                 [rows[key]["material_status"] for key in (-20, -21, -22)])
+                self.assertEqual([MATERIAL_A, MATERIAL_B],
+                                 [rows[key]["materials"][0]["guid"] for key in (-20, -21)])
+                self.assertEqual({}, rows[-22]["materials"])
+                self.assertEqual(int(unknown in operations),
+                                 sum(issue["code"] == "UNRESOLVED_OVERRIDE"
+                                     for issue in projection.issues))
+                bindings, issues = plan_witness_realizations(
+                    list(reversed(projection.records)),
+                    [native(row) for row in projection.records], witness)
+                self.assertEqual([], issues)
+                dependencies = plan_witness_material_dependencies(bindings, PACKAGE_SHA)
+                self.assertEqual({("native-0", MATERIAL_A), ("native-1", MATERIAL_B)},
+                                 {(dep["consumer_native_realization_id"], dep["target_guid"])
+                                  for dep in dependencies})
+        swapped, witness = fixture(self.temp.name, operations=[
+            (-20, MATERIAL_B, MODEL, 10), (-21, MATERIAL_A, MODEL, 10), unknown])
+        bindings, issues = plan_witness_realizations(
+            list(reversed(swapped.records)), [native(row) for row in swapped.records], witness)
+        self.assertEqual([], issues)
+        self.assertEqual({("native-0", MATERIAL_B), ("native-1", MATERIAL_A)},
+                         {(dep["consumer_native_realization_id"], dep["target_guid"])
+                          for dep in plan_witness_material_dependencies(bindings, PACKAGE_SHA)})
+
+    def test_counterfactual_instance_source_and_direct_invalid_target(self):
+        # E5: U is on the same instance, a second occurrence of the same
+        # source, or a different source GUID. Instance edges remain explicit.
+        valid = [(-20, MATERIAL_A, MODEL, 10), (-21, MATERIAL_B, MODEL, 10),
+                 (-20, MATERIAL_A, MODEL, 11), (-21, MATERIAL_B, MODEL, 11)]
+        for label, extra in (("same", (-999, MATERIAL_U, MODEL, 10)),
+                             ("other_instance", (-999, MATERIAL_U, MODEL, 11)),
+                             ("other_source", (-999, MATERIAL_U, OTHER_SOURCE, 10))):
+            with self.subTest(label=label):
+                projection, _ = fixture(self.temp.name, operations=valid + [extra])
+                self.assertEqual(6, len(projection.records))
+                self.assertEqual(1, sum(issue["code"] == "UNRESOLVED_OVERRIDE"
+                                        for issue in projection.issues))
+                for row in projection.records:
+                    renderer_id = row["source_key"]["renderer_file_id"]
+                    self.assertEqual("PARTIAL", row["material_status"])
+                    self.assertEqual({-20: MATERIAL_A, -21: MATERIAL_B}.get(renderer_id),
+                                     row["materials"].get(0, {}).get("guid"))
+        # E6: a genuinely matching invalid reference must stop only R1.
+        projection, witness = fixture(
+            self.temp.name, operations=valid[:2] + [(-20, None, MODEL, 10)])
+        rows = {row["source_key"]["renderer_file_id"]: row for row in projection.records}
+        self.assertEqual("UNKNOWN", rows[-20]["material_status"])
+        self.assertEqual("PARTIAL", rows[-21]["material_status"])
+        bindings, issues = plan_witness_realizations(
+            projection.records, [native(row) for row in projection.records], witness)
+        self.assertEqual([], issues)
+        self.assertEqual([MATERIAL_B],
+                         [dep["target_guid"] for dep in
+                          plan_witness_material_dependencies(bindings, PACKAGE_SHA)])
+
+    def test_counterfactual_missing_witness_fails_closed(self):
+        # E7: no accepted model witness means no projected model Renderer, not
+        # an empty-success status that could authorize a guessed binding.
+        fixture(self.temp.name)
+        prefab = parse_prefab(Path(self.temp.name) / "root.prefab")
+        root = PrefabSource(prefab, "pkg", "root-member", "root-revision")
+        model = PrefabSource(None, "pkg", "model-member", FBX_SHA, MODEL)
+        projection = project_occurrences(root, "root-context", lambda _pkg, _guid: model)
+        self.assertEqual([], projection.records)
+        self.assertEqual(["UNRESOLVED_SOURCE"] + ["UNRESOLVED_OVERRIDE"] * 4,
+                         [issue["code"] for issue in projection.issues])
 
 
 if __name__ == "__main__":

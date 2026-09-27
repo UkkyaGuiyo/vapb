@@ -2,6 +2,27 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## B-QA-002 counterfactual audit — 2026-09-27
+
+The historical projection blob was replayed against a fixed public synthetic
+base: valid R1/R2 alone planned 2 dependencies; adding unmatched U planned 0;
+removing/reinserting U switched 2/0 again. Current code preserves the two
+`PARTIAL` rows and keeps U unresolved. Public tests now compare E0-E7 removal,
+reinsertion, order, instance/source scope, direct-invalid R1, and missing or
+ambiguous model identity, with fixed native expectations independent of record
+order. An aggregate-only check of the private Case B saved scene against a
+same-revision Unity 2022.3.22f1 Oracle found both R1/R2 source components and
+Material references, while U matched no expanded Renderer in that selected
+Prefab. This supports the existing repair for this exact source revision; it
+does not prove arbitrary alias or witness completeness. No production source
+changed. The audit worktree passed 366 public Python tests, `compileall`, and
+the focused Blender 5.2.1 Object-slot/new-process reopen probe. See the
+[falsification ledger](CASE_B_BQA002_FALSIFICATION_LEDGER.md).
+
+**Next action after this checkpoint:** build a public nested/stripped Prefab
+control in which U may alias R1 through corresponding-source relations, then compare Unity-expanded
+and projected slots before changing the invalidation rule.
+
 ## B-QA-002 scoped unresolved override repair — 2026-09-27
 
 Public synthetic RED proved that one unmatched Material override on a model source made two independently identified Renderer rows `UNKNOWN`. The repair in `unity/occurrence_projection.py` limits unknown status to records actually matching the override target. Unmatched and invalid overrides still emit issues; the third synthetic Renderer remains unresolved. Wrong Renderer/Material identity, package, witness revision, and ambiguous native-target controls remain unbound. A Blender 5.2.1 three-Renderer probe bound the two known Object slots, left the third empty, and passed new-process save/reopen and re-resolution. The public Python suite is **363 PASS**, `compileall` PASS, and five related Blender probes PASS. Read-only scope review PASS.
