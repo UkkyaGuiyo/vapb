@@ -1,0 +1,102 @@
+{
+  "unity_version": "2022.3.22f1",
+  "authority": {
+    "override_to_container_alias": "Unity serialized Prefab YAML",
+    "alias_to_variant_local_id": "Unity serialized m_CorrespondingSourceObject",
+    "variant_local_id_to_model_renderer": "Unity 2022.3.22f1 documented public PrefabUtility API",
+    "final_slot": "Unity 2022.3.22f1 Renderer.sharedMaterials and AssetDatabase"
+  },
+  "source_sha256": {
+    "Model.fbx": "7123dad66d3a4c0ec138a33363f9e6a315ad76a020a9206b949d2b1db3a9501a",
+    "ModelVariant.prefab": "668e7a18f06f3a62d1ae18be90ffbcc0efe6ba88a5c38ad40422a7d47f10fa00",
+    "Container.prefab": "61b04031e373da0908744efb9d511845d9f147062d9e6acbd32dd2e94b3b041f",
+    "E1_Alias.prefab": "0f82af86f11df1d37a2cdfe687ca475a5ac9026f4e18ff2f8e148d1c8788c6ae",
+    "E2_Unrelated.prefab": "10c7691c6497ee31fa3cff63dd311ed1a84868db18c4c665cf9ffec34ffdbaa0"
+  },
+  "cases": [
+    {
+      "case": "E1",
+      "override_target": {
+        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+        "file_id": "3371134361621030641",
+        "slot": 0
+      },
+      "container_alias": {
+        "class_id": 23,
+        "local_file_id": "3371134361621030641",
+        "nested_instance_file_id": "580987642118378626",
+        "corresponding_source": {
+          "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+          "file_id": "2799191651431707251"
+        }
+      },
+      "nested_source_prefab": {
+        "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+        "file_id": "100100000"
+      },
+      "unity_public_api_source_chain": [
+        {
+          "guid": "73f37864af1f9f441bbda5c04bdc005f",
+          "file_id": "3371134361621030641"
+        },
+        {
+          "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+          "file_id": "2799191651431707251"
+        },
+        {
+          "guid": "f541e92add760c94f8a680387bf92122",
+          "file_id": "-5277769136950918531"
+        }
+      ],
+      "unity_public_api_renderer_role": "target_R1",
+      "unity_public_api_final_material": {
+        "guid": "13eb9ebaa2de6554d8bc77f6ac834708",
+        "file_id": "2100000"
+      },
+      "serialized_variant_alias_document_present": false,
+      "package_only_break": "variant_alias_to_model_renderer"
+    },
+    {
+      "case": "E2",
+      "override_target": {
+        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+        "file_id": "3678588830305176102",
+        "slot": 0
+      },
+      "container_alias": {
+        "class_id": 23,
+        "local_file_id": "3678588830305176102",
+        "nested_instance_file_id": "1572953590616307797",
+        "corresponding_source": {
+          "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+          "file_id": "2799191651431707251"
+        }
+      },
+      "nested_source_prefab": {
+        "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+        "file_id": "100100000"
+      },
+      "unity_public_api_source_chain": [
+        {
+          "guid": "73f37864af1f9f441bbda5c04bdc005f",
+          "file_id": "3678588830305176102"
+        },
+        {
+          "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+          "file_id": "2799191651431707251"
+        },
+        {
+          "guid": "f541e92add760c94f8a680387bf92122",
+          "file_id": "-5277769136950918531"
+        }
+      ],
+      "unity_public_api_renderer_role": "other_R1",
+      "unity_public_api_final_material": {
+        "guid": "13eb9ebaa2de6554d8bc77f6ac834708",
+        "file_id": "2100000"
+      },
+      "serialized_variant_alias_document_present": false,
+      "package_only_break": "variant_alias_to_model_renderer"
+    }
+  ]
+}

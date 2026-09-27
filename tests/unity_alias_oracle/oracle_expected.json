@@ -1,0 +1,381 @@
+{
+    "unityVersion": "2022.3.22f1",
+    "modelR1": {
+        "guid": "f541e92add760c94f8a680387bf92122",
+        "fileId": "-5277769136950918531",
+        "assetPath": "Assets/Oracle/Model.fbx"
+    },
+    "modelR2": {
+        "guid": "f541e92add760c94f8a680387bf92122",
+        "fileId": "94586058172442283",
+        "assetPath": "Assets/Oracle/Model.fbx"
+    },
+    "modelR1Owner": {
+        "guid": "f541e92add760c94f8a680387bf92122",
+        "fileId": "4361033162551527945",
+        "assetPath": "Assets/Oracle/Model.fbx"
+    },
+    "modelR2Owner": {
+        "guid": "f541e92add760c94f8a680387bf92122",
+        "fileId": "1994239195629690909",
+        "assetPath": "Assets/Oracle/Model.fbx"
+    },
+    "modelR1Transform": {
+        "guid": "f541e92add760c94f8a680387bf92122",
+        "fileId": "-3429068724803565643",
+        "assetPath": "Assets/Oracle/Model.fbx"
+    },
+    "modelR2Transform": {
+        "guid": "f541e92add760c94f8a680387bf92122",
+        "fileId": "4867340868722583869",
+        "assetPath": "Assets/Oracle/Model.fbx"
+    },
+    "modelR1Mesh": {
+        "guid": "f541e92add760c94f8a680387bf92122",
+        "fileId": "1644867115675099630",
+        "assetPath": "Assets/Oracle/Model.fbx"
+    },
+    "modelR2Mesh": {
+        "guid": "f541e92add760c94f8a680387bf92122",
+        "fileId": "-5462180051159159439",
+        "assetPath": "Assets/Oracle/Model.fbx"
+    },
+    "cases": [
+        {
+            "caseName": "E1_E4_E5",
+            "prefabPath": "Assets/Oracle/E1_Alias.prefab",
+            "prefabType": "Variant",
+            "renderers": [
+                {
+                    "role": "target_R1",
+                    "renderer": {
+                        "guid": "",
+                        "fileId": "",
+                        "assetPath": ""
+                    },
+                    "sourceAtContainer": {
+                        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                        "fileId": "3371134361621030641",
+                        "assetPath": "Assets/Oracle/Container.prefab"
+                    },
+                    "originalSource": {
+                        "guid": "f541e92add760c94f8a680387bf92122",
+                        "fileId": "-5277769136950918531",
+                        "assetPath": "Assets/Oracle/Model.fbx"
+                    },
+                    "slotZeroMaterial": {
+                        "guid": "13eb9ebaa2de6554d8bc77f6ac834708",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Changed.mat"
+                    },
+                    "correspondingSourceChain": [
+                        {
+                            "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                            "fileId": "3371134361621030641",
+                            "assetPath": "Assets/Oracle/Container.prefab"
+                        },
+                        {
+                            "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+                            "fileId": "2799191651431707251",
+                            "assetPath": "Assets/Oracle/ModelVariant.prefab"
+                        },
+                        {
+                            "guid": "f541e92add760c94f8a680387bf92122",
+                            "fileId": "-5277769136950918531",
+                            "assetPath": "Assets/Oracle/Model.fbx"
+                        }
+                    ]
+                },
+                {
+                    "role": "other_R1",
+                    "renderer": {
+                        "guid": "",
+                        "fileId": "",
+                        "assetPath": ""
+                    },
+                    "sourceAtContainer": {
+                        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                        "fileId": "3678588830305176102",
+                        "assetPath": "Assets/Oracle/Container.prefab"
+                    },
+                    "originalSource": {
+                        "guid": "f541e92add760c94f8a680387bf92122",
+                        "fileId": "-5277769136950918531",
+                        "assetPath": "Assets/Oracle/Model.fbx"
+                    },
+                    "slotZeroMaterial": {
+                        "guid": "e7bfce22a0e3b5f41b71eab989539865",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Base.mat"
+                    },
+                    "correspondingSourceChain": [
+                        {
+                            "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                            "fileId": "3678588830305176102",
+                            "assetPath": "Assets/Oracle/Container.prefab"
+                        },
+                        {
+                            "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+                            "fileId": "2799191651431707251",
+                            "assetPath": "Assets/Oracle/ModelVariant.prefab"
+                        },
+                        {
+                            "guid": "f541e92add760c94f8a680387bf92122",
+                            "fileId": "-5277769136950918531",
+                            "assetPath": "Assets/Oracle/Model.fbx"
+                        }
+                    ]
+                },
+                {
+                    "role": "sibling_R2",
+                    "renderer": {
+                        "guid": "",
+                        "fileId": "",
+                        "assetPath": ""
+                    },
+                    "sourceAtContainer": {
+                        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                        "fileId": "1826559006993220135",
+                        "assetPath": "Assets/Oracle/Container.prefab"
+                    },
+                    "originalSource": {
+                        "guid": "f541e92add760c94f8a680387bf92122",
+                        "fileId": "94586058172442283",
+                        "assetPath": "Assets/Oracle/Model.fbx"
+                    },
+                    "slotZeroMaterial": {
+                        "guid": "e7bfce22a0e3b5f41b71eab989539865",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Base.mat"
+                    },
+                    "correspondingSourceChain": [
+                        {
+                            "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                            "fileId": "1826559006993220135",
+                            "assetPath": "Assets/Oracle/Container.prefab"
+                        },
+                        {
+                            "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+                            "fileId": "1245571387767428773",
+                            "assetPath": "Assets/Oracle/ModelVariant.prefab"
+                        },
+                        {
+                            "guid": "f541e92add760c94f8a680387bf92122",
+                            "fileId": "94586058172442283",
+                            "assetPath": "Assets/Oracle/Model.fbx"
+                        }
+                    ]
+                }
+            ],
+            "materialModifications": [
+                {
+                    "propertyPath": "m_Materials.Array.data[0]",
+                    "target": {
+                        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                        "fileId": "3371134361621030641",
+                        "assetPath": "Assets/Oracle/Container.prefab"
+                    },
+                    "objectReference": {
+                        "guid": "13eb9ebaa2de6554d8bc77f6ac834708",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Changed.mat"
+                    }
+                }
+            ]
+        },
+        {
+            "caseName": "E2",
+            "prefabPath": "Assets/Oracle/E2_Unrelated.prefab",
+            "prefabType": "Variant",
+            "renderers": [
+                {
+                    "role": "target_R1",
+                    "renderer": {
+                        "guid": "",
+                        "fileId": "",
+                        "assetPath": ""
+                    },
+                    "sourceAtContainer": {
+                        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                        "fileId": "3371134361621030641",
+                        "assetPath": "Assets/Oracle/Container.prefab"
+                    },
+                    "originalSource": {
+                        "guid": "f541e92add760c94f8a680387bf92122",
+                        "fileId": "-5277769136950918531",
+                        "assetPath": "Assets/Oracle/Model.fbx"
+                    },
+                    "slotZeroMaterial": {
+                        "guid": "e7bfce22a0e3b5f41b71eab989539865",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Base.mat"
+                    },
+                    "correspondingSourceChain": [
+                        {
+                            "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                            "fileId": "3371134361621030641",
+                            "assetPath": "Assets/Oracle/Container.prefab"
+                        },
+                        {
+                            "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+                            "fileId": "2799191651431707251",
+                            "assetPath": "Assets/Oracle/ModelVariant.prefab"
+                        },
+                        {
+                            "guid": "f541e92add760c94f8a680387bf92122",
+                            "fileId": "-5277769136950918531",
+                            "assetPath": "Assets/Oracle/Model.fbx"
+                        }
+                    ]
+                },
+                {
+                    "role": "other_R1",
+                    "renderer": {
+                        "guid": "",
+                        "fileId": "",
+                        "assetPath": ""
+                    },
+                    "sourceAtContainer": {
+                        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                        "fileId": "3678588830305176102",
+                        "assetPath": "Assets/Oracle/Container.prefab"
+                    },
+                    "originalSource": {
+                        "guid": "f541e92add760c94f8a680387bf92122",
+                        "fileId": "-5277769136950918531",
+                        "assetPath": "Assets/Oracle/Model.fbx"
+                    },
+                    "slotZeroMaterial": {
+                        "guid": "13eb9ebaa2de6554d8bc77f6ac834708",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Changed.mat"
+                    },
+                    "correspondingSourceChain": [
+                        {
+                            "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                            "fileId": "3678588830305176102",
+                            "assetPath": "Assets/Oracle/Container.prefab"
+                        },
+                        {
+                            "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+                            "fileId": "2799191651431707251",
+                            "assetPath": "Assets/Oracle/ModelVariant.prefab"
+                        },
+                        {
+                            "guid": "f541e92add760c94f8a680387bf92122",
+                            "fileId": "-5277769136950918531",
+                            "assetPath": "Assets/Oracle/Model.fbx"
+                        }
+                    ]
+                },
+                {
+                    "role": "sibling_R2",
+                    "renderer": {
+                        "guid": "",
+                        "fileId": "",
+                        "assetPath": ""
+                    },
+                    "sourceAtContainer": {
+                        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                        "fileId": "1826559006993220135",
+                        "assetPath": "Assets/Oracle/Container.prefab"
+                    },
+                    "originalSource": {
+                        "guid": "f541e92add760c94f8a680387bf92122",
+                        "fileId": "94586058172442283",
+                        "assetPath": "Assets/Oracle/Model.fbx"
+                    },
+                    "slotZeroMaterial": {
+                        "guid": "e7bfce22a0e3b5f41b71eab989539865",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Base.mat"
+                    },
+                    "correspondingSourceChain": [
+                        {
+                            "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                            "fileId": "1826559006993220135",
+                            "assetPath": "Assets/Oracle/Container.prefab"
+                        },
+                        {
+                            "guid": "6fc0ec8391f71e040aafd23e8b84bee4",
+                            "fileId": "1245571387767428773",
+                            "assetPath": "Assets/Oracle/ModelVariant.prefab"
+                        },
+                        {
+                            "guid": "f541e92add760c94f8a680387bf92122",
+                            "fileId": "94586058172442283",
+                            "assetPath": "Assets/Oracle/Model.fbx"
+                        }
+                    ]
+                }
+            ],
+            "materialModifications": [
+                {
+                    "propertyPath": "m_Materials.Array.data[0]",
+                    "target": {
+                        "guid": "73f37864af1f9f441bbda5c04bdc005f",
+                        "fileId": "3678588830305176102",
+                        "assetPath": "Assets/Oracle/Container.prefab"
+                    },
+                    "objectReference": {
+                        "guid": "13eb9ebaa2de6554d8bc77f6ac834708",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Changed.mat"
+                    }
+                }
+            ]
+        },
+        {
+            "caseName": "E0",
+            "prefabPath": "Assets/Oracle/E0_Direct.prefab",
+            "prefabType": "Variant",
+            "renderers": [
+                {
+                    "role": "direct_R1",
+                    "renderer": {
+                        "guid": "",
+                        "fileId": "",
+                        "assetPath": ""
+                    },
+                    "sourceAtContainer": {
+                        "guid": "",
+                        "fileId": "",
+                        "assetPath": ""
+                    },
+                    "originalSource": {
+                        "guid": "f541e92add760c94f8a680387bf92122",
+                        "fileId": "-5277769136950918531",
+                        "assetPath": "Assets/Oracle/Model.fbx"
+                    },
+                    "slotZeroMaterial": {
+                        "guid": "13eb9ebaa2de6554d8bc77f6ac834708",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Changed.mat"
+                    },
+                    "correspondingSourceChain": [
+                        {
+                            "guid": "f541e92add760c94f8a680387bf92122",
+                            "fileId": "-5277769136950918531",
+                            "assetPath": "Assets/Oracle/Model.fbx"
+                        }
+                    ]
+                }
+            ],
+            "materialModifications": [
+                {
+                    "propertyPath": "m_Materials.Array.data[0]",
+                    "target": {
+                        "guid": "f541e92add760c94f8a680387bf92122",
+                        "fileId": "-5277769136950918531",
+                        "assetPath": "Assets/Oracle/Model.fbx"
+                    },
+                    "objectReference": {
+                        "guid": "13eb9ebaa2de6554d8bc77f6ac834708",
+                        "fileId": "2100000",
+                        "assetPath": "Assets/Oracle/Materials/Changed.mat"
+                    }
+                }
+            ]
+        }
+    ]
+}

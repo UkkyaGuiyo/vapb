@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 import re
 import subprocess
@@ -14,6 +15,10 @@ TEXT_SUFFIXES = {
     ".bat", ".cmd", ".sh", ".ini", ".cfg", ".log", ".csv", ".cs",
 }
 FORBIDDEN_BINARY_SUFFIXES = {".unitypackage", ".fbx", ".blend", ".psd", ".tga"}
+PUBLIC_SYNTHETIC_FBX = {
+    "tests/unity_alias_oracle/Assets/Oracle/Model.fbx":
+        "7123dad66d3a4c0ec138a33363f9e6a315ad76a020a9206b949d2b1db3a9501a",
+}
 LOCAL_PATH_PATTERNS = (
     re.compile(r"[A-Za-z]:" + re.escape("\\") + "Users" + re.escape("\\") + r"[^\\\r\n\"'`]+"),
     re.compile(re.escape("/") + "Users" + re.escape("/") + r"[^/\r\n\"'`]+"),
@@ -41,12 +46,18 @@ class PublicRepositoryHygieneTests(unittest.TestCase):
                 self.assertIsNone(pattern.search(text), str(path))
 
     def test_no_proprietary_asset_binaries_are_tracked(self):
+        tracked = tracked_files()
         offenders = [
-            str(path.relative_to(ROOT))
-            for path in tracked_files()
+            path.relative_to(ROOT).as_posix()
+            for path in tracked
             if path.suffix.lower() in FORBIDDEN_BINARY_SUFFIXES
+            and path.relative_to(ROOT).as_posix() not in PUBLIC_SYNTHETIC_FBX
         ]
         self.assertEqual(offenders, [])
+        for relative, expected_sha in PUBLIC_SYNTHETIC_FBX.items():
+            path = ROOT / relative
+            if path in tracked:
+                self.assertEqual(expected_sha, hashlib.sha256(path.read_bytes()).hexdigest())
 
     def test_real_package_probe_is_explicitly_local_only(self):
         probe = (ROOT / "tests" / "blender_real_identity_verify.py").read_text(encoding="utf-8")

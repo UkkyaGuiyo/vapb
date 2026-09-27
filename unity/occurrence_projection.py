@@ -312,13 +312,51 @@ def project_occurrences(
                            and record["source_key"]["renderer_file_id"] == modification.target_file_id]
                 material = _reference(modification.object_reference)
                 if len(matches) != 1 or material is None:
-                    # An override for an unprojected Renderer has no proven
-                    # effect on independently identified sibling Renderers.
-                    for record in matches:
+                    # A stripped component in the child asset can alias a
+                    # Renderer below one of its nested Prefab instances. The
+                    # next source local ID may be Unity-generated and absent
+                    # from the serialized source, so never treat that alias
+                    # as an unrelated override or guess its final Renderer.
+                    alias_scope = []
+                    alias = (next((item for item in child.prefab.documents
+                                   if item.file_id == modification.target_file_id
+                                   and item.class_id in (23, 137)
+                                   and "stripped" in item.raw), None)
+                             if child.prefab is not None
+                             and modification.target_guid.lower() == child_guid else None)
+                    if alias is not None and not matches:
+                        nested_id = ref_file_id(alias.data.get("m_PrefabInstance"))
+                        nested = next((item for item in child.prefab.documents
+                                       if item.file_id == nested_id and item.class_id == 1001), None)
+                        corresponding = _reference(alias.data.get("m_CorrespondingSourceObject"))
+                        nested_source = (_reference(nested.data.get("m_SourcePrefab"))
+                                         if nested is not None else None)
+                        scoped = (corresponding is not None and nested_source is not None
+                                  and corresponding["guid"] == nested_source["guid"])
+                        if scoped:
+                            alias_scope = [record for record in child_records
+                                           if record["renderer_class_id"] == alias.class_id
+                                           and len(record["instance_edge_path"]) > len(child_path)
+                                           and record["instance_edge_path"][len(child_path)]["container_asset_guid"] == child_guid
+                                           and record["instance_edge_path"][len(child_path)]["prefab_instance_file_id"] == nested_id]
+                        else:
+                            # The alias is real but its source/instance edge
+                            # is not trustworthy. Bound uncertainty to this
+                            # child Prefab, never the selected root.
+                            alias_scope = [record for record in child_records
+                                           if record["renderer_class_id"] == alias.class_id]
+                    for record in matches or alias_scope:
                         record["material_status"] = "UNKNOWN"
-                    issue("AMBIGUOUS_OVERRIDE_TARGET" if len(matches) > 1 else "UNRESOLVED_OVERRIDE",
+                    code = ("UNRESOLVED_ALIAS_OVERRIDE" if alias is not None and not matches
+                            else "AMBIGUOUS_OVERRIDE_TARGET" if len(matches) > 1
+                            else "UNRESOLVED_OVERRIDE")
+                    alias_details = ({"alias_nested_instance_file_id": nested_id,
+                                      "uncertainty_scope": "NESTED_INSTANCE" if scoped else "CHILD_PREFAB"}
+                                     if alias is not None and not matches else {})
+                    issue(code,
                           child_path, target_source_guid=modification.target_guid,
-                          target_renderer_file_id=modification.target_file_id, slot_index=slot)
+                          target_renderer_file_id=modification.target_file_id, slot_index=slot,
+                          **alias_details)
                     continue
                 if (matches[0]["material_slot_count"] is not None
                         and slot >= matches[0]["material_slot_count"]):

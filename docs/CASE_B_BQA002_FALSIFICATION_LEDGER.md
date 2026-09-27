@@ -6,6 +6,51 @@ screenshots, and raw logs remain outside this repository. The actual source
 is `feature/multi-package-identity` at `c8718a3` before this audit; the
 historical projection source is `41c081a` (Git blob `3b0bc1b0`).
 
+## Nested/Variant stripped-alias counterexample (2026-09-27)
+
+This is a **different public synthetic** from the Case B R1/R2/U experiment
+below. The source, first-party FBX generator, Unity-authored Prefabs, public-API
+Oracle, and machine-readable identity edges are in `tests/unity_alias_oracle/`.
+Unity 2022.3.22f1 saved and reopened the Prefabs before recording
+`Renderer.sharedMaterials[0]`, source chains, and signed local IDs.
+
+| Case | Independent Unity observation | Previous VAPB projection | Repaired package-only projection |
+| --- | --- | --- | --- |
+| E0 direct model override | R1 slot changes | Same changed Material | Same changed Material |
+| E1 stripped alias override | Target instance R1 slot changes; other instance R1 and sibling R2 retain Base | Alias U unresolved; affected R1 incorrectly stays usable with Base | Alias U remains unresolved; class-compatible rows in only its nested instance become `UNKNOWN`; other instance remains usable |
+| E2 override on other nested instance | Target instance R1 and R2 stay Base; other instance R1 changes | Other instance U unresolved and wrongly usable with Base | Only other instance's class-compatible rows become `UNKNOWN`; target instance stays usable |
+| E3 missing alias source edge | Not run in Unity; malformed-source negative control only | U silently treated as unrelated | `UNKNOWN` bounded to the child Prefab's compatible Renderer class |
+| E4/E5 repeated source and sibling Renderer | Unity changes one R1 occurrence; the second R1 occurrence and the observed sibling R2 slot stay Base | All projected rows stay usable with incomplete state | Other occurrence stays usable; R2 in the affected instance also remains `UNKNOWN` because package-only evidence does not identify which Variant-local Renderer alias is R1 |
+
+The key serialized chain is root Material modification target → child Prefab
+stripped Renderer document → `m_PrefabInstance` (one nested instance) and
+`m_CorrespondingSourceObject` (Variant-local ID). Unity's documented public
+Prefab API continues that exact source chain to the model R1 Renderer and
+confirms the final slot. The Variant-local ID is absent from the serialized
+Variant Prefab and `.meta`, so the Package itself cannot complete that join.
+`alias_graph.json` records each edge's authority and this exact gap; names,
+order, and candidate count are not joins. The model IDs used by the Python
+projection test come from public `AssetDatabase` on the exact synthetic FBX;
+its dummy native UIDs are unused by projection and do not prove native binding.
+
+**Result A plus C:** the unmatched-equals-unrelated generalization is
+falsified, while exact R1-versus-R2 package-only attribution remains unproven.
+The repair recognizes a serialized stripped Renderer alias and withholds only
+class-compatible projected rows within its proven nested instance. If that
+instance/corresponding-source edge is malformed, it withholds the compatible
+rows under that child Prefab. It never copies U's Material to a guessed row.
+This is the smallest safe scope expressible by the current record-level
+`material_status` and available serialized identity. A future revision-bound
+alias bridge could keep unaffected R2 usable, but this audit has not created
+one. A no-alias unmatched U still follows the earlier Case B behavior below.
+
+Negative controls: wrong override source GUID/local ID is not bound; wrong
+corresponding source or missing nested edge cannot bind; wrong model witness
+revision creates no model rows; duplicate native candidate remains withheld by
+the existing witness tests. The two same-source nested occurrences are checked
+separately. Mutation tests prove no guessed binding on malformed inputs; they
+are not claims about Unity's behavior on those malformed inputs.
+
 ## Discriminating experiments
 
 The fixed synthetic base has two identified Renderer components, distinct

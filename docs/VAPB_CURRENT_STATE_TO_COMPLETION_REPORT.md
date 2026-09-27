@@ -2,6 +2,25 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Nested/stripped Material alias safety — 2026-09-27
+
+Unity 2022.3.22f1 authored a fully public synthetic nested Variant with two
+occurrences of the same model. Its serialized Material override targets a
+stripped Renderer alias that does not directly equal the model Renderer ID.
+Unity public APIs show that the override changes one R1 slot; the prior VAPB
+projection left it unresolved and kept that affected row usable with stale Base
+Material. A machine-readable source chain identifies the missing package-only
+edge: the Variant-local alias ID is absent from its serialized Prefab/meta.
+The projection now withholds class-compatible rows only in the proven nested
+instance, or the child Prefab when its alias edge is malformed. It never binds
+the override by name/order. This preserves the earlier exact Case B unrelated-U
+rule; it does not establish exact R1/R2 attribution in an alias instance.
+Public Oracle, RED/GREEN tests, limitations, and controls are recorded in the
+[B-QA-002 falsification ledger](CASE_B_BQA002_FALSIFICATION_LEDGER.md).
+
+**Next action after this checkpoint:** investigate B-QA-001 no-witness Import
+guidance while retaining the new alias uncertainty boundary.
+
 ## B-QA-002 counterfactual audit — 2026-09-27
 
 The historical projection blob was replayed against a fixed public synthetic
