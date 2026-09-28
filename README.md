@@ -13,7 +13,8 @@ UV Meshを、新しいFBX/GUIDと選択したUnity由来Material/TextureからPa
 **File → Export → VAPB UnityPackage（Blender完成形）** を使い、fresh Unity
 2022.3.22f1へPackageをImportした後、`manifest.json`を選択して
 **Tools → VAPB → Build Final State Prefab** を実行します。公開syntheticの
-UV CubeでMaterial slotとTextureの自動復元を検証済みです。現在この新経路は
+UV CubeでMaterial slotとTextureの自動復元を検証済みです。元Meshの形状を
+変えずに出力した公開synthetic Case Aもfresh Unityで確認しました。現在この新経路は
 単一static UV Mesh、Unity built-in Standard Materialに限定され、Skinや
 VRC Componentの復元には対応していません。従来のsource-bound出力は残しています。
 

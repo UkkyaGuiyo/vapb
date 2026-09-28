@@ -5,7 +5,10 @@ This is continuing work. The current original request in PRODUCT_SPEC.md is auth
 ## Blender final-state static replacement — 2026-09-28
 
 The first new Product Model route now exports a **new static UV Mesh** from the
-selected Blender Object. Source Mesh/Renderer binding is not required. A
+selected Blender Object. Source Mesh/Renderer binding is not required. Case A
+kept the selected imported Mesh geometry unchanged through the new exporter;
+the fresh Unity 2022.3.22f1 project created a new Prefab with the expected
+Mesh/UV, Material GUID and Texture. A
 public synthetic UnityPackage was imported normally into Blender 5.2.1; its
 Mesh was deleted, a new UV Cube was created, and the imported Unity-derived
 Material was assigned. The new operator exported a new FBX/GUID, the selected

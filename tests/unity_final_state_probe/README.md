@@ -9,21 +9,26 @@ Unity 2022.3.22f1 `ProjectSettings/ProjectVersion.txt` and `Packages/manifest.js
    into `Assets/Editor`. Run Unity batch method
    `VapbFinalStateSourceProbe.Prepare`. It writes `Source.unitypackage` to the
    project root and prints `VAPB_FINAL_STATE_SOURCE_PASS` before exit 0.
-2. Run Blender with `--background --factory-startup --disable-autoexec
+2. For Case A, run Blender with `--background --factory-startup --disable-autoexec
+   --python-exit-code 1 --python tests/blender_final_state_export_test.py --
+   unchanged <Source.unitypackage> <Unchanged.blend> <Output.unitypackage>`.
+   This keeps the selected imported Mesh geometry unchanged. Use a separate
+   fresh Unity project and step 3 to validate its return package.
+3. For Case B, run Blender with `--background --factory-startup --disable-autoexec
    --python-exit-code 1 --python tests/blender_final_state_export_test.py --
    create <Source.unitypackage> <Replacement.blend> <Output.unitypackage>`.
    The script performs normal Import, deletes the source Mesh, creates a UV
    Cube, assigns its imported Material, exports and saves. A second Blender
    invocation can open `<Replacement.blend>` and run phase `reopen` with a
    distinct output path; it checks persisted Export IDs.
-3. In a new **fresh** Unity project, copy `Editor/VapbFinalStateFreshProbe.cs`
+4. In a new **fresh** Unity project, copy `Editor/VapbFinalStateFreshProbe.cs`
    to `Assets/Editor` and the two first-party `unity_editor` support sources
    into the same `Assets/VAPBExport/...` paths used by the output package.
    Put `Output.unitypackage` in the project root. Run Unity batch method
    `VapbFinalStateFreshProbe.Run`. It imports the package, applies the Recipe,
    checks actual Mesh, UV, Material GUID, Texture and missing source Model,
    then prints `VAPB_FINAL_STATE_FRESH_PASS` before exit 0.
-4. For fail-closed controls, open `<Replacement.blend>` and run
+5. For fail-closed controls, open `<Replacement.blend>` and run
    `tests/blender_final_state_mutation_test.py` with `-- <missing|duplicate|renamed>
    <Output.unitypackage> <Mutant_mode.fbx>`. Place the three generated FBX
    variants beside the fresh Unity project's `Output.unitypackage`. Run batch
