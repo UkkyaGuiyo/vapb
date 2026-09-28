@@ -2,6 +2,10 @@
 
 Status: `EXPORT_ARCHITECTURE = READY` after SOL architecture review.
 
+## 2026-09-28 product-model update
+
+The current product authority is [VAPB Core Product Model — 2026-09-28](VAPB_CORE_PRODUCT_MODEL_20260928.md). The HYBRID architecture remains useful, but **source geometry identity continuity is no longer a normal export requirement**. Source identities remain import provenance and restoration evidence. Regenerated Blender-authored geometry may receive new export/post-import identities; the Finalizer uses VAPB Export IDs and the recipe to attach preserved Unity semantics to the current output structure. Raw-preserve remains preferred for unchanged reusable Unity assets such as Materials/Textures where appropriate, not as a requirement to preserve source Mesh lineage.
+
 ## Decision context
 
 The importer already stores package-scoped and source-scoped identity metadata, but it does not yet provide a deterministic UnityPackage repacker. The canonical Unity snapshot closes the source-side renderer/material records for the captured CASE_A dataset (311 renderer occurrences and 490 ordered slots); it is not a general proof for arbitrary packages. The Blender audit proves that generated Unity model localIDs are not all retained by Blender. Export must therefore distinguish source preservation from regenerated output.
