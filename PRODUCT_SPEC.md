@@ -2,6 +2,47 @@
 
 The appended **2026-09-26 full product campaign instruction** is the current user-authorized scope. Earlier milestones and scope exclusions below are historical where they conflict. V1 is intermediate; Cleanup, Weight Transfer, Bone Merge, practical Japanese UI and verified distribution are mandatory. Machine-specific paths are replaced with placeholders.
 
+# Core product model authority (2026-09-28)
+
+The user-authorized core product definition is now documented in [docs/VAPB_CORE_PRODUCT_MODEL_20260928.md](docs/VAPB_CORE_PRODUCT_MODEL_20260928.md). This section supersedes older wording where it would make **source geometry identity continuity** a prerequisite for successful export.
+
+VAPB's primary product goal is to eliminate the manual workflow:
+
+```text
+Unity → FBX → Blender → edit → FBX → Unity → manually reassign Materials / restore Unity-VRC settings
+```
+
+The normative replacement is:
+
+```text
+UnityPackage(s)
+→ VAPB import into Blender
+→ ordinary Blender editing
+→ Blender final state becomes the geometry authority
+→ VAPB export generates new Unity-ready geometry plus a semantic recipe
+→ self-contained UnityPackage
+→ Unity import
+→ Finalizer reattaches supported Material / component / VRC state to the new structure
+```
+
+Core rules:
+
+1. **Blender Final State Authority.** Mesh geometry/topology, UV, Armature/Bones, weights, Shape Keys, editable hierarchy/Transform, Material-slot structure, and face-to-slot assignment are taken from the Blender final state at export.
+2. **Source geometry lineage is not normally required.** The user may delete every imported Mesh and create a new Mesh. Export does not require proving that a newly generated FBX Mesh is the same logical source Mesh.
+3. **Unity semantic state is preserved separately.** Unity Material serialized state, Texture references, Avatar Descriptor, Animator/Expressions, PhysBone/Contact/Constraint and other preservable Unity/VRC state remain source-derived recipe/snapshot data until restored.
+4. **VAPB Export IDs bridge worlds.** Source identity, Blender final-state export identity, and Unity post-import identity are separate domains. Export IDs identify the current Blender entities that the Unity Finalizer must resolve after import.
+5. **Material preview is not the Unity Material source of truth.** A Unity Material may become an approximate Blender Material; the recipe retains the Unity-specific state. Current Blender slot usage determines which Unity Material is attached to which exported Renderer slot.
+6. **Self-contained output.** Required Material, Texture, Prefab and other selected composition assets are staged into the output UnityPackage. The normal workflow must not require re-importing the original input Material/Texture packages. Framework dependencies such as VRChat SDK or shader packages may remain explicitly external.
+7. **Finalizer role.** The Finalizer reattaches preserved Unity semantics to the newly imported Blender-authored structure. It is not primarily a mechanism for preserving source Mesh local fileIDs.
+8. **Source identity still matters on import.** GUID/fileID/package/occurrence evidence remains essential for dependency recovery, Prefab/Variant interpretation, state capture, ambiguity handling, diagnostics, and reusable Unity assets. The narrowed rule applies to mandatory geometry lineage across regenerated FBX.
+
+Minimum proof cases:
+
+- **Unchanged E2E:** UnityPackage → Blender → no edit → VAPB export → fresh Unity import → required Material/state reconstruction.
+- **Geometry replacement E2E:** UnityPackage → Blender → delete imported Meshes → create and UV-unwrap a Cube → assign Unity-derived Blender Materials → VAPB export → fresh Unity import → Cube receives the intended Unity Materials automatically.
+
+The second case is the critical proof that recipe-driven reconstruction does not depend on preserving source Mesh identity.
+
 # Product Specification
 
 ## Product Goal
@@ -16,7 +57,7 @@ Blender 5.2.1 LTSで、UnityPackageとして配布されるAvatar、Clothes、Ac
 - Armature、Bones、Vertex Groups、Bone Weights、Shape Keys
 - UV、Normals、Transform、Hierarchy
 - Material Slots、Texture Assets
-- Unity Material identity、Asset GUID、Asset Path、Unity fileID、source object identity
+- Unity Material identity、Asset GUID、Asset Path、Unity fileID、source object identity（Import provenance / Unity state capture / reusable Unity asset identityとして保持する。再生成Geometryが元Mesh identityを継承することは通常のExport必須条件ではない）
 
 ## Approximate Preview Only
 
@@ -45,7 +86,7 @@ Textureは元Assetを直接編集する前提とする。Addonは`Face_copy.png`
 
 ## Material Policy
 
-Materialの表示はBlender上の近似でよい。ただしUnity Asset identity、Renderer slot binding、Material GUID、Texture GUIDの追跡を優先する。「見た目が似ているMaterial」より、元Unity Rendererの参照関係を正本とする。
+Materialの表示はBlender上の近似でよい。Import時はUnity Asset identity、Renderer slot binding、Material GUID、Texture GUIDをsource evidenceとして正しく解釈する。Export時はBlender完成形のMaterial slot構成・face割当を正本とし、VAPB Export ID / Recipeを介して対応するUnity Material asset/stateを新しいRendererへ再装着する。元Unity Rendererのslot構成を、ユーザーが意図的に変更したBlender完成形より優先しない。
 
 ## Identity Policy
 
@@ -59,7 +100,7 @@ Automaticは互換する複数memberを一つに絞らない。Providerが曖昧
 
 `source_package`, `source_guid`, `source_asset_path`, `source_file_id`, `source_object_path`, `source_material_guid`, `source_texture_guid`
 
-Rename、複数Packageのmerge、Material replacement、Texture edit、export後も元Unity Assetとの対応を失わないことを将来要件とする。
+Rename、複数Packageのmerge、Material replacement、Texture edit後も、再利用するUnity Material / Texture / component stateとBlender完成形の対応をVAPB Export ID / Recipeで追跡できることを要件とする。再生成Geometryについて元Mesh / Rendererのsource identity continuityを必須条件にはしない。
 
 ## Maximum Recoverable Unity State (MRUS)
 
