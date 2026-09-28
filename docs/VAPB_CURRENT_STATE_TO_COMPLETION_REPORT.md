@@ -2,6 +2,33 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Real Material dependency boundary — 2026-09-28
+
+A local-only representative VRC Material Package was imported through the
+normal Blender operator. A Unity-derived Material was assigned to a newly
+created UV Cube with no source Mesh receipt or Renderer binding. The current
+final-state exporter stopped before writing an output Package at its explicit
+built-in Standard Shader gate. This establishes the **first observed boundary**
+for this sample. It does not yet establish its Shader family, cross-package
+Texture provider status, full serialized dependency closure, or destination
+Unity result. No private asset, identity, path, dump or log was added here.
+
+Code inspection identifies the next bounded change: `unity/material_parser.py`
+already models Shader GUID/fileID and serialized Texture references independent
+of Blender preview roles, while `export/final_state_package.py` currently gates
+on the built-in Standard Shader and searches Texture providers only in the
+Material's own source archive. The exporter must retain the source `.mat` and
+resolve every non-null serialized Texture reference using registered Package
+provenance, with unresolved/ambiguous providers rejected. Shader provider and
+external-framework requirements need separate evidence and a declared
+dependency; no Shader family should be inferred from the Material name.
+
+**Status:** diagnostic checkpoint only. No production change, public synthetic
+cross-package E2E, private output Package, or fresh Unity restoration is
+claimed. Exact next action: add a public synthetic Material/Texture split
+fixture that reproduces the gate and provider boundary before changing the
+exporter. Component/VRC-state Recipe expansion follows this Material work.
+
 ## Blender final-state static replacement — 2026-09-28
 
 The first new Product Model route now exports a **new static UV Mesh** from the
@@ -34,10 +61,8 @@ packages and complete Avatar roundtrip remain unverified in this route.
 The earlier staging-scene FBX experiment silently omitted the Object custom
 property. A current-scene temporary Object copy preserves the property, and
 the exporter now checks its bytes before writing the UnityPackage. This is a
-transport guard, not a name or source-Mesh identity fallback. Next action:
-extend the new Recipe from static Material assignment to independently
-identified Unity/VRC component state while retaining the optional old
-source-bound route and fail-closed behavior.
+transport guard, not a name or source-Mesh identity fallback. Material
+dependency closure is the next boundary; component state follows it.
 
 ## Hierarchy diagnosis and independent Geometry Oracle — 2026-09-28
 

@@ -26,6 +26,7 @@ VAPB開発で得た一般化可能な失敗知識、反証、設計原則を記�
 | LESSON-019 | PrefabInstance identityとplacementを分ける | PREFAB / TRANSFORM |
 | LESSON-020 | Model Object配置と直接参照Meshの形状座標を分ける | FBX / GEOMETRY |
 | LESSON-021 | Export IDの存在をFBX輸送後に確認する | EXPORT / IDENTITY |
+| LESSON-022 | Preview用TextureとUnity Material依存を分ける | MATERIAL / EXPORT |
 
 ## LESSON-001 — 表示名はidentityではない
 
@@ -599,6 +600,31 @@ Mesh。Skin、複数Object、他Importer設定には一般化していない。
 **根拠:** [Current State](VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md)、
 [Blender E2E](../tests/blender_final_state_export_test.py)、
 [Unity fresh/mutation probe](../tests/unity_final_state_probe/Editor/VapbFinalStateFreshProbe.cs)。
+
+## LESSON-022 — Preview用TextureとUnity Material依存を分ける
+
+**Status:** ACTIVE · **Domain:** MATERIAL / EXPORT
+
+**以前の考え:** Blender Previewに使われる画像だけを、Material帰還に必要なTextureと
+見なせそうだった。
+
+**観測・反証:** 既存のUnity Material parserはShaderと`m_TexEnvs`のproperty名を
+問わずTexture referenceを保持する。一方、現行final-state ExportはStandard Shader
+gateで実VRC由来Materialを拒否し、Texture providerもMaterialと同一Packageだけを
+探索する。private代表1件の最初の停止はこのShader gateだった。特定Textureの
+欠落やcross-package provider不一致は、まだ実測していない。
+
+**現在の原則:** Blender node graphはPreview用。出力対象のTextureは元Unity
+`.mat`のnon-null serialized referenceから列挙し、Package provenanceで一意の
+providerを選ぶ。未知propertyも役割を推測せず依存として保持する。Shader依存は
+Textureと分けて判定する。証拠不足なら完全復元を宣言しない。
+
+**適用範囲:** 新しいstatic final-state Material帰還の設計境界。実データの
+cross-package復元や任意Shaderのfresh Unity成功は未証明。
+
+**根拠:** [Current State](VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md)、
+[Material parser](../unity/material_parser.py)、
+[final-state exporter](../export/final_state_package.py)。
 
 ## How to use this document
 
