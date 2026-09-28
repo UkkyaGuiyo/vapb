@@ -25,6 +25,7 @@ VAPB開発で得た一般化可能な失敗知識、反証、設計原則を記�
 | LESSON-015 | 仮説を分ける実験を選ぶ | DEBUGGING |
 | LESSON-019 | PrefabInstance identityとplacementを分ける | PREFAB / TRANSFORM |
 | LESSON-020 | Model Object配置と直接参照Meshの形状座標を分ける | FBX / GEOMETRY |
+| LESSON-021 | Export IDの存在をFBX輸送後に確認する | EXPORT / IDENTITY |
 
 ## LESSON-001 — 表示名はidentityではない
 
@@ -574,6 +575,30 @@ Objectを参照する場合、Mesh以外のRenderer、Skin/Armatureが必要な�
 [独立観測値](../tests/unity_alias_oracle/geometry_expected.json)、
 [通常Import Blender probe](../tests/blender_nested_prefab_realization_test.py)、
 [Unity ModelImporter.fileScale（2022.3）](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-fileScale.html)。
+
+## LESSON-021 — Export IDの存在をFBX輸送後に確認する
+
+**Status:** ACTIVE · **Domain:** EXPORT / IDENTITY
+
+**以前の考え:** Blender ObjectにExport ID custom propertyを付け、FBX exporterに
+`use_custom_props=True`を渡せばUnityまでIDが届くと考えた。
+
+**観測・反証:** 別の一時SceneにObjectをコピーした初回出力ではPackage生成は成功したが、
+FBXバイト列にExport IDがなく、Unity Finalizerは対象Meshを一意に特定できなかった。
+同じ公開synthetic Meshを現在Scene上の一時Objectとして書き出すと、FBX IDと
+Unity公開user-property callbackの両方でIDを観測できた。IDなし/重複は拒否し、
+表示名の変更は受理した。
+
+**現在の原則:** 出力前のBlender metadataは輸送成功の証拠ではない。生成FBXに
+IDが残ったことを確認し、Unity側でもexact Recipe revisionと一意のObject IDを
+照合する。Material slotは名前ではなくRecipeのExport IDから解決する。
+
+**適用範囲:** Blender 5.2.1 / Unity 2022.3.22f1、公開syntheticの単一static UV
+Mesh。Skin、複数Object、他Importer設定には一般化していない。
+
+**根拠:** [Current State](VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md)、
+[Blender E2E](../tests/blender_final_state_export_test.py)、
+[Unity fresh/mutation probe](../tests/unity_final_state_probe/Editor/VapbFinalStateFreshProbe.cs)。
 
 ## How to use this document
 

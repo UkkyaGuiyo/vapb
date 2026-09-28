@@ -20,6 +20,7 @@ from ..export.model_package import SourcePackage, ModelReplacement, TextureRepla
 from ..export.package_writer import UnityPackageWriter
 from ..export.raw_assets import RawAssetRepository
 from ..export.staging import StagedUnityAsset
+from ..export.final_state_package import export_final_state_package
 
 
 def _materials(mesh, package_id, assets):
@@ -592,8 +593,27 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
         return {'FINISHED'}
 
 
-CLASSES = (VAPB_OT_export_unitypackage,)
+class VAPB_OT_export_final_state_unitypackage(bpy.types.Operator, ExportHelper):
+    bl_idname = 'export_scene.vapb_final_state_unitypackage'
+    bl_label = 'UnityPackage（Blender完成形から新規作成）'
+    bl_description = '静的Meshの現在の形状・UV・Material slotから新Assetと復元Recipeを作ります'
+    filename_ext = '.unitypackage'
+    filter_glob: bpy.props.StringProperty(default='*.unitypackage', options={'HIDDEN'})
+
+    def execute(self, context):
+        try:
+            export_final_state_package(context, context.active_object, Path(self.filepath))
+        except (OSError, RuntimeError, ValueError, KeyError) as exc:
+            self.report({'ERROR'}, f'完成形の書き出しを停止しました: {exc}')
+            return {'CANCELLED'}
+        self.report({'INFO'}, '新しい静的Mesh UnityPackageを作成しました。Unity側でRecipeを適用してください')
+        return {'FINISHED'}
+
+
+CLASSES = (VAPB_OT_export_unitypackage, VAPB_OT_export_final_state_unitypackage)
 
 
 def menu_export(self, context):
     self.layout.operator(VAPB_OT_export_unitypackage.bl_idname, text='VAPB UnityPackage（Mesh / Skin）')
+    self.layout.operator(VAPB_OT_export_final_state_unitypackage.bl_idname,
+                         text='VAPB UnityPackage（Blender完成形）')

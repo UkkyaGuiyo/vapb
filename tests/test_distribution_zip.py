@@ -25,8 +25,10 @@ class DistributionZipTests(unittest.TestCase):
     def test_export_finalizer_sources_are_packaged(self):
         helpers = {
             'unity_editor/VapbRealizationMarker.cs',
+            'unity_editor/VapbExportObjectMarker.cs',
             'unity_editor/Editor/VapbReferenceFinalizer.cs',
             'unity_editor/Editor/VapbModelSkinFinalizer.cs',
+            'unity_editor/Editor/VapbFinalStateFinalizer.cs',
         }
         members = git_files(ROOT, 'HEAD')
         self.assertTrue(helpers <= set(members))

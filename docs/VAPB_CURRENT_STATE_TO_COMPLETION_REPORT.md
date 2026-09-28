@@ -2,6 +2,40 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Blender final-state static replacement — 2026-09-28
+
+The first new Product Model route now exports a **new static UV Mesh** from the
+selected Blender Object. Source Mesh/Renderer binding is not required. A
+public synthetic UnityPackage was imported normally into Blender 5.2.1; its
+Mesh was deleted, a new UV Cube was created, and the imported Unity-derived
+Material was assigned. The new operator exported a new FBX/GUID, the selected
+Material/Texture assets, and a Recipe keyed by VAPB Object/Material Export IDs.
+In a fresh Unity 2022.3.22f1 project containing none of the source Model or
+Prefab assets, the documented FBX user-property callback carried the Object
+ID. The Finalizer created a Prefab with a 24-vertex Mesh, 24 UVs, one Renderer
+slot, the exact Recipe Material GUID and its Texture. A second apply was
+idempotent. Blender save/reopen kept the Object and Material Export IDs; a
+second export reused them while issuing a fresh Model GUID. Renaming the FBX
+Object did not change the identity result.
+
+The public negative controls removed or duplicated the FBX Object ID, changed
+the slot's Material ID to an unknown ID, set an invalid slot index, and
+removed the Material asset. Each rejected the Recipe without changing the
+existing Prefab. The old source-bound static and model-Skin Blender package
+roundtrip probes, plus Blender integration, passed. Public Python discovery: **402 PASS**, zero
+failures/errors; compileall PASS. These results are for one static UV Mesh and
+one built-in Standard Unity Material with one Texture. Multi-Object composition,
+Skin, arbitrary shaders, component/VRC state restoration, private real-world
+packages and complete Avatar roundtrip remain unverified in this route.
+
+The earlier staging-scene FBX experiment silently omitted the Object custom
+property. A current-scene temporary Object copy preserves the property, and
+the exporter now checks its bytes before writing the UnityPackage. This is a
+transport guard, not a name or source-Mesh identity fallback. Next action:
+extend the new Recipe from static Material assignment to independently
+identified Unity/VRC component state while retaining the optional old
+source-bound route and fail-closed behavior.
+
 ## Hierarchy diagnosis and independent Geometry Oracle — 2026-09-28
 
 An isolated diagnostic ran the same fixed public FBX in Blender 5.2.1 with
