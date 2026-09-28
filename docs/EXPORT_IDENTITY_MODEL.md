@@ -2,6 +2,10 @@
 
 Status: design contract. Names are diagnostic labels only; they are never identity keys.
 
+## 2026-09-28 product-model update
+
+See [VAPB Core Product Model — 2026-09-28](VAPB_CORE_PRODUCT_MODEL_20260928.md). Source identity and export identity are now explicitly allowed to **separate at the geometry boundary**. Source Mesh/Renderer identities remain evidence for import reconstruction, provenance and Unity-state capture, but a Blender-authored output Mesh does not normally need to prove continuity with a source Mesh. Export-time VAPB IDs identify the Blender final-state entities that must be resolved after Unity imports the generated FBX/assets. Material/Texture and other reusable Unity assets may preserve their Unity identity independently of geometry lineage.
+
 ## Identity layers
 
 | Layer | Stable key | Purpose |
