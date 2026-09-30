@@ -154,6 +154,62 @@ PASS — no unnecessary implementation found. No excess production changes ident
 
 [Actual sanitized report](../tests/bounded_skin_roundtrip_measurements.json).
 
-**Next exact action:** capture one existing representative real source occurrence
-through its supported production Export and fresh Finalizer, retaining the exact
-Mesh/Bone/target receipt chain; keep unsupported relations explicit.
+**Next exact action:** reproduce missing preserved-script providers and absent external-dependency declarations with a public-safe synthetic fixture before changing the dependency boundary.
+
+
+## Representative real production closure attempt — 2026-10-01
+
+**PARTIAL; one real production export/import captured, complete joins 0/1.**
+Starting source commit `9bd2a26418b5bcf63d1968869cef4513c2d0214e`.
+
+The two existing numerically measured occurrences were checked against the
+current model-derived Skin route. Both prepared; the occurrence with no Shape
+Keys was selected to avoid an additional unsupported Shape comparison. Selection
+used the existing exact occurrence, source Mesh reference and native receipts,
+not displayed names or Object order. Private identity and all capture scripts,
+Package bytes, raw reports and Unity logs remain outside Git.
+
+The ordinary `export_scene.vapb_unitypackage` ACTIVE route produced a Package
+with one `RESTORE_DIRECT_SKIN_VARIANT_V1` task and 160 Bone mappings. Its output
+contained 257 assets, including the four generated first-party support scripts.
+The source scene hierarchy snapshot and original Package bytes were unchanged;
+the immutable source blend was never saved. No diagnostic marker was added to
+the editing source. No old diagnostic D1 FBX was used as the acceptance artifact.
+
+An isolated Unity2022.3.22f1 project imported only this actual output Package.
+The Finalizer compiled with zero C# errors and was actually invoked. It returned
+false with `PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT`. Public Unity API counted 55
+missing MonoBehaviours in the loaded source hierarchy. The directly serialized
+Prefab had 51 script components referencing three distinct script asset GUIDs;
+none had providers in the output. The manifest's `external_dependencies` was
+empty. A bounded read-only check of the known primary VRC Oracle found no exact
+provider for these three references; their framework/type remains unresolved.
+Do not label them VRChat SDK merely from the avatar's appearance or purpose.
+
+This is a supported-scope/dependency blocker, not proof of a Mesh/Bone numerical
+regression. No scripts were removed, no source Prefab was rewritten and no
+undeclared framework or original source Package was preloaded to force a PASS.
+Broad component restoration and shader work remain outside this mission.
+
+Consequently target resolution, ordered target Bones/rootBone, effective
+Material association, CP/topology/surface comparison, Skin numeric acceptance,
+first/repeated Apply and the combined real report are **UNPROVEN**. No real
+positive capture exists, so the five real evidence-corruption controls were not
+run. Shape is N/A for the selected occurrence. The second case was not exported:
+the required first complete PASS gate was not reached. Historical numeric
+6636 PASS and public combined PASS remain separate prior evidence.
+
+Current verification: Python517 PASS using repository-parent context and
+`unittest discover -s unitypackage_blender_importer/tests -t . -p "test_*.py"`;
+compileall PASS. Actual Blender5.2.1 triangle staging regression PASS, including
+Skin, Shape, UV, Materials, Export IDs, shared datablock preservation, success
+immutability, injected rollback and save/reopen. Previous same-source-commit
+public Skin package/Finalizer/repeated Apply captures were reused rather than
+claimed as a new real result. Production/code changes NONE.
+
+The initial test invocations exposed two harness errors: discovery without
+`-t .` lost relative imports; Unity `-quit` exited before asynchronous Package
+import completed. Corrected discovery passed all 517 tests. A further disposable
+Oracle reload lost its import callback; after import completion and an idle
+batch restart, the final dedicated Apply invocation compiled and emitted the
+explicit rejection above. These harness errors are not production regressions.

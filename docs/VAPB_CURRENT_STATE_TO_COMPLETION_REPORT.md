@@ -1,5 +1,27 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Representative real production Skin closure — 2026-10-01
+
+**PARTIAL — production Export/import 1; complete authoritative joins 0/1.**
+Source commit `9bd2a26418b5bcf63d1968869cef4513c2d0214e`.
+Selected existing receipt-proven occurrence without Shape Keys; normal ACTIVE
+Skin export produced one direct Variant task /160 Bone mappings. Source scene
+snapshot, immutable blend and original Package preserved. Fresh Unity2022.3.22f1
+imported only the generated output. C# compile0 errors; actual Finalizer rejected
+`PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT`, public API missing scripts55.
+Three distinct directly serialized script references lack output providers;
+`external_dependencies` empty and exact providers unresolved in the bounded
+known primary Oracle check. No framework guessed/preloaded, source stripped,
+component restoration or shader scope broadened. Production changes NONE.
+Full target/Bone/root, Geometry/Material/Skin and repeated Apply remain UNPROVEN;
+real negative controls deferred because no positive complete capture exists.
+Python517 PASS, compileall PASS, Blender triangle/Skin/Shape/UV/Material/IDs,
+source preservation, injected rollback and save/reopen PASS.
+[Evidence boundary](VAPB_BOUNDED_SKIN_ROUNDTRIP_ACCEPTANCE_20261001.md#representative-real-production-closure-attempt--2026-10-01).
+**Next exact action:** create a public-safe synthetic RED for missing preserved
+script providers and absent external-dependency declarations before changing
+that boundary. Historical numeric PASS does not close this real evidence gap.
+
 ## Bounded Skin round-trip evidence composition — 2026-10-01
 
 **PARTIAL overall; public direct confirmed Skin PASS; real full round-trip UNSUPPORTED.**
