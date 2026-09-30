@@ -16,6 +16,7 @@ from .staging import StagedUnityAsset, StagingTree
 from ..blender.identity_registry import load_scene_registry
 from ..unity.asset_database import AssetDatabase
 from ..unity.material_parser import parse_material
+from ..unity.identity import select_package_provider
 
 
 def _sha(payload: bytes) -> str:
@@ -33,16 +34,17 @@ def _id(block, prefix: str, key: str, collection) -> str:
     return prefix + uuid4().hex
 
 
-def _material_texture_guids(payload: bytes) -> set[str]:
-    text = payload.decode("utf-8-sig")
-    if not re.search(r"(?m)^\s*m_Shader:\s*\{fileID:\s*46,\s*guid:\s*0000000000000000f000000000000000", text):
-        raise ValueError("only the synthetic built-in Standard shader is supported")
+def _material_data(payload: bytes):
     with tempfile.TemporaryDirectory(prefix="vapb_material_refs_") as temporary:
         root = Path(temporary)
         path = root / "Material.mat"
         path.write_bytes(payload)
         material = parse_material(path, AssetDatabase(root), strict_references=True)
-    return {reference.guid for reference in material.textures.values() if reference.file_id != 0}
+    return material
+
+
+def _material_texture_guids(payload: bytes) -> set[str]:
+    return {reference.guid for reference in _material_data(payload).textures.values() if reference.file_id != 0}
 
 
 def _source_assets(scene, package_id: str):
@@ -54,6 +56,47 @@ def _source_assets(scene, package_id: str):
     if package_id != "sha256:" + _sha(payload) or package["package_sha256"] != _sha(payload):
         raise ValueError("source Material package revision changed")
     return {asset.guid: asset for asset in RawAssetRepository(archive).read_all(payload)}
+
+
+def _resolve_source_asset(scene, consumer_package_id: str, guid: str, cache=None):
+    cache = {} if cache is None else cache
+    def assets(package_id):
+        if package_id not in cache:
+            cache[package_id] = _source_assets(scene, package_id)
+        return cache[package_id]
+    local = assets(consumer_package_id).get(guid)
+    if local is not None:
+        return local
+    candidates = []
+    for package_id in load_scene_registry(scene).packages:
+        if package_id != consumer_package_id:
+            source = assets(package_id).get(guid)
+            if source is not None:
+                candidates.append((package_id, source))
+    status, provider = select_package_provider(candidates, consumer_package_id)
+    if provider is None:
+        raise ValueError("dependency provider " + status)
+    return provider
+
+
+def _shader_dependency(scene, package_id, data, cache):
+    if data.shader_guid == "0000000000000000f000000000000000" and data.shader_file_id == 46:
+        return {"classification": "UNITY_BUILTIN", "guid": data.shader_guid,
+                "file_id": str(data.shader_file_id)}, None
+    if not data.shader_file_id or not re.fullmatch(r"[0-9a-f]{32}", data.shader_guid):
+        raise ValueError("Shader dependency UNRESOLVED")
+    source = _resolve_source_asset(scene, package_id, data.shader_guid, cache)
+    if (data.shader_file_id != 4800000 or not source.pathname.lower().endswith('.shader')
+            or not re.search(rb"(?m)^ShaderImporter:\s*$", source.meta_bytes)):
+        raise ValueError("Shader provider identity is unsupported")
+    text = source.asset_bytes.decode('utf-8-sig')
+    fallbacks = re.findall(r'\bFallback\s+(\S+)', text, re.IGNORECASE)
+    if (re.search(r"#\s*include\b|\bUsePass\b", text)
+            or any(value.lower() != 'off' for value in fallbacks)
+            or any(int(value) != 0 for value in re.findall(rb"fileID:\s*(-?\d+)\b", source.meta_bytes))):
+        raise ValueError("Shader requires explicit external dependency closure")
+    return {"classification": "PACKAGE_PROVIDER", "guid": data.shader_guid,
+            "file_id": str(data.shader_file_id)}, source
 
 
 def _stage_fbx(context, mesh, export_id: str, output: Path) -> None:
@@ -108,6 +151,7 @@ def export_final_state_package(context, mesh, output: Path):
     material_records = []
     selected = StagingTree()
     material_ids = {}
+    source_cache = {}
     for slot in mesh.material_slots:
         material = slot.material
         key = material.as_pointer()
@@ -116,22 +160,37 @@ def export_final_state_package(context, mesh, output: Path):
             package_id = str(material.get("unity_source_package_id", ""))
             guid = str(material.get("unity_material_guid", "")).lower()
             file_id = str(material.get("unity_material_file_id", ""))
-            assets = _source_assets(context.scene, package_id)
+            if package_id not in source_cache:
+                source_cache[package_id] = _source_assets(context.scene, package_id)
+            assets = source_cache[package_id]
             source = assets.get(guid)
             if source is None or not source.pathname.lower().endswith(".mat") or not re.search(
                     rb"(?m)^---\s+!u!21\s+&" + re.escape(file_id.encode()) + rb"\b", source.asset_bytes):
                 raise ValueError("Unity Material asset identity is not proven")
             selected.add(StagedUnityAsset(source.guid, source.pathname, source.asset_bytes,
                 source.meta_bytes, source.preview_bytes, asset_type="MATERIAL_ASSET"))
-            for texture_guid in _material_texture_guids(source.asset_bytes):
-                texture = assets.get(texture_guid)
-                if texture is None or not re.search(rb"(?m)^TextureImporter:\s*$", texture.meta_bytes):
-                    raise ValueError("selected Material Texture provider is unavailable")
+            data = _material_data(source.asset_bytes)
+            shader, shader_source = _shader_dependency(context.scene, package_id, data, source_cache)
+            if shader_source is not None:
+                selected.add(StagedUnityAsset(shader_source.guid, shader_source.pathname,
+                    shader_source.asset_bytes, shader_source.meta_bytes, shader_source.preview_bytes,
+                    asset_type="SHADER_ASSET"))
+            textures = []
+            for reference in data.textures.values():
+                if reference.file_id == 0:
+                    continue
+                texture = _resolve_source_asset(context.scene, package_id, reference.guid, source_cache)
+                if reference.file_id != 2800000 or not re.search(rb"(?m)^TextureImporter:\s*$", texture.meta_bytes):
+                    raise ValueError("Texture provider subasset identity is unsupported")
                 selected.add(StagedUnityAsset(texture.guid, texture.pathname, texture.asset_bytes,
                     texture.meta_bytes, texture.preview_bytes, asset_type="TEXTURE_ASSET"))
+                textures.append({"property_name": reference.property_name, "guid": reference.guid,
+                                 "file_id": str(reference.file_id)})
             material_ids[key] = material_id
             material_records.append({"export_material_id": material_id,
-                                     "guid": guid, "file_id": file_id})
+                                     "guid": guid, "file_id": file_id,
+                                     "asset_sha256": _sha(source.asset_bytes),
+                                     "shader": shader, "textures": textures})
     slots = [{"slot_index": index, "export_material_id": material_ids[slot.material.as_pointer()]}
              for index, slot in enumerate(mesh.material_slots)]
 

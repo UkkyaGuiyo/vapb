@@ -9,6 +9,7 @@ from typing import Any, Iterable
 import bpy  # type: ignore
 
 from ..unity.texture_roles import TextureRole, canonical_texture_properties, classify_texture_property
+from ..unity.identity import select_package_provider
 from .performance import diagnostic_add
 
 
@@ -355,19 +356,9 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
             continue
         provider_type = "Material" if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"} else "Image"
         candidates = _providers(record.get("target_guid", ""), provider_type)
-        local = [item for item in candidates if item.get("unity_source_package_id") == record.get("consumer_package_id")]
-        status = ""
-        provider = None
-        if len(local) == 1:
-            status, provider = RESOLVED_LOCAL, local[0]
-        elif len(local) > 1:
-            status = AMBIGUOUS_PROVIDER
-        elif len(candidates) == 1:
-            status, provider = RESOLVED_CROSS_PACKAGE, candidates[0]
-        elif len(candidates) > 1:
-            status = AMBIGUOUS_PROVIDER
-        else:
-            status = UNRESOLVED
+        status, provider = select_package_provider(
+            ((item.get("unity_source_package_id"), item) for item in candidates),
+            record.get("consumer_package_id"))
         record["provider_status"] = status
         if provider is not None:
             if record.get("dependency_type") == "MATERIAL_TEXTURE":

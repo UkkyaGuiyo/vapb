@@ -108,6 +108,19 @@ def get_asset_identity(datablock: Any, asset_type: str = "") -> AssetIdentity:
     )
 
 
+def select_package_provider(candidates, consumer_package_id):
+    """Shared local-priority/unique-cross-package rule; never choose by order."""
+    candidates = list(candidates)
+    local = [value for package_id, value in candidates if package_id == consumer_package_id]
+    if len(local) == 1:
+        return "RESOLVED_LOCAL", local[0]
+    if len(local) > 1:
+        return "AMBIGUOUS_PROVIDER", None
+    if len(candidates) == 1:
+        return "RESOLVED_CROSS_PACKAGE", candidates[0][1]
+    return ("AMBIGUOUS_PROVIDER" if candidates else "UNRESOLVED"), None
+
+
 class SceneIdentityRegistry:
     """Small serializable registry for package metadata and canonical assets."""
 

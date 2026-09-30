@@ -56,6 +56,21 @@ public static class VapbFinalStateFinalizer
         public string export_material_id;
         public string guid;
         public string file_id;
+        public string asset_sha256;
+        public ShaderRecord shader;
+        public TextureRecord[] textures;
+    }
+    [Serializable] private sealed class ShaderRecord
+    {
+        public string classification;
+        public string guid;
+        public string file_id;
+    }
+    [Serializable] private sealed class TextureRecord
+    {
+        public string property_name;
+        public string guid;
+        public string file_id;
     }
     [Serializable] private sealed class SlotRecord
     {
@@ -147,6 +162,7 @@ public static class VapbFinalStateFinalizer
             if (material == null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material,
                     out string actualGuid, out long actualId) || actualGuid != record.guid || actualId != fileId)
                 throw new InvalidOperationException("MATERIAL_ID_MISMATCH");
+            ValidateDependencies(record, material, path);
             byId[record.export_material_id] = material;
         }
         var result = new Material[task.material_slots.Length];
@@ -161,6 +177,55 @@ public static class VapbFinalStateFinalizer
         if (used.Count != result.Length)
             throw new InvalidOperationException("MATERIAL_SLOT_INVALID");
         return result;
+    }
+
+    private static void ValidateDependencies(MaterialRecord record, Material material, string path)
+    {
+        // Older Standard-only recipes had no dependency records. Keep that
+        // bounded route; new recipes must pass every explicit identity check.
+        if (record.shader == null && record.textures == null && string.IsNullOrEmpty(record.asset_sha256))
+        {
+            if (material.shader == null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material.shader,
+                out string legacyGuid, out long legacyId) || legacyGuid != "0000000000000000f000000000000000" || legacyId != 46)
+                throw new InvalidOperationException("LEGACY_SHADER_UNSUPPORTED");
+            return;
+        }
+        if (!Regex.IsMatch(record.asset_sha256 ?? "", @"^[0-9a-f]{64}$") ||
+            HashFile(path) != record.asset_sha256)
+            throw new InvalidOperationException("MATERIAL_REVISION_MISMATCH");
+        ShaderRecord shader = record.shader;
+        if (shader == null || (shader.classification != "UNITY_BUILTIN" &&
+                shader.classification != "PACKAGE_PROVIDER") ||
+            material.shader == null || !material.shader.isSupported ||
+            ShaderUtil.ShaderHasError(material.shader) ||
+            !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material.shader, out string guid, out long id) ||
+            guid != shader.guid || !long.TryParse(shader.file_id, out long expectedId) || id != expectedId)
+            throw new InvalidOperationException("SHADER_DEPENDENCY_UNRESOLVED");
+        if (record.textures == null) throw new InvalidOperationException("TEXTURE_DEPENDENCIES_MISSING");
+        var properties = new HashSet<string>(StringComparer.Ordinal);
+        foreach (TextureRecord reference in record.textures)
+        {
+            if (reference == null || string.IsNullOrEmpty(reference.property_name) ||
+                !properties.Add(reference.property_name) ||
+                !Regex.IsMatch(reference.guid ?? "", @"^[0-9a-f]{32}$") ||
+                !long.TryParse(reference.file_id, out long textureId))
+                throw new InvalidOperationException("TEXTURE_REFERENCE_INVALID");
+            string texturePath = AssetDatabase.GUIDToAssetPath(reference.guid);
+            Texture found = null;
+            if (!string.IsNullOrEmpty(texturePath))
+                foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(texturePath))
+                    if (asset is Texture texture && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(texture,
+                        out string actualGuid, out long actualId) && actualGuid == reference.guid && actualId == textureId)
+                    {
+                        if (found != null) throw new InvalidOperationException("TEXTURE_ID_NOT_UNIQUE");
+                        found = texture;
+                    }
+            if (found == null || (material.HasProperty(reference.property_name) &&
+                    material.GetTexture(reference.property_name) != found))
+                throw new InvalidOperationException("TEXTURE_DEPENDENCY_UNRESOLVED");
+            // A saved property absent from this Shader is still retained in
+            // the exact source .mat and its Texture asset must resolve.
+        }
     }
 
     public static bool Apply(string manifestPath)

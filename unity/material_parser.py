@@ -84,8 +84,8 @@ def _unity_path(path: Path, asset_db: AssetDatabase) -> str:
         return str(path).replace("\\", "/")
 
 
-def _strict_texture_reference(body: str) -> dict[str, Any]:
-    matches = re.findall(r"(?m)^[ \t]*m_Texture[ \t]*:[ \t]*\{([^{}\n]*)\}[ \t]*$", body)
+def _strict_texture_reference(body: str, key: str = "m_Texture") -> dict[str, Any]:
+    matches = re.findall(r"(?m)^[ \t]*" + re.escape(key) + r"[ \t]*:[ \t]*\{([^{}\n]*)\}[ \t]*$", body)
     if len(matches) != 1:
         raise ValueError("Material texture reference is not one inline mapping")
     fields: dict[str, str] = {}
@@ -116,6 +116,8 @@ def parse_material(path: Path, asset_db: AssetDatabase, *, strict_references: bo
     shader_match = re.search(r"(?m)^\s*m_Shader:\s*(\{.*?\})\s*$", text)
     shader = parse_scalar(shader_match.group(1)) if shader_match else {}
     shader = shader if isinstance(shader, dict) else {}
+    if strict_references:
+        shader = _strict_texture_reference(text, "m_Shader")
     shader_guid = str(shader.get("guid", ""))
     try:
         shader_file_id = int(shader.get("fileID", 0))

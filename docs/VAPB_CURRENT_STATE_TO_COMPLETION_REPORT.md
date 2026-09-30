@@ -2,7 +2,46 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
-## Real Material Return / Phase 2: public RED fixture — 2026-09-30
+## Real Material Return / Phase 2: public production candidate — 2026-09-30
+
+The generated non-Standard standalone Shader fixture now exports through the
+production final-state path. The original Material bytes remain authoritative;
+both nonnull Texture properties resolve to the same Texture supplied by a
+separately registered Package. Provider selection shares the import resolver's
+local-first, then unique registered-provider policy. Missing, ambiguous and
+changed archive providers reject. Built-in Standard and bounded standalone
+`.shader` providers are classified explicitly; include/UsePass/non-Off Fallback
+dependencies remain unsupported without an explicit dependency closure.
+
+**Observed evidence:** 423 Python tests PASS; compileall PASS; Blender 5.2.1
+static Mesh and model-Skin round-trip regressions PASS. The new fixture passes
+both non-Standard and Standard/cross-Package export, rename and save/reopen.
+Fresh Unity 2022.3.22f1 imports only the generated output Package, receives its
+product helper, and verifies original Material SHA-256, exact Material/Shader/
+Texture GUID and signed local IDs, both Texture property bindings, geometry/UV
+and idempotent finalization. Deliberately removed Texture and Shader assets each
+cause product refusal with the existing Prefab bytes unchanged; restoration
+returns the positive control to PASS.
+
+The first generated Texture meta was an invalid 2D fixture: Unity imported it
+as a Cubemap. Repairing the synthetic TextureImporter version and explicit
+texture shape, then rerunning in a new empty project, resolved that test issue.
+No production fallback or manual destination Material repair was used.
+
+**PRIVATE_SHADER = UNRESOLVED.** Original input Packages and the bounded known
+Unity-project search provide no exact Shader-GUID provider. Eleven verified
+VRChat projects were examined in the relevant Assets/Packages and lock-backed
+provider scopes. No family/version is inferred from appearance or names; no
+private identifier was submitted to public search. Private return remains
+unverified; it does not stop the public synthetic work. Shader frameworks may
+be installed externally in Unity, but runtime/provider revision verification
+for such a framework is not yet implemented or claimed. No whole-framework
+copying, full VRChat compatibility, prerelease or completion is claimed here.
+
+The read-only scope review found no unnecessary implementation. Next action:
+finish checkpoint verification and preserve this bounded public candidate.
+
+## Historical Phase 2 RED fixture — 2026-09-30
 
 **Status: PARTIAL; production source unchanged from `ab1e7c0`.** The Phase-2
 request supersedes the previous allocation instruction: finish only a bounded

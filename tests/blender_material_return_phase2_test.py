@@ -1,12 +1,15 @@
-"""Phase-2 RED controls; generate first-party fixtures, no private inputs.
+"""Phase-2 generated first-party material return fixtures, no private inputs.
 
 Run Blender with --python-exit-code 1 and -- <unused scratch directory>.
-Exit 0 means both current refusals were observed, not successful roundtrip.
+Default green mode checks export and save/reopen; optional red mode reproduces
+the historical refusal on the pre-repair source revision.
 """
 from pathlib import Path
 import struct
 import sys
 import zlib
+import hashlib
+import json
 
 import bpy
 
@@ -15,6 +18,7 @@ import unitypackage_blender_importer as addon
 from unitypackage_blender_importer.export.final_state_package import export_final_state_package
 from unitypackage_blender_importer.export.package_writer import UnityPackageWriter
 from unitypackage_blender_importer.export.staging import StagedUnityAsset, StagingTree
+from unitypackage_blender_importer.export.raw_assets import RawAssetRepository
 
 MATERIAL_GUID = '1' * 32
 TEXTURE_GUID = '2' * 32
@@ -61,7 +65,9 @@ Material:
 '''
     material += '    m_Ints: []\n    m_Floats: []\n    m_Colors: []\n'
     def asset(guid, suffix, payload, importer):
-        meta = f'fileFormatVersion: 2\nguid: {guid}\n{importer}:\n  serializedVersion: 2\n'.encode()
+        version = 12 if importer == 'TextureImporter' else 2
+        shape = '  textureType: 0\n  textureShape: 1\n' if importer == 'TextureImporter' else ''
+        meta = f'fileFormatVersion: 2\nguid: {guid}\n{importer}:\n  serializedVersion: {version}\n{shape}'.encode()
         return StagedUnityAsset(guid, 'Assets/VAPBPhase2/' + suffix, payload, meta)
     entries = [asset(MATERIAL_GUID, 'SyntheticReference.mat', material.encode(), 'NativeFormatImporter')]
     if nonstandard:
@@ -76,6 +82,8 @@ def main():
     if scratch.exists():
         raise ValueError('use an unused scratch directory')
     scratch.mkdir(parents=True)
+    mode = sys.argv[sys.argv.index('--') + 2] if len(sys.argv) > sys.argv.index('--') + 2 else 'green'
+    assert mode in {'red', 'green'}
     for phase in ('NONSTANDARD_GATE', 'CROSS_PACKAGE_PROVIDER'):
         root = scratch / phase
         root.mkdir()
@@ -98,7 +106,41 @@ def main():
                 '_vapb_renderer_binding', '_vapb_fbx_realization_id',
                 '_vapb_fbx_mesh_receipt_id', '_vapb_occurrence_id'))
             cube.data.materials.append(materials[0])
-            output = root / 'Unexpected.unitypackage'
+            output = root / 'Output.unitypackage'
+            if mode == 'green':
+                source = next(a for a in RawAssetRepository(root / 'Material.unitypackage').read_all()
+                              if a.guid == MATERIAL_GUID)
+                expected = {'material_guid': MATERIAL_GUID, 'material_file_id': '2100000',
+                    'shader_guid': SHADER_GUID if phase == 'NONSTANDARD_GATE' else '0000000000000000f000000000000000',
+                    'shader_file_id': '4800000' if phase == 'NONSTANDARD_GATE' else '46',
+                    'texture_guid': TEXTURE_GUID, 'texture_file_id': '2800000',
+                    'source_material_sha256': hashlib.sha256(source.asset_bytes).hexdigest()}
+                (root / 'Expected.json').write_text(json.dumps(expected), encoding='utf-8')
+                manifest = export_final_state_package(bpy.context, cube, output)
+                by_guid = {a.guid: a for a in RawAssetRepository(output).read_all()}
+                assert by_guid[MATERIAL_GUID].asset_bytes == source.asset_bytes
+                assert TEXTURE_GUID in by_guid
+                if phase == 'NONSTANDARD_GATE':
+                    assert by_guid[SHADER_GUID].asset_bytes == SHADER
+                record = manifest.material_mappings[0]
+                assert len(record['textures']) == 2
+                assert len({r['guid'] for r in record['textures']}) == 1
+                bpy.ops.wm.save_as_mainfile(filepath=str(root / 'Cube.blend'))
+                export_id = cube.get('_vapb_export_object_id')
+                assert export_id
+                assert bpy.ops.wm.open_mainfile(filepath=str(root / 'Cube.blend')) == {'FINISHED'}
+                candidates = [obj for obj in bpy.context.scene.objects
+                              if obj.get('_vapb_export_object_id') == export_id]
+                assert len(candidates) == 1
+                reopened = candidates[0]
+                reopened.name = 'RenamedAfterReopen'
+                replay = export_final_state_package(bpy.context, reopened, root / 'Reopened.unitypackage')
+                assert replay.material_mappings == manifest.material_mappings
+                replay_assets = {a.guid: a for a in RawAssetRepository(root / 'Reopened.unitypackage').read_all()}
+                assert replay_assets[MATERIAL_GUID].asset_bytes == source.asset_bytes
+                assert replay_assets[TEXTURE_GUID].asset_bytes == png()
+                print('PHASE2_EXPORT_GREEN', phase)
+                continue
             try:
                 export_final_state_package(bpy.context, cube, output)
             except ValueError as error:
