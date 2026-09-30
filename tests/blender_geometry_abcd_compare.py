@@ -213,6 +213,7 @@ def skin_parity_report(before, observed, context):
         rows=[]
         for cp in raw:
             require(authored[cp]==staged[cp]==raw[cp],'AUTHORED_CANONICAL_OR_STAGING_CHANGED')
+            require(all(value>=2**-126 for value in raw[cp].values()),'UNPROVEN_NUMERIC_SCOPE')
             comparison=representation_compare(authored[cp],staged[cp],raw[cp],actual[cp],unity_version=context['unity_version'])
             rows.extend(dict(row,cp=cp) for row in comparison['rows'])
         result['staging']='EXACT' if 'staged_weights' in context else 'UNMEASURED'

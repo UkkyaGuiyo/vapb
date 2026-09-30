@@ -14,13 +14,32 @@ missing0, raw changed60 /1002, unexplained0, max expected/actual ULP0; both PASS
 Deformation remains MEASURED_NONZERO; private captured-position maxima remain
 ~1.34867e-6 /1.80983e-6m, separate from public controlled displacement ~1.19209e-7m.
 
-Bounded closure: Python510 PASS; compileall PASS; Blender Skin Package,
+Bounded closure: Python511 PASS; compileall PASS; Blender Skin Package,
 normalization fixture, triangle staging, Shape, source preservation, injected
 failure rollback and save/reopen PASS. Fresh Unity2022.3.22f1: 54-vertex/2-Bone
 package PASS, tiny weights, Material/Bone/state preservation, repeated Apply,
 invalid mapping rejection. Fresh numeric first/repeated183/183 BITWISE_EXACT
 and Skin transport PASS; displacement delta remains ~1.19209e-7m.
-Final whole-branch review precedes push. Historical checkpoints below stay intact.
+Final whole-branch review: Critical0, Important1 fixed, deferred minors0.
+A subnormal distribution could pass despite being outside measured scope;
+smallest/largest positive float32 subnormal controls failed before the guard
+and now return UNSUPPORTED. Final Python511 PASS; both bounded real reports
+remain PASS/BITWISE_EXACT after the guard. Historical checkpoints stay intact.
+
+Execution rulings (approved spec unchanged):
+- Native worktree API could not resolve the repository ref: Git worktree fallback;
+  cost is missing desktop attachment, with explicit Git isolation retained.
+- Windows task scripts use repository-parent PYTHONPATH; cost if incorrect is
+  import failure, with no runtime or package-population change.
+- Unsupported-origin control changes authored/staged/raw together to isolate
+  numeric scope; cost is test isolation, canonical-change RED remains covered.
+- Document task verification prints OK after the same git diff --check;
+  cost is ledger formatting only.
+- Hash-bound synthetic meta fixture uses exact committed LF bytes rather than
+  checkout CRLF; no tracked change, other checkouts require byte-exact handling.
+- Authorized push follows final review; cost is publication timing only.
+Task4 ledger's last-line worker-failure text is an expected negative-control
+message; the captured unittest result is 510/OK, exit0. Final suite is 511/OK.
 
 [Normative acceptance and evidence](VAPB_SKIN_WEIGHT_NORMALIZATION_20260930.md#product-authorized-skin-transport-acceptance--2026-10-01).
 **Exact next action after closure:** combine Skin transport with independent

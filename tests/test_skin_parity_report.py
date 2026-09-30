@@ -138,3 +138,15 @@ class SkinParityReportTests(unittest.TestCase):
             self.assertEqual(row['max_expected_actual_ULP'],0)
             self.assertEqual(row['deformation']['status'],'MEASURED_NONZERO')
             self.assertEqual(row['source_renderer_owner'],'UNMEASURED')
+
+    def test_subnormal_model_match_is_still_unsupported(self):
+        from .weight_numeric_models import models
+        for encoded in (1,0x7fffff):
+            b,o,c=self.fixture();tiny=struct.unpack('<f',struct.pack('<I',encoded))[0]
+            b['skin_weights'][0][0]['weight']=tiny;c['staged_weights'][0][0]['weight']=tiny
+            c['raw_weights'][(0,'WEIGHT-BONE-0')]=tiny
+            expected=models([tiny,.5])['M5_divide_then_reciprocal']
+            o['bone_weights'][0]['weight'],o['bone_weights'][1]['weight']=expected
+            result=self.report(b,o,c)
+            self.assertEqual(result['overall_supported_transport'],'UNSUPPORTED')
+            self.assertNotEqual(result['unity_representation'],'BITWISE_EXACT')

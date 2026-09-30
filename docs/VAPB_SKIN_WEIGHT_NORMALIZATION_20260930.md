@@ -288,14 +288,18 @@ expected/actual ULP0. Raw changed60/public and1002/real remain unchanged; the
 legacy raw real RED remains in both cases. Deformation metrics and source
 Renderer owner UNMEASURED are preserved. No private raw rows enter Git.
 
-Task4 bounded regression: Python510 PASS, compileall PASS; actual Blender Skin
+Task4 bounded regression: Python510 PASS; final reviewed suite511 PASS, compileall PASS; actual Blender Skin
 Package, tiny weights, triangle staging, Shape/UV/Material/IDs, source success
 preservation, injected failure rollback and save/reopen PASS. Fresh public Unity
 2022.3.22f1: 54 vertices/two Bones, repeated Apply, invalid mapping, source-model
 and unrelated-state preservation PASS. Fresh normalization source and fresh
 Unity numeric first/repeated imports were also run:183/183 BITWISE_EXACT each,
 transport PASS, errors0/warnings0, measured displacement delta1.1920928955078125e-7m.
-Final whole-branch review occurs before the authorized feature-branch push.
+Final whole-branch review: Critical0, Important1 fixed, deferred minors0.
+Smallest/largest float32 subnormal controls demonstrated an unsupported-scope
+false PASS before the fix. The report now rejects positive subnormal raw weights
+as UNSUPPORTED, without changing the numeric model or production data. Focused19
+and full511 tests PASS; actual bounded real reports remain PASS/BITWISE_EXACT.
 No weight mutation, FBX rewrite, importer-policy change or epsilon window is added.
 
 **Next exact action after policy closure:** combine the approved Skin transport
