@@ -150,6 +150,30 @@ public static class VapbGeometryAbcd
         catch(Exception ex) {status.status=ex is InvalidOperationException?ex.Message:"CAPTURE_FAILED";}
         finally {status.warnings=warnings;status.errors=errors;File.WriteAllText(Path.Combine(Project,"UnityDStatus.json"),JsonUtility.ToJson(status,true));EditorApplication.Exit(status.status=="CAPTURED"?0:1);}
     }
+    public static void RunSkinWeightPolicy()
+    {
+        var status=new Status {editor_version=Application.unityVersion};Application.logMessageReceived+=Logs;
+        try {
+            if(Application.unityVersion!="2022.3.22f1") throw new InvalidOperationException("EDITOR_VERSION_MISMATCH");
+            var m=JsonUtility.FromJson<Manifest>(File.ReadAllText(Path.Combine(Project,"ControlPointManifest.json")));
+            string input=Path.Combine(Project,"D1.fbx");
+            // A repeated diagnostic must not contaminate its no-policy RED.
+            string oldGuid=AssetDatabase.AssetPathToGUID(ModelPath);
+            string oldPolicy="Assets/VAPBExport/SkinWeightPolicy_"+oldGuid+".json";
+            if(File.Exists(oldPolicy))File.Move(oldPolicy,oldPolicy+"."+Guid.NewGuid().ToString("N")+".disabled");
+            Save(Import(input,null),"BeforePolicy",m);
+            string guid=AssetDatabase.AssetPathToGUID(ModelPath);
+            Directory.CreateDirectory("Assets/VAPBExport");
+            File.WriteAllText("Assets/VAPBExport/SkinWeightPolicy_"+guid+".json",
+                "{\"version\":1,\"model_guid\":\""+guid+"\",\"model_sha256\":\""+Hash(input)+"\"}");
+            AssetDatabase.ImportAsset(ModelPath,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);
+            Save(AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath),"D1",m);
+            AssetDatabase.ImportAsset(ModelPath,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);
+            Save(AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath),"RepeatedPolicy",m);
+            status.status="CAPTURED";
+        } catch(Exception e) {status.status="CAPTURE_FAILED";Debug.LogException(e);}
+        finally {status.warnings=warnings;status.errors=errors;File.WriteAllText(Path.Combine(Project,"UnityDStatus.json"),JsonUtility.ToJson(status,true));EditorApplication.Exit(status.status=="CAPTURED"?0:1);}
+    }
     public static void RunCReimport()
     {
         var status=new Status {editor_version=Application.unityVersion}; Application.logMessageReceived+=Logs;

@@ -1,5 +1,35 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Small Bone Weight lifecycle repair — 2026-09-30
+
+**GOAL_VERIFIED for measured small positive influence retention; full real Skin
+numeric parity remains RED.** Starting remote `d3e65b23d10b9dabe712d2a30ebed5d6f3f109fa`.
+
+- Public 42-CP / two-Bone triangle-only Generic fixture independently proves raw
+  FBX Cluster weights equal Blender. Default/post-import setters trim below .001;
+  first/pre-reimport OnPreprocessModel Custom/min=0 preserves all float32 weights,
+  including 1e-8. Post-import getter still .001: it is not effective-import proof.
+- CASE B UNITY CONFIGURABLE; copied min=0 .meta alone fails. Generated Skin
+  packages now carry exact GUID+FBX SHA import policies and a first-party public
+  API preprocessing helper. Source assets are outside policy scope; revision
+  mismatch rejects. Triangle staging and Finalizer production are unchanged.
+- Production public route: 18/42 exact without policy → 42/42 with policy and
+  repeated import. .0005/.9995 becomes 1.0 if trimmed; synthetic .5m Bone movement
+  exposes ~.000250816m deformation loss, absent at the measured policy CP.
+- Actual packaged/fresh Unity Finalizer: 54 vertices preserve .0005 float32,
+  Bone identities/Material/deformation/repeated Apply/invalid mapping PASS.
+- Same two real RED cases: 26+684 missing influences → zero missing, including
+  reimport. Max raw/native numerical difference remains ~1.19209e-7; existing
+  total Skin-binding comparator remains RED. No tolerance change or full Skin
+  parity completion claim. Shapes EXACT / N/A retained; private evidence external.
+- Python 492 PASS; compileall and actual triangle/source immutability/failure
+  rollback/save-reopen regressions PASS; one bounded scope review PASS.
+
+[Focused investigation and evidence](VAPB_SMALL_BONE_WEIGHT_INVESTIGATION_20260930.md).
+**Exact next action:** public normalization control separating Blender→raw FBX
+normalization from raw FBX→Unity float storage for the residual Skin mismatch.
+
+
 ## Production explicit Blender triangles — 2026-09-30
 
 **Production D1 Geometry export verified in the bounded supported scope.**

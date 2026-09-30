@@ -418,6 +418,20 @@ public static class VapbSkinRoundtripProbe
                 skin.sharedMaterials[0] != null &&
                 AssetDatabase.TryGetGUIDAndLocalFileIdentifier(skin.sharedMaterials[0], out string matGuid, out long matId) &&
                 matGuid == info.material_guid && Id(matId) == info.material_file_id;
+            if(File.Exists(ProjectFile("SmallWeights.flag")))
+            {
+                if(!report.boneIdsPreserved) throw new InvalidOperationException("SMALL_WEIGHT_BONE_ID_UNPROVEN");
+                int rootIndex=Array.IndexOf(skin.bones,skin.rootBone);
+                var counts=mesh.GetBonesPerVertex();var weights=mesh.GetAllBoneWeights();int offset=0;
+                try {
+                    for(int vertex=0;vertex<counts.Length;vertex++) {
+                        if(counts[vertex]!=2) throw new InvalidOperationException("SMALL_WEIGHT_LOST");
+                        float rootWeight=0;
+                        for(int n=0;n<counts[vertex];n++) {var w=weights[offset++];if(w.boneIndex==rootIndex)rootWeight=w.weight;}
+                        if(rootWeight!=.0005f) throw new InvalidOperationException("SMALL_WEIGHT_CHANGED");
+                    }
+                } finally {counts.Dispose();weights.Dispose();}
+            }
             report.sourceModelUnchanged = FileHash(AssetFile(Input)) == info.source_model_sha256;
             Transform sentinel = prefab == null ? null : prefab.transform.Find("UnrelatedSentinel");
             report.unrelatedStatePreserved = prefab != null && prefab.name == "Avatar" && sentinel != null &&

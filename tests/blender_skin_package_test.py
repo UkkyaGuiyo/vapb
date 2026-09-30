@@ -160,8 +160,9 @@ def main():
         for vertex in mesh.data.vertices:
             vertex.co *= 1.2
         indices = list(range(len(mesh.data.vertices)))
-        mesh.vertex_groups['Root'].add(indices, 0.25, 'REPLACE')
-        mesh.vertex_groups['Child'].add(indices, 0.75, 'REPLACE')
+        low_weight = 0.0005 if '--small-weights' in sys.argv else 0.25
+        mesh.vertex_groups['Root'].add(indices, low_weight, 'REPLACE')
+        mesh.vertex_groups['Child'].add(indices, 1-low_weight, 'REPLACE')
         for old in ('Root', 'Child'):
             group = mesh.vertex_groups[old]
             rig.data.bones[old].name = 'Renamed_' + old
@@ -177,10 +178,14 @@ def main():
         assert json.loads(mesh['_vapb_skin_binding']) == binding_before
         before = (len(bpy.data.scenes), len(bpy.data.objects), len(bpy.data.meshes), len(bpy.data.armatures))
         geometry = [tuple(vertex.co) for vertex in mesh.data.vertices]
+        weights_before = [[(group.group, group.weight) for group in vertex.groups]
+                          for vertex in mesh.data.vertices]
         output = root / (sys.argv[sys.argv.index('--output') + 1] if '--output' in sys.argv else 'Output.unitypackage')
         assert bpy.ops.export_scene.vapb_unitypackage(filepath=str(output)) == {'FINISHED'}
         assert before == (len(bpy.data.scenes), len(bpy.data.objects), len(bpy.data.meshes), len(bpy.data.armatures))
         assert geometry == [tuple(vertex.co) for vertex in mesh.data.vertices]
+        assert weights_before == [[(group.group, group.weight) for group in vertex.groups]
+                                  for vertex in mesh.data.vertices]
         assert output.is_file()
         print('SKIN_PACKAGE_EXPORT_PASS topology=1 weights=1 renamed_bones=1 reload=1 source_unchanged=1')
     finally:

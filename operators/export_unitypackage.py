@@ -510,6 +510,15 @@ def export_static_package(context, mesh, output):
 
 
 def _write_package(tree, manifest, output):
+    from ..export.skin_import_policy import skin_weight_policy_assets
+    policies = skin_weight_policy_assets(manifest.reference_rebind_tasks)
+    for policy in policies:
+        tree.add(policy)
+    manifest = replace(manifest, export_assets=manifest.export_assets + tuple({
+        'node_id': p.pathname, 'node_type': 'GENERATED_EXPORT_SUPPORT', 'operation': 'CREATE',
+        'strategy': 'REGENERATE_FROM_BLENDER', 'desired_export_path': p.pathname,
+        'export_identity': {'export_guid': p.guid},
+    } for p in policies))
     first_party = Path(__file__).resolve().parents[1] / 'unity_editor'
     generated = [
         ('Assets/VAPBExport/VapbRealizationMarker.cs', (first_party / 'VapbRealizationMarker.cs').read_bytes()),
@@ -517,6 +526,9 @@ def _write_package(tree, manifest, output):
          (first_party / 'Editor/VapbReferenceFinalizer.cs').read_bytes())]
     generated.append(('Assets/VAPBExport/Editor/VapbModelSkinFinalizer.cs',
                       (first_party / 'Editor/VapbModelSkinFinalizer.cs').read_bytes()))
+    if policies:
+        generated.append(('Assets/VAPBExport/Editor/VapbSkinWeightImporter.cs',
+                          (first_party / 'Editor/VapbSkinWeightImporter.cs').read_bytes()))
     manifest_path = 'Assets/VAPBExport/manifest.json'
     generated_paths = [manifest_path] + [p for p, _ in generated]
     generated_guids = {p: hashlib.sha256(('VAPB_EXPORT_HELPER_V1:' + p).encode()).hexdigest()[:32]
