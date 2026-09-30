@@ -1,5 +1,55 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Geometry A/B/C/D characterization checkpoint — 2026-09-30
+
+**GOAL_VERIFIED: bounded representation/round-trip experiment only.** Production
+files and PRODUCT_SPEC are unchanged. Full Geometry/export/VAPB completion is
+not claimed. Starting HEAD: `ae178b5c1f0e39162ef384147bf86c12e3f519cc`.
+
+- Five public fixtures measured A (raw FBX to Unity), B (native Blender), C
+  (official Unity FBX Exporter **5.1.1** binary to Blender), and D0/D1 (Blender
+  final state through existing export preset / explicit temporary triangles).
+  Unity **2022.3.22f1**, Blender **5.2.1**. Final public captures: zero errors,
+  zero warnings. Exact artifact hashes gate observations; explicit CP transport
+  and assigned Bone/Shape export labels supply correspondence.
+- Nonplanar A/B and D0 have both topology and sampled surface RED. Planar
+  diagonal RED has no sampled surface loss. D1 preserves base connectivity,
+  winding, slot partitions and sampled surface in **5/5 public cases**.
+- C preserves A triangle connectivity **5/5**, but default C surface/transform
+  comparisons remain RED. C is not a universal preservation oracle. No fitted
+  scale, tolerance change, source-Unity geometry injection or fourth guessed
+  triangulation algorithm is used.
+- Bounded private D: **one earlier EXACT and three earlier MISMATCH Skins**,
+  eight imports; zero errors and two unclassified warnings. D0 topology **1/4**
+  and sampled base surface **3/4** EXACT; D1 both **4/4** EXACT. Baked positions
+  **4/4** EXACT in both routes; two measured Shape cases EXACT, two N/A.
+- Separate remaining limitations: Bone-weight bindings **2/4** EXACT (two
+  small-weight DATA_LOSS cases); two genuine normal differences; rounded UV
+  differences retained. Arbitrary deformation, tangents and full appearance
+  are unproven. Existing `BakeMesh(true)`/world-space oracle plus independent
+  CPU skinning corrects a false-scale measurement; it is not a production fix.
+- Public three-vertex/two-Bone control reproduces missing 0.0005 influence.
+  Lower assigned/stored importer thresholds still yield runtime 0.001 and loss
+  after synchronous reimport. No GREEN or workaround claimed; original meta,
+  importer settings and FBX hashes restored. No private importer mutation.
+- Final repository-parent Python **484 PASS** (474 previous + 10 new metrics
+  and negative controls); compileall PASS; final read-only scope review PASS.
+  Original private source blend SHA
+  remains unchanged. Public evidence contains synthetic measurements only;
+  private assets, identities and raw reports remain outside Git.
+- Earlier committed Hierarchy **1,274 EXACT**, Shape **171 EXACT**, Geometry
+  **14 EXACT / 20 MISMATCH** remain prior measurements, not freshly rerun or
+  overwritten by this experiment. No production change, main merge, tag or ZIP.
+
+[Experiment, matrix, boundaries and known issues](VAPB_GEOMETRY_ABCD_ROUNDTRIP_20260930.md).
+
+**Exact next automatic action:** implement and verify explicit Blender-triangle
+staging in the existing supported production export route using public D0 RED /
+D1 GREEN controls; retain separate Skin-weight and normal limitations.
+
+Earlier sections below are historical checkpoints.
+
+
 ## Residual Geometry identity / reassessment boundary — 2026-09-30
 
 **SHAPE IDENTITY: GOAL_VERIFIED in the measured supported direct scope.**
