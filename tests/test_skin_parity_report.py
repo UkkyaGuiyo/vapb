@@ -126,3 +126,15 @@ class SkinParityReportTests(unittest.TestCase):
         self.assertEqual(supported_skin_transport_verdict(r),'PASS')
         self.assertEqual(supported_skin_transport_verdict(dict(r,total_influences=0)),'UNSUPPORTED')
         self.assertEqual(supported_skin_transport_verdict(dict(r,unexplained_influences=1)),'RED')
+
+    def test_committed_acceptance_evidence_preserves_dimensions(self):
+        report=json.loads((Path(__file__).parent/'unity_small_weight_probe/skin_parity_measurements.json').read_text())
+        rows=[report['public']]+[r['skin'] for r in report['real_aggregate_only']]
+        for row in rows:
+            self.assertEqual(row['overall_supported_transport'],'PASS')
+            self.assertEqual(row['unity_representation'],'BITWISE_EXACT')
+            self.assertGreater(row['raw_changed_influences'],0)
+            self.assertEqual(row['unexplained_influences'],0)
+            self.assertEqual(row['max_expected_actual_ULP'],0)
+            self.assertEqual(row['deformation']['status'],'MEASURED_NONZERO')
+            self.assertEqual(row['source_renderer_owner'],'UNMEASURED')
