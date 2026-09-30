@@ -1,5 +1,23 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Skin Transport Acceptance Contract — 2026-10-01
+
+Approved design/plan at starting HEAD `131eb1aeb7ec396efafa199daacbd4d0b153e0ba`.
+Policy implemented: PASS requires export Mesh/CP/Bone/influence identity EXACT,
+retention EXACT, Unity BITWISE_EXACT, unexplained0 and valid supported context.
+Raw numeric differences and nonzero/unmeasured deformation remain independent;
+source Renderer owner is UNMEASURED in this report. Stale/unresolved evidence is
+RED; unsupported context is UNSUPPORTED. Production changes NONE; no epsilon.
+
+Evidence baseline: public183 / real6636 bitwise explained; missing0;
+raw changed60 /1002. Deformation MEASURED_NONZERO. Actual policy evidence refresh
+and bounded regression closure follow in Tasks3–4; historical checkpoints below
+remain intact.
+
+[Normative acceptance and evidence](VAPB_SKIN_WEIGHT_NORMALIZATION_20260930.md#product-authorized-skin-transport-acceptance--2026-10-01).
+**Exact next action after closure:** combine Skin transport with independent
+Hierarchy/Renderer-occurrence evidence in a bounded round-trip acceptance report.
+
 ## Representation-aware full Skin report integration — 2026-09-30
 
 **GOAL_VERIFIED for reporting integration; no new Skin transport product policy.**

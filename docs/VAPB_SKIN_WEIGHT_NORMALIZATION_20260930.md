@@ -259,6 +259,35 @@ One independent read-only scope review PASS. Production changes NONE.
 contains public and real aggregate counts/metrics only. Original private identity,
 raw weights, asset names and paths are absent.
 
-**Next exact action:** evaluate the product-level Skin transport acceptance policy
-using separate raw, representation and measured deformation evidence, without
-silently promoting bitwise representation EXACT to deformation IDENTICAL.
+The preceding 2026-09-30 integration section records the prior policy state;
+`NOT_ASSESSED_PRODUCT_POLICY` there is historical, superseded by the contract below.
+
+
+## Product-authorized Skin transport acceptance — 2026-10-01
+
+The user approved the [design](superpowers/specs/2026-10-01-skin-transport-acceptance-design.md)
+and [four-task plan](superpowers/plans/2026-10-01-skin-transport-acceptance.md).
+`PRODUCT_SPEC.md` now defines the normative Skin Transport Acceptance Contract.
+`overall_supported_transport` is `PASS / RED / UNSUPPORTED`. The integrated
+report exposes `BITWISE_EXACT`; lower-level `representation_compare()` retains
+its internal `EXACT` label. Neither the numeric model nor production data changed.
+
+The pure reducer requires identity and retention EXACT, representation
+BITWISE_EXACT, unexplained=0, reason=NONE and a positive influence population.
+Unsupported version/numeric scope/incomplete context yields UNSUPPORTED;
+stale/ambiguous identity, missing/unexpected influences and unexplained output
+are RED. Raw numeric parity and deformation are independent of this reducer.
+Known raw RED and MEASURED_NONZERO remain visible. UNMEASURED deformation alone
+also does not block this bounded transport verdict. Source Renderer ownership
+remains UNMEASURED here and must come from independent occurrence proof where
+needed. PASS makes no arbitrary-pose, visual-harmlessness or whole-Avatar claim.
+
+The verified prior public183 / real6636 representation evidence is the acceptance
+baseline. Tasks3–4 reprocess actual first/repeated evidence and rerun bounded
+integration; their results will close this section. No private raw rows enter Git.
+No weight mutation, FBX rewrite, importer-policy change or epsilon window is added.
+
+**Next exact action after policy closure:** combine the approved Skin transport
+verdict with the existing independent Hierarchy/Renderer-occurrence evidence in
+a bounded round-trip acceptance report, retaining deformation and remaining
+Geometry/Normal/Tangent boundaries separately.

@@ -59,6 +59,32 @@ Blender 5.2.1 LTSで、UnityPackageとして配布されるAvatar、Clothes、Ac
 - Material Slots、Texture Assets
 - Unity Material identity、Asset GUID、Asset Path、Unity fileID、source object identity（Import provenance / Unity state capture / reusable Unity asset identityとして保持する。再生成Geometryが元Mesh identityを継承することは通常のExport必須条件ではない）
 
+## Skin Transport Acceptance Contract (2026-10-01)
+
+Blender Final State Authority remains normative for exported Skin weights.
+Supported Skin transport `PASS` requires authoritative exported Mesh/CP/Bone/
+influence identity `EXACT`, positive-influence retention `EXACT`, expected Unity
+representation `BITWISE_EXACT`, zero unexplained transformations, and valid
+revision/import-policy evidence within the proven runtime/numeric scope.
+The verdict is `PASS / RED / UNSUPPORTED`; unsupported context never receives PASS.
+
+Raw Blender/FBX versus Unity values remain independently observable, including
+changed count and magnitude, and may be `DIFFERENT` in a passing transport.
+Deformation remains independent evidence (`MEASURED_ZERO`, `MEASURED_NONZERO`, or
+`UNMEASURED`); nonzero or unmeasured deformation alone does not block Skin transport
+PASS. PASS does not assert unchanged raw values, identical deformation or visual
+harmlessness. No epsilon or ULP acceptance window is permitted: one ULP of
+expected/actual representation difference, any lost positive influence, ambiguous
+identity, stale revision or unexplained transformation is RED.
+
+Source Renderer ownership is supplied by independent Hierarchy/occurrence proof
+where required; this numeric report leaves `source_renderer_owner = UNMEASURED`.
+Skin transport PASS alone does not declare complete Avatar/VRC round-trip support.
+
+[Approved design](docs/superpowers/specs/2026-10-01-skin-transport-acceptance-design.md)
+and [bounded numeric evidence](docs/VAPB_SKIN_WEIGHT_NORMALIZATION_20260930.md)
+define the supported context; broader contexts require independent proof.
+
 ## Approximate Preview Only
 
 Blender側では次を近似表示とする。Unityの描画結果を完全再現することはGoalではない。
