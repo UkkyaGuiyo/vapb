@@ -1,5 +1,39 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Mandatory Hierarchy Parity milestone — 2026-09-30
+
+**STATUS: SPEC_MANDATED / NOT YET IMPLEMENTED.** The user requires the
+Unity-imported and Blender-imported views of the same selected composition to
+present the same supported **semantic hierarchy** before broad Unity/VRC component
+restoration proceeds. This is now a required product milestone, not an optional
+cleanup task.
+
+The target comparison covers GameObject-equivalent parent/child relations,
+Transform chains, Renderer ownership/attachment, Bone hierarchy and occurrence
+multiplicity. Blender-only technical representation nodes may exist, but they must
+be isolated from the user-facing semantic hierarchy. Correspondence must use
+GUID/fileID/package/occurrence provenance rather than names. Intrinsic
+Unity/Blender representation differences must be represented explicitly instead
+of silently flattening or inventing hierarchy.
+
+The first public comparison fixture should use the synthetic **Majun** composition.
+Acceptance must be automated for supported hierarchy edges, Renderer attachment,
+Bone chain, repeated occurrences and Blender save/reopen persistence; visual name
+matching alone is insufficient.
+
+Required roadmap order:
+
+```text
+Human-readable Material naming/organization
+→ Hierarchy Parity
+→ broad Unity/VRC component-state restoration
+```
+
+The current naming checkpoint remains the immediate implementation work.
+Hierarchy Parity is the mandatory next architectural validation milestone before
+expanding into broad Avatar Descriptor / Animator / PhysBone / Contact /
+Constraint restoration.
+
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
 ## Human-readable Material production prerequisite — 2026-09-30
