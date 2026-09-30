@@ -93,6 +93,12 @@ def main():
             assert not cube.get('_vapb_fbx_realization_id')
         for guid in guids:
             cube.data.materials.append(materials[guid])
+        # Replay control starts with explicit fixture IDs; fresh read-only IDs have a separate control.
+        from uuid import uuid4
+        cube["_vapb_export_object_id"] = "VAPB-OBJ-" + uuid4().hex
+        for slot in cube.material_slots:
+            if slot.material and not slot.material.get("_vapb_export_material_id"):
+                slot.material["_vapb_export_material_id"] = "VAPB-MAT-" + uuid4().hex
         manifest = fixture.export_final_state_package(bpy.context, cube, root/'Output.unitypackage')
         output = {a.guid: a for a in fixture.RawAssetRepository(root/'Output.unitypackage').read_all()}
         assert '/Majun/Materials/Majun_Body__' in output[guids[0]].pathname

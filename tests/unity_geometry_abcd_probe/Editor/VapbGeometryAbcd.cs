@@ -25,6 +25,7 @@ public static class VapbGeometryAbcd
     {
         public string guid, local_id, renderer_path, renderer_type, renderer_name;
         public int vertex_count, marker_channel, marker_invalid_count;
+        public string[] material_export_labels;
         public Vector3[] positions, world_positions, normals, world_normals, baked_world_positions, baked_world_normals;
         public Vector3[] baked_true_world_positions, baked_true_world_normals, cpu_weighted_world_positions;
         public int cpu_invalid_influence_count;
@@ -72,6 +73,7 @@ public static class VapbGeometryAbcd
                 if(skin!=null) for(int s=0;s<mesh.blendShapeCount;s++) skin.SetBlendShapeWeight(s,0);
                 if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(mesh,out string guid,out long id)) throw new InvalidOperationException("IDENTITY_FAILED");
                 var r=new Row { guid=guid,local_id=id.ToString(),renderer_path=Hierarchy(renderer.transform,instance.transform),renderer_type=renderer.GetType().Name,
+                    material_export_labels=renderer.sharedMaterials.Select(m=>m!=null&&m.name.StartsWith("VAPB-EXP-MAT-")?m.name:null).ToArray(),
                     renderer_name=renderer.name,renderer_lossy_scale=renderer.transform.lossyScale,vertex_count=mesh.vertexCount,positions=mesh.vertices,normals=mesh.normals,tangents=mesh.tangents,bounds=mesh.bounds,
                     renderer_local_to_world=Matrix(renderer.localToWorldMatrix),triangles=mesh.triangles,marker_channel=manifest.meshes.Single().uv_channel };
                 r.world_positions=r.positions.Select(v=>renderer.transform.TransformPoint(v)).ToArray();

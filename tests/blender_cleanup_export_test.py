@@ -88,7 +88,25 @@ def main():
             manifest = json.loads(path.with_suffix('.materialmap.json').read_text(encoding='utf-8'))
             assert manifest['cleanup']['removed_count'] == 2
             assert len(manifest['bindings']) == 1
-            print('CLEANUP_EXPORT_PASS bones=2 materials=1 source_unchanged=1 failure_recovery=1')
+            no_cleanup = Path(folder) / 'SyntheticNoCleanup.fbx'
+            assert bpy.ops.export_scene.unitypackage_roundtrip(filepath=str(no_cleanup),
+                selected_only=True, cleanup_materials=False, cleanup_bones=False) == {'FINISHED'}
+            unchanged()
+            tree, _ = parse(str(no_cleanup), use_namedtuple=True)
+            objects = next(item for item in tree.elems if item.id == b'Objects')
+            assert len([item for item in objects.elems if item.id == b'Model' and item.props[2] == b'LimbNode']) == 3
+            roundtrip_export.build_material_manifest = fail_manifest
+            try:
+                try:
+                    bpy.ops.export_scene.unitypackage_roundtrip(filepath=str(Path(folder)/'FailureNoCleanup.fbx'),
+                        selected_only=True, cleanup_materials=False, cleanup_bones=False)
+                except RuntimeError:
+                    pass
+            finally:
+                roundtrip_export.build_material_manifest = original_manifest
+            unchanged()
+            assert not (Path(folder)/'FailureNoCleanup.fbx').exists()
+            print('CLEANUP_EXPORT_PASS bones=2 materials=1 source_unchanged=1 failure_recovery=1 no_cleanup_success_failure=1')
     finally:
         addon.unregister()
 

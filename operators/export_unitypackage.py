@@ -21,6 +21,7 @@ from ..export.package_writer import UnityPackageWriter
 from ..export.raw_assets import RawAssetRepository
 from ..export.staging import StagedUnityAsset
 from ..export.final_state_package import export_final_state_package
+from ..export.triangle_staging import frozen_export_meshes
 
 
 def _materials(mesh, package_id, assets):
@@ -121,11 +122,13 @@ def _export_staged_mesh(context, source, output):
         scene.unit_settings.scale_length = context.scene.unit_settings.scale_length
         layer = scene.view_layers[0]
         layer.objects.active = obj
-        with context.temp_override(scene=scene, view_layer=layer):
+        with context.temp_override(scene=scene, view_layer=layer, selected_objects=[obj],
+                                   selected_editable_objects=[obj], active_object=obj, object=obj):
             obj.select_set(True)
-            result = bpy.ops.export_scene.fbx(filepath=str(output), use_selection=True,
-                object_types={'MESH'}, use_mesh_modifiers=False, use_custom_props=True,
-                bake_anim=False, bake_space_transform=False, path_mode='STRIP', embed_textures=False)
+            with frozen_export_meshes([obj]):
+                result = bpy.ops.export_scene.fbx(filepath=str(output), use_selection=True,
+                    object_types={'MESH'}, use_mesh_modifiers=False, use_custom_props=True,
+                    bake_anim=False, bake_space_transform=False, path_mode='STRIP', embed_textures=False)
         if result != {'FINISHED'} or not output.is_file():
             raise ValueError('FBXの書き出しに失敗しました')
     finally:
@@ -212,11 +215,12 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *,
             for obj in copies:
                 obj.select_set(True)
             layer.update()
-            result = bpy.ops.export_scene.fbx(filepath=str(output), use_selection=True,
-                object_types={'MESH', 'ARMATURE'}, use_mesh_modifiers=False,
-                use_custom_props=True, add_leaf_bones=False, use_armature_deform_only=source_skin_only,
-                bake_anim=False, bake_space_transform=False, apply_scale_options=scale_options,
-                path_mode='STRIP', embed_textures=False)
+            with frozen_export_meshes([mesh]):
+                result = bpy.ops.export_scene.fbx(filepath=str(output), use_selection=True,
+                    object_types={'MESH', 'ARMATURE'}, use_mesh_modifiers=False,
+                    use_custom_props=True, add_leaf_bones=False, use_armature_deform_only=source_skin_only,
+                    bake_anim=False, bake_space_transform=False, apply_scale_options=scale_options,
+                    path_mode='STRIP', embed_textures=False)
         if result != {'FINISHED'} or not output.is_file():
             raise ValueError('Skin FBXの書き出しに失敗しました')
     finally:

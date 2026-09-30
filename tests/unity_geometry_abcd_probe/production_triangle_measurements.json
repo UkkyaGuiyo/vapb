@@ -1,0 +1,1477 @@
+{
+  "schema": "vapb-production-triangle-measurements-1",
+  "starting_commit": "7b41b30fb45f4a1f6d60bf1e7bc8827a15127d24",
+  "scope": "PUBLIC_SYNTHETIC_ONLY",
+  "public": [
+    {
+      "fixture": "nonplanar",
+      "rows": [
+        {
+          "mode": "D0",
+          "fbx_sha256": "cb3a14e2ae35787729775ccfdb5f2b6c1ec252d81f3e2264919d1052cb8b25d7",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 2.5331974029541016e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "TOPOLOGY_MISMATCH",
+            "a_triangles": 18,
+            "b_triangles": 18,
+            "surface": {
+              "status": "SURFACE_DIFFERENCE",
+              "a_to_b": {
+                "maximum_distance": 0.06540866941213608,
+                "samples": 126,
+                "samples_above_tolerance": 26
+              },
+              "b_to_a": {
+                "maximum_distance": 0.04687560722231865,
+                "samples": 126,
+                "samples_above_tolerance": 26
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "ORIENTED_TOPOLOGY_MISMATCH",
+            "topology_by_material_slot": "SUBMESH_TOPOLOGY_MISMATCH",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  -0.4999999403953552,
+                  -0.08999969065189362,
+                  -0.07200002670288086
+                ],
+                "maximum": [
+                  0.47999995946884155,
+                  0.09000030159950256,
+                  1.871999979019165
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.49999991059303284,
+                  -0.08999946713447571,
+                  -0.07200002670288086
+                ],
+                "maximum": [
+                  0.47999995946884155,
+                  0.09000054001808167,
+                  1.871999979019165
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {},
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 2.27578651726128e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              0,
+              0
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 2.40533775945871e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SURFACE_DIFFERENCE",
+              "a_to_b": {
+                "maximum_distance": 0.06540840864181519,
+                "samples": 126,
+                "samples_above_tolerance": 26
+              },
+              "b_to_a": {
+                "maximum_distance": 0.04687560349702835,
+                "samples": 126,
+                "samples_above_tolerance": 26
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 1.8630176410153489e-07,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "NOT_APPLICABLE"
+            },
+            "skin_bone_weight_binding": "EXACT",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            4,
+            5,
+            5,
+            6,
+            7,
+            3
+          ]
+        },
+        {
+          "mode": "D1",
+          "fbx_sha256": "44048801ed5851e1db6b1a41a1a898069381aec9a8933bb54073eb562c343331",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 2.5331974029541016e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "EXACT",
+            "a_triangles": 18,
+            "b_triangles": 18,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 2.5331974029541016e-07,
+                "samples": 126,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 2.384185791015625e-07,
+                "samples": 126,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "EXACT",
+            "topology_by_material_slot": "EXACT",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  -0.4999999403953552,
+                  -0.08999969065189362,
+                  -0.07200002670288086
+                ],
+                "maximum": [
+                  0.47999995946884155,
+                  0.09000030159950256,
+                  1.871999979019165
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.49999991059303284,
+                  -0.08999946713447571,
+                  -0.07200002670288086
+                ],
+                "maximum": [
+                  0.47999995946884155,
+                  0.09000054001808167,
+                  1.871999979019165
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {},
+            "normals_per_cp_values": "NORMALS_DIFFERENCE",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 0.0003959535145685488,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              0,
+              0
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 2.40533775945871e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 2.6491503035686037e-07,
+                "samples": 126,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 2.6491503035686037e-07,
+                "samples": 126,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 1.8630176410153489e-07,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "NOT_APPLICABLE"
+            },
+            "skin_bone_weight_binding": "EXACT",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        }
+      ],
+      "unity_status": {
+        "status": "CAPTURED",
+        "editor_version": "2022.3.22f1",
+        "warnings": 0,
+        "errors": 0
+      }
+    },
+    {
+      "fixture": "shape",
+      "rows": [
+        {
+          "mode": "D0",
+          "fbx_sha256": "41d02d49b04b4e42150d1f82a7c7fa65805e1be4ad0e39c778adea84da58100b",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 2.0267770452403194e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "EXACT",
+            "a_triangles": 12,
+            "b_triangles": 12,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 9.538562153466046e-07,
+                "samples": 84,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 2.5680196813482326e-07,
+                "samples": 84,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "EXACT",
+            "topology_by_material_slot": "EXACT",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  -0.19999997317790985,
+                  -0.14999999105930328,
+                  -2.443809954399967e-08
+                ],
+                "maximum": [
+                  0.19999997317790985,
+                  0.15000028908252716,
+                  1.7999999523162842
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.19999997317790985,
+                  -0.1500001847743988,
+                  -1.1920928955078125e-07
+                ],
+                "maximum": [
+                  0.19999997317790985,
+                  0.15000048279762268,
+                  1.8000000715255737
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {
+              "0": {
+                "status": "DISTANCE_OBSERVED",
+                "maximum_distance": 0.0,
+                "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+              }
+            },
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 1.94707e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              3,
+              3
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 1.210576058124894e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 2.590617214082158e-07,
+                "samples": 84,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 2.4620757699267415e-07,
+                "samples": 84,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 1.210576058124894e-07,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "EXACT",
+              "frames": 3,
+              "maximum_distance": 8.160571756767618e-08
+            },
+            "skin_bone_weight_binding": "EXACT",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ]
+        },
+        {
+          "mode": "D1",
+          "fbx_sha256": "5ea068dd6b8a34f234a62228d8d14e4bdba958a7cca0042d6ac210d0074f7fc4",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 2.0267770452403194e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "EXACT",
+            "a_triangles": 12,
+            "b_triangles": 12,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 9.538562153466046e-07,
+                "samples": 84,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 2.5680196813482326e-07,
+                "samples": 84,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "EXACT",
+            "topology_by_material_slot": "EXACT",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  -0.19999997317790985,
+                  -0.14999999105930328,
+                  -2.443809954399967e-08
+                ],
+                "maximum": [
+                  0.19999997317790985,
+                  0.15000028908252716,
+                  1.7999999523162842
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.19999997317790985,
+                  -0.1500001847743988,
+                  -1.1920928955078125e-07
+                ],
+                "maximum": [
+                  0.19999997317790985,
+                  0.15000048279762268,
+                  1.8000000715255737
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {
+              "0": {
+                "status": "DISTANCE_OBSERVED",
+                "maximum_distance": 0.0,
+                "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+              }
+            },
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 1.94707e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              3,
+              3
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 1.210576058124894e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 2.590617214082158e-07,
+                "samples": 84,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 2.4620757699267415e-07,
+                "samples": 84,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 1.210576058124894e-07,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "EXACT",
+              "frames": 3,
+              "maximum_distance": 8.160571756767618e-08
+            },
+            "skin_bone_weight_binding": "EXACT",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3,
+            3
+          ]
+        }
+      ],
+      "unity_status": {
+        "status": "CAPTURED",
+        "editor_version": "2022.3.22f1",
+        "warnings": 0,
+        "errors": 0
+      }
+    },
+    {
+      "fixture": "planar",
+      "rows": [
+        {
+          "mode": "D0",
+          "fbx_sha256": "7d305bb3f58bac409d50d278f7c80194ee34689a5af040f581b44410f0f27a7e",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 3.8941439584050386e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "TOPOLOGY_MISMATCH",
+            "a_triangles": 3,
+            "b_triangles": 3,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "ORIENTED_TOPOLOGY_MISMATCH",
+            "topology_by_material_slot": "SUBMESH_TOPOLOGY_MISMATCH",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  0.0,
+                  0.0,
+                  -3.2584134146418364e-07
+                ],
+                "maximum": [
+                  2.4000000953674316,
+                  2.0,
+                  0.0
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.0,
+                  -0.0,
+                  -7.152557373046875e-07
+                ],
+                "maximum": [
+                  2.4000000953674316,
+                  2.0,
+                  0.0
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {
+              "0": {
+                "status": "DISTANCE_OBSERVED",
+                "maximum_distance": 0.0,
+                "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+              }
+            },
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 1.94707e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              0,
+              0
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 3.8941439584050386e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 0.0,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "NOT_APPLICABLE"
+            },
+            "skin_bone_weight_binding": "NOT_APPLICABLE",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            5
+          ]
+        },
+        {
+          "mode": "D1",
+          "fbx_sha256": "75cd46c9298166ae0123ab9f1c2c1575f8620c3af1a4fab7e156e5db183e5500",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 3.8941439584050386e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "EXACT",
+            "a_triangles": 3,
+            "b_triangles": 3,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "EXACT",
+            "topology_by_material_slot": "EXACT",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  0.0,
+                  0.0,
+                  -3.2584134146418364e-07
+                ],
+                "maximum": [
+                  2.4000000953674316,
+                  2.0,
+                  0.0
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.0,
+                  -0.0,
+                  -7.152557373046875e-07
+                ],
+                "maximum": [
+                  2.4000000953674316,
+                  2.0,
+                  0.0
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {
+              "0": {
+                "status": "DISTANCE_OBSERVED",
+                "maximum_distance": 0.0,
+                "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+              }
+            },
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 1.94707e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              0,
+              0
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 3.8941439584050386e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 0.0,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "NOT_APPLICABLE"
+            },
+            "skin_bone_weight_binding": "NOT_APPLICABLE",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            3,
+            3,
+            3
+          ]
+        }
+      ],
+      "unity_status": {
+        "status": "CAPTURED",
+        "editor_version": "2022.3.22f1",
+        "warnings": 0,
+        "errors": 0
+      }
+    },
+    {
+      "fixture": "concave",
+      "rows": [
+        {
+          "mode": "D0",
+          "fbx_sha256": "5509f0fdef0554f5daea8f46034bd064f25464156a30fbcac0845581cc547a35",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 3.8941439584050386e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "EXACT",
+            "a_triangles": 3,
+            "b_triangles": 3,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "EXACT",
+            "topology_by_material_slot": "EXACT",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  0.0,
+                  0.0,
+                  -3.2584134146418364e-07
+                ],
+                "maximum": [
+                  2.0,
+                  2.0,
+                  0.0
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.0,
+                  -0.0,
+                  -7.152557373046875e-07
+                ],
+                "maximum": [
+                  2.0,
+                  2.0,
+                  0.0
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {
+              "0": {
+                "status": "DISTANCE_OBSERVED",
+                "maximum_distance": 0.0,
+                "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+              }
+            },
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 1.94707e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              0,
+              0
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 3.8941439584050386e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 0.0,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "NOT_APPLICABLE"
+            },
+            "skin_bone_weight_binding": "NOT_APPLICABLE",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            5
+          ]
+        },
+        {
+          "mode": "D1",
+          "fbx_sha256": "70dcfff3d1c7bdf7d4059a7f7ae065c8767a45692ebe664431b40fbf9ceada22",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 3.8941439584050386e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "EXACT",
+            "a_triangles": 3,
+            "b_triangles": 3,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "EXACT",
+            "topology_by_material_slot": "EXACT",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  0.0,
+                  0.0,
+                  -3.2584134146418364e-07
+                ],
+                "maximum": [
+                  2.0,
+                  2.0,
+                  0.0
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.0,
+                  -0.0,
+                  -7.152557373046875e-07
+                ],
+                "maximum": [
+                  2.0,
+                  2.0,
+                  0.0
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {
+              "0": {
+                "status": "DISTANCE_OBSERVED",
+                "maximum_distance": 0.0,
+                "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+              }
+            },
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 1.94707e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              0,
+              0
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 3.8941439584050386e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 3.8941439584050386e-07,
+                "samples": 21,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 0.0,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "NOT_APPLICABLE"
+            },
+            "skin_bone_weight_binding": "NOT_APPLICABLE",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            3,
+            3,
+            3
+          ]
+        }
+      ],
+      "unity_status": {
+        "status": "CAPTURED",
+        "editor_version": "2022.3.22f1",
+        "warnings": 0,
+        "errors": 0
+      }
+    },
+    {
+      "fixture": "triangles",
+      "rows": [
+        {
+          "mode": "D0",
+          "fbx_sha256": "c877a02ccf8150a2a1afb56308bec3f336ab719d85ddbc45de2408151b09883d",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 5.066394805908203e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "EXACT",
+            "a_triangles": 2,
+            "b_triangles": 2,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 4.76837158203125e-07,
+                "samples": 14,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 5.066394805908203e-07,
+                "samples": 14,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "EXACT",
+            "topology_by_material_slot": "EXACT",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  0.0,
+                  0.0,
+                  -3.2584134146418364e-07
+                ],
+                "maximum": [
+                  2.0,
+                  2.0,
+                  0.2999996840953827
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.0,
+                  -0.0,
+                  -7.152557373046875e-07
+                ],
+                "maximum": [
+                  2.0,
+                  2.000000238418579,
+                  0.2999992370605469
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {
+              "0": {
+                "status": "DISTANCE_OBSERVED",
+                "maximum_distance": 0.0,
+                "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+              }
+            },
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 2.026783793685818e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              0,
+              0
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 5.066394805908203e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 4.76837158203125e-07,
+                "samples": 14,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 5.066394805908203e-07,
+                "samples": 14,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 0.0,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "NOT_APPLICABLE"
+            },
+            "skin_bone_weight_binding": "NOT_APPLICABLE",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            3,
+            3
+          ]
+        },
+        {
+          "mode": "D1",
+          "fbx_sha256": "597e84cbf02b9a5c5d872e96936c346de44385e9957b169638bfc60c4f7ce7c8",
+          "comparison": {
+            "vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 5.066394805908203e-07,
+              "tolerance": 3e-05
+            },
+            "topology": "EXACT",
+            "a_triangles": 2,
+            "b_triangles": 2,
+            "surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 4.76837158203125e-07,
+                "samples": 14,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 5.066394805908203e-07,
+                "samples": 14,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "oriented_topology": "EXACT",
+            "topology_by_material_slot": "EXACT",
+            "world_bounds": {
+              "a": {
+                "minimum": [
+                  0.0,
+                  0.0,
+                  -3.2584134146418364e-07
+                ],
+                "maximum": [
+                  2.0,
+                  2.0,
+                  0.2999996840953827
+                ]
+              },
+              "b": {
+                "minimum": [
+                  -0.0,
+                  -0.0,
+                  -7.152557373046875e-07
+                ],
+                "maximum": [
+                  2.0,
+                  2.000000238418579,
+                  0.2999992370605469
+                ]
+              }
+            },
+            "uv_per_cp_values": "EXACT",
+            "uv_set_distances": {
+              "0": {
+                "status": "DISTANCE_OBSERVED",
+                "maximum_distance": 0.0,
+                "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+              }
+            },
+            "normals_per_cp_values": "EXACT",
+            "normal_set_distance": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 2.026783793685818e-07,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            },
+            "skin_numeric_weight_sets": "EXACT",
+            "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "shape_frame_counts": [
+              0,
+              0
+            ],
+            "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+            "baked_vertex_correspondence": {
+              "status": "EXACT",
+              "maximum_distance": 5.066394805908203e-07,
+              "tolerance": 3e-05
+            },
+            "baked_surface": {
+              "status": "SAMPLED_EXACT",
+              "a_to_b": {
+                "maximum_distance": 4.76837158203125e-07,
+                "samples": 14,
+                "samples_above_tolerance": 0
+              },
+              "b_to_a": {
+                "maximum_distance": 5.066394805908203e-07,
+                "samples": 14,
+                "samples_above_tolerance": 0
+              },
+              "tolerance": 3e-05,
+              "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+            },
+            "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+            "b_bake_vs_cpu": {
+              "status": "EXACT",
+              "maximum_distance": 0.0,
+              "tolerance": 3e-05
+            }
+          },
+          "identity": {
+            "shape_geometry": {
+              "status": "NOT_APPLICABLE"
+            },
+            "skin_bone_weight_binding": "NOT_APPLICABLE",
+            "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+          },
+          "raw_polygon_sizes": [
+            3,
+            3
+          ]
+        }
+      ],
+      "unity_status": {
+        "status": "CAPTURED",
+        "editor_version": "2022.3.22f1",
+        "warnings": 0,
+        "errors": 0
+      }
+    }
+  ],
+  "public_material_control": {
+    "rows": [
+      {
+        "mode": "D0",
+        "fbx_sha256": "b16c3fc42ac762bc8bf25311950f29a3fa924c855d04689230d51f543fef93ec",
+        "comparison": {
+          "vertex_correspondence": {
+            "status": "EXACT",
+            "maximum_distance": 4.76837158203125e-07,
+            "tolerance": 3e-05
+          },
+          "topology": "EXACT",
+          "a_triangles": 3,
+          "b_triangles": 3,
+          "surface": {
+            "status": "SAMPLED_EXACT",
+            "a_to_b": {
+              "maximum_distance": 4.76837158203125e-07,
+              "samples": 21,
+              "samples_above_tolerance": 0
+            },
+            "b_to_a": {
+              "maximum_distance": 1.9470719792025193e-07,
+              "samples": 21,
+              "samples_above_tolerance": 0
+            },
+            "tolerance": 3e-05,
+            "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+          },
+          "oriented_topology": "EXACT",
+          "topology_by_material_slot": "SUBMESH_TOPOLOGY_MISMATCH",
+          "material_identity_partitions": "EXACT",
+          "world_bounds": {
+            "a": {
+              "minimum": [
+                0.0,
+                0.0,
+                -1.6292067073209182e-07
+              ],
+              "maximum": [
+                5.0,
+                1.0,
+                0.0
+              ]
+            },
+            "b": {
+              "minimum": [
+                -0.0,
+                -0.0,
+                -3.5762786865234375e-07
+              ],
+              "maximum": [
+                4.999999523162842,
+                1.0,
+                0.0
+              ]
+            }
+          },
+          "uv_per_cp_values": "EXACT",
+          "uv_set_distances": {
+            "0": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 0.0,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            }
+          },
+          "normals_per_cp_values": "EXACT",
+          "normal_set_distance": {
+            "status": "DISTANCE_OBSERVED",
+            "maximum_distance": 1.94707e-07,
+            "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+          },
+          "skin_numeric_weight_sets": "EXACT",
+          "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+          "shape_frame_counts": [
+            0,
+            0
+          ],
+          "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+          "baked_vertex_correspondence": {
+            "status": "EXACT",
+            "maximum_distance": 4.76837158203125e-07,
+            "tolerance": 3e-05
+          },
+          "baked_surface": {
+            "status": "SAMPLED_EXACT",
+            "a_to_b": {
+              "maximum_distance": 4.76837158203125e-07,
+              "samples": 21,
+              "samples_above_tolerance": 0
+            },
+            "b_to_a": {
+              "maximum_distance": 1.9470719792025193e-07,
+              "samples": 21,
+              "samples_above_tolerance": 0
+            },
+            "tolerance": 3e-05,
+            "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+          },
+          "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+          "b_bake_vs_cpu": {
+            "status": "EXACT",
+            "maximum_distance": 0.0,
+            "tolerance": 3e-05
+          }
+        },
+        "identity": {
+          "shape_geometry": {
+            "status": "NOT_APPLICABLE"
+          },
+          "skin_bone_weight_binding": "NOT_APPLICABLE",
+          "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+        },
+        "raw_polygon_sizes": [
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "mode": "D1",
+        "fbx_sha256": "773c0ef40db61868307d06698d83b663717d77735f8324808989710b441a8c96",
+        "comparison": {
+          "vertex_correspondence": {
+            "status": "EXACT",
+            "maximum_distance": 4.76837158203125e-07,
+            "tolerance": 3e-05
+          },
+          "topology": "EXACT",
+          "a_triangles": 3,
+          "b_triangles": 3,
+          "surface": {
+            "status": "SAMPLED_EXACT",
+            "a_to_b": {
+              "maximum_distance": 4.76837158203125e-07,
+              "samples": 21,
+              "samples_above_tolerance": 0
+            },
+            "b_to_a": {
+              "maximum_distance": 1.9470719792025193e-07,
+              "samples": 21,
+              "samples_above_tolerance": 0
+            },
+            "tolerance": 3e-05,
+            "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+          },
+          "oriented_topology": "EXACT",
+          "topology_by_material_slot": "SUBMESH_TOPOLOGY_MISMATCH",
+          "material_identity_partitions": "EXACT",
+          "world_bounds": {
+            "a": {
+              "minimum": [
+                0.0,
+                0.0,
+                -1.6292067073209182e-07
+              ],
+              "maximum": [
+                5.0,
+                1.0,
+                0.0
+              ]
+            },
+            "b": {
+              "minimum": [
+                -0.0,
+                -0.0,
+                -3.5762786865234375e-07
+              ],
+              "maximum": [
+                4.999999523162842,
+                1.0,
+                0.0
+              ]
+            }
+          },
+          "uv_per_cp_values": "EXACT",
+          "uv_set_distances": {
+            "0": {
+              "status": "DISTANCE_OBSERVED",
+              "maximum_distance": 0.0,
+              "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+            }
+          },
+          "normals_per_cp_values": "EXACT",
+          "normal_set_distance": {
+            "status": "DISTANCE_OBSERVED",
+            "maximum_distance": 1.94707e-07,
+            "limitation": "CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD"
+          },
+          "skin_numeric_weight_sets": "EXACT",
+          "bone_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+          "shape_frame_counts": [
+            0,
+            0
+          ],
+          "shape_semantic_identity": "UNPROVEN_BY_THIS_CP_TRANSPORT",
+          "baked_vertex_correspondence": {
+            "status": "EXACT",
+            "maximum_distance": 4.76837158203125e-07,
+            "tolerance": 3e-05
+          },
+          "baked_surface": {
+            "status": "SAMPLED_EXACT",
+            "a_to_b": {
+              "maximum_distance": 4.76837158203125e-07,
+              "samples": 21,
+              "samples_above_tolerance": 0
+            },
+            "b_to_a": {
+              "maximum_distance": 1.9470719792025193e-07,
+              "samples": 21,
+              "samples_above_tolerance": 0
+            },
+            "tolerance": 3e-05,
+            "limitation": "FINITE_SAMPLES_NOT_CONTINUOUS_SURFACE_PROOF"
+          },
+          "unity_bake_method": "PUBLIC_BAKEMESH_TRUE_EXISTING_ORACLE_CONTRACT",
+          "b_bake_vs_cpu": {
+            "status": "EXACT",
+            "maximum_distance": 0.0,
+            "tolerance": 3e-05
+          }
+        },
+        "identity": {
+          "shape_geometry": {
+            "status": "NOT_APPLICABLE"
+          },
+          "skin_bone_weight_binding": "NOT_APPLICABLE",
+          "authority": "EXPLICIT_TEMPORARY_EXPORT_LABELS_AND_EXACT_FBX_SHA256"
+        },
+        "raw_polygon_sizes": [
+          3,
+          3,
+          3
+        ]
+      }
+    ],
+    "scope": "FIRST_PARTY_THREE_MATERIAL_TRIANGLE_CONTROL"
+  }
+}

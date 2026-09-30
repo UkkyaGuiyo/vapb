@@ -11,7 +11,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from unitypackage_blender_importer.export.fbx_export import export_fbx
+from unitypackage_blender_importer.export.fbx_export import export_fbx, FBX_EXPORT_PRESET
 from unitypackage_blender_importer.blender.fbx_receipt import import_with_receipts
 from unitypackage_blender_importer.tests.blender_geometry_point_controls import decode_marker
 
@@ -48,6 +48,7 @@ def observe(obj, uid, channel=None, count=None, shape_ids=None):
                 for k in list(mesh.shape_keys.key_blocks)[1:]] if basis else [],
         skin_weights=[[dict(group=groups[g.group], weight=g.weight) for g in v.groups] for v in mesh.vertices],
         armature_modifier_count=sum(m.type == 'ARMATURE' and m.object is not None for m in obj.modifiers))
+    row['material_export_labels'] = [slot.material.name if slot.material and slot.material.name.startswith('VAPB-EXP-MAT-') else None for slot in obj.material_slots]
     row['world_bounds'] = dict(minimum=[min(p[i] for p in row['positions']) for i in range(3)],
                               maximum=[max(p[i] for p in row['positions']) for i in range(3)])
     if channel is not None:
@@ -63,6 +64,20 @@ def observe(obj, uid, channel=None, count=None, shape_ids=None):
         evaluated.to_mesh_clear()
     return row
 
+
+
+def label_materials(obj):
+    """Bind temporary export labels to actual Material handles, never original names."""
+    copies = {}
+    for slot in obj.material_slots:
+        material = slot.material
+        if material is None:
+            continue
+        if material not in copies:
+            copy = material.copy()
+            copy.name = 'VAPB-EXP-MAT-%04d' % len(copies)
+            copies[material] = copy
+        slot.material = copies[material]
 
 def explicit_copy(obj):
     """Freeze calc_loop_triangles, preserving vertex, loop, skin and Shape data."""
@@ -110,7 +125,7 @@ def explicit_copy(obj):
 def main():
     import bpy
     from io_scene_fbx import import_fbx, parse_fbx
-    control, output = map(Path, sys.argv[sys.argv.index('--')+1:])
+    control, output = map(Path, sys.argv[sys.argv.index('--')+1:][:2])
     assert not output.exists()
     output.mkdir(parents=True)
     manifest = json.loads((control/'ControlPointManifest.json').read_text())
@@ -177,13 +192,15 @@ def main():
         weight_expectations = {}
         shape_bridge = {}
         for uid,obj in objects.items():
-            copied = explicit_copy(obj) if mode == 'D1' else obj.copy()
-            if mode == 'D0':
+            diagnostic_copy = mode == 'D1' and '--production-triangles' not in sys.argv
+            copied = explicit_copy(obj) if diagnostic_copy else obj.copy()
+            if not diagnostic_copy:
                 copied.data = obj.data.copy()
                 bpy.context.scene.collection.objects.link(copied)
             # Labels are assigned to actual imported handles as export transport IDs;
             # they do not infer a source identity from existing object/shape names.
             copied.name = 'VAPB-EXP-MESH-'+str(uid)
+            if '--material-labels' in sys.argv:label_materials(copied)
             group_labels = {}
             for modifier in copied.modifiers:
                 if modifier.type != 'ARMATURE':
@@ -224,7 +241,7 @@ def main():
         bpy.context.view_layer.update()
         pre = [observe(o,uid,specs[uid]['uv_channel'],specs[uid]['control_point_count'],shape_bridge)
                for uid,o in copies.items()]
-        if mode == 'D1':
+        if mode == 'D1' and '--production-triangles' not in sys.argv:
             for row in pre:
                 expected = before[int(row['geometry_uid'])]
                 for field in ('positions','triangle_control_points','triangle_material_slots'):
@@ -233,7 +250,10 @@ def main():
                 assert all(len(p) == 3 for p in row['polygons'])
                 assert [s['deltas'] for s in row['shapes']] == [s['deltas'] for s in expected['shapes']]
         path = output/(mode+'.fbx')
-        export_fbx(path)
+        if mode == 'D0':
+            assert bpy.ops.export_scene.fbx(**dict(FBX_EXPORT_PRESET,filepath=str(path))) == {'FINISHED'}
+        else:
+            export_fbx(path)
         assert path.is_file()
         for uid,obj in objects.items():
             assert observe(obj,uid,specs[uid]['uv_channel'],specs[uid]['control_point_count'],ids) == before[uid]

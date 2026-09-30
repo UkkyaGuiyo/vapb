@@ -74,6 +74,7 @@ class UNITYPACKAGE_OT_export_roundtrip(bpy.types.Operator, ExportHelper):
 
             if self.cleanup_materials or self.cleanup_bones:
                 from .semantic_cleanup import cleanup_export_objects
+                from ..export.triangle_staging import frozen_export_meshes
                 references = tuple(bpy.data.objects)
                 with cleanup_export_objects(context, objects, materials=self.cleanup_materials,
                                             bones=self.cleanup_bones) as staged:
@@ -91,10 +92,14 @@ class UNITYPACKAGE_OT_export_roundtrip(bpy.types.Operator, ExportHelper):
                                                active_object=staged.objects[0], object=staged.objects[0]):
                         for obj in staged.objects:
                             obj.select_set(True)
-                        export_current(True)
+                        with frozen_export_meshes(staged.objects):
+                            layer.update()
+                            export_current(True)
             else:
+                from ..export.triangle_staging import triangle_export_scene
                 manifest = build_material_manifest(objects, fbx_path, reference_objects=bpy.data.objects)
-                export_current(self.selected_only)
+                with triangle_export_scene(context, objects):
+                    export_current(True)
             if not fbx_path.is_file():
                 raise RuntimeError("Blender FBX export did not create the requested file")
             write_material_manifest(objects, fbx_path, manifest)

@@ -68,6 +68,12 @@ def main():
         assert cube.data.uv_layers
         cube.data.materials.append(materials[0])
         output = scratch / 'Output.unitypackage'
+        # Replay control starts with explicit fixture IDs; fresh read-only IDs have a separate control.
+        from uuid import uuid4
+        cube["_vapb_export_object_id"] = "VAPB-OBJ-" + uuid4().hex
+        for slot in cube.material_slots:
+            if slot.material and not slot.material.get("_vapb_export_material_id"):
+                slot.material["_vapb_export_material_id"] = "VAPB-MAT-" + uuid4().hex
         manifest = fixture.export_final_state_package(bpy.context, cube, output)
         record = manifest.material_mappings[0]
         ref = record['shader']

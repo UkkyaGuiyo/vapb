@@ -255,13 +255,19 @@ class ExportMaterializationTests(unittest.TestCase):
                 @staticmethod
                 def fbx(**kwargs):
                     calls.append(kwargs)
+                    return {"FINISHED"}
 
         class FakeBpy:
             ops = Ops()
+            context = type("Context", (), {"selected_objects": []})()
 
         with tempfile.TemporaryDirectory(prefix="vapb_fbx_") as temp:
             output = Path(temp) / "Avatar.fbx"
-            result = export_fbx(output, bpy_module=FakeBpy())
+            from contextlib import nullcontext
+            from unittest.mock import patch
+            with patch("unitypackage_blender_importer.export.triangle_staging.triangle_export_scene",
+                       return_value=nullcontext()):
+                result = export_fbx(output, bpy_module=FakeBpy())
         self.assertEqual(result, output)
         self.assertEqual(calls[0]["add_leaf_bones"], False)
         self.assertEqual(set(FBX_EXPORT_PRESET), set(calls[0]))

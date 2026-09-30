@@ -116,6 +116,12 @@ def main():
                     'texture_guid': TEXTURE_GUID, 'texture_file_id': '2800000',
                     'source_material_sha256': hashlib.sha256(source.asset_bytes).hexdigest()}
                 (root / 'Expected.json').write_text(json.dumps(expected), encoding='utf-8')
+                # Replay control starts with explicit fixture IDs; fresh read-only IDs have a separate control.
+                from uuid import uuid4
+                cube["_vapb_export_object_id"] = "VAPB-OBJ-" + uuid4().hex
+                for slot in cube.material_slots:
+                    if slot.material and not slot.material.get("_vapb_export_material_id"):
+                        slot.material["_vapb_export_material_id"] = "VAPB-MAT-" + uuid4().hex
                 manifest = export_final_state_package(bpy.context, cube, output)
                 by_guid = {a.guid: a for a in RawAssetRepository(output).read_all()}
                 assert by_guid[MATERIAL_GUID].asset_bytes == source.asset_bytes

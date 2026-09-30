@@ -76,11 +76,21 @@ def main():
             cube = cubes[0]
             assert cube.data.uv_layers.active is not None
             assert len(cube.material_slots) == 1
-            assert cube.get("_vapb_export_object_id", "").startswith("VAPB-OBJ-")
-            assert cube.material_slots[0].material.get("_vapb_export_material_id", "").startswith("VAPB-MAT-")
+        object_id_before = cube.get("_vapb_export_object_id")
+        material_id_before = cube.material_slots[0].material.get("_vapb_export_material_id")
         assert bpy.ops.export_scene.vapb_final_state_unitypackage(filepath=str(output)) == {"FINISHED"}
         assert output.is_file()
-        assert cube.get("_vapb_export_object_id", "").startswith("VAPB-OBJ-")
+        assert cube.get("_vapb_export_object_id") == object_id_before, "EXPORT_MUTATED_SOURCE_OBJECT_ID"
+        assert cube.material_slots[0].material.get("_vapb_export_material_id") == material_id_before, "EXPORT_MUTATED_SOURCE_MATERIAL_ID"
+        from unitypackage_blender_importer.export.raw_assets import RawAssetRepository
+        import json
+        assets = RawAssetRepository(output).read_all(output.read_bytes())
+        manifest = json.loads(next(a.asset_bytes for a in assets if a.pathname == "Assets/VAPBExport/manifest.json"))
+        exported_id = manifest["export_roots"][0]
+        assert exported_id.startswith("VAPB-OBJ-")
+        if object_id_before: assert exported_id == object_id_before
+        fbx = next(a.asset_bytes for a in assets if a.pathname.lower().endswith(".fbx"))
+        assert exported_id.encode() in fbx
         if phase == "unchanged":
             assert geometry_before == tuple(tuple(vertex.co) for vertex in cube.data.vertices)
         bpy.ops.wm.save_as_mainfile(filepath=str(blend))

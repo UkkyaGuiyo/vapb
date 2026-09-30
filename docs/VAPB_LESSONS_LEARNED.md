@@ -30,6 +30,31 @@ VAPB開発で得た一般化可能な失敗知識、反証、設計原則を記�
 | LESSON-023 | Reference preservationとprovider解決を分ける | MATERIAL / UNITY |
 | LESSON-024 | Path、Asset object名、identityを分ける | NAMING / EXPORT |
 | LESSON-025 | RendererがなくてもPrefab occurrenceは階層に存在する | PREFAB / HIERARCHY |
+| LESSON-026 | Export三角形とMaterial partitionをBlenderの実体から輸送する | GEOMETRY / EXPORT |
+
+## LESSON-026 — Export三角形とMaterial partitionをBlenderの実体から輸送する
+
+**Status:** ACTIVE · **Domain:** GEOMETRY / EXPORT
+
+Blender完成形がGeometryの正本である場合、出力FBXにn-gonを残すと下流Importerが
+別の対角線を選び、nonplanar面のsurfaceを変える。実際のloop triangle/loop indexを
+使い捨てコピーに固定したproduction経路では、公開5件と同じ実4件のtopology・
+sampled surfaceを保持できた。Unityの元triangulationを推測する修正とは別である。
+有限サンプルのGREENを全変形・全surfaceの連続的証明に広げない。
+
+Skin weightの微小値欠落、法線差、tangent UNKNOWN、Import時のsurface差は別境界で
+あり、Export三角形のGREENから解決済みと推論しない。source sceneはstagingに使わず、
+成功だけでなくexport例外とsave/reopenでShape、共有Mesh、選択、Armature、IDを確認する。
+Geometryが同じでも成功時のID書戻しはscene変更である。既存IDを再利用し、
+新規transport labelを出力コピー/Recipeに置くことで、無IDの入力sceneも変更せずに出力できる。
+
+Material slot番号とUnity submesh番号の一致は、Material identityの証明ではない。
+公開3-Material controlは番号REDでも、actual Material handleへ割り当てたExport labelと
+exact出力revision、CP三角形によるMaterial partition比較で対応を保持した。
+元Material名、見た目、候補数や順序で対応を補わない。番号REDは消さず、効果的な
+Material対応の判定を独立に記録する。unused slotやFinalizer全体の保持をこれで主張しない。
+
+[Production evidence](VAPB_GEOMETRY_TRIANGLE_STAGING_20260930.md)
 
 ## LESSON-025 — RendererがなくてもPrefab occurrenceは階層に存在する
 

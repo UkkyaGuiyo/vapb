@@ -10,13 +10,13 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
-from unitypackage_blender_importer.tests.blender_geometry_abcd import observe, explicit_copy
-from unitypackage_blender_importer.export.fbx_export import export_fbx
+from unitypackage_blender_importer.tests.blender_geometry_abcd import observe, explicit_copy, label_materials
+from unitypackage_blender_importer.export.fbx_export import export_fbx, FBX_EXPORT_PRESET
 
 
 def main():
     import bpy
-    baseline, cp_report, output=map(Path,sys.argv[sys.argv.index('--')+1:])
+    baseline, cp_report, output=map(Path,sys.argv[sys.argv.index('--')+1:][:3])
     assert not output.exists()
     blend=baseline/'baseline.blend'
     digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
@@ -48,6 +48,8 @@ def main():
     selection=[]
     for index,(skin,obj,category,ngons) in enumerate(selected):
         case=output/('sample_%02d'%index);case.mkdir()
+        source_before=observe(obj,index)
+        materials_before=tuple(slot.material.as_pointer() if slot.material else None for slot in obj.material_slots)
         original_data=obj.data.copy()
         original_keys=[k.value for k in obj.data.shape_keys.key_blocks] if obj.data.shape_keys else []
         copies=[]
@@ -56,12 +58,13 @@ def main():
             bpy.context.scene.collection.objects.link(copied)
             copied.parent=None;copied.matrix_world=obj.matrix_world.copy()
             copied.name='VAPB-EXP-MESH-'+str(index)
+            if '--material-labels' in sys.argv:label_materials(copied)
             if copied.data.shape_keys:
                 for key in copied.data.shape_keys.key_blocks:key.value=0
             marker=len(copied.data.uv_layers)
             layer=copied.data.uv_layers.new(name='VAPB_FINAL_VERTEX_DIAGNOSTIC')
             for loop in copied.data.loops:layer.data[loop.index].uv=(loop.vertex_index+1,.375)
-            if mode=='D1':
+            if mode=='D1' and '--production-triangles' not in sys.argv:
                 old=copied;copied=explicit_copy(copied)
                 bpy.data.objects.remove(old,do_unlink=True)
             armatures=[]
@@ -90,11 +93,17 @@ def main():
             for scene_obj in bpy.context.scene.objects:scene_obj.select_set(False)
             copied.select_set(True)
             for rig in armatures:rig.select_set(True)
-            export_fbx(case/(mode+'.fbx'))
+            if mode=='D0':
+                options=dict(FBX_EXPORT_PRESET,filepath=str(case/(mode+'.fbx')))
+                assert bpy.ops.export_scene.fbx(**options)=={'FINISHED'}
+            else:
+                export_fbx(case/(mode+'.fbx'))
             copies.append(dict(mode=mode,fbx_sha256=digest(case/(mode+'.fbx')),pre_export=[row],
                                source_objects_unchanged=True,bone_export_labels=bone_labels))
             for rig in armatures:bpy.data.objects.remove(rig,do_unlink=True)
             bpy.data.objects.remove(copied,do_unlink=True)
+        assert observe(obj,index)==source_before,'SOURCE_SEMANTIC_STATE_CHANGED'
+        assert tuple(slot.material.as_pointer() if slot.material else None for slot in obj.material_slots)==materials_before,'SOURCE_MATERIAL_HANDLES_CHANGED'
         assert obj.data is not original_data
         assert ([k.value for k in obj.data.shape_keys.key_blocks] if obj.data.shape_keys else []) == original_keys
         manifest=dict(meshes=[dict(uv_channel=marker,control_point_count=len(obj.data.vertices))])

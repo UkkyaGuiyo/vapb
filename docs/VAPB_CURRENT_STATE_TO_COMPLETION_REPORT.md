@@ -1,5 +1,65 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Production explicit Blender triangles — 2026-09-30
+
+**Production D1 Geometry export verified in the bounded supported scope.**
+Starting HEAD `7b41b30fb45f4a1f6d60bf1e7bc8827a15127d24`.
+Blender final geometry remains authoritative; Source identity and Export labels
+remain separate. No Unity triangulation recreation or Unity geometry injection.
+
+- Shared disposable triangle staging now covers direct FBX, static final-state
+  UnityPackage, receipt-based static/Skin UnityPackage and sidecar FBX exports
+  with cleanup on/off. Actual Blender loop triangle/loop indices preserve vertex
+  positions, supported Shape/Skin/UV data, Material face slots and existing IDs.
+  Existing presets/input support boundaries remain; no new modifier baking.
+- Historical raw D0 nonplanar RED is retained. Production D1 uses the original
+  n-gon Mesh through the real export route, without diagnostic manual triangles.
+  Fresh Unity **2022.3.22f1** / Blender **5.2.1** public controls: **5/5** topology,
+  winding, sampled surface, vertex correspondence, slot partitions and UV EXACT;
+  public Skin bindings and three Shape frames EXACT. Ten imports: zero errors,
+  zero warnings. Exact FBX hash gates and actual output triangles checked.
+- Same private four-case selection: topology **4/4**, sampled base surface **4/4**,
+  baked positions **4/4** EXACT; measured Shape **2 EXACT / 2 N/A**. Eight imports:
+  zero errors, two unclassified warnings. Source blend SHA unchanged.
+- Separate residual REDs remain: small Bone-weight loss **2 cases**, genuine
+  normal differences **2 cases**, rounded UV differences; tangent/arbitrary
+  deformation UNKNOWN and original Import-preview nonplanar surface difference.
+  Earlier source Geometry **14 EXACT / 20 MISMATCH** is not reclassified.
+- Numeric Blender slot/Unity submesh comparison remains **1/4 EXACT** in the
+  real cases, also present in experimental D1. Public 3-Material face order
+  control proves that numeric reordering can retain effective Material identity
+  partitions; wrong-binding/missing-label negatives reject. Exact-revision
+  private Material-label controls prove effective Material partitions **4/4 EXACT**
+  for production D1; raw numeric slot RED is retained. Label-control imports
+  have zero errors and repeat the two baseline warnings. Source memory state,
+  Material handles and source blend hash remain unchanged.
+- Success, injected FBX exceptions and save/reopen preserve actual source
+  pointers, shared Mesh, Shape values, selection, active Object, Armature parent
+  relations, IDs and data-block inventory. Static/Skin/final-state package
+  regression, final-state separate reopen export, cleanup on/off success/failure,
+  Hierarchy TR-001..005 and Bone receipt rename/reopen/export PASS.
+- Successful final-state export no longer writes new Export IDs into live
+  Object/Material properties: existing IDs reused, new labels output-only.
+  Actual no-ID RED/GREEN, reopen, Recipe-ID-in-FBX and existing-ID replay tests
+  PASS. This directly closes the source-immutability acceptance condition.
+  Fresh Unity Finalizer also PASS: one Recipe task/marker, 24 vertices/UVs,
+  Material/Texture restored, source Model/Prefab absent and repeated Apply;
+  exit 0, no compiler errors/warnings, exact package/helper revision checked.
+- Repository-parent Python **487 PASS**; compileall PASS; two bounded scope
+  reviews PASS. The subsequent minimal ID-writeback removal was parent-verified
+  by RED/GREEN/replay tests; review limit retained. Previous Hierarchy
+  **1,274 EXACT** / Shape identity **171 EXACT** remain historical full-scope
+  measurements; they are not presented as newly rerun private totals.
+
+[Production evidence and boundaries](VAPB_GEOMETRY_TRIANGLE_STAGING_20260930.md).
+
+**Exact next automatic action:** isolate the public small-Bone-weight importer
+RED using documented Unity API and prove actual influence retention before any
+production workaround or private importer mutation.
+
+Earlier sections below are historical checkpoints.
+
+
 ## Geometry A/B/C/D characterization checkpoint — 2026-09-30
 
 **GOAL_VERIFIED: bounded representation/round-trip experiment only.** Production

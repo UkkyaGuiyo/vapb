@@ -21,6 +21,7 @@ def main():
     for chosen in selection:
         name='sample_%02d'%chosen['sample']
         folder=source/name; project=unity/(name+'_unity')
+        if not project.exists():project=unity/name
         marker,=read(folder/'ControlPointManifest.json')['meshes']
         report=read(folder/'BlenderD.json')
         status=read(project/'UnityDStatus.json')

@@ -67,3 +67,16 @@ def attribute_set_distance(a_triangles,a_values,b_triangles,b_values):
     backward=max(min(math.dist(y,x) for x in a[cp]) for cp in b for y in b[cp])
     return dict(status='DISTANCE_OBSERVED',maximum_distance=max(forward,backward),
                 limitation='CP_VALUE_SETS_NOT_TRIANGLE_CORNER_BIJECTION_NO_ACCEPTANCE_THRESHOLD')
+
+
+def material_label_partitions(point_triangles, slots, labels):
+    """Effective Material identity partitions, independent of submesh numbering."""
+    from collections import Counter
+    if len(point_triangles) != len(slots):
+        raise ValueError('MATERIAL_PARTITION_LENGTH_MISMATCH')
+    result = Counter()
+    for triangle, slot in zip(point_triangles, slots):
+        if not 0 <= slot < len(labels) or not labels[slot] or not labels[slot].startswith('VAPB-EXP-MAT-'):
+            raise ValueError('MATERIAL_EXPORT_LABEL_UNPROVEN')
+        result[labels[slot],tuple(sorted(triangle))] += 1
+    return result

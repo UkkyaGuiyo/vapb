@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from unitypackage_blender_importer.blender.fbx_witness import canonical, encode_node
-from unitypackage_blender_importer.export.fbx_export import export_fbx
+from unitypackage_blender_importer.export.fbx_export import FBX_EXPORT_PRESET
 
 
 def main():
@@ -22,11 +22,12 @@ def main():
         'planar': ([(0,0,0),(2,0,0),(2.4,1,0),(1,2,0),(0,1,0)],[(0,1,2,3,4)]),
         'concave': ([(0,0,0),(2,0,0),(2,2,0),(1,.6,0),(0,2,0)],[(0,1,2,3,4)]),
         'triangles': ([(0,0,0),(2,0,0),(2,2,.3),(0,2,0)],[(0,1,2),(0,2,3)]),
+        'material_partitions': ([(0,0,0),(1,0,0),(0,1,0),(2,0,0),(3,0,0),(2,1,0),(4,0,0),(5,0,0),(4,1,0)],[(0,1,2),(3,4,5),(6,7,8)]),
         'small_weights': ([(0,0,0),(1,0,0),(0,1,0)],[(0,1,2)])}
     if len(args)>1:
         fixtures={label:fixtures[label] for label in args[1:]}
     else:
-        fixtures={label:value for label,value in fixtures.items() if label!='small_weights'}
+        fixtures={label:value for label,value in fixtures.items() if label not in {'small_weights','material_partitions'}}
     for label,(vertices,faces) in fixtures.items():
         out=folder/label;out.mkdir(parents=True)
         bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -43,10 +44,13 @@ def main():
             for index,weight in enumerate((.0005,.0015,.25)):
                 ga.add([index],1-weight,'REPLACE');gb.add([index],weight,'REPLACE')
             obj.parent=rig;obj.modifiers.new('AuthoredSkin','ARMATURE').object=rig
+        if label=='material_partitions':
+            for n in range(3):data.materials.append(bpy.data.materials.new('AuthoredMaterial%d'%n))
+            for polygon,slot in zip(data.polygons,(0,2,1)):polygon.material_index=slot
         uv=data.uv_layers.new(name='AuthoredUV')
         for loop in data.loops:uv.data[loop.index].uv=data.vertices[loop.vertex_index].co.xy
         obj.select_set(True);bpy.context.view_layer.objects.active=obj
-        export_fbx(out/'Source.fbx')
+        assert bpy.ops.export_scene.fbx(**dict(FBX_EXPORT_PRESET,filepath=str(out/'Source.fbx'))) == {'FINISHED'}
         guid=hashlib.sha256(('vapb-public-abcd-'+label).encode()).hexdigest()[:32]
         (out/'Source.fbx.meta').write_text('fileFormatVersion: 2\nguid: '+guid+'\nModelImporter:\n  serializedVersion: 22200\n  meshes:\n    globalScale: 1\n    useFileUnits: 1\n    meshCompression: 0\n    importBlendShapes: 1\n    keepQuads: 0\n    weldVertices: 1\n    indexFormat: 0\n  tangentSpace:\n    normalSmoothAngle: 60\n    normalImportMode: 0\n    tangentImportMode: 3\n  animationType: 0\n')
         if label=='small_weights':

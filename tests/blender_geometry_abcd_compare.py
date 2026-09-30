@@ -13,7 +13,7 @@ import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from unitypackage_blender_importer.tests.blender_geometry_abcd import observe
 from unitypackage_blender_importer.tests.geometry_abcd_metrics import (
-    POSITION_TOLERANCE, triangle_multiset, position_metric, corner_values_by_point, weight_value_sets,attribute_set_distance,oriented_triangles)
+    POSITION_TOLERANCE, triangle_multiset, position_metric, corner_values_by_point, weight_value_sets,attribute_set_distance,oriented_triangles,material_label_partitions)
 
 
 def unity_vector(v):
@@ -33,6 +33,7 @@ def unity_row(row):
         vertex_control_point_indices=labels, triangles=[indices[i:i+3] for i in range(0,len(indices),3)],
         triangle_control_points=triangles,
         unity_handedness=True,
+        material_export_labels=row.get('material_export_labels',[]),
         triangle_material_slots=[index for index,submesh in enumerate(row['submeshes'])
                                  for _ in range(len(submesh['indices'])//3)],
         corner_normals=[unity_vector(row['world_normals'][i]) for i in indices] if row['world_normals'] else [],
@@ -81,6 +82,14 @@ def compare(a,b,marker):
         partition=lambda row:Counter((slot,tuple(sorted(triangle))) for slot,triangle in
                             zip(row['triangle_material_slots'],row['triangle_control_points']))
         result['topology_by_material_slot']='EXACT' if partition(a)==partition(b) else 'SUBMESH_TOPOLOGY_MISMATCH'
+    result['material_identity_partitions']='UNPROVEN'
+    if a.get('material_export_labels') and b.get('material_export_labels'):
+        try:
+            aa=material_label_partitions(a['triangle_control_points'],a['triangle_material_slots'],a['material_export_labels'])
+            bb=material_label_partitions(b['triangle_control_points'],b['triangle_material_slots'],b['material_export_labels'])
+            result['material_identity_partitions']='EXACT' if aa==bb else 'MATERIAL_BINDING_MISMATCH'
+        except ValueError:
+            pass
     result['world_bounds']={label:dict(minimum=[min(p[i] for p in row['positions']) for i in range(3)],
                                     maximum=[max(p[i] for p in row['positions']) for i in range(3)])
                            for label,row in [('a',a),('b',b)]}

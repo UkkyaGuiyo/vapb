@@ -20,7 +20,9 @@ Unity 2022.3.22f1 `ProjectSettings/ProjectVersion.txt` and `Packages/manifest.js
    The script performs normal Import, deletes the source Mesh, creates a UV
    Cube, assigns its imported Material, exports and saves. A second Blender
    invocation can open `<Replacement.blend>` and run phase `reopen` with a
-   distinct output path; it checks persisted Export IDs.
+   distinct output path; it checks unchanged source data and valid output-only Export IDs. Existing
+   author-assigned IDs are reused; new labels are stored in the FBX/Recipe without
+   writing into the editing scene.
 4. In a new **fresh** Unity project, copy `Editor/VapbFinalStateFreshProbe.cs`
    to `Assets/Editor` and the two first-party `unity_editor` support sources
    into the same `Assets/VAPBExport/...` paths used by the output package.

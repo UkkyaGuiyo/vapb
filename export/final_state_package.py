@@ -10,6 +10,7 @@ from uuid import uuid4
 from dataclasses import replace
 
 from .fbx_export import FBX_EXPORT_PRESET
+from .triangle_staging import frozen_export_meshes
 from .manifest import ExportManifest, GeneratorInfo, SCHEMA_VERSION
 from .package_writer import UnityPackageWriter
 from .raw_assets import RawAssetRepository
@@ -137,8 +138,9 @@ def _stage_fbx(context, mesh, export_id: str, output: Path) -> None:
         options.update(filepath=str(output), path_mode="STRIP", object_types={"MESH"},
                        use_selection=True, use_custom_props=True)
         copied.select_set(True)
-        if bpy.ops.export_scene.fbx(**options) != {"FINISHED"} or not output.is_file():
-            raise ValueError("final-state FBX export failed")
+        with frozen_export_meshes([copied]):
+            if bpy.ops.export_scene.fbx(**options) != {"FINISHED"} or not output.is_file():
+                raise ValueError("final-state FBX export failed")
         if b"_vapb_export_object_id" not in output.read_bytes() or export_id.encode() not in output.read_bytes():
             raise ValueError("final-state FBX lost the Export ID")
     finally:
@@ -277,7 +279,5 @@ def export_final_state_package(context, mesh, output: Path):
         selected.add(StagedUnityAsset(guid, path, source.read_bytes(),
             f"fileFormatVersion: 2\nguid: {guid}\n".encode("ascii"), operation="CREATE"))
     UnityPackageWriter().write(selected, output)
-    mesh["_vapb_export_object_id"] = object_id
-    for slot in mesh.material_slots:
-        slot.material["_vapb_export_material_id"] = material_ids[slot.material.as_pointer()]
+    # Export labels live in the output copy/Recipe; never write into the editing scene.
     return manifest

@@ -50,5 +50,12 @@ def export_fbx(filepath: Path, *, bpy_module: Any | None = None, selected_only: 
     options = dict(FBX_EXPORT_PRESET)
     options["filepath"] = str(output)
     options["use_selection"] = bool(selected_only)
-    bpy_module.ops.export_scene.fbx(**options)
+    from .triangle_staging import triangle_export_scene
+    context = bpy_module.context
+    objects = context.selected_objects if selected_only else context.scene.objects
+    objects = [obj for obj in objects if obj.type in options["object_types"]]
+    with triangle_export_scene(context, objects, bpy_module=bpy_module):
+        options["use_selection"] = True
+        if bpy_module.ops.export_scene.fbx(**options) != {"FINISHED"}:
+            raise RuntimeError("FBX export was cancelled")
     return output
