@@ -232,7 +232,8 @@ Material export; other model/skin routes remain outside the verified checkpoint.
 `m_Name` or serialized bytes for naming, and do not offer a synchronization option.
 Naming cannot restore a source-geometry-lineage requirement or make original
 input packages runtime dependencies. Persistent Material usage evidence survives
-source Mesh deletion without inventing geometry lineage; see [the research evidence and limits](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
+source Mesh deletion without inventing geometry lineage. Fresh Unity 2022.3.22f1
+verifies supported static naming, byte preservation and Finalizer/save/reimport; see [the research evidence and limits](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
 
 ### Mandatory hierarchy parity milestone (2026-09-30)
 

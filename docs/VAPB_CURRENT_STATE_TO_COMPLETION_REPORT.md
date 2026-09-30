@@ -2,6 +2,91 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Human-readable Material naming fresh Unity closure — 2026-09-30
+
+**NAMING STATUS: COMPLETE / GOAL_VERIFIED for the supported static final-state
+route.** Production baseline/local/remote was
+`64696e43e71c4883610d5c6d7ee4fa9466d30c52`, clean. No production source changed.
+This closes the requested naming mission, not VAPB completion or other export
+architectures. Hierarchy Parity remains the next milestone and was not started.
+
+**Production Output:** the saved public production naming fixture .blend was
+loaded and exported by current `export_final_state_package`. The representative
+selects original Body alone, producing
+`Assets/VAPBExport/Majun/Materials/Majun_Body.mat`, synthetic GUID
+`11111111111111111111111111111111`, signed localID `2100000`, original m_Name
+`Body`, Material SHA256
+`cb91614f45e73802e50710b018a38313ce0e8eb0a4ec0c8609c6bf15538948f0`, original .meta
+SHA256 `3baa357a1084bbaeb68acc82410683a81bad66c4d4347dd287a9756dc7e4fa11`.
+Expected identities/name/Shader/Texture/hash values were extracted from the
+original synthetic Materials package, plus fixed fixture owner/slot order policy,
+not from the Output manifest. The existing Material parser was reused to extract
+source evidence; this does not independently validate that parser itself.
+
+**Fresh Unity 2022.3.22f1:** two genuinely fresh projects started with only the
+public test Editor script. Only production Output was imported. No original
+Avatar/Material/Texture package or external framework was supplied. Native Unity
+modules and built-in Standard Shader are runtime prerequisites, not source assets.
+The representative and five-Material positive outputs PASS, process exit 0.
+AssetDatabase proves output path, exact GUID/signed localID; disk bytes prove
+original Material and .meta SHA equality; Material.name remains source Body/
+SharedSkin. Shader GUID/localID and all non-null Texture asset identities pass;
+API-declared texture properties also bind correctly. Standard's undeclared future
+property is preserved in identical serialized bytes with its referenced Texture
+asset verified, not claimed as an exposed Standard API shader property.
+
+**Finalizer:** public first-party Apply returns true and public LastResult COMPLETE.
+Exact ordered generated Renderer Material bindings PASS. Repeated Apply leaves
+Prefab bytes unchanged. SaveAssets, ForceSynchronousImport + ForceUpdate of
+Materials and generated Prefab, and a third Apply preserve identities/name/bytes/
+references and COMPLETE status. Both projects were reopened and rechecked with
+these same assertions. API evidence only; no GUI observation claim.
+
+**Shared/collision:** five-Material Output has one canonical Shared GUID asset,
+neutral Shared path, two Majun Body assets with symmetric identity-derived suffixes;
+all exact identities/paths survive Unity. Multiple original semantic owners were
+proved in the previous production Blender fixture; fresh Output contains one
+combined Renderer, not separately restored original owner Prefabs.
+
+**Retained RED / known existing export limit:** the original five-slot Cube used
+only slot 0 for every face. Unity public API observed imported FBX Renderer slots
+1 versus Recipe expectation 5; Finalizer correctly rejected MODEL_STRUCTURE_UNSUPPORTED.
+Material path/identity/hash/name/reference checks had passed before this rejection.
+For the positive multi-Material fixture, each slot is used by at least one face.
+Only test geometry usage was adjusted; production was not patched and the failing
+Output/log remains external evidence. Unused-slot preservation is not proven and
+remains an existing separate export limitation, not silently waived.
+
+**Regression:** current Python 438 PASS, focused owner/naming + portable 13 PASS,
+compileall PASS. Existing Standard unchanged/replacement A/B, Deferred Shader,
+PACKAGE_PROVIDER, static/Skin integration and Blender save/reopen evidence reused
+from the unchanged production baseline; no gratuitous full Blender rerun. Scope
+review PASS. Skin-specific package-export runtime and other model/skin naming
+routes remain outside this supported naming feature; no Geometry Oracle rerun.
+
+**Resource/release:** API start/latest both 18.2968137500, within-turn debit not
+reflected; actual final spend unknown. Reserve >=15 policy means no new ZIP/install/
+release campaign. Naming GOAL_VERIFIED is separate from Release (not created).
+No private data used; no production dependency on Unity for normal naming export.
+
+**Next milestone:** Hierarchy Parity, under a separate mission; STOP here.
+
+Reproduce from repository root with public saved fixture only:
+
+```text
+blender --background --factory-startup --python-exit-code 1 --python tests/blender_material_naming_output.py -- SOURCE_FIXTURE UNUSED_OUTPUT single
+blender --background --factory-startup --python-exit-code 1 --python tests/blender_material_naming_output.py -- SOURCE_FIXTURE UNUSED_MULTI_OUTPUT
+```
+
+Copy Output.unitypackage, independent Expected.json and only
+`VapbNamingProductionFreshProbe.cs` into separate empty 2022.3.22f1 projects
+(the script goes in Assets/Editor; package/JSON at project root). ExecuteMethod
+`VapbNamingProductionFreshProbe.Run`; after completion, reopen with executeMethod
+`VapbNamingProductionFreshProbe.Recheck`. Observed.json records validated expected
+values after assertions, not an independent raw Unity dump. Raw generated evidence
+stays outside Git. The unsupported unused-slot diagnostic uses DiagnoseModel on
+that retained rejected project; it never repairs product state.
+
 ## Human-readable Material naming production — 2026-09-30
 
 **STATUS: PARTIAL (production static final-state route verified; Unity/remaining

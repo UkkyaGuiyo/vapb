@@ -12,8 +12,11 @@ No current or future synchronization option is authorized.
 A subsequent PARTIAL production checkpoint repairs StagingTree portable
 validation/collision rejection. The following production checkpoint connects
 persistent occurrence usage and the Hybrid allocator to static final-state export;
-production Blender cases 1–7 PASS. Fresh Unity production naming and remaining
-model/skin routes remain unverified; the research results below are historical.
+production Blender cases 1–7 PASS. Supported static final-state production
+naming is now GOAL_VERIFIED in fresh Unity 2022.3.22f1: representative plus
+Shared/collision, exact identities/bytes/names/references, repeated Finalizer and
+save/reimport PASS. Other model/skin routes and unused-slot export remain outside
+this claim; see Current State. The research results below are historical.
 The case-only acceptance described below is a historical baseline observation.
 See the Current State report for actual current verification.
 

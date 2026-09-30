@@ -100,8 +100,10 @@ must be deterministic and portable, including casefold/path constraints.
 Hybrid naming is implemented in the static final-state export route, with
 persistent exact occurrence Material usage, Shared/Unassigned and symmetric
 portable collisions. Legacy/no-evidence Materials remain Unassigned. Other
-model/skin export routes and fresh Unity production naming validation remain
-outside the verified checkpoint; see Current State. No m_Name synchronization.
+model/skin export routes remain outside this naming feature. Fresh Unity
+2022.3.22f1 verifies identity/bytes/m_Name/references and repeated Finalizer plus
+save/reimport for the supported static route; see Current State for the existing
+unused-slot limitation. No m_Name synchronization.
 See [the measured feasibility study](docs/VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
 
 Materialの表示はBlender上の近似でよい。Import時はUnity Asset identity、Renderer slot binding、Material GUID、Texture GUIDをsource evidenceとして正しく解釈する。Export時はBlender完成形のMaterial slot構成・face割当を正本とし、VAPB Export ID / Recipeを介して対応するUnity Material asset/stateを新しいRendererへ再装着する。元Unity Rendererのslot構成を、ユーザーが意図的に変更したBlender完成形より優先しない。
