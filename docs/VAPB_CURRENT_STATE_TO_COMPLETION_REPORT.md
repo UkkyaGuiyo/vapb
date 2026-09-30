@@ -2,6 +2,58 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Limited real Material return mission: reference diagnosis — 2026-09-30
+
+**Status: PARTIAL; no production fix or new E2E success.** The user's latest
+instruction postpones the planned reset and consumes the remaining current
+allocation first. This checkpoint advances the limited Material return mission,
+not the historical full-product campaign above.
+
+At source HEAD `4dc6d17251bd9cbdff7e575a5f11831c16350e4e`, a read-only inspection
+of the previously archived representative Material found **7 non-null Texture
+uses, 5 distinct GUIDs, and 5 local TextureImporter providers**. The existing
+parser's non-null reference multiset matches all 7 uses for this sample. Thus
+Texture-provider absence is not demonstrated for this representative. This does
+not test local fileID resolution, cross-package export, or fresh Unity output.
+The Material Shader is not the built-in Standard reference and has **zero
+providers in that archive**. A GUID search of Assets/Packages in the previously
+used local Oracle also found no provider; this limited search does not prove
+absence from other projects, Library package caches, or other source Packages.
+Shader family/version and destination runtime resolution remain **UNPROVEN**.
+Private identity evidence stays outside Git.
+
+Two public synthetic counterexamples invalidate using the existing preview
+parser as an unchecked export closure collector:
+
+- An underscore-prefixed unknown Texture property is preserved, but the same
+  valid serialized reference under `FutureTexture` is omitted.
+- A non-integer Texture fileID becomes zero instead of raising an error.
+
+The public diagnostic probe is deliberately outside normal `test_*.py`
+discovery. From the repository parent run:
+
+```text
+python -m unitypackage_blender_importer.tests.material_export_reference_safety_probe
+```
+
+Observed result: **4 tests, 2 PASS, 2 FAIL, exit 1**. The passing controls cover
+an unknown underscore property and an explicit null. The failing requirements
+cover non-underscore properties and malformed fileID rejection. These are RED
+requirements evidence, not regressions introduced by this checkpoint and not
+tests claimed to pass. The unchanged normal Python discovery was rerun:
+**402 PASS, 0 FAIL, 0 ERROR**, exit 0. The diagnostic module compileall and
+`git diff --check` also passed. A separate read-only scope review found no
+unnecessary implementation. No production source, private asset, raw log, private
+name, GUID table, or absolute machine path is included.
+
+No Blender/Unity E2E, source-bound static/Skin regression, ZIP installation,
+or prerelease validation was repeated for this diagnostic-only checkpoint.
+**Exact next action:** implement a strict export reference collector with these
+two RED requirements, retaining every serialized use independently of preview
+roles and rejecting malformed references before dependency resolution. Then
+prove the non-Standard gate and cross-package provider cases independently;
+the existing Standard gate must not merely be removed.
+
 ## Real Material dependency boundary — 2026-09-28
 
 A local-only representative VRC Material Package was imported through the

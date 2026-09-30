@@ -608,8 +608,11 @@ Mesh。Skin、複数Object、他Importer設定には一般化していない。
 **以前の考え:** Blender Previewに使われる画像だけを、Material帰還に必要なTextureと
 見なせそうだった。
 
-**観測・反証:** 既存のUnity Material parserはShaderと`m_TexEnvs`のproperty名を
-問わずTexture referenceを保持する。一方、現行final-state ExportはStandard Shader
+**観測・反証:** 既存のUnity Material parserはShaderと、対応する`m_TexEnvs`の
+Texture referenceをPreview roleとは別に保持する。ただし2026-09-30のpublic
+synthetic反例で、underscoreなしのpropertyを取りこぼし、不正fileIDを0へ変換する
+ことが確認された。全serialized referenceを取得できるとは扱えない。
+現行final-state ExportはStandard Shader
 gateで実VRC由来Materialを拒否し、Texture providerもMaterialと同一Packageだけを
 探索する。private代表1件の最初の停止はこのShader gateだった。特定Textureの
 欠落やcross-package provider不一致は、まだ実測していない。
@@ -617,7 +620,8 @@ gateで実VRC由来Materialを拒否し、Texture providerもMaterialと同一Pa
 **現在の原則:** Blender node graphはPreview用。出力対象のTextureは元Unity
 `.mat`のnon-null serialized referenceから列挙し、Package provenanceで一意の
 providerを選ぶ。未知propertyも役割を推測せず依存として保持する。Shader依存は
-Textureと分けて判定する。証拠不足なら完全復元を宣言しない。
+Textureと分けて判定する。parserの参照取得範囲とmalformed入力拒否も検証し、
+解析失敗をnullへ変換しない。証拠不足なら完全復元を宣言しない。
 
 **適用範囲:** 新しいstatic final-state Material帰還の設計境界。実データの
 cross-package復元や任意Shaderのfresh Unity成功は未証明。
