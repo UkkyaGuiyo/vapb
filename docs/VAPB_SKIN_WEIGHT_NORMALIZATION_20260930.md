@@ -282,9 +282,20 @@ also does not block this bounded transport verdict. Source Renderer ownership
 remains UNMEASURED here and must come from independent occurrence proof where
 needed. PASS makes no arbitrary-pose, visual-harmlessness or whole-Avatar claim.
 
-The verified prior public183 / real6636 representation evidence is the acceptance
-baseline. Tasks3–4 reprocess actual first/repeated evidence and rerun bounded
-integration; their results will close this section. No private raw rows enter Git.
+Actual first/repeated evidence refresh through the full entry point: public183
+and real626+6010 BITWISE_EXACT, transport PASS, missing0, unexplained0, max
+expected/actual ULP0. Raw changed60/public and1002/real remain unchanged; the
+legacy raw real RED remains in both cases. Deformation metrics and source
+Renderer owner UNMEASURED are preserved. No private raw rows enter Git.
+
+Task4 bounded regression: Python510 PASS, compileall PASS; actual Blender Skin
+Package, tiny weights, triangle staging, Shape/UV/Material/IDs, source success
+preservation, injected failure rollback and save/reopen PASS. Fresh public Unity
+2022.3.22f1: 54 vertices/two Bones, repeated Apply, invalid mapping, source-model
+and unrelated-state preservation PASS. Fresh normalization source and fresh
+Unity numeric first/repeated imports were also run:183/183 BITWISE_EXACT each,
+transport PASS, errors0/warnings0, measured displacement delta1.1920928955078125e-7m.
+Final whole-branch review occurs before the authorized feature-branch push.
 No weight mutation, FBX rewrite, importer-policy change or epsilon window is added.
 
 **Next exact action after policy closure:** combine the approved Skin transport

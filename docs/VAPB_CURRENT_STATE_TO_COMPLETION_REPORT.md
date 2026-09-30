@@ -9,10 +9,18 @@ Raw numeric differences and nonzero/unmeasured deformation remain independent;
 source Renderer owner is UNMEASURED in this report. Stale/unresolved evidence is
 RED; unsupported context is UNSUPPORTED. Production changes NONE; no epsilon.
 
-Evidence baseline: public183 / real6636 bitwise explained; missing0;
-raw changed60 /1002. Deformation MEASURED_NONZERO. Actual policy evidence refresh
-and bounded regression closure follow in Tasks3–4; historical checkpoints below
-remain intact.
+Actual integrated first/repeated report: public183 / real6636 BITWISE_EXACT,
+missing0, raw changed60 /1002, unexplained0, max expected/actual ULP0; both PASS.
+Deformation remains MEASURED_NONZERO; private captured-position maxima remain
+~1.34867e-6 /1.80983e-6m, separate from public controlled displacement ~1.19209e-7m.
+
+Bounded closure: Python510 PASS; compileall PASS; Blender Skin Package,
+normalization fixture, triangle staging, Shape, source preservation, injected
+failure rollback and save/reopen PASS. Fresh Unity2022.3.22f1: 54-vertex/2-Bone
+package PASS, tiny weights, Material/Bone/state preservation, repeated Apply,
+invalid mapping rejection. Fresh numeric first/repeated183/183 BITWISE_EXACT
+and Skin transport PASS; displacement delta remains ~1.19209e-7m.
+Final whole-branch review precedes push. Historical checkpoints below stay intact.
 
 [Normative acceptance and evidence](VAPB_SKIN_WEIGHT_NORMALIZATION_20260930.md#product-authorized-skin-transport-acceptance--2026-10-01).
 **Exact next action after closure:** combine Skin transport with independent
