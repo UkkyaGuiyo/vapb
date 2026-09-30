@@ -102,6 +102,61 @@ See [the measured feasibility study](docs/VAPB_HUMAN_READABLE_EXPORT_NAMING_FEAS
 
 Materialの表示はBlender上の近似でよい。Import時はUnity Asset identity、Renderer slot binding、Material GUID、Texture GUIDをsource evidenceとして正しく解釈する。Export時はBlender完成形のMaterial slot構成・face割当を正本とし、VAPB Export ID / Recipeを介して対応するUnity Material asset/stateを新しいRendererへ再装着する。元Unity Rendererのslot構成を、ユーザーが意図的に変更したBlender完成形より優先しない。
 
+## Mandatory Hierarchy Parity Milestone
+
+Hierarchy Parity is a mandatory product milestone and must be completed **after
+human-readable Material export organization and before broad Unity/VRC component
+restoration**.
+
+For the same selected composition, VAPB must compare the Unity-imported structure
+with the Blender-imported structure and preserve the equivalent **semantic**
+hierarchy wherever the two applications can represent the same relationship.
+The acceptance scope includes:
+
+- GameObject-equivalent parent/child relations under the selected composition root.
+- Transform chains needed to preserve those semantic parent/child relations.
+- Renderer ownership / attachment to the correct semantic owner.
+- Armature/Bone hierarchy and the relationship between Renderer skin state and bones.
+- Occurrence multiplicity: repeated instances of one source object/component must
+  remain distinct occurrences and must not be collapsed.
+
+This requirement is **semantic hierarchy parity**, not raw object-count or
+object-type parity. Blender-specific Armature Objects, technical Empties, importer
+helpers or other representation-only nodes may exist when Blender requires them,
+but they must be isolated from the user-facing semantic hierarchy and must not
+silently change the meaning of the Unity structure.
+
+Identity matching must use GUID/fileID/package/occurrence provenance and existing
+VAPB semantic identity. Names are diagnostic/human labels only. If Unity and
+Blender have an intrinsic representation difference, VAPB must record an explicit
+mapping rather than flattening, inventing, or guessing a hierarchy.
+
+A representative public fixture should use the synthetic **Majun** composition and
+compare Unity and Blender views of a structure such as:
+
+```text
+Majun
+├ Body
+├ Head
+│  ├ Face
+│  └ Hair
+└ Armature
+   └ Hips
+      └ Spine
+```
+
+The milestone is not satisfied by a screenshot or matching names alone. Automated
+comparison must cover the supported semantic parent/child relations, Renderer
+attachment, Bone chain, occurrence multiplicity, and save/reopen persistence.
+
+Product-order invariant:
+
+```text
+Human-readable Material organization
+→ Hierarchy Parity
+→ broad Unity/VRC component restoration
+```
+
 ## Identity Policy
 
 ## Prefab Candidate Analyzer / Automatic Package Composition
