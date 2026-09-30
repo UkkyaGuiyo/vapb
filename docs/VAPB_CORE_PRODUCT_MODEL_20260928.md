@@ -234,6 +234,37 @@ Naming cannot restore a source-geometry-lineage requirement or make original
 input packages runtime dependencies. No production naming behavior is added by
 this document; see [the research evidence and limits](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
 
+### Mandatory hierarchy parity milestone (2026-09-30)
+
+Hierarchy Parity is mandatory **after human-readable Material organization and
+before broad Unity/VRC component restoration**. For the same selected composition,
+VAPB must preserve the equivalent semantic parent/child structure between Unity
+and Blender wherever both applications can represent the same relationship.
+
+Parity covers GameObject-equivalent parent/child relations, Transform chains,
+Renderer ownership/attachment, Bone hierarchy, and occurrence multiplicity.
+Repeated instances of one source component remain distinct occurrences. The
+comparison is semantic: Blender-specific Armature Objects, technical Empties and
+other representation helpers may exist, but they must be isolated from the
+user-facing semantic hierarchy and may not silently alter its meaning.
+
+Correspondence must be established from GUID/fileID/package/occurrence provenance
+and VAPB semantic identity, never from display-name coincidence. Intrinsic
+Unity/Blender representation differences are recorded as explicit mappings rather
+than silently flattened or replaced with invented hierarchy. Supported parity must
+survive Blender save/reopen.
+
+A public synthetic **Majun** hierarchy is the normative example for the first
+independent comparison fixture. This milestone must be validated before broad
+Avatar Descriptor, Animator, PhysBone, Contact, Constraint or other Unity/VRC
+component restoration is treated as a downstream reconstruction target.
+
+```text
+Human-readable Material organization
+→ Hierarchy Parity
+→ broad Unity/VRC component restoration
+```
+
 ## 7. Finalizer responsibility
 
 The Unity Finalizer is not primarily a source-Mesh identity restoration engine.
