@@ -22,6 +22,13 @@ VRC Componentの復元には対応していません。従来のsource-bound出�
 
 最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性は未完了です。特にsemantic Objectとnative Mesh/Armatureの統合、Prefab配置やSkin変形の全面的一致は未解決です。座標系の回帰修正は新規Importに適用され、既存の保存済みBlendを自動変換しません。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。配布ZIPごとの検証済みcommit・SHA-256・インストール結果はExperimental / Alpha prereleaseの説明で確認してください。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
 
+
+## 支援 / Support
+
+VAPBは無料のオープンソースとして開発しています。役に立った場合は、[GitHub Sponsors](https://github.com/sponsors/UkkyaGuiyo) から任意で開発を支援できます。支援は開発・検証環境の維持に使用します。支援の有無や金額によって、機能、個別サポート、開発優先順位が変わることはありません。
+
+VAPB is developed as free and open-source software. If VAPB is useful to you, you can optionally support development through [GitHub Sponsors](https://github.com/sponsors/UkkyaGuiyo). Sponsorship helps maintain the development and validation environment. Sponsorship status or amount does not grant feature access, individual support, or development priority.
+
 ## 開発について / Development
 
 ### 日本語
