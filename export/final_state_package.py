@@ -80,12 +80,24 @@ def _resolve_source_asset(scene, consumer_package_id: str, guid: str, cache=None
 
 
 def _shader_dependency(scene, package_id, data, cache):
+    if (not isinstance(data.shader_file_id, int) or isinstance(data.shader_file_id, bool)
+            or not -(2 ** 63) <= data.shader_file_id < 2 ** 63
+            or not data.shader_file_id or not re.fullmatch(r"[0-9a-f]{32}", data.shader_guid)
+            or data.shader_guid == '0' * 32):
+        raise ValueError("INVALID_REFERENCE")
     if data.shader_guid == "0000000000000000f000000000000000" and data.shader_file_id == 46:
         return {"classification": "UNITY_BUILTIN", "guid": data.shader_guid,
                 "file_id": str(data.shader_file_id)}, None
-    if not data.shader_file_id or not re.fullmatch(r"[0-9a-f]{32}", data.shader_guid):
-        raise ValueError("Shader dependency UNRESOLVED")
-    source = _resolve_source_asset(scene, package_id, data.shader_guid, cache)
+    deferred = {"classification": "UNRESOLVED_BUT_PRESERVED", "kind": "SHADER",
+        "reference_id": "VAPB-REF-" + _sha(f"SHADER:{data.shader_guid}:{data.shader_file_id}".encode())[:32],
+        "guid": data.shader_guid, "file_id": str(data.shader_file_id),
+        "status": "UNRESOLVED_BUT_PRESERVED"}
+    try:
+        source = _resolve_source_asset(scene, package_id, data.shader_guid, cache)
+    except ValueError as error:
+        if str(error) != "dependency provider UNRESOLVED":
+            raise
+        return deferred, None
     if (data.shader_file_id != 4800000 or not source.pathname.lower().endswith('.shader')
             or not re.search(rb"(?m)^ShaderImporter:\s*$", source.meta_bytes)):
         raise ValueError("Shader provider identity is unsupported")
@@ -94,7 +106,7 @@ def _shader_dependency(scene, package_id, data, cache):
     if (re.search(r"#\s*include\b|\bUsePass\b", text)
             or any(value.lower() != 'off' for value in fallbacks)
             or any(int(value) != 0 for value in re.findall(rb"fileID:\s*(-?\d+)\b", source.meta_bytes))):
-        raise ValueError("Shader requires explicit external dependency closure")
+        return deferred, None
     return {"classification": "PACKAGE_PROVIDER", "guid": data.shader_guid,
             "file_id": str(data.shader_file_id)}, source
 
@@ -230,7 +242,9 @@ def export_final_state_package(context, mesh, output: Path):
         material_mappings=tuple(material_records), texture_mappings=(), bone_mappings=(),
         shape_key_mappings=(), prefab_source_chains=(), component_provenance=(),
         reachability=(), reference_rebind_tasks=(task,), unity_postimport_identity_map=(),
-        external_dependencies=(), unsupported_preserved_state=(), warnings=(), errors=())
+        external_dependencies=tuple(record['shader'] for record in material_records
+            if record['shader']['classification'] == 'UNRESOLVED_BUT_PRESERVED'),
+        unsupported_preserved_state=(), warnings=(), errors=())
     selected.add(StagedUnityAsset(manifest_guid, manifest_path,
         manifest.to_json().encode("utf-8"),
         f"fileFormatVersion: 2\nguid: {manifest_guid}\n".encode("ascii"), operation="CREATE"))

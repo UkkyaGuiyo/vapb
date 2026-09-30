@@ -37,3 +37,20 @@ Unity 2022.3.22f1 `ProjectSettings/ProjectVersion.txt` and `Packages/manifest.js
 
 Use `-logFile` outside the repository for Unity runs. Keep generated packages,
 Unity projects, `.blend` files and logs outside the public repository.
+
+## Deferred Shader / self-contained output
+
+Run `tests/blender_deferred_shader_test.py` in Blender with `--python-exit-code 1`
+and `-- <unused-external-scratch>`. It creates Material/Texture input Packages,
+normal-imports them, exports a new Cube, tests save/reopen, and makes only the
+generated source inputs/archive unavailable. `--addon-zip <exact-built-zip>`
+uses Blender's standard install/enable/disable operations in isolated settings.
+
+Copy only `Editor/VapbDeferredShaderProbe.cs` into a new Unity project's
+`Assets/Editor`. Put generated `Output.unitypackage`, `Expected.json` and
+`ExternalShader.unitypackage` at its root. Run batch executeMethod
+`VapbDeferredShaderProbe.Run`. Product helpers arrive through Output only.
+Expect `VAPB_DEFERRED_PARTIAL_PASS` then `VAPB_DEFERRED_COMPLETE_PASS`, exit 0.
+This checks missing provider, same-name wrong GUID, later exact provider,
+Mesh/UV and Material/Texture identities, unchanged original bytes and Prefab,
+and repeat finalization. No input Package A/B is imported into Unity.

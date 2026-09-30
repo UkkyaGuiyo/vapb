@@ -77,9 +77,31 @@ class FinalStateDependencyProviders(unittest.TestCase):
         self.assertEqual('PACKAGE_PROVIDER', record['classification'])
         self.assertEqual('3' * 32, source.guid)
 
-    def test_unresolved_shader_refused(self):
+    def test_unresolved_shader_preserves_exact_reference_with_stable_symbolic_id(self):
         consumer, _ = self.package('Consumer', '1' * 32, b'consumer')
-        with self.assertRaisesRegex(ValueError, 'UNRESOLVED'):
+        data = SimpleNamespace(shader_guid='3' * 32, shader_file_id=4800000)
+        record, source = _shader_dependency(self.scene, consumer, data, {})
+        self.assertIsNone(source)
+        self.assertEqual('UNRESOLVED_BUT_PRESERVED', record['classification'])
+        self.assertEqual('UNRESOLVED_BUT_PRESERVED', record['status'])
+        self.assertEqual('SHADER', record['kind'])
+        self.assertEqual('3' * 32, record['guid'])
+        self.assertEqual('4800000', record['file_id'])
+        self.assertRegex(record['reference_id'], '^VAPB-REF-[0-9a-f]{32}$')
+        self.assertEqual(record, _shader_dependency(self.scene, consumer, data, {})[0])
+
+    def test_invalid_shader_reference_refused(self):
+        for guid, file_id in [('bad', 4800000), ('0' * 32, 4800000),
+                              ('3' * 32, 0), ('3' * 32, 2 ** 63)]:
+            with self.subTest(guid=guid, file_id=file_id), self.assertRaises(ValueError):
+                _shader_dependency({}, 'absent',
+                    SimpleNamespace(shader_guid=guid, shader_file_id=file_id), {})
+
+    def test_ambiguous_shader_not_deferred(self):
+        consumer, _ = self.package('Consumer', '1' * 32, b'consumer')
+        self.package('FirstShader', '3' * 32, b'Shader "One" {}', '.shader', 'ShaderImporter')
+        self.package('SecondShader', '3' * 32, b'Shader "Two" {}', '.shader', 'ShaderImporter')
+        with self.assertRaisesRegex(ValueError, 'AMBIGUOUS'):
             _shader_dependency(self.scene, consumer,
                 SimpleNamespace(shader_guid='3' * 32, shader_file_id=4800000), {})
 
@@ -87,6 +109,7 @@ class FinalStateDependencyProviders(unittest.TestCase):
         for index, shader in enumerate((b'#include "missing.cginc"', b'UsePass "Other/Pass"', b'Fallback "Other"')):
             with self.subTest(shader=shader):
                 consumer, _ = self.package('Shader' + str(index), '3' * 32, shader, '.shader', 'ShaderImporter')
-                with self.assertRaisesRegex(ValueError, 'external dependency closure'):
-                    _shader_dependency(self.scene, consumer,
-                        SimpleNamespace(shader_guid='3' * 32, shader_file_id=4800000), {})
+                record, source = _shader_dependency(self.scene, consumer,
+                    SimpleNamespace(shader_guid='3' * 32, shader_file_id=4800000), {})
+                self.assertIsNone(source)
+                self.assertEqual('UNRESOLVED_BUT_PRESERVED', record['classification'])

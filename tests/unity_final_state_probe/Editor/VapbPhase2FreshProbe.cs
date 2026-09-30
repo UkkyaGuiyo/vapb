@@ -192,11 +192,21 @@ public static class VapbPhase2FreshProbe
         Material material = renderers[0].sharedMaterial;
         Identity(material, expected.material_guid, expected.material_file_id);
         Identity(material.shader, expected.shader_guid, expected.shader_file_id);
-        Require(material.shader.name != "Standard" && !ShaderUtil.ShaderHasError(material.shader), "SHADER_ERROR");
+        Require(!ShaderUtil.ShaderHasError(material.shader), "SHADER_ERROR");
         foreach (string property in new[] { "_MainTex", "_FutureTexture" })
         {
-            Require(material.HasProperty(property), "TEXTURE_PROPERTY");
-            Identity(material.GetTexture(property), expected.texture_guid, expected.texture_file_id);
+            if (expected.shader_guid == "0000000000000000f000000000000000" && !material.HasProperty(property))
+            {
+                // Standard lacks the preserved future property; its asset
+                // still resolves and original .mat bytes were checked above.
+                Identity(AssetDatabase.LoadAssetAtPath<Texture>(AssetDatabase.GUIDToAssetPath(expected.texture_guid)),
+                    expected.texture_guid, expected.texture_file_id);
+            }
+            else
+            {
+                Require(material.HasProperty(property), "TEXTURE_PROPERTY");
+                Identity(material.GetTexture(property), expected.texture_guid, expected.texture_file_id);
+            }
         }
     }
 

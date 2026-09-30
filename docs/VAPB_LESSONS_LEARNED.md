@@ -27,6 +27,27 @@ VAPB開発で得た一般化可能な失敗知識、反証、設計原則を記�
 | LESSON-020 | Model Object配置と直接参照Meshの形状座標を分ける | FBX / GEOMETRY |
 | LESSON-021 | Export IDの存在をFBX輸送後に確認する | EXPORT / IDENTITY |
 | LESSON-022 | Preview用TextureとUnity Material依存を分ける | MATERIAL / EXPORT |
+| LESSON-023 | Reference preservationとprovider解決を分ける | MATERIAL / UNITY |
+
+## LESSON-023 — Reference preservationとprovider解決を分ける
+
+**Status:** ACTIVE · **Domain:** MATERIAL / EXPORT / UNITY
+
+Providerが分からないことと、source referenceが壊れていることは別である。
+有効なShader GUID / signed fileIDはsymbolic referenceと一緒に保持し、元Materialと
+既知TextureをOutputへ実体として運べる。Unity側にproviderが無ければPARTIALと
+依存不足を明示し、後からexact providerを導入すれば同じFinalizerで解決できる。
+元入力Packageの再ImportやShader名による推測接続は不要であり、行わない。
+不正参照、曖昧provider、同梱すべきTexture欠落はこの延期許可の対象外である。
+
+**根拠:** public syntheticはsource Package/archive利用不能の状態で、fresh Unityの
+PARTIAL、同名別GUID拒否、external Shaderのみの後日導入、COMPLETEへの遷移と
+Prefab/Material bytes不変を確認した。private代表ではMaterial一つ、Texture実体五つ、
+七用途の情報を失わずOutput生成した。private Shaderの表示品質は未証明。
+
+**適用範囲:** 現在の実装はShader referenceに限定する。他の参照型の自動復元を
+証明したものではない。[Core Product Model](VAPB_CORE_PRODUCT_MODEL_20260928.md)
+の自己完結性と明示的External Dependency境界を具体化した。
 
 ## LESSON-001 — 表示名はidentityではない
 

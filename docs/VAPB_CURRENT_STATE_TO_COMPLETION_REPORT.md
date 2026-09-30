@@ -2,6 +2,57 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Deferred Unity Reference / Self-Contained Export — 2026-09-30
+
+This bounded extension follows the existing 2026-09-28 Core Product Model.
+Geometry and slot placement remain Blender-authoritative; original Unity
+Material bytes and reusable Texture identity remain source-authoritative.
+No source Mesh lineage requirement or additional registry was introduced.
+
+Valid unresolved Shader GUID/signed fileID references now export with a stable
+`VAPB-REF-*`, kind, original reference and `UNRESOLVED_BUT_PRESERVED` status.
+Missing framework closure is declared external, without copying an incomplete
+Shader. Malformed references, ambiguous providers and missing required Texture
+assets still reject. Known bounded standalone Shaders retain PACKAGE_PROVIDER.
+
+**Public E2E:** normal import of generated Material Package A and Texture
+Package B, new UV Cube, export, rename/save/reopen and re-export PASS. Output
+contains new FBX, original Material, required Texture, Recipe and helpers, but
+no deferred Shader. Synthetic inputs and archive were made unavailable before
+fresh Unity verification; neither source Package was provided to Unity.
+Unity 2022.3.22f1 builds the Material-attached Prefab with `PARTIAL` and
+`EXTERNAL_DEPENDENCY_REQUIRED`. A same-name wrong-GUID Shader stays unresolved.
+Adding only the exact external Shader then rerunning the same Finalizer gives
+`COMPLETE` / `RESOLVED_IN_UNITY`; both Texture properties bind correctly.
+Prefab bytes/GUID and original Material bytes/meta remain unchanged, including
+repeated finalization. No output regeneration or source re-import is needed.
+
+**Private representative:** original Material bytes/meta, five distinct Texture
+assets/meta and seven Texture uses were preserved in a generated Output.
+Shader remains `UNRESOLVED_BUT_PRESERVED`; framework family/version and actual
+rendering remain unproven. Private assets, identifiers and raw evidence stay
+outside this repository and release. Source archives are needed during export
+asset recovery, but are absent from the output runtime requirements.
+
+**Verification:** Python 425 PASS; compileall PASS; Blender 5.2.1 deferred,
+Standard Case A/B, non-Standard PACKAGE_PROVIDER, save/reopen and static/Skin
+regressions PASS. Fresh Unity Standard A/B and PACKAGE_PROVIDER PASS. Existing
+Object-ID missing/duplicate, Material-ID and slot negatives PASS. Mutation
+controls detect dropped source GUID, ambiguous-provider guessing and omitted
+external-closure handling. Missing bundled Shader/Texture remain strict errors
+for PACKAGE_PROVIDER. Read-only scope review: PASS.
+
+`Apply` returns true only for COMPLETE; false with `LastResult = PARTIAL`
+means valid reconstruction with declared missing external dependency, distinct
+from REJECTED. `LastReferences` exposes exact per-reference resolution status.
+The menu reports PARTIAL as a dependency warning, never complete success.
+
+**Limits:** one static UV Mesh final-state route; no Blender-node-to-Unity
+Material regeneration, framework download/bundling, new Skin/Bone/VRC model,
+or complete Avatar round-trip. Independent Geometry Oracle was not rerun
+because geometry production code did not change. Only Shader references have
+deferred realization support; other Unity-only kinds are future work.
+
 ## Real Material Return / Phase 2: public production candidate — 2026-09-30
 
 The generated non-Standard standalone Shader fixture now exports through the

@@ -21,6 +21,8 @@ export_id = manifest["reference_rebind_tasks"][0]["export_object_id"]
 meshes = [obj for obj in bpy.context.scene.objects if obj.type == "MESH"]
 assert len(meshes) == 1
 mesh = meshes[0]
+if mode == "missing" and "_vapb_export_object_id" in mesh:
+    del mesh["_vapb_export_object_id"]
 for obj in bpy.context.scene.objects:
     obj.select_set(False)
 if mode != "missing":

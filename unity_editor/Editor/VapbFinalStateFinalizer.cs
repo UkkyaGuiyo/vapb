@@ -34,6 +34,16 @@ public sealed class VapbExportObjectPostprocessor : AssetPostprocessor
 
 public static class VapbFinalStateFinalizer
 {
+    public static string LastResult { get; private set; } = "NOT_RUN";
+    [Serializable] public sealed class ReferenceResult
+    {
+        public string reference_id;
+        public string kind;
+        public string guid;
+        public string file_id;
+        public string status;
+    }
+    public static ReferenceResult[] LastReferences { get; private set; } = new ReferenceResult[0];
     private const string ManifestPath = "Assets/VAPBExport/manifest.json";
     private const string TaskKind = "BUILD_EXPORTED_STATIC_V1";
     [Serializable] private sealed class Manifest
@@ -65,6 +75,9 @@ public static class VapbFinalStateFinalizer
         public string classification;
         public string guid;
         public string file_id;
+        public string reference_id;
+        public string kind;
+        public string status;
     }
     [Serializable] private sealed class TextureRecord
     {
@@ -82,7 +95,7 @@ public static class VapbFinalStateFinalizer
     private static void ApplySelected()
     {
         string path = AssetDatabase.GetAssetPath(Selection.activeObject);
-        if (!Apply(path)) Debug.LogError("VAPB_FINAL_STATE_FAILED");
+        if (!Apply(path) && LastResult != "PARTIAL") Debug.LogError("VAPB_FINAL_STATE_FAILED");
     }
 
     [MenuItem("Tools/VAPB/Build Final State Prefab", true)]
@@ -145,7 +158,7 @@ public static class VapbFinalStateFinalizer
         catch { return false; }
     }
 
-    private static Material[] ResolveMaterials(Task task)
+    private static Material[] ResolveMaterials(Task task, List<ReferenceResult> references)
     {
         var byId = new Dictionary<string, Material>(StringComparer.Ordinal);
         foreach (MaterialRecord record in task.materials)
@@ -162,7 +175,7 @@ public static class VapbFinalStateFinalizer
             if (material == null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material,
                     out string actualGuid, out long actualId) || actualGuid != record.guid || actualId != fileId)
                 throw new InvalidOperationException("MATERIAL_ID_MISMATCH");
-            ValidateDependencies(record, material, path);
+            ValidateDependencies(record, material, path, references);
             byId[record.export_material_id] = material;
         }
         var result = new Material[task.material_slots.Length];
@@ -179,7 +192,8 @@ public static class VapbFinalStateFinalizer
         return result;
     }
 
-    private static void ValidateDependencies(MaterialRecord record, Material material, string path)
+    private static void ValidateDependencies(MaterialRecord record, Material material, string path,
+        List<ReferenceResult> references)
     {
         // Older Standard-only recipes had no dependency records. Keep that
         // bounded route; new recipes must pass every explicit identity check.
@@ -194,7 +208,38 @@ public static class VapbFinalStateFinalizer
             HashFile(path) != record.asset_sha256)
             throw new InvalidOperationException("MATERIAL_REVISION_MISMATCH");
         ShaderRecord shader = record.shader;
-        if (shader == null || (shader.classification != "UNITY_BUILTIN" &&
+        bool missingShader = false;
+        if (shader != null && shader.classification == "UNRESOLVED_BUT_PRESERVED")
+        {
+            if (shader.kind != "SHADER" || shader.status != "UNRESOLVED_BUT_PRESERVED" ||
+                !Regex.IsMatch(shader.guid ?? "", @"^[0-9a-f]{32}$") ||
+                shader.guid == new string('0', 32) || !long.TryParse(shader.file_id, out long deferredId) || deferredId == 0 ||
+                shader.reference_id != ReferenceId(shader.guid, deferredId))
+                throw new InvalidOperationException("INVALID_REFERENCE");
+            Shader exact = null;
+            string providerPath = AssetDatabase.GUIDToAssetPath(shader.guid);
+            if (!string.IsNullOrEmpty(providerPath))
+                foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(providerPath))
+                    if (asset is Shader candidate && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(candidate,
+                        out string candidateGuid, out long candidateId) && candidateGuid == shader.guid && candidateId == deferredId)
+                    {
+                        if (exact != null) throw new InvalidOperationException("AMBIGUOUS_REFERENCE");
+                        exact = candidate;
+                    }
+            missingShader = exact == null;
+            if (!missingShader)
+            {
+                // Reimport reads the preserved serialized reference. Do not
+                // regenerate or serialize a replacement Material from preview.
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+                if (material.shader != exact || !exact.isSupported || ShaderUtil.ShaderHasError(exact))
+                    throw new InvalidOperationException("SHADER_DEPENDENCY_UNRESOLVED");
+            }
+            references.Add(new ReferenceResult { reference_id = shader.reference_id, kind = shader.kind,
+                guid = shader.guid, file_id = shader.file_id,
+                status = missingShader ? "EXTERNAL_DEPENDENCY_REQUIRED" : "RESOLVED_IN_UNITY" });
+        }
+        else if (shader == null || (shader.classification != "UNITY_BUILTIN" &&
                 shader.classification != "PACKAGE_PROVIDER") ||
             material.shader == null || !material.shader.isSupported ||
             ShaderUtil.ShaderHasError(material.shader) ||
@@ -220,7 +265,7 @@ public static class VapbFinalStateFinalizer
                         if (found != null) throw new InvalidOperationException("TEXTURE_ID_NOT_UNIQUE");
                         found = texture;
                     }
-            if (found == null || (material.HasProperty(reference.property_name) &&
+            if (found == null || (!missingShader && material.HasProperty(reference.property_name) &&
                     material.GetTexture(reference.property_name) != found))
                 throw new InvalidOperationException("TEXTURE_DEPENDENCY_UNRESOLVED");
             // A saved property absent from this Shader is still retained in
@@ -228,8 +273,31 @@ public static class VapbFinalStateFinalizer
         }
     }
 
+    private static string ReferenceId(string guid, long fileId)
+    {
+        using (var sha = SHA256.Create())
+        {
+            var result = new StringBuilder();
+            foreach (byte value in sha.ComputeHash(Encoding.UTF8.GetBytes("SHADER:" + guid + ":" +
+                fileId.ToString(System.Globalization.CultureInfo.InvariantCulture)))) result.Append(value.ToString("x2"));
+            return "VAPB-REF-" + result.ToString().Substring(0, 32);
+        }
+    }
+
+    private static bool Finish(List<ReferenceResult> references)
+    {
+        LastReferences = references.ToArray();
+        bool partial = references.Exists(reference => reference.status == "EXTERNAL_DEPENDENCY_REQUIRED");
+        LastResult = partial ? "PARTIAL" : "COMPLETE";
+        if (partial) Debug.LogWarning("VAPB_FINAL_STATE_PARTIAL=EXTERNAL_DEPENDENCY_REQUIRED MATERIAL=ATTACHED");
+        else Debug.Log("VAPB_FINAL_STATE_APPLIED=1");
+        return !partial;
+    }
+
     public static bool Apply(string manifestPath)
     {
+        LastResult = "REJECTED";
+        LastReferences = new ReferenceResult[0];
         try
         {
             Task task = ReadTask(manifestPath);
@@ -238,7 +306,8 @@ public static class VapbFinalStateFinalizer
                 !modelPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase) ||
                 HashFile(modelPath) != task.model_sha256)
                 throw new InvalidOperationException("MODEL_REVISION_MISMATCH");
-            Material[] materials = ResolveMaterials(task);
+            var references = new List<ReferenceResult>();
+            Material[] materials = ResolveMaterials(task, references);
             // The initial package import can precede its manifest. Reimport after
             // authorization so the user-property callback can persist the ID.
             AssetDatabase.ImportAsset(modelPath, ImportAssetOptions.ForceUpdate);
@@ -262,8 +331,7 @@ public static class VapbFinalStateFinalizer
                     old[0].GetComponent<MeshRenderer>() == null ||
                     !SameMaterials(old[0].GetComponent<MeshRenderer>().sharedMaterials, materials))
                     throw new InvalidOperationException("PREFAB_ALREADY_DIFFERS");
-                Debug.Log("VAPB_FINAL_STATE_APPLIED=1");
-                return true;
+                return Finish(references);
             }
             GameObject instance = PrefabUtility.InstantiatePrefab(model) as GameObject;
             if (instance == null) throw new InvalidOperationException("MODEL_INSTANCE_FAILED");
@@ -279,8 +347,7 @@ public static class VapbFinalStateFinalizer
                     throw new InvalidOperationException("PREFAB_SAVE_FAILED");
             }
             finally { UnityEngine.Object.DestroyImmediate(instance); }
-            Debug.Log("VAPB_FINAL_STATE_APPLIED=1");
-            return true;
+            return Finish(references);
         }
         catch (Exception exception)
         {
