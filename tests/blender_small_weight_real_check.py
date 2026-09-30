@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 
-def raw_skin_weights(folder, filename='D1.fbx'):
+def raw_skin_weights(folder, filename='D1.fbx', *, bone_label_property=None):
     from io_scene_fbx import parse_fbx
     path=folder/filename;root,_=parse_fbx.parse(str(path),use_namedtuple=True)
     nodes={n.props[0]:n for n in next(n for n in root.elems if n.id==b'Objects').elems}
@@ -40,8 +40,13 @@ def raw_skin_weights(folder, filename='D1.fbx'):
         model,=[nodes[u] for u in edges[uid] if nodes[u].id==b'Model']
         # These are explicit temporary labels assigned to actual Bone handles by
         # the existing diagnostic, never original Bone names as identity.
-        label=model.props[1].split(b'\x00')[0].decode()
-        if not label.startswith('VAPB-EXP-BONE-'):raise ValueError('EXPLICIT_BONE_LABEL_MISSING')
+        if bone_label_property:
+            labels=[p.props[-1].decode() for group in model.elems if group.id==b'Properties70'
+                    for p in group.elems if p.props[0]==bone_label_property.encode()]
+            label,=labels
+        else:
+            label=model.props[1].split(b'\x00')[0].decode()
+            if not label.startswith('VAPB-EXP-BONE-'):raise ValueError('EXPLICIT_BONE_LABEL_MISSING')
         ids=next((n.props[0] for n in cluster.elems if n.id==b'Indexes'),[])
         weights=next((n.props[0] for n in cluster.elems if n.id==b'Weights'),[])
         if len(ids)!=len(weights):raise ValueError('CLUSTER_ARRAY_MISMATCH')

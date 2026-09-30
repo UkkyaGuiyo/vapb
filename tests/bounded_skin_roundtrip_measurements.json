@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "scope": "PUBLIC_DIRECT_EXPLICITLY_CONFIRMED_SKIN_SOURCE",
+  "source_start_commit": "f9ad8a078133a2bffdc739a4e1189fb5d6d3ad20",
+  "public": {
+    "verdict": "PASS",
+    "renderer_owner": "EXACT",
+    "dimensions": {
+      "hierarchy": {
+        "semantic_parent": "EXACT",
+        "renderer_owner": "EXACT",
+        "mesh_bridge": "EXACT",
+        "armature_relation": "EXACT",
+        "ordered_bones": "EXACT",
+        "root_bone": "EXACT"
+      },
+      "geometry": {
+        "explicit_triangles": "EXACT",
+        "topology": "EXACT",
+        "sampled_surface": "EXACT",
+        "cp_correspondence": "EXACT"
+      },
+      "skin": {},
+      "material": {
+        "effective_association": "EXACT"
+      },
+      "shape": {
+        "shape": "NOT_APPLICABLE"
+      },
+      "finalizer": {
+        "package_import": "EXACT",
+        "target_resolution": "EXACT",
+        "apply": "EXACT",
+        "repeated_apply": "EXACT"
+      },
+      "preservation": {
+        "source_unchanged": "EXACT",
+        "rollback": "EXACT",
+        "rename_save_reopen": "EXACT"
+      }
+    },
+    "skin": {
+      "identity": "EXACT",
+      "influence_retention": "EXACT",
+      "raw_numeric": "EXACT",
+      "unity_representation": "BITWISE_EXACT",
+      "deformation": {
+        "provenance": "PUBLIC_FINALIZER_CONTROL_CPU_EXPECTED_VS_UNITY_BAKEMESH",
+        "metrics": {
+          "CPU_Unity_Bake_max_error_m": 0.0
+        },
+        "status": "MEASURED_ZERO"
+      },
+      "identity_scope": "EXPORTED_MESH_CP_BONE_INFLUENCE_ASSOCIATIONS",
+      "source_renderer_owner": "UNMEASURED",
+      "total_influences": 52,
+      "missing_influences": 0,
+      "raw_changed_influences": 0,
+      "representation_exact_influences": 52,
+      "unexplained_influences": 0,
+      "max_expected_actual_ULP": 0,
+      "staging": "UNMEASURED",
+      "reason": "NONE",
+      "overall_supported_transport": "PASS"
+    },
+    "known_boundaries": {
+      "normals": "UNMEASURED",
+      "tangents": "UNKNOWN",
+      "import_preview": "NOT_MEASURED_BY_THIS_CONTROL",
+      "shape": "NOT_APPLICABLE_NO_SHAPES_IN_THIS_FIXTURE"
+    },
+    "negative_controls_rejected": 10,
+    "negative_controls_total": 10
+  },
+  "real": {
+    "cases": 2,
+    "authoritative_joins": 0,
+    "source_occurrence_to_numeric_export_joins": 2,
+    "ordered_bone_links": 0,
+    "verdict": "UNSUPPORTED",
+    "reason": "FINALIZER_TARGET_AND_APPLY_NOT_CAPTURED_FOR_DIAGNOSTIC_EXPORT",
+    "numeric_influences": 6636,
+    "numeric_transport": [
+      "PASS",
+      "PASS"
+    ],
+    "raw_changed": 1002,
+    "deformation": [
+      {
+        "provenance": "EXACT_REVISION_CAPTURE_BAKEMESH_TRUE_TRANSFORMPOINT_EXISTING_POSE",
+        "metrics": {
+          "Blender_Unity_evaluated_capture_position_max_m": 1.3486690062364894e-06,
+          "CPU_Unity_BakeMesh_capture_position_max_m": 6.016545663244253e-07
+        },
+        "status": "MEASURED_NONZERO"
+      },
+      {
+        "provenance": "EXACT_REVISION_CAPTURE_BAKEMESH_TRUE_TRANSFORMPOINT_EXISTING_POSE",
+        "metrics": {
+          "Blender_Unity_evaluated_capture_position_max_m": 1.8098327157498704e-06,
+          "CPU_Unity_BakeMesh_capture_position_max_m": 5.994014085373077e-07
+        },
+        "status": "MEASURED_NONZERO"
+      }
+    ],
+    "missing_evidence": [
+      "ORDERED_BONE_TO_FINALIZER_TARGET_BRIDGE",
+      "FRESH_FINALIZER_ON_EXACT_FBX_REVISION"
+    ]
+  }
+}

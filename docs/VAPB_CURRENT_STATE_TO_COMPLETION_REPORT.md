@@ -1,5 +1,27 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Bounded Skin round-trip evidence composition — 2026-10-01
+
+**PARTIAL overall; public direct confirmed Skin PASS; real full round-trip UNSUPPORTED.**
+Starting remote `f9ad8a078133a2bffdc739a4e1189fb5d6d3ad20`.
+Public exact Package/occurrence/native receipt/Export FBX/Unity target join,
+independent source Renderer owner, Geometry/Material and Skin acceptance PASS.
+52/52 positive influences BITWISE_EXACT, missing0, raw changed0; Shape N/A.
+Numeric owner and disposable numeric staging remain UNMEASURED. Source-owner
+EXACT comes from independent serialized/hierarchy/confirmed receipt proof;
+native Mesh remains under its rig, with no automatic attachment-restoration claim.
+Fresh Unity2022.3.22f1 Finalizer/repeated Apply PASS; second Object/Bone rename,
+save/reopen preserves entity and PASS; ten actual-capture join corruptions reject.
+Python517 PASS; compileall and actual Blender triangle/Shape/rollback/reopen PASS.
+Real two immutable source-to-diagnostic-export partial joins proven, but complete
+Bone order/Finalizer target and Apply proof absent: full joins0/2, UNSUPPORTED.
+Prior numeric6636 PASS, raw1002 differences and nonzero deformation remain separate.
+Production changes NONE; no epsilon, main merge, Release/tag/ZIP or private rows.
+
+[Focused scope, joins and evidence](VAPB_BOUNDED_SKIN_ROUNDTRIP_ACCEPTANCE_20261001.md).
+**Next exact action:** capture one existing representative real occurrence through
+supported production Export and fresh Finalizer with exact Mesh/Bone/target receipts.
+
 ## Skin Transport Acceptance Contract — 2026-10-01
 
 Approved design/plan at starting HEAD `131eb1aeb7ec396efafa199daacbd4d0b153e0ba`.

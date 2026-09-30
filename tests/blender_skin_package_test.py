@@ -168,6 +168,9 @@ def main():
             rig.data.bones[old].name = 'Renamed_' + old
             group.name = 'Renamed_' + old
         mesh.name = 'Renamed edited skin'
+        if '--bounded-capture' in sys.argv:
+            from unitypackage_blender_importer.tests.blender_bounded_skin_capture import configure
+            configure(mesh)
         for obj in bpy.context.selected_objects:
             obj.select_set(False)
         mesh.select_set(True)
@@ -176,6 +179,9 @@ def main():
         bpy.ops.wm.open_mainfile(filepath=str(root / 'SkinRoundtrip.blend'))
         mesh = bpy.context.active_object
         assert json.loads(mesh['_vapb_skin_binding']) == binding_before
+        if '--bounded-capture' in sys.argv:
+            from unitypackage_blender_importer.tests.blender_bounded_skin_capture import capture
+            capture(root, mesh)
         before = (len(bpy.data.scenes), len(bpy.data.objects), len(bpy.data.meshes), len(bpy.data.armatures))
         geometry = [tuple(vertex.co) for vertex in mesh.data.vertices]
         weights_before = [[(group.group, group.weight) for group in vertex.groups]
@@ -187,6 +193,9 @@ def main():
         assert weights_before == [[(group.group, group.weight) for group in vertex.groups]
                                   for vertex in mesh.data.vertices]
         assert output.is_file()
+        if '--bounded-capture' in sys.argv:
+            from unitypackage_blender_importer.tests.blender_bounded_skin_capture import finish
+            finish(root, output, mesh)
         print('SKIN_PACKAGE_EXPORT_PASS topology=1 weights=1 renamed_bones=1 reload=1 source_unchanged=1')
     finally:
         addon.unregister()

@@ -10,6 +10,7 @@ using UnityEngine;
 [InitializeOnLoad]
 public static class VapbSkinRoundtripProbe
 {
+    public static Action BoundedCapture;
     private const string Folder = "Assets/VapbSkinRoundtrip";
     private const string Input = Folder + "/Input.fbx";
     private const string Prefab = Folder + "/Avatar.prefab";
@@ -596,6 +597,11 @@ public static class VapbSkinRoundtripProbe
     private static void Finish(Report report)
     {
         SessionState.SetString(Phase, "");
+        if (report.pass && File.Exists(ProjectFile("BoundedBlender.json")))
+        {
+            try { if (BoundedCapture == null) throw new InvalidOperationException(); BoundedCapture(); }
+            catch { report.pass = false; report.error = "BOUNDED_CAPTURE_FAILED"; }
+        }
         try { File.WriteAllText(ProjectFile("VapbSkinRoundtripResult.json"), JsonUtility.ToJson(report, true)); }
         catch { report.pass = false; }
         Debug.Log(report.pass ? "VAPB_SKIN_ROUNDTRIP_PASS" : "VAPB_SKIN_ROUNDTRIP_FAIL");
