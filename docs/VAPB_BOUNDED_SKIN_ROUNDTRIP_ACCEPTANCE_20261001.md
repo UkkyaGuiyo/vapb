@@ -154,7 +154,7 @@ PASS — no unnecessary implementation found. No excess production changes ident
 
 [Actual sanitized report](../tests/bounded_skin_roundtrip_measurements.json).
 
-**Next exact action:** reproduce missing preserved-script providers and absent external-dependency declarations with a public-safe synthetic fixture before changing the dependency boundary.
+**Next exact action:** resolve the undeclared external SDK prerequisite before retrying this exact output through the existing Finalizer.
 
 
 ## Representative real production closure attempt — 2026-10-01
@@ -182,9 +182,12 @@ false with `PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT`. Public Unity API counted 55
 missing MonoBehaviours in the loaded source hierarchy. The directly serialized
 Prefab had 51 script components referencing three distinct script asset GUIDs;
 none had providers in the output. The manifest's `external_dependencies` was
-empty. A bounded read-only check of the known primary VRC Oracle found no exact
-provider for these three references; their framework/type remains unresolved.
-Do not label them VRChat SDK merely from the avatar's appearance or purpose.
+empty. A bounded read-only check of all relevant `.meta` files in the known
+primary VRC Oracle found three exact GUID-matching DLL providers, belonging to
+`com.vrchat.base` and `com.vrchat.avatars`, version3.10.5. Searching only C# script
+meta files initially missed the DLL providers; the complete meta check corrected
+that finding. Attribution comes from GUID matches and provider package manifests,
+not from avatar appearance. The output still does not declare this prerequisite.
 
 This is a supported-scope/dependency blocker, not proof of a Mesh/Bone numerical
 regression. No scripts were removed, no source Prefab was rewritten and no
