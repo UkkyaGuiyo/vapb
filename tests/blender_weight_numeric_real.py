@@ -8,10 +8,13 @@ import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
 from unitypackage_blender_importer.tests.blender_small_weight_real_check import raw_skin_weights
 from unitypackage_blender_importer.tests.weight_numeric_models import models,bits,ulp
+from unitypackage_blender_importer.tests.blender_geometry_abcd_compare import d_identity_metrics,skin_export_context,skin_deformation_measurement
 
 
 def main():
-    folder,blender_report,output=map(Path,sys.argv[sys.argv.index('--')+1:])
+    args=list(map(Path,sys.argv[sys.argv.index('--')+1:]))
+    folder,blender_report,output=args[:3]
+    policy_root=args[3] if len(args)==4 else None
     raw=raw_skin_weights(folder)
     report=json.loads(blender_report.read_text());before,=next(e for e in report['exports'] if e['mode']=='D1')['pre_export']
     b0={}
@@ -48,7 +51,12 @@ def main():
                 model_matches=[name for name,prediction in predictions.items() if bits(prediction[keys.index(label)])==bits(native)]))
     aggregate=dict(total_influences=len(result),cp_count=len(grouped),classes=classes,exact_B0_F=bfexact,
         changed_B0_F=len(result)-bfexact,model_exact_counts=model_counts,max_abs_B0_F=maxBF,max_abs_F_U=maxFU,max_ULP_B0_F=maxBFulp,max_ULP_F_U=maxFUulp)
-    output.write_text(json.dumps(dict(aggregate=aggregate,private_rows=result),indent=2));print(json.dumps(aggregate))
+    export=next(e for e in report['exports'] if e['mode']=='D1')
+    full=d_identity_metrics(before,observed,skin_context=skin_export_context(folder,export,capture,
+        policy_root,skin_deformation_measurement(before,observed)))
+    output.write_text(json.dumps(dict(aggregate=aggregate,full_skin_report=full,private_rows=result),indent=2))
+    public=dict(full['skin_report']);public.pop('numeric_stages',None)
+    print(json.dumps(dict(aggregate=aggregate,skin_report=public)))
 
 
 if __name__=='__main__':main()

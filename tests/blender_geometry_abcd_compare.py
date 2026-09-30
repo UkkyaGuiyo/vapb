@@ -124,7 +124,140 @@ def compare(a,b,marker):
     return result
 
 
-def d_identity_metrics(before, observed):
+def skin_parity_report(before, observed, context):
+    """Independent facts for the measured export scope; no transport-policy verdict."""
+    import math
+    from unitypackage_blender_importer.tests.weight_numeric_models import representation_compare
+    result=dict(identity='UNPROVEN',influence_retention='UNPROVEN',raw_numeric='UNMEASURED',
+        unity_representation='UNSUPPORTED_REPRESENTATION',deformation=dict(status='UNMEASURED'),
+        overall_supported_transport='NOT_ASSESSED_PRODUCT_POLICY',
+        identity_scope='EXPORTED_MESH_CP_BONE_INFLUENCE_ASSOCIATIONS',
+        source_renderer_owner='UNMEASURED',total_influences=0,missing_influences=0,
+        raw_changed_influences=0,representation_exact_influences=0,unexplained_influences=0,
+        max_expected_actual_ULP=None)
+    def require(condition,code):
+        if not condition:raise ValueError(code)
+    def cp_rows(ids,rows):
+        require(len(ids)==len(rows),'CP_IDENTITY_UNPROVEN')
+        output={}
+        for cp,row in zip(ids,rows):
+            require(type(cp) is int and cp>=0,'CP_IDENTITY_UNPROVEN')
+            values={}
+            for w in row:
+                key=w['group'];value=w['weight']
+                require(isinstance(key,str) and bool(key) and key not in values,'DUPLICATE_OR_UNRESOLVED_BONE')
+                require(math.isfinite(value) and value>=0,'UNSUPPORTED_REPRESENTATION')
+                if value>0:values[key]=value
+            require(cp not in output or output[cp]==values,'CP_SPLIT_INFLUENCE_CONFLICT')
+            output[cp]=values
+        return output
+    try:
+        require(bool(context),'NUMERIC_CONTEXT_MISSING')
+        measurement=context.get('deformation')
+        if measurement:
+            metrics=measurement['metrics']
+            require(bool(measurement['provenance']) and bool(metrics) and all(
+                math.isfinite(v) and v>=0 for v in metrics.values()),'DEFORMATION_MEASUREMENT_INVALID')
+            result['deformation']=dict(measurement,status='MEASURED_NONZERO' if any(metrics.values()) else 'MEASURED_ZERO')
+        revision=context['fbx_sha256']
+        require(len(revision)==64 and all(c in '0123456789abcdef' for c in revision)
+            and revision==context['expected_fbx_sha256']==context['observed_fbx_sha256'],'SOURCE_REVISION_MISMATCH')
+        require(context['unity_version']=='2022.3.22f1','UNSUPPORTED_REPRESENTATION')
+        policy=context['preprocess_policy']
+        require(policy.get('version')==1 and policy.get('model_sha256')==revision
+            and policy.get('model_guid')==observed['guid']==context['mesh_guid']
+            and str(observed['local_id'])==str(context['mesh_local_id']),'IMPORT_POLICY_OR_MESH_IDENTITY_UNPROVEN')
+        require(observed.get('marker_invalid_count')==0,'CP_IDENTITY_UNPROVEN')
+        bones={}
+        for bone in observed['bones']:
+            index,label=bone['index'],bone.get('export_label')
+            require(type(index) is int and index>=0 and index not in bones and label
+                and label not in bones.values(),'DUPLICATE_OR_UNRESOLVED_BONE')
+            bones[index]=label
+        labels=observed['vertex_control_point_indices'];native=[[] for _ in labels]
+        for w in observed['bone_weights']:
+            require(w['bone'] in bones,'UNEXPECTED_BONE')
+            require(type(w['vertex']) is int and 0<=w['vertex']<len(labels),'CP_IDENTITY_UNPROVEN')
+            native[w['vertex']].append(dict(group=bones[w['bone']],weight=w['weight']))
+        authored=cp_rows(before['vertex_control_point_indices'],before['skin_weights'])
+        staged=cp_rows(before['vertex_control_point_indices'],context.get('staged_weights',before['skin_weights']))
+        actual=cp_rows(labels,native);raw={cp:{} for cp in authored}
+        for (cp,bone),value in context['raw_weights'].items():
+            require(cp in raw and bone in bones.values(),'CP_OR_BONE_IDENTITY_UNPROVEN')
+            require(math.isfinite(value) and value>=0,'UNSUPPORTED_REPRESENTATION')
+            if value>0:raw[cp][bone]=value
+        require(set(authored)==set(actual),'CP_IDENTITY_UNPROVEN')
+        require(all(set(authored[cp])==set(raw[cp]) for cp in raw),'CANONICAL_INPUT_INCOMPLETE')
+        result['total_influences']=sum(len(row) for row in raw.values())
+        result['missing_influences']=sum(len(set(raw[cp])-set(actual[cp])) for cp in raw)
+        unexpected=sum(len(set(actual[cp])-set(raw[cp])) for cp in raw)
+        result['influence_retention']='MISSING_POSITIVE_INFLUENCES' if result['missing_influences'] else 'EXACT'
+        result['raw_changed_influences']=sum(actual[cp].get(k)!=v for cp,row in raw.items() for k,v in row.items())
+        result['raw_numeric']='RAW_NUMERIC_DIFFERENCE' if result['raw_changed_influences'] else 'EXACT'
+        require(not result['missing_influences'] and not unexpected,'INFLUENCE_ASSOCIATION_MISMATCH')
+        result['identity']='EXACT'
+        rows=[]
+        for cp in raw:
+            require(authored[cp]==staged[cp]==raw[cp],'AUTHORED_CANONICAL_OR_STAGING_CHANGED')
+            comparison=representation_compare(authored[cp],staged[cp],raw[cp],actual[cp],unity_version=context['unity_version'])
+            rows.extend(dict(row,cp=cp) for row in comparison['rows'])
+        result['staging']='EXACT' if 'staged_weights' in context else 'UNMEASURED'
+        if result['staging']=='UNMEASURED':
+            for row in rows:row['STAGED']=None
+        result['representation_exact_influences']=sum(row['expected_actual_ULP']==0 for row in rows)
+        result['unexplained_influences']=len(rows)-result['representation_exact_influences']
+        result['max_expected_actual_ULP']=max((row['expected_actual_ULP'] for row in rows),default=0)
+        result['unity_representation']='EXACT' if not result['unexplained_influences'] else 'NUMERIC_MISMATCH'
+        result['numeric_stages']=rows  # Private reports remain external; publish only aggregates.
+        result['reason']='NONE'
+    except (ValueError,KeyError,TypeError,OverflowError) as exc:
+        result['reason']=str(exc) if isinstance(exc,ValueError) else 'NUMERIC_CONTEXT_INCOMPLETE'
+        result['unexplained_influences']=result['total_influences']
+    return result
+
+
+def d_identity_metrics(before, observed, *, skin_context=None):
+    report=skin_parity_report(before,observed,skin_context)
+    try:result=_legacy_d_identity_metrics(before,observed)
+    except (KeyError,IndexError,TypeError):
+        result=dict(shape_geometry=dict(status='UNPROVEN'),skin_bone_weight_binding='SKIN_BINDING_MISMATCH')
+    result['skin_report']=report
+    return result
+
+
+def skin_export_context(folder, export, capture, policy_root=None, deformation=None):
+    """Bind actual FBX bytes, public API Mesh identity and the existing import policy."""
+    from unitypackage_blender_importer.tests.blender_small_weight_real_check import raw_skin_weights
+    observed,=capture['meshes']
+    path=Path(folder)/(export['mode']+'.fbx')
+    policy_path=Path(policy_root or Path(folder)/'Assets/VAPBExport')/('SkinWeightPolicy_'+observed['guid']+'.json')
+    # Missing policy is an unsupported context, never a guessed min=0 setting.
+    policy=json.loads(policy_path.read_text()) if policy_path.exists() else {}
+    try:raw=raw_skin_weights(Path(folder),path.name)
+    except (ValueError,KeyError,IndexError):return {}
+    context=dict(unity_version=capture['editor_version'],
+        fbx_sha256=hashlib.sha256(path.read_bytes()).hexdigest(),expected_fbx_sha256=export['fbx_sha256'],
+        observed_fbx_sha256=capture['input_sha256'],mesh_guid=observed['guid'],
+        mesh_local_id=observed['local_id'],preprocess_policy=policy,
+        raw_weights=raw)
+    if deformation:context['deformation']=deformation
+    return context
+
+
+def skin_deformation_measurement(before, observed):
+    native=unity_row(observed);metrics={}
+    if before.get('baked_positions') and native.get('baked_positions'):
+        measurement=position_metric(before['vertex_control_point_indices'],before['baked_positions'],
+            native['vertex_control_point_indices'],native['baked_positions'])
+        if 'maximum_distance' in measurement:metrics['Blender_Unity_evaluated_capture_position_max_m']=measurement['maximum_distance']
+    if native.get('cpu_positions') and native.get('baked_positions'):
+        measurement=position_metric(native['vertex_control_point_indices'],native['cpu_positions'],
+            native['vertex_control_point_indices'],native['baked_positions'])
+        if 'maximum_distance' in measurement:metrics['CPU_Unity_BakeMesh_capture_position_max_m']=measurement['maximum_distance']
+    return dict(provenance='EXACT_REVISION_CAPTURE_BAKEMESH_TRUE_TRANSFORMPOINT_EXISTING_POSE',metrics=metrics) if metrics else None
+
+
+def _legacy_d_identity_metrics(before, observed):
     """Verify explicitly assigned export labels against the exact output revision."""
     labels=observed['vertex_control_point_indices']
     mesh_matrix=observed['renderer_local_to_world']
@@ -217,7 +350,8 @@ def main():
         before,=export['pre_export']; observed,=capture['meshes']
         result['D'].append(dict(mode=label,fbx_sha256=export['fbx_sha256'],
              comparison=compare(before,unity_row(observed),spec['uv_channel']),
-             identity=d_identity_metrics(before,observed),
+             identity=d_identity_metrics(before,observed,skin_context=skin_export_context(project,export,capture,
+                deformation=skin_deformation_measurement(before,observed))),
              source_unchanged=export['source_objects_unchanged'],raw_polygon_sizes=export['raw_polygon_sizes']))
     result['unity_ac_status']=read(project/'UnityACStatus.json')
     result['unity_d_status']=read(project/'UnityDStatus.json')

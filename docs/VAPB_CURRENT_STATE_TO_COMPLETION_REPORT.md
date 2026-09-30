@@ -1,5 +1,33 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Representation-aware full Skin report integration — 2026-09-30
+
+**GOAL_VERIFIED for reporting integration; no new Skin transport product policy.**
+Starting remote `e8f227afbca3c210c41f2dfa4dd86dae2caa71c9`.
+
+- Existing full `d_identity_metrics` now exposes independent export-scope identity,
+  retention, raw numeric, Unity representation and deformation dimensions. Existing
+  aggregate callers and bounded real adapter consume the same entry point.
+- Public 183 influences: missing 0, raw changed 60, representation 183 exact.
+  Same bounded real: 6636 influences, missing 0, raw changed 1002, representation
+  6636 exact, unexplained 0, max expected/actual ULP 0. Repeated snapshots agree.
+- Legacy real raw Skin-binding RED remains in both cases. No epsilon relaxation,
+  production mutation, extra normalization, importer-policy change or FBX rewrite.
+- Identity EXACT covers exported Mesh/CP/Bone influence association only;
+  source Renderer owner remains UNMEASURED here. Private B1 is UNMEASURED.
+- Deformation remains separately MEASURED_NONZERO. Public controlled displacement
+  max ~1.19209e-7m; private captured-position maxima ~1.34867e-6 / 1.80983e-6m.
+  Different poses/metrics; no general harmlessness or deformation equality claim.
+- overall_supported_transport = NOT_ASSESSED_PRODUCT_POLICY (facts only).
+  PRODUCT_SPEC unchanged. Successful supported transport has not been redefined.
+- Nine integration acceptance/negative tests; Python 505 PASS; compileall PASS.
+  Actual Skin Package, fresh Unity, tiny weights, repeated import/Apply, triangle,
+  Shape, source preservation, failure rollback, save/reopen PASS; scope review PASS.
+
+[Integrated Skin report evidence](VAPB_SKIN_WEIGHT_NORMALIZATION_20260930.md#integrated-full-skin-parity-report--2026-09-30).
+**Exact next action:** evaluate Skin transport acceptance policy from the separate
+raw, representation and measured deformation evidence.
+
 ## Skin numeric representation investigation — 2026-09-30
 
 **GOAL_VERIFIED for bounded numeric characterization; raw Skin equality remains RED.**

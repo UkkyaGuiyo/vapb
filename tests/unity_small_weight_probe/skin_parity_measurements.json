@@ -1,0 +1,103 @@
+{
+  "schema": "vapb-integrated-skin-parity-1",
+  "start_commit": "e8f227afbca3c210c41f2dfa4dd86dae2caa71c9",
+  "unity_version": "2022.3.22f1",
+  "public": {
+    "identity": "EXACT",
+    "influence_retention": "EXACT",
+    "raw_numeric": "RAW_NUMERIC_DIFFERENCE",
+    "unity_representation": "EXACT",
+    "deformation": {
+      "provenance": "PUBLIC_CONTROLLED_POSE_BAKEMESH_TRUE_TRANSFORMPOINT",
+      "metrics": {
+        "B0_normalized_F_normalized_CPU": 0.0,
+        "F_normalized_U_CPU": 1.2102460866803e-08,
+        "U_CPU_Unity_BakeMesh": 5.960709081875848e-08,
+        "Blender_evaluated_B0_CPU": 3.613712229455501e-08,
+        "Blender_Unity_evaluated": 1.1920928955078125e-07,
+        "F_normalized_U_CPU_position": 4.2782396736384953e-08,
+        "U_CPU_Unity_BakeMesh_position": 1.408184187035033e-07
+      },
+      "status": "MEASURED_NONZERO"
+    },
+    "overall_supported_transport": "NOT_ASSESSED_PRODUCT_POLICY",
+    "identity_scope": "EXPORTED_MESH_CP_BONE_INFLUENCE_ASSOCIATIONS",
+    "source_renderer_owner": "UNMEASURED",
+    "total_influences": 183,
+    "missing_influences": 0,
+    "raw_changed_influences": 60,
+    "representation_exact_influences": 183,
+    "unexplained_influences": 0,
+    "max_expected_actual_ULP": 0,
+    "staging": "EXACT",
+    "reason": "NONE"
+  },
+  "real_aggregate_only": [
+    {
+      "skin": {
+        "identity": "EXACT",
+        "influence_retention": "EXACT",
+        "raw_numeric": "RAW_NUMERIC_DIFFERENCE",
+        "unity_representation": "EXACT",
+        "deformation": {
+          "provenance": "EXACT_REVISION_CAPTURE_BAKEMESH_TRUE_TRANSFORMPOINT_EXISTING_POSE",
+          "metrics": {
+            "Blender_Unity_evaluated_capture_position_max_m": 1.3486690062364894e-06,
+            "CPU_Unity_BakeMesh_capture_position_max_m": 6.016545663244253e-07
+          },
+          "status": "MEASURED_NONZERO"
+        },
+        "overall_supported_transport": "NOT_ASSESSED_PRODUCT_POLICY",
+        "identity_scope": "EXPORTED_MESH_CP_BONE_INFLUENCE_ASSOCIATIONS",
+        "source_renderer_owner": "UNMEASURED",
+        "total_influences": 626,
+        "missing_influences": 0,
+        "raw_changed_influences": 54,
+        "representation_exact_influences": 626,
+        "unexplained_influences": 0,
+        "max_expected_actual_ULP": 0,
+        "staging": "UNMEASURED",
+        "reason": "NONE"
+      },
+      "legacy_raw_verdict": "SKIN_BINDING_MISMATCH",
+      "shape": "EXACT"
+    },
+    {
+      "skin": {
+        "identity": "EXACT",
+        "influence_retention": "EXACT",
+        "raw_numeric": "RAW_NUMERIC_DIFFERENCE",
+        "unity_representation": "EXACT",
+        "deformation": {
+          "provenance": "EXACT_REVISION_CAPTURE_BAKEMESH_TRUE_TRANSFORMPOINT_EXISTING_POSE",
+          "metrics": {
+            "Blender_Unity_evaluated_capture_position_max_m": 1.8098327157498704e-06,
+            "CPU_Unity_BakeMesh_capture_position_max_m": 5.994014085373077e-07
+          },
+          "status": "MEASURED_NONZERO"
+        },
+        "overall_supported_transport": "NOT_ASSESSED_PRODUCT_POLICY",
+        "identity_scope": "EXPORTED_MESH_CP_BONE_INFLUENCE_ASSOCIATIONS",
+        "source_renderer_owner": "UNMEASURED",
+        "total_influences": 6010,
+        "missing_influences": 0,
+        "raw_changed_influences": 948,
+        "representation_exact_influences": 6010,
+        "unexplained_influences": 0,
+        "max_expected_actual_ULP": 0,
+        "staging": "UNMEASURED",
+        "reason": "NONE"
+      },
+      "legacy_raw_verdict": "SKIN_BINDING_MISMATCH",
+      "shape": "NOT_APPLICABLE"
+    }
+  ],
+  "policy": "FACT_REPORT_ONLY_NO_NEW_SUPPORTED_TRANSPORT_VERDICT",
+  "repeated_full_report_exact": {
+    "public": 183,
+    "real": [
+      626,
+      6010
+    ]
+  }
+}

@@ -185,3 +185,80 @@ are the acceptance evidence.
 **Exact next action:** connect the bounded bitwise numeric diagnostic to the
 existing full Skin parity report, retaining raw numeric RED and deformation
 measurements separately from expected Unity representation.
+
+
+## Integrated full Skin parity report — 2026-09-30
+
+Starting remote `e8f227afbca3c210c41f2dfa4dd86dae2caa71c9`.
+The existing `tests/blender_geometry_abcd_compare.py:d_identity_metrics` now
+consumes the exact representation comparator. Existing public/real aggregate
+experiment callers use this same entry point. The numeric real-evidence adapter
+also stores the **full** entry-point result, including the unchanged legacy
+Shape and Skin-binding verdicts. It is not a competing truth system.
+
+`skin_report` separates these facts:
+
+| Dimension | Public | Bounded real |
+| --- | --- | --- |
+| Export Mesh/CP/Bone/influence associations | EXACT | EXACT / EXACT |
+| Positive influence retention | EXACT, missing 0 | EXACT, missing 0 |
+| Raw FBX/Unity values | RAW_NUMERIC_DIFFERENCE, 60 changed | RAW_NUMERIC_DIFFERENCE, 54 + 948 changed |
+| Expected Unity representation | EXACT, 183 / 183, 0 ULP | EXACT, 626 + 6010 / 6636, 0 ULP |
+| Actual deformation measurement | MEASURED_NONZERO | MEASURED_NONZERO / MEASURED_NONZERO |
+
+Identity scope is explicitly `EXPORTED_MESH_CP_BONE_INFLUENCE_ASSOCIATIONS`.
+**Source Renderer owner is UNMEASURED by these export captures**; this result does
+not replace the separate Hierarchy/Renderer-occurrence comparator. Private B1
+was not directly recaptured; its `staging` is UNMEASURED and STAGED numeric rows
+are null, rather than inferred. Public B1 remains the measured exact stage.
+
+Before representation acceptance, the full report checks actual FBX SHA against
+export and Unity capture revisions, Unity version, exact GUID/hash preprocessing
+policy, public API Mesh GUID/local ID, CP labels/coverage/split consistency,
+unique Bone claims and positive influence associations. It rejects missing or
+unexpected influences, duplicate claims, invalid/stale context and unsupported
+numeric scope. A 1-ULP expected/actual difference is NUMERIC_MISMATCH. No fallback
+to epsilon, weight mutation, FBX rewrite or Unity patch is added.
+
+The old `skin_bone_weight_binding` is unchanged: **both real cases still report
+SKIN_BINDING_MISMATCH**. The new fields explain those REDs without overwriting
+them. Raw values and expected Unity values remain independently available per
+CP/Bone; private numeric rows are external, not part of committed evidence.
+
+Deformation is never inferred from representation. The public controlled-pose
+Blender/Unity displacement maximum remains 1.1920928955078125e-7m. In the two real
+existing-pose captures, Blender/Unity evaluated **position** maxima are
+1.3486690062364894e-6m and 1.8098327157498704e-6m; CPU/BakeMesh position maxima
+are 6.016545663244253e-7m and 5.994014085373077e-7m. These are different measurements
+and poses, not a worsening of the public controlled-pose metric or a general
+all-pose equivalence claim. Metric provenance is retained in each report.
+Absent deformation evidence stays UNMEASURED even with exact representation.
+
+`overall_supported_transport = NOT_ASSESSED_PRODUCT_POLICY` explicitly means this
+report contains facts only and makes no product-level success decision. No
+PRODUCT_SPEC change or new definition of successful Skin transport was made.
+A future promotion to supported transport would require a separately authorized
+policy decision; this reporting-only mission does not require one.
+
+Acceptance A–H: normal M5 / 1-ULP mutation / swapped Bone / missing influence /
+unsupported Unity / >4 influences / stale hash / raw RED + representation EXACT
+all covered, plus duplicate claims, unexpected Bone, unresolved CP, changed
+staging, missing policy/context, non-float32 origin and unmeasured deformation.
+9 integration tests added. Python full suite 505 PASS; compileall PASS. Actual
+Blender Skin Package and triangle regression PASS, including tiny weights, Skin,
+Shape, UV/Material/IDs, source preservation, injected failure rollback and
+save/reopen. Fresh Unity 2022.3.22f1 package regression PASS: 54 vertices, two
+Bones, retention, Material, deformation, repeated Apply and invalid mapping.
+
+Exact-revision first **and repeated** native snapshots were reprocessed through
+the full entry point: public 183 and real 626 + 6010 bitwise exact each time.
+Fresh Unity package runtime was rerun; unrelated heavy campaigns were not.
+One independent read-only scope review PASS. Production changes NONE.
+
+[Sanitized integrated report](../tests/unity_small_weight_probe/skin_parity_measurements.json)
+contains public and real aggregate counts/metrics only. Original private identity,
+raw weights, asset names and paths are absent.
+
+**Next exact action:** evaluate the product-level Skin transport acceptance policy
+using separate raw, representation and measured deformation evidence, without
+silently promoting bitwise representation EXACT to deformation IDENTICAL.

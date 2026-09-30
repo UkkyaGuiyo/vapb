@@ -9,7 +9,7 @@ from pathlib import Path
 import sys
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]))
-from unitypackage_blender_importer.tests.blender_geometry_abcd_compare import compare,unity_row,d_identity_metrics
+from unitypackage_blender_importer.tests.blender_geometry_abcd_compare import compare,unity_row,d_identity_metrics,skin_export_context,skin_deformation_measurement
 
 
 def main():
@@ -35,7 +35,8 @@ def main():
             rows.append(dict(sample=chosen['sample'],source_category=chosen['source_category'],
                 source_ngon_count=chosen['source_ngon_count'],mode=mode,input_sha256=revision,
                 comparison=compare(before,unity_row(actual),marker['uv_channel']),
-                identity=d_identity_metrics(before,actual),unity_status=status))
+                identity=d_identity_metrics(before,actual,skin_context=skin_export_context(folder,export,capture,
+                    project/'Assets/VAPBExport',skin_deformation_measurement(before,actual))),unity_status=status))
     output.write_text(json.dumps(dict(rows=rows),indent=2))
     for mode in ('D0','D1'):
         subset=[r for r in rows if r['mode']==mode]

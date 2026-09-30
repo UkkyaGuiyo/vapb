@@ -6,9 +6,9 @@ from pathlib import Path
 import sys
 
 
-def raw_skin_weights(folder):
+def raw_skin_weights(folder, filename='D1.fbx'):
     from io_scene_fbx import parse_fbx
-    path=folder/'D1.fbx';root,_=parse_fbx.parse(str(path),use_namedtuple=True)
+    path=folder/filename;root,_=parse_fbx.parse(str(path),use_namedtuple=True)
     nodes={n.props[0]:n for n in next(n for n in root.elems if n.id==b'Objects').elems}
     edges={}
     for row in next(n for n in root.elems if n.id==b'Connections').elems:
@@ -47,6 +47,7 @@ def raw_skin_weights(folder):
         if len(ids)!=len(weights):raise ValueError('CLUSTER_ARRAY_MISMATCH')
         for cp,w in zip(ids,weights):
             if cp not in cp_map:raise ValueError('RAW_CP_UNPROVEN')
+            if (cp_map[cp],label) in raw:raise ValueError('DUPLICATE_RAW_BONE_CLAIM')
             raw[(cp_map[cp],label)]=float(w)
     return raw
 
