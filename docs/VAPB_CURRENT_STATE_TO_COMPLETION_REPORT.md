@@ -1,5 +1,7 @@
 # Current product campaign checkpoint — 2026-09-26
 
+This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
+
 ## Mandatory Hierarchy Parity milestone — 2026-09-30
 
 **STATUS: SPEC_MANDATED / NOT YET IMPLEMENTED.** The user requires the
@@ -33,8 +35,6 @@ The current naming checkpoint remains the immediate implementation work.
 Hierarchy Parity is the mandatory next architectural validation milestone before
 expanding into broad Avatar Descriptor / Animator / PhysBone / Contact /
 Constraint restoration.
-
-This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
 ## Human-readable Material production prerequisite — 2026-09-30
 
