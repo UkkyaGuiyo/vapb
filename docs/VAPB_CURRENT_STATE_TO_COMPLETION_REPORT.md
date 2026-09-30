@@ -2,6 +2,45 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Real Material Return / Phase 2: public RED fixture — 2026-09-30
+
+**Status: PARTIAL; production source unchanged from `ab1e7c0`.** The Phase-2
+request supersedes the previous allocation instruction: finish only a bounded
+old-allocation step, then use the single reset before larger implementation.
+
+`tests/blender_material_return_phase2_test.py` formalizes the previous temporary
+experiment with completely first-party generated inputs. Package A contains a
+Material and, in the non-Standard case, a standalone synthetic Shader source.
+Package B contains its generated one-pixel PNG. The same Texture is referenced
+by `_MainTex` and `_FutureTexture`; asset deduplication must preserve both uses.
+The Shader has no includes or framework source. Its Unity compilation and
+expected GUID/localID resolution are **not yet validated**; source availability
+is not destination runtime proof.
+
+Run Blender in factory background mode with `--python-exit-code 1`,
+`--python tests/blender_material_return_phase2_test.py`, then
+`-- <unused-scratch-directory>`. All generated Packages stay outside Git.
+No preexisting source project or private asset is required.
+
+Blender 5.2.1 normal Import/new UV Cube independently reproduced both existing
+refusals: `NONSTANDARD_GATE` with the synthetic Shader source available in
+Package A, and `CROSS_PACKAGE_PROVIDER` with Standard Shader and the matching
+Image already imported from Package B. Both `PHASE2_RED_CONFIRMED` assertions
+passed; process exit 0, no output Packages. This is **successful reproduction
+of failing product behavior**, not Material return success. Missing refusal or
+unexpected exception yields nonzero via the explicit Python exit-code option.
+Focused repository hygiene: **3 PASS**; probe compileall and diff checks PASS.
+
+At this boundary the old allocation read **1% remaining**, with one reset ticket
+available. No official reset action is exposed to this task; the user must
+execute that one operation before the larger production/Unity step.
+No new production change, fresh Unity result, private restoration, ZIP or
+Release is claimed. Shader classification, registered-package closure recovery,
+negative controls and destination Finalizer validation remain next-phase work.
+**Exact next action:** after the one reset, make this fixture GREEN through
+authoritative Shader/provider classification and local-then-unique registered
+Texture resolution, preserving the existing fail-closed checks.
+
 ## Limited Material return: strict reference collection — 2026-09-30
 
 **Status: PARTIAL.** The reference-safety step after diagnostic checkpoint

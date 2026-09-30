@@ -630,6 +630,10 @@ cross-package復元や任意Shaderのfresh Unity成功は未証明。
 **根拠:** [Current State](VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md)、
 [Material parser](../unity/material_parser.py)、
 [final-state exporter](../export/final_state_package.py)。
+Phase-2の独立RED controlは
+[public Blender probe](../tests/blender_material_return_phase2_test.py)。Shader gateの
+拒否とcross-package Texture探索の拒否を別入力で確認し、一つ目の拒否だけから
+二つ目の問題を実測したと扱わない。
 
 ## How to use this document
 
