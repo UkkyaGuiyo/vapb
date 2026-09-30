@@ -1,5 +1,66 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Residual Geometry identity / reassessment boundary — 2026-09-30
+
+**SHAPE IDENTITY: GOAL_VERIFIED in the measured supported direct scope.**
+**GEOMETRY: 14 EXACT / 20 GEOMETRY_MISMATCH; no overall GREEN claim.**
+Production Shape checkpoint `c4a10b401c0454b78e569b9550640883acecbadd`
+is pushed. The residual loop changes proof tooling only.
+
+- An exact-source diagnostic UV layer transports explicit FBX control-point
+  indices. Original/no-op/stamped/restored controls preserve Mesh GUID/localID,
+  vertex/triangle/skin/Shape signatures, existing UV data and restored FBX/meta
+  bytes. Native controls also record existing UV coordinates; no native UV
+  noninterference claim is inferred solely from position/triangle signatures.
+- All **34** real Unity Meshes have a valid map for every actually observed Unity
+  vertex and triangle vertex. Source markers are checked against declared per-CP
+  values; four revision hashes gate consumption. Fixed-observed-set removal and
+  out-of-range negatives reject corrupted maps. Full raw-source-CP coverage
+  remains a separate strict RED / Unity exit 1.
+- Unity omits **27 raw CPs across five Meshes**: 19 are unreferenced raw points,
+  four occur only in zero-area/degenerate raw-base polygons, and four occur in
+  positive-area polygons but equal an immediate adjacent corner exactly.
+  Base positions and Shape index membership do not prove all-deformation area
+  behavior. Missing source CPs have no invented Unity counterpart.
+- Source CP triangle connectivity yields **14 EXACT / 20 TOPOLOGY_MISMATCH**.
+  These categories align with the existing 14/20 Prefab geometry verdicts using
+  exact Mesh and owner identities. Connectivity is not a surface-equivalence
+  verdict. Earlier partial diagnostic retained five unproven Meshes as RED;
+  the qualified observed-vertex map removes that proof gap without claiming
+  a bijection to every raw point or overriding the strict control failure.
+- Public nonplanar source: one topology RED, four affected polygons, equal
+  triangle counts of 18. Public three-Shape source: topology EXACT. A new public
+  nine-CP Skin/three-Shape fixture acquired fresh source controls and an
+  independent oracle: Unity keeps seven CPs and omits a loose point and an
+  adjacent duplicate. The degenerate triangle's points remain in this fixture;
+  deleting every base-degenerate face is not a justified general fix.
+- Three candidate fixes were tested against the public nonplanar RED:
+  first-corner fan, Blender FIXED plus EAR_CLIP, and constrained Delaunay
+  projection on the first noncollinear plane. All remain MISMATCH. The CDT
+  candidate fixes the omission fixture but fails the nonplanar fixture, so it
+  was not promoted or fitted to private data. An initial vector tessellator
+  exposed no reliable input-handle provenance and was rejected; the replacement
+  uses integer CP attributes. CDT output was corrected from whole convex hull
+  to bounded faces with origin IDs before the final candidate verdicts.
+- Stop boundary: three independent candidate fixes fail the same public
+  nonplanar representation problem, requiring architecture reassessment under
+  this mission's explicit stop condition. These were rejected TDD candidates,
+  not three deployed production patches. No resource-floor stop, guessed
+  tessellation, Unity-derived geometry injection, broad component restoration,
+  main merge or Release. Private bytes/identities/raw reports stay outside Git.
+- Final repository-parent Python **474 PASS**, compileall PASS; final bounded
+  scope review PASS. Executed production integration/register, Bone/Transform/
+  nested creation-reopen checks remain valid; this residual loop has not changed
+  production behavior. Public truncated-weight normal Import additionally yields
+  **6 Shape EXACT / GREEN**, checking unchanged source FBX/meta bytes before
+  reusing source-only controls for the new exact package hash.
+
+**Exact next action:** reassess the residual Geometry realization boundary using
+the proven CP transport and public nonplanar/omission REDs; decide a general,
+product-authority-compatible remedy before another production triangulation fix.
+
+Earlier sections record the Shape fix and previous milestones.
+
 ## Geometry / Shape identity checkpoint — 2026-09-30
 
 **SHAPE CHANNEL / OCCURRENCE WEIGHTS: proven in the measured direct scope.**
@@ -19,7 +80,8 @@
   Object/Bone/KeyBlock rename, save and reopen remain GREEN.
 - Public independent Unity control proves truncated serialized arrays `[25]`
   and `[]` become `[25,0,0]` and `[0,0,0]`, even with source defaults
-  `[100,100,100]`. Runtime padded-array import is not separately claimed here.
+  `[100,100,100]`. Normal VAPB Import of that exact public package separately
+  yields six Shape EXACT verdicts, with unchanged source FBX/meta bytes checked.
 - Representative private source: **34 Meshes / 11 shaped Meshes / 171 channels**.
   All independently observed frames are single-frame weight 100. Normal fresh
   Import and all-Object/all-Bone/all-KeyBlock rename/save/reopen each yield Shape
