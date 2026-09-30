@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from .hierarchy_comparator import compare, convert, unity_trs, point_multiset_equal
+from .hierarchy_comparator import compare, convert, unity_trs, point_multiset_equal, triangle_multiset_equal
 
 SHA = 'a' * 64
 GUID = 'b' * 32
@@ -71,6 +71,29 @@ def skin_fixture():
 
 
 class ComparatorTests(unittest.TestCase):
+    def test_same_corner_multiset_does_not_prove_triangle_connectivity(self):
+        oracle, observed = skin_fixture()
+        skin = observed['native_skin']['skins'][0]
+        a, b, c, d, e = ([-x, 0, z] for x, z in ((0, 0), (1, 0), (0, 1), (2, 0.3), (0.2, 2)))
+        skin['evaluated_world_triangle_corners'] = [a, b, c, a, d, e]
+        expected = [a, b, d, a, c, e]
+        skin['prefab_unity_world_triangle_corners'] = [dict(x=-p[0], y=p[2], z=-p[1]) for p in expected]
+        self.assertTrue(point_multiset_equal(skin['evaluated_world_triangle_corners'], skin['prefab_unity_world_triangle_corners']))
+        result = compare(oracle, observed, SHA)
+        self.assertEqual(result['status'], 'RED')
+        self.assertIn('NATIVE_REPRESENTATION_MISMATCH', result['counts'])
+
+    def test_triangle_matching_preserves_multiplicity_and_accepts_reordering(self):
+        a, b, c, d = ([0, 0, 0], [-1, 0, 0], [0, 0, 1], [-1, 0, 1])
+        actual = [a, b, c, b, d, c]
+        expected = [dict(x=-p[0], y=p[2], z=-p[1]) for p in [c, d, b, c, a, b]]
+        self.assertTrue(triangle_multiset_equal(actual, expected))
+        self.assertFalse(triangle_multiset_equal(actual + actual, expected))
+        self.assertFalse(triangle_multiset_equal([a, b], expected))
+        bad = copy.deepcopy(actual)
+        bad[0][0] = float('nan')
+        self.assertFalse(triangle_multiset_equal(bad, expected))
+
     def test_native_skin_positive_and_corruption_controls(self):
         oracle, original = skin_fixture()
         self.assertEqual(compare(oracle, original, SHA)['status'], 'GREEN')

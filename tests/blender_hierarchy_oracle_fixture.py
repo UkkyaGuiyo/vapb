@@ -30,6 +30,27 @@ def main():
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.mesh.primitive_cube_add(size=1, location=(0, 0, 0.9))
     body = bpy.context.object
+    if os.environ.get('VAPB_HIERARCHY_TOPOLOGY_FIXTURE') == 'NONPLANAR_NGONS':
+        # First-party polygons, unrelated to any private coordinates/topology.
+        # Both weighted channels remain present; warped convex/concave n-gons
+        # distinguish genuine surface differences from triangle multiplicity.
+        patterns = (
+            ((-0.3, -0.2, 0), (0.3, -0.2, 0.04), (0.3, 0.2, 0), (-0.3, 0.2, -0.02)),
+            ((-0.3, -0.2, 0), (0.25, -0.25, 0.04), (0.35, 0.1, 0), (0, 0.3, -0.03), (-0.35, 0.1, 0.02)),
+            ((-0.3, -0.2, 0), (0.3, -0.2, 0.02), (0.08, 0, -0.04), (0.3, 0.25, 0.03), (-0.3, 0.25, 0)),
+            ((-0.3, -0.2, 0), (0, -0.3, 0.04), (0.3, -0.2, 0), (0.35, 0.15, -0.02), (0, 0.3, 0.03), (-0.35, 0.15, 0)),
+            ((-0.3, -0.2, 0), (0, -0.3, 0.03), (0.3, -0.2, 0), (0.35, 0.1, -0.03), (0.15, 0.3, 0), (-0.15, 0.3, 0.04), (-0.35, 0.1, 0)),
+            ((-0.3, -0.2, 0), (0.3, -0.2, 0), (0, 0.25, 0)),
+        )
+        vertices, faces = [], []
+        for index, polygon in enumerate(patterns):
+            start = len(vertices)
+            vertices.extend((x + (index % 3 - 1) * 0.9, y, z + (-0.5 if index < 3 else 0.5)) for x, y, z in polygon)
+            faces.append(tuple(range(start, len(vertices))))
+        mesh = bpy.data.meshes.new('SyntheticNonplanarTopology')
+        mesh.from_pydata(vertices, [], faces)
+        mesh.update()
+        body.data = mesh
     body.name = 'Body'
     body.scale = (0.4, 0.3, 1.8)
     body.parent = rig

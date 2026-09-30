@@ -8,7 +8,7 @@ never inferred from native names or counts.
 from collections import Counter, defaultdict
 import json
 import math
-from itertools import product
+from itertools import permutations, product
 from pathlib import Path
 import sys
 
@@ -74,6 +74,40 @@ def point_multiset_equal(actual, expected):
     return True
 
 
+def triangle_multiset_equal(actual, expected):
+    """Corroborate actual triangle connectivity, not just corner incidence.
+
+    Coordinates are compared only after authoritative Mesh correspondence.
+    Triangle/vertex order is irrelevant; multiplicity is preserved.
+    Alternative tessellations remain unproven rather than being guessed equal.
+    """
+    if not actual or len(actual) != len(expected) or len(actual) % 3:
+        return False
+    wanted = [(-p['x'], -p['z'], p['y']) for p in expected]
+    if any(not math.isfinite(v) for p in actual + wanted for v in p):
+        return False
+    tolerance = 2e-5 + 1e-6 * max(abs(v) for p in actual + wanted for v in p)
+    def bucket(triangle):
+        return tuple(math.floor(sum(p[axis] for p in triangle) / (3 * tolerance)) for axis in range(3))
+    buckets = defaultdict(list)
+    for index in range(0, len(wanted), 3):
+        triangle = wanted[index:index + 3]
+        buckets[bucket(triangle)].append(triangle)
+    for index in range(0, len(actual), 3):
+        triangle = actual[index:index + 3]
+        key, found = bucket(triangle), None
+        for offset in product((-1, 0, 1), repeat=3):
+            target = tuple(a + b for a, b in zip(key, offset))
+            for candidate_index, candidate in enumerate(buckets.get(target, ())):
+                error = min(max(abs(a - b) for p, q in zip(triangle, ordering) for a, b in zip(p, q)) for ordering in permutations(candidate))
+                if error <= tolerance and (found is None or error < found[0]):
+                    found = error, target, candidate_index
+        if found is None:
+            return False
+        buckets[found[1]].pop(found[2])
+    return True
+
+
 def native_checks(renderer, key, snapshot, handles, by_handle, transform_to_go):
     dimensions = ('renderer_owner', 'mesh', 'bones_order', 'root_bone', 'bone_representation')
     evidence = snapshot.get('native_skin')
@@ -131,7 +165,7 @@ def native_checks(renderer, key, snapshot, handles, by_handle, transform_to_go):
         root_ok = False
     representation = mesh_ok and bone_ok and root_ok and all(
         b['carrier_constraint_valid'] and b['pose_delta_pass'] for b in bones)
-    representation = representation and point_multiset_equal(skin['evaluated_world_triangle_corners'], skin['prefab_unity_world_triangle_corners'])
+    representation = representation and triangle_multiset_equal(skin['evaluated_world_triangle_corners'], skin['prefab_unity_world_triangle_corners'])
     for bone in bones:
         if 'expected_native_world_matrix' in bone or 'evaluated_native_world_matrix' in bone:
             representation = representation and bool(bone.get('expected_native_world_matrix')) and bool(bone.get('evaluated_native_world_matrix')) and matrix_equal(bone['evaluated_native_world_matrix'], bone['expected_native_world_matrix'])

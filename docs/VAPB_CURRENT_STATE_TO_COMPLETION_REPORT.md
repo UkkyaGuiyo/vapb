@@ -1,5 +1,40 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Geometry proof checkpoint — 2026-09-30
+
+**STATUS: hierarchy/native identity proven; nonplanar tessellation remains RED.**
+Previous verified implementation checkpoint: `1e653538eb758215146477b96526265b99438a3f`
+(feature branch pushed, remote equal, clean at that checkpoint).
+
+- Original Majun and authored Bone-pose synthetic: **53 EXACT / GREEN**.
+- New wholly first-party nonplanar polygon fixture: **52 EXACT / 1 native
+  representation mismatch**. Exact package SHA-256:
+  `fc6bfa0f29b6dba637780320438d6f7b6da7e566966620550bfe8da567f88595`.
+  Unity original/no-op/stamped/restored controls, exact package observation,
+  witness promotion and normal Blender Import all exit 0. Comparator exits 1.
+- Private fresh Import and all-Object/all-Bone rename/save/reopen both:
+  **1,254 EXACT / 20 native representation mismatches**. Identity, parent,
+  Transform, ordered Bones, rootBone, native frames and motion remain proven.
+- Six standard triangulation controls and common fans/ear rules did not
+  eliminate differences. FIXED residuals uniquely attribute to 92 nonplanar
+  n-gons: 70 convex, 22 concave. Ninety have complete triangle attribution;
+  two remain UNKNOWN. Exact raw FBX polygon loops match native loops.
+  Active source ShapeKeys explain raw-to-evaluated displacement; evaluated
+  referenced points agree with Unity. This does not prove surface equality.
+- Public comparator RED showed that equal corner incidence could hide changed
+  triangle connectivity. Minimal proof-side fix compares triangle multisets,
+  preserving multiplicity and allowing triangle/vertex reorder. Public GREEN
+  controls remain GREEN; genuine geometry RED remains RED. No production
+  triangulation or witness geometry-copy behavior was introduced.
+- Python **456 PASS**, compileall PASS, bounded scope review PASS. Raw private
+  evidence remains outside Git. Last authoritative usage: **80% remaining**;
+  no resource-floor blocker. This checkpoint is not a stop condition.
+
+**Exact next automatic action:** test documented constrained triangulation on
+raw Geometry-local polygons in the small public fixture; only a uniform proven
+candidate proceeds to real recheck. If it fails, reassess geometry proof/fix
+options against existing product authority rather than fitting private data.
+
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
 ## Hierarchy Parity — exact native Skin bridge checkpoint — 2026-09-30
