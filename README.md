@@ -25,7 +25,11 @@ VRC Componentの復元には対応していません。従来のsource-bound出�
 
 ## 支援 / Support
 
+### 日本語
+
 VAPBは無料のオープンソースとして開発しています。役に立った場合は、[GitHub Sponsors](https://github.com/sponsors/UkkyaGuiyo) から任意で開発を支援できます。支援は開発・検証環境の維持に使用します。支援の有無や金額によって、機能、個別サポート、開発優先順位が変わることはありません。
+
+### English
 
 VAPB is developed as free and open-source software. If VAPB is useful to you, you can optionally support development through [GitHub Sponsors](https://github.com/sponsors/UkkyaGuiyo). Sponsorship helps maintain the development and validation environment. Sponsorship status or amount does not grant feature access, individual support, or development priority.
 
