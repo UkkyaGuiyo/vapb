@@ -62,6 +62,7 @@ def main():
         observed['native_skin'] = observation
         result = compare(oracle, observed, sha)
         assert result['status'] == 'RED', 'Actual corruption falsely passed: ' + control
+        assert result['hierarchy_status'] == 'RED', 'Hierarchy corruption falsely passed: ' + control
         results.append(dict(control=control, result='RED', categories=sorted(result['counts'])))
     assert len(results) == 6
     Path(output).write_text(json.dumps(dict(status='PASS', controls=results), indent=2), encoding='utf-8')

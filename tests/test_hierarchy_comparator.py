@@ -81,7 +81,7 @@ class ComparatorTests(unittest.TestCase):
         self.assertTrue(point_multiset_equal(skin['evaluated_world_triangle_corners'], skin['prefab_unity_world_triangle_corners']))
         result = compare(oracle, observed, SHA)
         self.assertEqual(result['status'], 'RED')
-        self.assertIn('NATIVE_REPRESENTATION_MISMATCH', result['counts'])
+        self.assertIn('GEOMETRY_MISMATCH', result['counts'])
 
     def test_triangle_matching_preserves_multiplicity_and_accepts_reordering(self):
         a, b, c, d = ([0, 0, 0], [-1, 0, 0], [0, 0, 1], [-1, 0, 1])
@@ -93,6 +93,26 @@ class ComparatorTests(unittest.TestCase):
         bad = copy.deepcopy(actual)
         bad[0][0] = float('nan')
         self.assertFalse(triangle_multiset_equal(bad, expected))
+
+    def test_geometry_red_is_retained_separately_from_hierarchy_acceptance(self):
+        oracle, observed = skin_fixture()
+        observed['native_skin']['skins'][0]['evaluated_world_triangle_corners'][0][0] = 1
+        result = compare(oracle, observed, SHA)
+        self.assertEqual(result['status'], 'RED')
+        self.assertEqual(result['hierarchy_status'], 'GREEN')
+        self.assertEqual(result['geometry_status'], 'RED')
+        self.assertEqual(result['geometry_counts'], {'GEOMETRY_MISMATCH': 1})
+        observed['objects'][6]['actual_parent'] = 5
+        self.assertEqual(compare(oracle, observed, SHA)['hierarchy_status'], 'RED')
+
+    def test_geometry_without_authoritative_mesh_bridge_is_unknown(self):
+        oracle, observed = skin_fixture()
+        observed['objects'][6]['mesh_metadata']['_vapb_fbx_mesh_receipt_id'] = 'wrong'
+        result = compare(oracle, observed, SHA)
+        self.assertEqual(result['hierarchy_status'], 'RED')
+        self.assertEqual(result['geometry_status'], 'UNKNOWN')
+        self.assertEqual(result['geometry_counts'], {'GEOMETRY_UNPROVEN': 1})
+        self.assertEqual(result['status'], 'RED')
 
     def test_native_skin_positive_and_corruption_controls(self):
         oracle, original = skin_fixture()
@@ -106,7 +126,7 @@ class ComparatorTests(unittest.TestCase):
             ('disabled', lambda s: s['objects'][9]['constraints'][0].update(muted=True), 'BONE_BINDING_MISMATCH'),
             ('motion', lambda s: s['native_skin']['skins'][0]['bones'][1].update(pose_delta_pass=False), 'NATIVE_REPRESENTATION_MISMATCH'),
             ('attachment', lambda s: s['objects'][3].update(actual_parent=5), 'WRONG_PARENT'),
-            ('geometry', lambda s: s['native_skin']['skins'][0]['evaluated_world_triangle_corners'][0].__setitem__(0,1), 'NATIVE_REPRESENTATION_MISMATCH'),
+            ('geometry', lambda s: s['native_skin']['skins'][0]['evaluated_world_triangle_corners'][0].__setitem__(0,1), 'GEOMETRY_MISMATCH'),
             ('pose_frame', lambda s: s['native_skin']['skins'][0]['bones'][1]['evaluated_native_world_matrix'][0].__setitem__(0, 2), 'NATIVE_REPRESENTATION_MISMATCH'),
             ('order', lambda s: s['native_skin']['skins'][0]['bones'].reverse(), 'BONE_BINDING_MISMATCH'),
         )
@@ -117,6 +137,7 @@ class ComparatorTests(unittest.TestCase):
                 result = compare(oracle, observed, SHA)
                 self.assertEqual(result['status'], 'RED')
                 self.assertIn(category, result['counts'])
+                self.assertEqual(result['hierarchy_status'], 'GREEN' if label == 'geometry' else 'RED')
 
     def test_root_frame_outside_weighted_slots(self):
         oracle, observed = skin_fixture()
@@ -196,7 +217,7 @@ class ComparatorTests(unittest.TestCase):
 
     def test_native_skin_not_self_scored_from_source_projection(self):
         self.oracle['nodes'][0]['renderers'] = [dict()]
-        self.assertEqual(self.result()['counts']['UNSUPPORTED_REPRESENTATION'], 5)
+        self.assertEqual(self.result()['counts']['UNSUPPORTED_REPRESENTATION'], 6)
         self.assertEqual(self.result()['status'], 'RED')
 
     def test_exact_instance_handle_bridge_and_wrong_edge_rejection(self):

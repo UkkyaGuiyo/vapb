@@ -109,7 +109,7 @@ def triangle_multiset_equal(actual, expected):
 
 
 def native_checks(renderer, key, snapshot, handles, by_handle, transform_to_go):
-    dimensions = ('renderer_owner', 'mesh', 'bones_order', 'root_bone', 'bone_representation')
+    dimensions = ('renderer_owner', 'mesh', 'bones_order', 'root_bone', 'bone_representation', 'geometry')
     evidence = snapshot.get('native_skin')
     if (not evidence or evidence.get('package_sha256') != snapshot['package_sha256']
             or evidence.get('source_control_report_pass') is not True):
@@ -165,7 +165,7 @@ def native_checks(renderer, key, snapshot, handles, by_handle, transform_to_go):
         root_ok = False
     representation = mesh_ok and bone_ok and root_ok and all(
         b['carrier_constraint_valid'] and b['pose_delta_pass'] for b in bones)
-    representation = representation and triangle_multiset_equal(skin['evaluated_world_triangle_corners'], skin['prefab_unity_world_triangle_corners'])
+    geometry = mesh_ok and triangle_multiset_equal(skin['evaluated_world_triangle_corners'], skin['prefab_unity_world_triangle_corners'])
     for bone in bones:
         if 'expected_native_world_matrix' in bone or 'evaluated_native_world_matrix' in bone:
             representation = representation and bool(bone.get('expected_native_world_matrix')) and bool(bone.get('evaluated_native_world_matrix')) and matrix_equal(bone['evaluated_native_world_matrix'], bone['expected_native_world_matrix'])
@@ -174,7 +174,8 @@ def native_checks(renderer, key, snapshot, handles, by_handle, transform_to_go):
     return {d: 'EXACT' if valid else failure for d, valid, failure in (
         ('renderer_owner', owner, 'WRONG_RENDERER_OWNER'), ('mesh', mesh_ok, 'MESH_BRIDGE_MISMATCH'),
         ('bones_order', bone_ok, 'BONE_BINDING_MISMATCH'), ('root_bone', root_ok, 'ROOT_BONE_MISMATCH'),
-        ('bone_representation', representation, 'NATIVE_REPRESENTATION_MISMATCH'))}
+        ('bone_representation', representation, 'NATIVE_REPRESENTATION_MISMATCH'),
+        ('geometry', geometry, 'GEOMETRY_MISMATCH' if mesh_ok else 'GEOMETRY_UNPROVEN'))}
 
 
 def compare(oracle, snapshot, expected_sha):
@@ -274,8 +275,17 @@ def compare(oracle, snapshot, expected_sha):
         if len(group) > 1 and any(not candidates.get(key) for key in group):
             record('MISSING_OCCURRENCE', 'multiplicity', group[0])
     counts = dict(Counter(c['category'] for c in checks))
-    return dict(status='GREEN' if all(c['category'] == 'EXACT' for c in checks) else 'RED',
-        scope='SINGLE_COMPOSITION_OBJECT_RELATIONS; optional exact-revision native Skin evidence',
+    hierarchy_checks = [c for c in checks if c['dimension'] != 'geometry']
+    geometry_checks = [c for c in checks if c['dimension'] == 'geometry']
+    hierarchy_status = 'GREEN' if all(c['category'] == 'EXACT' for c in hierarchy_checks) else 'RED'
+    geometry_status = ('NOT_APPLICABLE' if not geometry_checks else
+                       'GREEN' if all(c['category'] == 'EXACT' for c in geometry_checks) else
+                       'RED' if any(c['category'] == 'GEOMETRY_MISMATCH' for c in geometry_checks) else 'UNKNOWN')
+    return dict(hierarchy_status=hierarchy_status, geometry_status=geometry_status,
+        hierarchy_counts=dict(Counter(c['category'] for c in hierarchy_checks)),
+        geometry_counts=dict(Counter(c['category'] for c in geometry_checks)),
+        status='GREEN' if all(c['category'] == 'EXACT' for c in checks) else 'RED',
+        scope='SEMANTIC_HIERARCHY_AND_NATIVE_SKIN_RELATIONS; separate geometry corroboration',
         counts=counts, dimensions={d: dict(Counter(c['category'] for c in checks if c['dimension']==d))
             for d in sorted({c['dimension'] for c in checks})}, checks=checks,
         blender=dict(semantic_nodes=len(by_handle),
@@ -288,5 +298,5 @@ if __name__ == '__main__':
     oracle_path, snapshot_path, sha, output_path = sys.argv[1:]
     result = compare(json.loads(Path(oracle_path).read_text()), json.loads(Path(snapshot_path).read_text()), sha)
     Path(output_path).write_text(json.dumps(result, indent=2))
-    print(json.dumps({k: result[k] for k in ('status', 'counts', 'dimensions', 'blender')}))
+    print(json.dumps({k: result[k] for k in ('status', 'hierarchy_status', 'geometry_status', 'counts', 'dimensions', 'blender')}))
     sys.exit(0 if result['status'] == 'GREEN' else 1)

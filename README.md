@@ -41,7 +41,7 @@ VRC Componentの復元には対応していません。従来のsource-bound出�
 
 選択した既存Skinに結び付くTextureでは、出所を確認できるpacked PNGの実編集・save/reopen・UnityPackage出力・新規Unity Projectでの画素変化とGUID/meta/Material参照の保持を、異なる実データ2ケースで確認しています。同じPrefab個体に属する複数のモデル由来Skinを一つのVariantへ復元する経路は、公開syntheticと実データの各2 Meshで検証しました。実データでは34 Renderer中の意図した2件を独立した出所情報で特定し、他32件と元アセットの保持も確認しています。実Avatar全体の往復、任意のMaterial node graphのUnity Shader変換、全画像形式への対応は未検証です。
 
-最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性は未完了です。特にsemantic Objectとnative Mesh/Armatureの統合、Prefab配置やSkin変形の全面的一致は未解決です。座標系の回帰修正は新規Importに適用され、既存の保存済みBlendを自動変換しません。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。配布ZIPごとの検証済みcommit・SHA-256・インストール結果はExperimental / Alpha prereleaseの説明で確認してください。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
+最優先は複数実データでのCore round-tripです。全面的な構造・編集操作・依存Packageへの対応、Unity/VRCでの利用可能性は未完了です。Hierarchy Parityでは、公開Majunと代表実Packageのsemantic親子関係・Transform・Renderer所属・Mesh receipt・ordered Bones・rootBone・Bone attachmentを、独立Unity public APIと通常Blender Importで比較し、全Object/Bone改名後のsave/reopenまで一致を確認しました（実データ1,274項目）。このsupported scopeの階層判定はGREENですが、形状比較20件はREDのままで、PrefabのShape Key channel対応も未証明です。全Prefab・全AvatarのSkin変形や形状一致を保証する結果ではありません。座標系の回帰修正は新規Importに適用され、既存の保存済みBlendを自動変換しません。Weight Transfer、参照を確認できる範囲のCleanup・Bone Mergeは合成データで検証しており、Coreの成立後も完成へ進めます。配布ZIPごとの検証済みcommit・SHA-256・インストール結果はExperimental / Alpha prereleaseの説明で確認してください。全仕様の正本と現在の証明範囲・制限は `PRODUCT_SPEC.md` と `docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` を参照してください。private/commercialアセットは同梱しません。
 
 
 ## 支援 / Support

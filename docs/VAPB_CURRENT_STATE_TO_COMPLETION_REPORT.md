@@ -1,5 +1,63 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Hierarchy Parity acceptance closure — 2026-09-30
+
+**HIERARCHY_PARITY: GOAL_VERIFIED for the measured supported scope.**
+**GEOMETRY: RED; aggregate comparator remains RED on the real input.**
+This closure follows PRODUCT_SPEC.md, Mandatory Hierarchy Parity Milestone:
+semantic parents/Transforms, Renderer ownership, Skin/Bone relationships,
+occurrence multiplicity and save/reopen. Identical Unity triangulation was an
+extra acceptance condition introduced during debugging; it is now reported as
+separate geometry corroboration, without deleting or passing its failures.
+The five required native relationship dimensions have zero unsupported or
+unexplained mismatches in the measured public and real compositions.
+
+- Original Majun: hierarchy **53 EXACT / GREEN**, geometry **1 EXACT / GREEN**.
+- Deferred-component/outside-weighted-root and authored Bone-pose followups:
+  fresh Import and all-Object/all-Bone rename/save/reopen each hierarchy
+  **53 EXACT / GREEN**, geometry **1 EXACT / GREEN**.
+- First-party nonplanar n-gon fixture: hierarchy **53 EXACT / GREEN**,
+  geometry **1 GEOMETRY_MISMATCH / RED**, overall **RED**.
+- Representative private exact-byte Unity/normal Blender differential:
+  **276 semantic nodes / 275 edges / 34 Skins / 5,440 ordered Bone bindings**.
+  Fresh Import and all-Object/all-Bone rename/save/reopen both hierarchy
+  **1,274 EXACT / GREEN**: 1,104 node/parent/local/world checks and 170 native
+  Renderer-owner/Mesh-receipt/Bone-order/rootBone/representation checks.
+  **160** distinct native Bone motion controls corroborate carrier/attachment
+  relations. Geometry separately retains **14 EXACT / 20 GEOMETRY_MISMATCH**;
+  overall comparator/CLI remains **RED / exit 1**. No surface equivalence claim.
+- Exact-revision witness uses Unity public API and original/no-op/stamped/restored
+  controls, restored source/meta bytes and native UID receipts. Unity remains
+  optional. Names, enumeration order and candidate counts are not identity.
+- Six actual Blender corruptions (owner, receipt, Armature target, Bone parent,
+  rootBone, attachment) fail hierarchy acceptance: **PASS / process exit 0**.
+  Wrong proof-file arguments in two verification attempts were rejected with
+  exit 1; corrected immutable evidence paths produced the six-control PASS.
+- Python repository-parent full discovery: **458 PASS**, zero failures/errors.
+  compileall PASS; final read-only scope review PASS. Previous production
+  integration/register/Bone-receipt/Transform checks remain valid; this closure
+  changes only comparator tests and documentation, not production behavior.
+
+**UNKNOWN / retained findings:** three private Renderer serialized states contain
+seven nonzero blend-shape weights; native Key values retain source-cache state.
+Authoritative Unity blend-shape channel to native KeyBlock correspondence is not
+proven. This observation does not attribute any of the 20 geometry mismatches.
+No private identity, path, source, snapshot or raw log is tracked.
+
+Prior pushed checkpoints: `1e653538eb758215146477b96526265b99438a3f`
+(production realization fixes) and `7f09c976f40c7c2515ea676c051bf8a5c533e6df`
+(triangle-connectivity negative control and public nonplanar RED).
+Old `18.2968` is not a resource percentage; latest measured balance was **80%
+remaining**, with no resource-floor blocker. Stop reason is the requested
+Hierarchy Parity goal, not synthetic GREEN, a checkpoint or a budget estimate.
+No broad Unity/VRC component restoration, main merge, ZIP or Release in this loop.
+
+**Exact next action:** create a public synthetic RED for revision-bound Unity
+blend-shape channel to native KeyBlock identity before applying serialized
+Prefab weights; keep geometry RED until independently proven or fixed.
+
+Older sections below are historical checkpoints, not the current next action.
+
 ## Geometry proof checkpoint — 2026-09-30
 
 **STATUS: hierarchy/native identity proven; nonplanar tessellation remains RED.**
