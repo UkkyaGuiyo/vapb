@@ -2,6 +2,19 @@
 
 **STATUS: FEASIBLE_WITH_CONSTRAINTS**
 
+## Product policy correction — 2026-09-30
+
+The historical m_Name modification experiment below is TECHNICALLY OBSERVED,
+not PRODUCT-ALLOWED. PRODUCT POLICY = NO-GO: human-readable organization only
+changes paths/filenames; Material payload and m_Name remain byte-identical.
+No current or future synchronization option is authorized.
+
+A subsequent PARTIAL production checkpoint repairs StagingTree portable
+validation/collision rejection; owner naming integration remains unimplemented.
+The case-only acceptance described below is a historical baseline observation.
+See the Current State report for actual current verification.
+
+
 Research baseline: `7d21318444c4d422565fe54f373ac1af8444a0ee`.
 This is a feasibility checkpoint, not a production implementation. No private
 assets were used. All concrete examples refer to **マジュン (Majun)** or generic
@@ -121,7 +134,7 @@ is a proposal, **not an additional tested clothing fixture**.
 | Shared asset | Neutral prefix required | Shared folder is clear | Shared folder, neutral original name |
 | Long path risk | Lowest | Moderate | Highest; must cap redundant prefixes/levels |
 | Determinism/rename stability | Fixed policy and identity keys | Same | Same; owner-label changes intentionally move path |
-| User rename coexistence | Explicit override only | Explicit folder/leaf policy | Explicit override plus separate name-sync policy |
+| User rename coexistence | Explicit override only | Explicit folder/leaf policy | Explicit path-label override only; no internal sync |
 | GUID/reference preservation | PASS for tested Material assets | Same mechanism, specific folder-only form not separately run | PASS for tested Material assets |
 | Manifest complexity | Low | Low/moderate | Moderate: original vs chosen labels separated |
 | Windows/Unity restrictions | Required | Required | Required; no case-only paths |
@@ -129,11 +142,10 @@ is a proposal, **not an additional tested clothing fixture**.
 ## Recommended constrained default
 
 **C: hybrid folder + owner-prefixed filename**, with bounded hierarchy and stable
-suffixes only on collisions. Default internal `m_Name` policy is **preserve**.
-An explicit name-synchronization option may be offered later for users requiring
-owner-visible Material object labels; it must be a typed MODIFY with original
-name retained as provenance, every other serialized field preserved, output hash
-updated and fresh Unity regression. Never silently claim raw-preserve after patching.
+suffixes only on collisions. **PRODUCT POLICY = NO-GO:** Material `m_Name`
+and serialized bytes must never change for naming. The former future sync option
+is formally withdrawn; no automatic or optional synchronization is allowed.
+TECHNICALLY OBSERVED does not mean PRODUCT-ALLOWED.
 
 ```text
 Assets/VAPBExport/Majun/Materials/Majun_Body.mat
@@ -168,7 +180,7 @@ label; explicit export-label override wins. Store proposed `original_name`,
 - Add a pure export-organization policy after identity/provider resolution and
   before staging; do not put owner/name fallback into the resolver or Finalizer.
 - Preserve .meta/import settings. Path changes are MOVE/RENAME with unchanged
-  payload. Optional m_Name sync is a separately validated MODIFY.
+  payload. Naming never modifies m_Name; no sync option is product-allowed.
 - Reject reserved Windows names/chars, trailing dots/spaces, case-only collisions,
   unsafe Unicode normalization collisions and over-budget paths. The budget must
   account for the actual destination project prefix; do not assert a universal
@@ -182,7 +194,7 @@ label; explicit export-label override wins. Store proposed `original_name`,
 
 Before production: add owner-positive/negative and shared-revision tests, same-
 name/casefold/Unicode/reserved-name/path-length tests, input-order permutation and
-repeat/rename tests, optional m_Name-only patch/hash-gate negatives, normal Blender
+repeat/rename tests, payload/m_Name preservation negatives, normal Blender
 export/save/reopen, fresh Unity exact identity/slot/property comparison, and
 nonempty destination GUID collision handling. Observe actual GUI labels before
 claiming complete Project Browser/Inspector readability.

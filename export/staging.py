@@ -5,21 +5,39 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 import re
+import unicodedata
 from typing import Any, Iterable
 
 
 _GUID_RE = re.compile(r"^[0-9a-f]{32}$")
 _META_GUID_RE = re.compile(rb"(?m)^guid:\s*([0-9a-fA-F]{32})\s*$")
+# Conservative package-relative budgets, not a claim about every host project.
+MAX_UNITY_COMPONENT_BYTES = 120
+MAX_UNITY_PATH_BYTES = 240
+_RESERVED_COMPONENT_RE = re.compile(r"^(?:CON|PRN|AUX|NUL|COM[1-9¹²³]|LPT[1-9¹²³])$", re.I)
 
 
 def normalize_unity_path(path: str) -> str:
-    value = str(path or "").replace("\\", "/").strip()
+    value = str(path or "").replace("\\", "/")
     parts = value.split("/")
     if not value or "\x00" in value or value.startswith("/") or re.match(r"^[A-Za-z]:", value):
         raise ValueError(f"invalid Unity pathname: {path!r}")
     if parts[0] != "Assets" or any(part in {"", ".", ".."} for part in parts):
         raise ValueError(f"unsafe Unity pathname: {path!r}")
+    for part in parts:
+        if (any(ord(char) < 32 or char in '<>:"|?*' for char in part)
+                or part.endswith((".", " "))
+                or _RESERVED_COMPONENT_RE.fullmatch(part.split('.')[0])
+                or len(part.encode('utf-8')) > MAX_UNITY_COMPONENT_BYTES):
+            raise ValueError(f"nonportable Unity pathname: {path!r}")
+    if len(value.encode('utf-8')) > MAX_UNITY_PATH_BYTES:
+        raise ValueError(f"Unity pathname exceeds package-relative budget: {path!r}")
     return "/".join(parts)
+
+
+def portable_path_key(path: str) -> str:
+    """Compare portable destinations without rewriting the stored human label."""
+    return unicodedata.normalize('NFC', normalize_unity_path(path)).casefold()
 
 
 def normalize_guid(guid: str) -> str:
@@ -82,13 +100,14 @@ class StagingTree:
             if existing_guid != entry:
                 raise ValueError(f"GUID collision: {guid}")
             return
-        existing_path = self._by_path.get(entry.pathname)
+        path_key = portable_path_key(entry.pathname)
+        existing_path = self._by_path.get(path_key)
         if existing_path is not None:
             if existing_path.guid == entry.guid:
                 return
             raise ValueError(f"pathname collision: {entry.pathname}")
         self._by_guid[guid] = entry
-        self._by_path[entry.pathname] = entry
+        self._by_path[path_key] = entry
 
     def get(self, guid: str) -> StagedUnityAsset:
         return self._by_guid[normalize_guid(guid)]

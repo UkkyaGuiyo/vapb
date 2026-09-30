@@ -38,12 +38,14 @@ Fresh Unity 2022.3.22f1で、Materialのoutput pathnameを変更してもGUID/fi
 Shader/Texture/Renderer参照は維持できた。一方、ファイル名を変えただけでは
 Material.nameとObject Field用public API表示は元のBodyのままだった。
 内部m_Nameを変えるとobject名も変わるが、それはserialized stateのMODIFYであり、
-元bytesのraw-preserveと混同しない。既存Finalizerのbyte-hash検証も維持する。
+元bytesのraw-preserveと混同しない。技術的観測と製品許可は別であり、現在の
+PRODUCT POLICY = NO-GO: 名前整理ではm_Nameを変更せず、同期optionも提供しない。
+既存Finalizerのbyte-hash検証も維持する。
 
 Owner labelは確定したRenderer使用関係の表示であり、identity判定の入力にしない。
 同じGUIDの共有資産は一つにまとめ、競合revisionや未証明ownerを名前で解決しない。
-大文字小文字だけ異なるpathは現stagingの検査を通るため、命名実装前にportableな
-衝突検査が必要。APIによるObject Field表示の観測は全GUIの目視確認とは別である。
+調査時のstagingは大文字小文字だけ異なるpathを通していた。その後のproduction
+前提修正ではNFC + casefold衝突を拒否する。命名allocationでは集合全体を先に比較する。APIによるObject Field表示の観測は全GUIの目視確認とは別である。
 
 **根拠・適用範囲:** [public naming feasibility](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md)。
 standalone .mat main assetを対象とした実測であり、FBX subassetや全Asset typeの

@@ -2,6 +2,48 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Human-readable Material production prerequisite — 2026-09-30
+
+**STATUS: PARTIAL.** Original request: implement Hybrid Material export naming
+without changing Material serialized bytes, GUID or references. Required start
+HEAD was `73ad90daab0653fb3078427a1d24bfc56601c931`; worktree was clean.
+
+**Policy correction completed:** m_Name auto-change and future synchronization
+options are formally withdrawn in Product/Core/feasibility/current-state/lessons.
+PRODUCT POLICY = NO-GO. The historical research patch remains explicitly marked
+PRODUCT-NO-GO and is not imported or invoked by production.
+
+**Production prerequisite completed:** StagingTree now rejects destinations that
+collide under NFC + casefold, Windows reserved components (including superscript
+COM/LPT digits), forbidden/control characters, trailing dot/space, empty/dot/
+traversal components and absolute/drive paths. It preserves accepted pathname
+spelling and asset/meta bytes. Conservative UTF-8 budgets are 120 bytes per
+component and 240 per package-relative path. These are product guard budgets,
+not a guarantee for arbitrary absolute Unity project paths; invalid source paths
+now fail closed rather than being silently staged. No sanitization allocator yet.
+
+**Evidence:** new 7-test suite initially exposed 23 missing-check subtest failures;
+after repair, full Python 432 PASS (previous 425 + 7), compileall export/tests PASS.
+Blender 5.2.1 Phase2 NONSTANDARD_GATE and CROSS_PACKAGE_PROVIDER PASS (exit 0),
+including original Material/Texture bytes and save/reopen/re-export. Deferred
+Shader Blender acceptance PASS (exit 0), including save/reopen and register/
+unregister. Scope review PASS. No private data used.
+
+**Not implemented/verified:** owner evidence persistence after source Mesh deletion,
+Hybrid filename allocation/default production connection, symmetric suffixes and
+cases 1–5, fresh Unity naming/reimport, Standard A/B and Skin-specific runtime
+regression, ZIP/install/release. Prior feasibility evidence does not prove these
+production acceptance conditions. No new release is created for this PARTIAL.
+
+**Resource boundary:** API reports 18.2968137500 at start and checkpoint, with no
+within-turn debit reflected; actual final spend is not proven. To honor the user
+requirement to preserve >=15, this turn closes the verified prerequisite instead
+of opening the remaining owner/import/ZIP/Unity integration work.
+
+**Exact next action:** persist exact Renderer-to-Material owner usage through the
+existing import provenance, then connect a pure Hybrid path allocator before
+staging, preserving source Material/meta bytes and falling back to Unassigned.
+
 ## Human-readable asset naming feasibility — 2026-09-30
 
 **FEASIBLE_WITH_CONSTRAINTS.** Read current product authority at the equal local/
@@ -16,8 +58,8 @@ staging is byte-identical. Exact path/GUID conflicts reject; current StagingTree
 case-only collision handling is insufficient and remains unchanged.
 
 Filename changes do not change Material.name/Object Field label: serialized
-m_Name changes do. Recommend hybrid folder + filename labels, preserving m_Name
-by default, with optional explicit typed MODIFY for object-label synchronization.
+m_Name changes do (historical technical observation only). PRODUCT POLICY =
+NO-GO: preserve Material payload completely; no automatic or optional m_Name sync.
 Actual Project Browser/Inspector GUI layouts, Unicode/long/reserved paths and
 nonempty-destination GUID conflicts remain unverified. Product/core documents
 record a constrained specification; production code/schema remain unchanged.

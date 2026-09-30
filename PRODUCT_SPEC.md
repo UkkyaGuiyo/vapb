@@ -93,8 +93,9 @@ identity. Prefer hybrid owner folders plus owner-prefixed filenames only after
 exact composition usage/provider evidence; use neutral Shared/Unassigned labels
 where appropriate, with one canonical copy of a proved shared asset. Preserve
 GUID/.meta and never infer ownership from directory/package names alone.
-Internal Material `m_Name` remains unchanged by default; explicit label sync is
-a typed serialized modification, never silent raw-preserve. Collision naming
+PRODUCT POLICY = NO-GO: human-readable naming must never modify Material
+serialized bytes or `m_Name`, automatically or through a synchronization option.
+Only output pathname/filename may change; GUID and original .meta are retained. Collision naming
 must be deterministic and portable, including casefold/path constraints.
 This is a constrained basic specification, **not implemented naming behavior**.
 See [the measured feasibility study](docs/VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).

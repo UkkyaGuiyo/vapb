@@ -1,4 +1,7 @@
-"""Research-only relocation probe; never called by the production exporter.
+"""Historical research-only relocation probe; never called by production.
+
+PRODUCT-NO-GO: its internal-name patch documents a technical counterexample,
+not an allowed export policy or reusable production naming implementation.
 
 stage BASE_OUTPUT SOURCE_PROJECT; relocate SOURCE_PROJECT FRESH_PROJECT
 Run Unity Prepare between commands, then Unity Validate in the fresh project.
