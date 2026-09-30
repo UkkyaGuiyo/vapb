@@ -28,6 +28,26 @@ VAPB開発で得た一般化可能な失敗知識、反証、設計原則を記�
 | LESSON-021 | Export IDの存在をFBX輸送後に確認する | EXPORT / IDENTITY |
 | LESSON-022 | Preview用TextureとUnity Material依存を分ける | MATERIAL / EXPORT |
 | LESSON-023 | Reference preservationとprovider解決を分ける | MATERIAL / UNITY |
+| LESSON-024 | Path、Asset object名、identityを分ける | NAMING / EXPORT |
+
+## LESSON-024 — Path、Asset object名、identityを分ける
+
+**Status:** ACTIVE · **Domain:** NAMING / MATERIAL / UNITY
+
+Fresh Unity 2022.3.22f1で、Materialのoutput pathnameを変更してもGUID/fileIDと
+Shader/Texture/Renderer参照は維持できた。一方、ファイル名を変えただけでは
+Material.nameとObject Field用public API表示は元のBodyのままだった。
+内部m_Nameを変えるとobject名も変わるが、それはserialized stateのMODIFYであり、
+元bytesのraw-preserveと混同しない。既存Finalizerのbyte-hash検証も維持する。
+
+Owner labelは確定したRenderer使用関係の表示であり、identity判定の入力にしない。
+同じGUIDの共有資産は一つにまとめ、競合revisionや未証明ownerを名前で解決しない。
+大文字小文字だけ異なるpathは現stagingの検査を通るため、命名実装前にportableな
+衝突検査が必要。APIによるObject Field表示の観測は全GUIの目視確認とは別である。
+
+**根拠・適用範囲:** [public naming feasibility](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md)。
+standalone .mat main assetを対象とした実測であり、FBX subassetや全Asset typeの
+fileID安定性を証明したものではない。
 
 ## LESSON-023 — Reference preservationとprovider解決を分ける
 

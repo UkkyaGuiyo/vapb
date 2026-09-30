@@ -221,6 +221,19 @@ Framework-level dependencies may remain external when appropriate, for example:
 
 “Self-contained” therefore means self-contained with respect to the selected asset composition, excluding explicitly declared external frameworks.
 
+### Human-readable output organization (constrained addition, 2026-09-30)
+
+Readable output labels must remain independent of source/Export/post-import
+identity. Material assets may keep GUID/fileID and metadata at a new output
+path, with references restored by GUID. Owner labels require proven composition
+use; genuinely shared assets are staged once, unproved owners remain neutral.
+Hybrid folder/filename organization is the constrained basic policy for later
+implementation. Internal Material names are a distinct serialized-state policy:
+preserve by default; any explicit synchronization requires a validated MODIFY.
+Naming cannot restore a source-geometry-lineage requirement or make original
+input packages runtime dependencies. No production naming behavior is added by
+this document; see [the research evidence and limits](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
+
 ## 7. Finalizer responsibility
 
 The Unity Finalizer is not primarily a source-Mesh identity restoration engine.

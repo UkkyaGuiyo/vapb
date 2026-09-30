@@ -2,6 +2,29 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Human-readable asset naming feasibility — 2026-09-30
+
+**FEASIBLE_WITH_CONSTRAINTS.** Read current product authority at the equal local/
+remote `7d21318444c4d422565fe54f373ac1af8444a0ee` baseline. Six synthetic Material
+GUID/localIDs, Shader and two Texture property uses per Material survive output
+relocation and fresh Unity 2022.3.22f1 import; original ordered Prefab Renderer
+references survive. Existing Finalizer passes repeated GUID lookup for filename-
+only and filename-plus-m_Name changes. Five requested ownership/collision cases
+are covered by synthetic public-API source evidence and separate split Packages.
+Shared asset is staged once; unproved owner uses Unassigned. Repeated frozen-input
+staging is byte-identical. Exact path/GUID conflicts reject; current StagingTree
+case-only collision handling is insufficient and remains unchanged.
+
+Filename changes do not change Material.name/Object Field label: serialized
+m_Name changes do. Recommend hybrid folder + filename labels, preserving m_Name
+by default, with optional explicit typed MODIFY for object-label synchronization.
+Actual Project Browser/Inspector GUI layouts, Unicode/long/reserved paths and
+nonempty-destination GUID conflicts remain unverified. Product/core documents
+record a constrained specification; production code/schema remain unchanged.
+See [the complete study](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
+Exact next action: implement the bounded export organization policy with portable
+collision checks and owner-evidence tests, under a separate implementation request.
+
 ## Deferred Unity Reference / Self-Contained Export — 2026-09-30
 
 This bounded extension follows the existing 2026-09-28 Core Product Model.

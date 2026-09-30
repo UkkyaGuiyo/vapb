@@ -86,6 +86,19 @@ Textureは元Assetを直接編集する前提とする。Addonは`Face_copy.png`
 
 ## Material Policy
 
+### Human-readable export organization — constrained specification (2026-09-30)
+
+Human labels and output paths are separate from GUID/fileID/Package/Export-ID
+identity. Prefer hybrid owner folders plus owner-prefixed filenames only after
+exact composition usage/provider evidence; use neutral Shared/Unassigned labels
+where appropriate, with one canonical copy of a proved shared asset. Preserve
+GUID/.meta and never infer ownership from directory/package names alone.
+Internal Material `m_Name` remains unchanged by default; explicit label sync is
+a typed serialized modification, never silent raw-preserve. Collision naming
+must be deterministic and portable, including casefold/path constraints.
+This is a constrained basic specification, **not implemented naming behavior**.
+See [the measured feasibility study](docs/VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
+
 Materialの表示はBlender上の近似でよい。Import時はUnity Asset identity、Renderer slot binding、Material GUID、Texture GUIDをsource evidenceとして正しく解釈する。Export時はBlender完成形のMaterial slot構成・face割当を正本とし、VAPB Export ID / Recipeを介して対応するUnity Material asset/stateを新しいRendererへ再装着する。元Unity Rendererのslot構成を、ユーザーが意図的に変更したBlender完成形より優先しない。
 
 ## Identity Policy
