@@ -124,13 +124,27 @@ def compare(a,b,marker):
     return result
 
 
+def supported_skin_transport_verdict(report):
+    """Approved bounded transport policy; raw equality and deformation are independent."""
+    reason=report.get('reason','NUMERIC_CONTEXT_INCOMPLETE')
+    if reason in ('NUMERIC_CONTEXT_MISSING','NUMERIC_CONTEXT_INCOMPLETE',
+                  'UNSUPPORTED_REPRESENTATION','UNPROVEN_NUMERIC_SCOPE','UNPROVEN_WEIGHT_REPRESENTATION'):
+        return 'UNSUPPORTED'
+    if reason!='NONE':return 'RED'
+    if report.get('total_influences',0)<=0:return 'UNSUPPORTED'
+    if (report.get('identity')=='EXACT' and report.get('influence_retention')=='EXACT'
+            and report.get('unity_representation')=='BITWISE_EXACT'
+            and report.get('unexplained_influences')==0):
+        return 'PASS'
+    return 'RED'
+
+
 def skin_parity_report(before, observed, context):
-    """Independent facts for the measured export scope; no transport-policy verdict."""
+    """Independent facts and the approved acceptance verdict for measured export scope."""
     import math
     from unitypackage_blender_importer.tests.weight_numeric_models import representation_compare
     result=dict(identity='UNPROVEN',influence_retention='UNPROVEN',raw_numeric='UNMEASURED',
         unity_representation='UNSUPPORTED_REPRESENTATION',deformation=dict(status='UNMEASURED'),
-        overall_supported_transport='NOT_ASSESSED_PRODUCT_POLICY',
         identity_scope='EXPORTED_MESH_CP_BONE_INFLUENCE_ASSOCIATIONS',
         source_renderer_owner='UNMEASURED',total_influences=0,missing_influences=0,
         raw_changed_influences=0,representation_exact_influences=0,unexplained_influences=0,
@@ -207,12 +221,13 @@ def skin_parity_report(before, observed, context):
         result['representation_exact_influences']=sum(row['expected_actual_ULP']==0 for row in rows)
         result['unexplained_influences']=len(rows)-result['representation_exact_influences']
         result['max_expected_actual_ULP']=max((row['expected_actual_ULP'] for row in rows),default=0)
-        result['unity_representation']='EXACT' if not result['unexplained_influences'] else 'NUMERIC_MISMATCH'
+        result['unity_representation']='BITWISE_EXACT' if not result['unexplained_influences'] else 'NUMERIC_MISMATCH'
         result['numeric_stages']=rows  # Private reports remain external; publish only aggregates.
         result['reason']='NONE'
     except (ValueError,KeyError,TypeError,OverflowError) as exc:
         result['reason']=str(exc) if isinstance(exc,ValueError) else 'NUMERIC_CONTEXT_INCOMPLETE'
         result['unexplained_influences']=result['total_influences']
+    result['overall_supported_transport']=supported_skin_transport_verdict(result)
     return result
 
 

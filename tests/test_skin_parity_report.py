@@ -32,13 +32,13 @@ class SkinParityReportTests(unittest.TestCase):
 
     def test_raw_red_and_bitwise_exact_remain_independent(self):
         b,o,c=self.fixture();r=self.report(b,o,c)
-        self.assertEqual(r['unity_representation'],'EXACT')
+        self.assertEqual(r['unity_representation'],'BITWISE_EXACT')
         self.assertEqual(r['raw_numeric'],'RAW_NUMERIC_DIFFERENCE')
         self.assertGreater(r['raw_changed_influences'],0)
         self.assertEqual(r['representation_exact_influences'],183)
         self.assertEqual(r['missing_influences'],0)
         self.assertEqual(r['deformation']['status'],'MEASURED_NONZERO')
-        self.assertEqual(r['overall_supported_transport'],'NOT_ASSESSED_PRODUCT_POLICY')
+        self.assertEqual(r['overall_supported_transport'],'PASS')
 
     def test_one_ulp_is_red(self):
         b,o,c=self.fixture();w=o['bone_weights'][0]
@@ -47,12 +47,12 @@ class SkinParityReportTests(unittest.TestCase):
 
     def test_swapped_bone_claim_is_red(self):
         b,o,c=self.fixture();o['bones'][0]['export_label'],o['bones'][1]['export_label']=o['bones'][1]['export_label'],o['bones'][0]['export_label']
-        self.assertNotEqual(self.report(b,o,c)['unity_representation'],'EXACT')
+        self.assertNotEqual(self.report(b,o,c)['unity_representation'],'BITWISE_EXACT')
 
     def test_missing_positive_influence_is_red(self):
         b,o,c=self.fixture();o['bone_weights'].pop(0);r=self.report(b,o,c)
         self.assertEqual(r['missing_influences'],1)
-        self.assertNotEqual(r['unity_representation'],'EXACT')
+        self.assertNotEqual(r['unity_representation'],'BITWISE_EXACT')
 
     def test_unsupported_version_and_count_reject(self):
         b,o,c=self.fixture();c['unity_version']='6000.0'
@@ -67,7 +67,7 @@ class SkinParityReportTests(unittest.TestCase):
         b,o,c=self.fixture();c['observed_fbx_sha256']='0'*64
         self.assertEqual(self.report(b,o,c)['reason'],'SOURCE_REVISION_MISMATCH')
         b,o,c=self.fixture();c['preprocess_policy']['model_sha256']='0'*64
-        self.assertNotEqual(self.report(b,o,c)['unity_representation'],'EXACT')
+        self.assertNotEqual(self.report(b,o,c)['unity_representation'],'BITWISE_EXACT')
 
     def test_duplicate_unexpected_bone_and_cp_reject(self):
         for change in ('bone','influence','cp','unexpected'):
@@ -76,10 +76,10 @@ class SkinParityReportTests(unittest.TestCase):
             elif change=='influence':o['bone_weights'].append(copy.deepcopy(o['bone_weights'][0]))
             elif change=='cp':o['vertex_control_point_indices'][0]=None
             else:o['bones'].append(dict(index=4,export_label='EXTRA'));o['bone_weights'].append(dict(vertex=0,bone=4,weight=.25))
-            self.assertNotEqual(self.report(b,o,c)['unity_representation'],'EXACT',change)
+            self.assertNotEqual(self.report(b,o,c)['unity_representation'],'BITWISE_EXACT',change)
 
     def test_missing_context_and_nonfloat_origin_reject(self):
-        b,o,c=self.fixture();self.assertNotEqual(d_identity_metrics(b,o)['skin_report']['unity_representation'],'EXACT')
+        b,o,c=self.fixture();self.assertNotEqual(d_identity_metrics(b,o)['skin_report']['unity_representation'],'BITWISE_EXACT')
         c['raw_weights'][(0,'WEIGHT-BONE-0')]=.1
         self.assertEqual(self.report(b,o,c)['unity_representation'],'UNSUPPORTED_REPRESENTATION')
 
@@ -87,4 +87,42 @@ class SkinParityReportTests(unittest.TestCase):
         b,o,c=self.fixture();c.pop('deformation')
         self.assertEqual(self.report(b,o,c)['deformation']['status'],'UNMEASURED')
         c['staged_weights'][0][0]['weight']=.25
-        self.assertNotEqual(self.report(b,o,c)['unity_representation'],'EXACT')
+        self.assertNotEqual(self.report(b,o,c)['unity_representation'],'BITWISE_EXACT')
+
+    def test_policy_red_on_ulp_missing_swapped_unresolved_and_stale(self):
+        for change in ('ulp','missing','swapped','unresolved','stale','policy'):
+            b,o,c=self.fixture()
+            if change=='ulp':
+                w=o['bone_weights'][0];w['weight']=struct.unpack('<f',struct.pack('<I',bits(w['weight'])+1))[0]
+            elif change=='missing':o['bone_weights'].pop(0)
+            elif change=='swapped':o['bones'][0]['export_label'],o['bones'][1]['export_label']=o['bones'][1]['export_label'],o['bones'][0]['export_label']
+            elif change=='unresolved':o['bones'][0]['export_label']=None
+            elif change=='stale':c['observed_fbx_sha256']='0'*64
+            else:c['preprocess_policy']['model_sha256']='0'*64
+            self.assertEqual(self.report(b,o,c)['overall_supported_transport'],'RED',change)
+
+    def test_policy_unsupported_version_count_origin_and_missing_context(self):
+        for change in ('version','count','origin','context'):
+            b,o,c=self.fixture()
+            if change=='version':c['unity_version']='6000.0'
+            elif change=='origin':
+                c['raw_weights'][(0,'WEIGHT-BONE-0')]=.1
+                b['skin_weights'][0][0]['weight']=.1;c['staged_weights'][0][0]['weight']=.1
+            elif change=='context':c=None
+            else:
+                cp=9;b['skin_weights'][cp].append(dict(group='EXTRA',weight=.25));c['raw_weights'][(cp,'EXTRA')]=.25
+                o['bones'].append(dict(index=4,export_label='EXTRA'));o['bone_weights'].append(dict(vertex=cp,bone=4,weight=.25));c['staged_weights']=copy.deepcopy(b['skin_weights'])
+            self.assertEqual(self.report(b,o,c)['overall_supported_transport'],'UNSUPPORTED',change)
+
+    def test_unmeasured_deformation_does_not_block_pass(self):
+        b,o,c=self.fixture();c.pop('deformation');r=self.report(b,o,c)
+        self.assertEqual(r['deformation']['status'],'UNMEASURED')
+        self.assertEqual(r['source_renderer_owner'],'UNMEASURED')
+        self.assertEqual(r['overall_supported_transport'],'PASS')
+
+    def test_reducer_accepts_raw_exact_and_rejects_empty_or_unexplained(self):
+        from .blender_geometry_abcd_compare import supported_skin_transport_verdict
+        r=dict(reason='NONE',total_influences=1,identity='EXACT',influence_retention='EXACT',unity_representation='BITWISE_EXACT',unexplained_influences=0,raw_numeric='EXACT')
+        self.assertEqual(supported_skin_transport_verdict(r),'PASS')
+        self.assertEqual(supported_skin_transport_verdict(dict(r,total_influences=0)),'UNSUPPORTED')
+        self.assertEqual(supported_skin_transport_verdict(dict(r,unexplained_influences=1)),'RED')
