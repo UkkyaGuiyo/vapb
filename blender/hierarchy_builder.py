@@ -15,7 +15,7 @@ from ..unity.prefab_instance_transform import resolve_instance_transform, has_co
 
 def _realize_renderer_free_instances(prefab, mapping, package_id, context_id,
                                      source_loader, collection, issues):
-    """Expand directly serialized transform-only source trees per exact instance.
+    """Expand directly serialized Renderer-free source trees per exact instance.
 
     Renderer/model instances keep their existing realization route. Ambiguous,
     removed/added, deeper nested or modified descendant trees remain unresolved.
@@ -39,19 +39,31 @@ def _realize_renderer_free_instances(prefab, mapping, package_id, context_id,
         effective = resolve_instance_transform(prefab, instance.file_id, child)
         allowed = all((m.property_path == 'm_Name' and m.target_guid == child.asset_guid
                        and m.target_file_id in child.game_objects) or
+                      (m.property_path == 'm_RootOrder' and m.target_guid == child.asset_guid
+                       and m.target_file_id == (effective.source_transform_id if effective else None)
+                       and str(m.value).isdigit() and m.object_reference in (None, {'fileID': 0})) or
                       (m.target_file_id == (effective.source_transform_id if effective else None)
                        and m.target_guid == child.asset_guid
                        and m.property_path.startswith(('m_LocalPosition.', 'm_LocalRotation.', 'm_LocalScale.',
                                                        'm_LocalEulerAnglesHint.')))
                       for m in prefab.modifications() if m.prefab_instance_file_id == instance.file_id)
         transform_ids = {t.file_id for t in child.transforms.values()}
+        documents = {doc.file_id: doc for doc in child.documents}
+        def owned_component(go, file_id):
+            doc = documents.get(file_id)
+            return (doc is not None and ref_file_id(doc.data.get('m_GameObject')) == go.file_id
+                    and not ref_guid(doc.data.get('m_GameObject'))
+                    and (doc.class_id == 4 if file_id in transform_ids
+                         else doc.class_id not in {1, 4, 23, 137, 1001}))
         complete = (len(child.transforms) == len(child.game_objects)
+                    and len(documents) == len(child.documents)
                     and {t.game_object_id for t in child.transforms.values()} == set(child.game_objects)
                     and all(t.game_object_id in child.game_objects
                             and t.parent_id in transform_ids | {0, None}
                             and has_complete_transform(child, t.file_id)
                             for t in child.transforms.values())
-                    and all(set(go.component_ids) <= transform_ids for go in child.game_objects.values()))
+                    and all(all(owned_component(go, file_id) for file_id in go.component_ids)
+                            for go in child.game_objects.values()))
         structural_change = any(modification.get(k) for k in ('m_RemovedComponents', 'm_RemovedGameObjects',
                                                                'm_AddedComponents', 'm_AddedGameObjects'))
         if (not context_id or child.asset_guid != guid or source.package_id != package_id
@@ -82,6 +94,8 @@ def _realize_renderer_free_instances(prefab, mapping, package_id, context_id,
             obj['_vapb_root_context_id'] = context_id
             obj['_vapb_model_instance_edge_path'] = edge_json
             obj['_vapb_semantic_id'] = f'v1:{source.package_id}:{guid}:{go.file_id}:{context_id}:{edge_json}'
+            obj['_vapb_deferred_component_file_ids'] = json.dumps(
+                [str(file_id) for file_id in go.component_ids if file_id not in transform_ids])
             nodes[transform.file_id] = obj
         for transform in child.transforms.values():
             obj = nodes[transform.file_id]
@@ -255,6 +269,8 @@ def build_prefab_hierarchy(
         semantic_path = str(source_prefab_unity_path).replace("\\", "/")
         obj["_vapb_semantic_id"] = f"v1:{semantic_source}:{semantic_path}:{game_object_id}"
         obj["_vapb_source_local_file_id"] = str(game_object_id)
+        if root_context_id:
+            obj['_vapb_root_context_id'] = root_context_id
         obj["_vapb_source_hierarchy_path"] = source_hierarchy_path(game_object_id)
     root["unity_prefab_bone_identities"] = json.dumps(bone_identities, sort_keys=True)
     # Mapped FBX TRS may include genuine instance overrides, but without a

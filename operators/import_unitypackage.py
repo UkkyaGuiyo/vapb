@@ -1742,6 +1742,14 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                                 projection.issues.append({"code": issue["code"],
                                                           "root_context_id": root_context_id,
                                                           "occurrence_id": issue["occurrence_id"]})
+                            from ..blender.model_witness_bridge import plan_witness_skin_carriers, realize_witness_skin_carriers
+                            context.view_layer.update()
+                            skin_plans, skin_issues = plan_witness_skin_carriers(
+                                bindings, model_witness, prefab, prefab_object_map)
+                            projection.issues.extend(skin_issues)
+                            if not realize_witness_skin_carriers(skin_plans, member_collection, bindings, prefab_object_map, prefab):
+                                projection.issues.append({'code': 'SKIN_POSE_FRAME_UNSUPPORTED',
+                                                          'root_context_id': root_context_id})
                             pending_witness_dependencies.extend(
                                 plan_witness_material_dependencies(bindings, package_key.sha256)
                             )

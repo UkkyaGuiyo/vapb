@@ -1,4 +1,11 @@
-# Independent semantic hierarchy Oracle — phase 1 checkpoint
+# Independent semantic hierarchy Oracle
+
+Current checkpoint: original Majun and authored Bone-pose public followups are
+GREEN (53 EXACT), including rename/reopen and six actual negative controls.
+The real differential remains RED at the source/default geometry boundary. See
+[RENDERER_FREE_LOOP.md](RENDERER_FREE_LOOP.md) for current authority and next action.
+
+## Historical phase 1 checkpoint
 
 Status: **PARTIAL**. Unity observation is verified; Unity ↔ Blender parity is
 **UNVERIFIED**. No production behavior was changed.
@@ -76,3 +83,113 @@ The phase 1 checkpoint was selected to preserve the requested 15+ credit
 reserve from the observed 18.2968137500 opening balance. In-session usage is
 not reflected reliably by that balance; unchanged balance is not proof of zero
 spend. Only the required read-only scope reviewer was delegated (PASS).
+
+## Exact-package witness and independent observation workflow
+
+The phase 1 status above is historical. Use this workflow to observe an existing
+package revision; keep all generated evidence outside the repository. Commands
+below run from the repository root in PowerShell. Set the placeholders first:
+
+```powershell
+$Blender = '<Blender 5.2 executable>'
+$Unity = '<Unity 2022.3.22f1 Editor executable>'
+$Package = '<external exact .unitypackage>'
+$Sha = '<SHA-256 of that package>'
+$SourceProject = '<new external source-control project>'
+$OracleProject = '<different new external Oracle project>'
+$SelectedPrefab = 'Assets/<selected composition>.prefab'
+$BlenderEvidence = '<new external Blender evidence directory>'
+```
+
+1. Extract the exact FBX/meta and prepare original, no-op and stamped source
+   controls. The preparer currently requires exactly one FBX in the package.
+
+```powershell
+python tests/unity_hierarchy_probe/prepare_exact_witness.py $Package $Sha $SourceProject
+& $Blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender_fbx_source_witness.py -- $SourceProject
+$Process = Start-Process -FilePath $Unity -WindowStyle Hidden -PassThru -ArgumentList @('-batchmode','-nographics','-projectPath',('"'+$SourceProject+'"'),'-executeMethod','VapbBoneWitnessProbe.Run','-logFile',('"'+$SourceProject+'/unity.log"'))
+$Process.WaitForExit()
+$Process.ExitCode
+```
+
+Require actual exit 0 and `VapbBoneWitnessResult.json` PASS controls, including
+original/no-op/stamped/restored equivalence and restored FBX/meta hashes.
+`VapbHierarchyBoneObservation.json` is separate public-API diagnostic evidence:
+ordered authored Skin slots, stamped Model UIDs, parent UIDs, origins and full
+`local_to_world_matrix` values for Bones and all stamped Models. Matrices are
+16 column-major values. Display names never establish correspondence.
+
+2. Promote the exact revision. This preserves v1 and creates v2 with validated
+   authored Bone-slot UIDs and optional source Bone world matrices.
+
+```powershell
+& $Blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/unity_hierarchy_probe/promote_exact_witness.py -- $SourceProject
+```
+
+Outputs are `witness_v1.json` and `witness_v2.json`. Reuse of source controls for
+another package requires identical FBX/meta bytes and explicit external reuse
+provenance; promote against the new package SHA. Never reuse controls for a
+changed FBX or meta revision.
+
+3. Import the exact package independently into a second isolated Unity project.
+   The copied package probe observes the selected Prefab through public APIs and
+   writes both full `unity_oracle.json` and typed Skin observations.
+
+```powershell
+python tests/unity_hierarchy_probe/prepare_exact_witness.py $Package $Sha $OracleProject
+$env:VAPB_HIERARCHY_SELECTED_PREFAB_PATH = $SelectedPrefab
+$Process = Start-Process -FilePath $Unity -WindowStyle Hidden -PassThru -ArgumentList @('-batchmode','-nographics','-projectPath',('"'+$OracleProject+'"'),'-executeMethod','VapbHierarchyPackageSkinObservation.Run','-logFile',('"'+$OracleProject+'/unity.log"'))
+$Process.WaitForExit()
+$Process.ExitCode
+Remove-Item Env:VAPB_HIERARCHY_SELECTED_PREFAB_PATH
+```
+
+The package observer may enable Model readability in this isolated diagnostic
+copy. The package archive stays unchanged. Keep dependency state explicit;
+missing external scripts/shaders do not become restored components by observing
+the available Transform/Renderer/Mesh/Bone APIs.
+
+4. Normally import that same package into Blender with the witness and capture
+   the native representation through the snapshot hook.
+
+```powershell
+$env:VAPB_HIERARCHY_WITNESS = "$SourceProject/witness_v2.json"
+$env:VAPB_HIERARCHY_SOURCE_OBSERVATION = "$SourceProject/VapbHierarchyBoneObservation.json"
+$env:VAPB_HIERARCHY_PACKAGE_OBSERVATION = "$OracleProject/VapbHierarchyPackageSkinObservation.json"
+$env:VAPB_HIERARCHY_CONTROL_REPORT = "$SourceProject/VapbBoneWitnessResult.json"
+& $Blender --background --factory-startup --disable-autoexec --python-exit-code 1 --python tests/blender_hierarchy_snapshot.py -- $Package $Sha $SelectedPrefab $BlenderEvidence
+Remove-Item Env:VAPB_HIERARCHY_WITNESS,Env:VAPB_HIERARCHY_SOURCE_OBSERVATION,Env:VAPB_HIERARCHY_PACKAGE_OBSERVATION,Env:VAPB_HIERARCHY_CONTROL_REPORT
+```
+
+`blender_snapshot.json` includes `native_skin`; `baseline.blend` preserves the
+normal import. Native observation validates exact Mesh identity and receipt
+UIDs, authored Skin slots, live Armature/Bone targets, semantic carriers and
+transient pose motion/restoration. Observation alone does not declare parity.
+Full Bone-frame diagnostics compare evaluated native world matrices with
+`convertedPrefabWorld * inverse(convertedSourceWorld) * nativeRestWorld`.
+
+### Geometry measurement boundary
+
+The Unity probe uses `BakeMesh(mesh, useScale: true)` followed by the renderer
+Transform's `TransformPoint`. For the public nonuniform-scale fixture, this was
+checked against Renderer bounds and explicit public-API weighted skinning on
+scene instances. The default/false overload followed by TransformPoint applied
+scale twice and was not a valid Oracle measurement. This is a measured boundary,
+not a general guarantee for every animation/dependency state.
+
+Unity baked triangle corners and Blender evaluated triangle corners corroborate
+surface geometry without pairing split/welded vertices by index. They do not
+prove UVs, normals, materials, or overall representation equivalence.
+
+For source/default geometry diagnostics, run `source_geometry_boundary.py` in
+Blender with `-- BLEND SOURCE_OBSERVATION CONTROL_REPORT OUTPUT`. It selects
+source-cache Meshes through exact realization/receipt links. BVH distances sample
+triangle corners, edge midpoints and centroids in both directions; triangles
+with area at most `1e-12` are counted and excluded from that surface sampling.
+Referenced-corner point coverage is reported separately from all Mesh vertices.
+Finite samples are diagnostics and never establish full surface equivalence.
+Optional `--triangulate-mode FIXED` (also `FIXED_ALTERNATE`,
+`SHORTEST_DIAGONAL`, `LONGEST_DIAGONAL`, `BEAUTY`) inserts a temporary standard
+Triangulate modifier before Armature evaluation. `--ngon-mode CLIP` can replace
+the default `BEAUTY` n-gon mode. The tool records raw polygon/zero-area counts,
+removes the temporary modifier and asserts restoration; it never saves the Scene.

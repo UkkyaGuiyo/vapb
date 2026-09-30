@@ -8,6 +8,7 @@ never inferred from native names or counts.
 from collections import Counter, defaultdict
 import json
 import math
+from itertools import product
 from pathlib import Path
 import sys
 
@@ -44,6 +45,102 @@ def matrix_equal(a, b, tolerance=2e-5):
     tolerance += 1e-6 * max(abs(v) for matrix in (a,b) for row in matrix for v in row)
     return all(math.isfinite(v) for matrix in (a,b) for row in matrix for v in row) and max(
         abs(a[i][j]-b[i][j]) for i in range(4) for j in range(4)) <= tolerance
+
+
+def point_multiset_equal(actual, expected):
+    """Geometry corroboration only: preserve multiplicity, ignore vertex order."""
+    if not actual or len(actual) != len(expected):
+        return False
+    expected = [(-p['x'], -p['z'], p['y']) for p in expected]
+    if any(not math.isfinite(v) for p in actual + expected for v in p):
+        return False
+    tolerance = 2e-5 + 1e-6 * max(abs(v) for p in actual + expected for v in p)
+    buckets = defaultdict(list)
+    bucket = lambda p: tuple(math.floor(v / tolerance) for v in p)
+    for point in expected:
+        buckets[bucket(point)].append(point)
+    for point in actual:
+        key = bucket(point)
+        found = None
+        for offset in product((-1, 0, 1), repeat=3):
+            target = tuple(a+b for a, b in zip(key, offset))
+            for index, candidate in enumerate(buckets.get(target, ())):
+                error = max(abs(a-b) for a, b in zip(point, candidate))
+                if error <= tolerance and (found is None or error < found[0]):
+                    found = error, target, index
+        if found is None:
+            return False
+        buckets[found[1]].pop(found[2])
+    return True
+
+
+def native_checks(renderer, key, snapshot, handles, by_handle, transform_to_go):
+    dimensions = ('renderer_owner', 'mesh', 'bones_order', 'root_bone', 'bone_representation')
+    evidence = snapshot.get('native_skin')
+    if (not evidence or evidence.get('package_sha256') != snapshot['package_sha256']
+            or evidence.get('source_control_report_pass') is not True):
+        return {d: 'UNSUPPORTED_REPRESENTATION' for d in dimensions}
+    component = identity(renderer.get('component'))
+    matches = [s for s in evidence['skins'] if
+               (s['renderer']['guid'], str(s['renderer']['local_id'])) == component]
+    if len(matches) != 1:
+        return {d: 'NATIVE_BRIDGE_MISMATCH' for d in dimensions}
+    skin = matches[0]
+    mesh, rig = handles.get(skin['mesh_handle']), handles.get(skin['armature_handle'])
+    if not mesh or not rig or mesh['representation'] != 'MESH' or rig['representation'] != 'ARMATURE':
+        return {d: 'NATIVE_BRIDGE_MISMATCH' for d in dimensions}
+    owner = by_handle.get(mesh['actual_parent']) == key
+    owner = owner and mesh['metadata'].get('_vapb_renderer_occurrence_id') == skin['occurrence_id']
+    owner = owner and transform_to_go.get((skin['owner_transform']['guid'], str(skin['owner_transform']['local_id']))) == key
+    mesh_ok = (identity(renderer.get('mesh')) == (skin['mesh_guid'], skin['mesh_local_id'])
+        and str(mesh['metadata'].get('_vapb_fbx_model_uid')) == skin['renderer_model_uid']
+        and mesh['metadata'].get('_vapb_fbx_mesh_receipt_id') == mesh['mesh_metadata'].get('_vapb_fbx_mesh_receipt_id')
+        and [m['target'] for m in mesh['armature_modifiers']] == [rig['handle']])
+    bones = skin['bones']
+    ordered = [(b['prefab_transform']['guid'], str(b['prefab_transform']['local_id'])) for b in bones]
+    bone_ok = ordered == [identity(b) for b in renderer.get('bones', [])]
+    bone_ok = bone_ok and len({b['model_uid'] for b in bones}) == len(bones)
+    for bone in bones:
+        native = [b for b in rig['bones'] if str(b['metadata'].get('_vapb_fbx_model_uid')) == bone['model_uid']]
+        carrier = handles.get(bone['semantic_carrier_handle'])
+        bone_ok = bone_ok and len(native) == 1 and carrier is not None and by_handle.get(carrier['handle']) == transform_to_go.get(
+            (bone['prefab_transform']['guid'], str(bone['prefab_transform']['local_id'])))
+        if len(native) == 1:
+            parent_index = native[0]['parent_index']
+            parent_uid = str(rig['bones'][parent_index]['metadata'].get('_vapb_fbx_model_uid')) if parent_index is not None else None
+            expected_parent = bone['expected_source_parent_uid'] if bone['expected_source_parent_uid'] in {b['model_uid'] for b in bones} else None
+            bone_ok = bone_ok and parent_uid == expected_parent
+            copies = [c for c in carrier.get('constraints', []) if c['kind'] == 'COPY_TRANSFORMS'
+                      and not c['muted'] and c['influence'] == 1] if carrier else []
+            proxy = handles.get(copies[0]['target']) if len(copies) == 1 else None
+            targets = [c for c in proxy.get('constraints', []) if c['kind'] == 'CHILD_OF'
+                       and not c['muted'] and c['influence'] == 1] if proxy else []
+            bone_ok = bone_ok and len(targets) == 1 and targets[0]['target'] == rig['handle'] and targets[0]['subtarget'] == native[0]['diagnostic_name']
+    root = handles.get(skin['root_bone_carrier_handle'])
+    root_identity = identity(renderer.get('rootBone'))
+    root_ok = (root is not None and root_identity is not None
+        and by_handle.get(root['handle']) == transform_to_go.get(root_identity)
+        and str(mesh['metadata'].get('_vapb_skin_root_transform_file_id')) == root_identity[1]
+        and bool(root['metadata'].get('_vapb_semantic_id'))
+        and mesh['metadata'].get('_vapb_skin_root_frame_semantic_id') == root['metadata']['_vapb_semantic_id'])
+    if skin.get('root_representation') == 'BONE_CARRIER':
+        root_ok = root_ok and str(root['metadata'].get('_vapb_skin_bone_model_uid')) == skin['root_bone_model_uid']
+    elif skin.get('root_representation') == 'ROOT_FRAME_OBJECT':
+        root_ok = root_ok and skin['root_bone_model_uid'] is None
+    else:
+        root_ok = False
+    representation = mesh_ok and bone_ok and root_ok and all(
+        b['carrier_constraint_valid'] and b['pose_delta_pass'] for b in bones)
+    representation = representation and point_multiset_equal(skin['evaluated_world_triangle_corners'], skin['prefab_unity_world_triangle_corners'])
+    for bone in bones:
+        if 'expected_native_world_matrix' in bone or 'evaluated_native_world_matrix' in bone:
+            representation = representation and bool(bone.get('expected_native_world_matrix')) and bool(bone.get('evaluated_native_world_matrix')) and matrix_equal(bone['evaluated_native_world_matrix'], bone['expected_native_world_matrix'])
+        p = bone['prefab_unity_world_origin']
+        representation = representation and max(abs(a-b) for a, b in zip(bone['evaluated_head_world'], (-p['x'], -p['z'], p['y']))) <= 2e-5
+    return {d: 'EXACT' if valid else failure for d, valid, failure in (
+        ('renderer_owner', owner, 'WRONG_RENDERER_OWNER'), ('mesh', mesh_ok, 'MESH_BRIDGE_MISMATCH'),
+        ('bones_order', bone_ok, 'BONE_BINDING_MISMATCH'), ('root_bone', root_ok, 'ROOT_BONE_MISMATCH'),
+        ('bone_representation', representation, 'NATIVE_REPRESENTATION_MISMATCH'))}
 
 
 def compare(oracle, snapshot, expected_sha):
@@ -129,8 +226,8 @@ def compare(oracle, snapshot, expected_sha):
         # Projection metadata describes source intent, not actual native binding.
         # Do not turn it into a proof of Renderer/Bone realization.
         for renderer in node['renderers']:
-            for dimension in ('renderer_owner', 'mesh', 'bones_order', 'root_bone', 'bone_representation'):
-                record('UNSUPPORTED_REPRESENTATION', dimension, key)
+            for dimension, category in native_checks(renderer, key, snapshot, handles, by_handle, transform_to_go).items():
+                record(category, dimension, key)
     for key, objects in candidates.items():
         if key not in expected:
             for obj in objects:
@@ -144,7 +241,7 @@ def compare(oracle, snapshot, expected_sha):
             record('MISSING_OCCURRENCE', 'multiplicity', group[0])
     counts = dict(Counter(c['category'] for c in checks))
     return dict(status='GREEN' if all(c['category'] == 'EXACT' for c in checks) else 'RED',
-        scope='SINGLE_COMPOSITION_OBJECT_RELATIONS; native skin equivalence unimplemented',
+        scope='SINGLE_COMPOSITION_OBJECT_RELATIONS; optional exact-revision native Skin evidence',
         counts=counts, dimensions={d: dict(Counter(c['category'] for c in checks if c['dimension']==d))
             for d in sorted({c['dimension'] for c in checks})}, checks=checks,
         blender=dict(semantic_nodes=len(by_handle),

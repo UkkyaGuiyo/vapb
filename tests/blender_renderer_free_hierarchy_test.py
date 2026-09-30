@@ -65,7 +65,42 @@ def negative_controls(package):
     print('RENDERER_FREE_NEGATIVE_CONTROLS_PASS=4')
 
 
+def deferred_component_control(package):
+    from unitypackage_blender_importer.unity.package_reader import UnityPackageReader
+    from unitypackage_blender_importer.unity.asset_database import AssetDatabase
+    from unitypackage_blender_importer.unity.prefab_parser import parse_prefab
+    from unitypackage_blender_importer.unity.yaml_parser import UnityYAMLDocument
+    from unitypackage_blender_importer.unity.occurrence_projection import PrefabSource
+    from unitypackage_blender_importer.blender.hierarchy_builder import build_prefab_hierarchy
+    with tempfile.TemporaryDirectory() as directory:
+        extraction = UnityPackageReader(package).extract(Path(directory))
+        db = AssetDatabase.from_extraction(extraction.root, extraction.assets)
+        root = parse_prefab(db.by_unity_path['Assets/VapbHierarchy/Majun.prefab'].path)
+        child = parse_prefab(db.by_unity_path['Assets/VapbHierarchy/Accessory.prefab'].path)
+        go = next(iter(child.game_objects.values()))
+        for file_id, class_id in ((9901, 114), (9902, 82)):
+            go.component_ids.append(file_id)
+            child.documents.append(UnityYAMLDocument(class_id, file_id, {'m_GameObject': {'fileID': go.file_id}}, ''))
+        transform = next(iter(child.transforms.values()))
+        for doc in root.documents:
+            if doc.class_id == 1001:
+                doc.raw += (f'\n    - target: {{fileID: {transform.file_id}, guid: {child.asset_guid}, type: 3}}'
+                            '\n      propertyPath: m_RootOrder\n      value: 0\n      objectReference: {fileID: 0}\n')
+        provider = PrefabSource.from_prefab(child, 'fixture-package', child.asset_guid)
+        bpy.ops.object.select_all(action='SELECT'); bpy.ops.object.delete(use_global=False)
+        issues = []
+        build_prefab_hierarchy(root, [], 'fixture-package', 'Assets/VapbHierarchy/Majun.prefab',
+            source_loader=lambda package_id, guid: provider, root_context_id='fixture-context', semantic_issues=issues)
+        nodes = [o for o in bpy.context.scene.objects if o.get('_vapb_model_instance_edge_path')]
+        assert len(nodes) == 2 and not issues, 'Serialized deferred components hid representable GameObjects'
+        assert all(json.loads(o['_vapb_deferred_component_file_ids']) == ['9901', '9902'] for o in nodes)
+        print('RENDERER_FREE_DEFERRED_COMPONENTS_PASS=2')
+
+
 if __name__ == '__main__':
+    if '--deferred-only' in sys.argv:
+        deferred_component_control(Path(sys.argv[-1]))
+        sys.exit(0)
     main()
     output = Path(sys.argv[-1])
     data = json.loads((output / 'blender_snapshot.json').read_text())

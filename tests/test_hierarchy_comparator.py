@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from .hierarchy_comparator import compare, convert, unity_trs
+from .hierarchy_comparator import compare, convert, unity_trs, point_multiset_equal
 
 SHA = 'a' * 64
 GUID = 'b' * 32
@@ -30,7 +30,88 @@ def fixture():
         assets={GUID:'Assets/Root.prefab'}, objects=objects)
 
 
+def skin_fixture():
+    oracle, observed = fixture()
+    oracle['nodes'][0]['renderers'] = [dict(component=ref(500), mesh=ref(600),
+        bones=[ref(101), ref(102)], rootBone=ref(101))]
+    objects = observed['objects']
+    mesh = copy.deepcopy(objects[0])
+    mesh.update(handle=10, classification='NATIVE_REALIZATION', representation='MESH',
+        actual_parent=0, metadata={'_vapb_fbx_model_uid': '900', '_vapb_fbx_mesh_receipt_id': 'mesh',
+        '_vapb_renderer_occurrence_id': 'occurrence', '_vapb_skin_root_transform_file_id': '101',
+        '_vapb_skin_root_frame_semantic_id': 'frame1'}, mesh_metadata={'_vapb_fbx_mesh_receipt_id': 'mesh'},
+        armature_modifiers=[{'target': 11}])
+    rig = copy.deepcopy(objects[0])
+    rig.update(handle=11, classification='NATIVE_REALIZATION', representation='ARMATURE',
+        metadata={}, bones=[dict(diagnostic_name='API channel 0', metadata={'_vapb_fbx_model_uid': '707'}, parent_index=None),
+                           dict(diagnostic_name='API channel 1', metadata={'_vapb_fbx_model_uid': '808'}, parent_index=0)])
+    objects.extend([mesh, rig])
+    bones = []
+    for index, uid in enumerate(('707', '808')):
+        proxy = copy.deepcopy(objects[0])
+        proxy.update(handle=12+index, classification='TECHNICAL_ONLY', metadata={},
+            constraints=[dict(kind='CHILD_OF', target=11, subtarget='API channel '+str(index), muted=False, influence=1)])
+        objects.append(proxy)
+        objects[1+index]['constraints'] = [dict(kind='COPY_TRANSFORMS', target=12+index, muted=False, influence=1)]
+        objects[1+index]['metadata']['_vapb_skin_bone_model_uid'] = uid
+        objects[1+index]['metadata']['_vapb_semantic_id'] = 'frame'+str(1+index)
+        bones.append(dict(model_uid=uid, prefab_transform={'guid':GUID, 'local_id':str(101+index)},
+            semantic_carrier_handle=1+index, expected_source_parent_uid='707' if index else '999',
+            carrier_constraint_valid=True, pose_delta_pass=True, evaluated_head_world=[0,0,0],
+            evaluated_native_world_matrix=copy.deepcopy(objects[0]['world_matrix']),
+            expected_native_world_matrix=copy.deepcopy(objects[0]['world_matrix']),
+            prefab_unity_world_origin=dict(x=0,y=0,z=0)))
+    skin = dict(renderer={'guid':GUID, 'local_id':'500'}, owner_transform={'guid':GUID, 'local_id':'100'},
+        occurrence_id='occurrence', mesh_handle=10, armature_handle=11, mesh_guid=GUID, mesh_local_id='600',
+        renderer_model_uid='900', bones=bones, root_bone_carrier_handle=1, root_bone_model_uid='707', root_representation='BONE_CARRIER',
+        evaluated_world_triangle_corners=[[0,0,0], [-1,0,0], [0,0,1]],
+        prefab_unity_world_triangle_corners=[dict(x=0,y=0,z=0),dict(x=1,y=0,z=0),dict(x=0,y=1,z=0)])
+    observed['native_skin'] = dict(package_sha256=SHA, source_control_report_pass=True, skins=[skin])
+    return oracle, observed
+
+
 class ComparatorTests(unittest.TestCase):
+    def test_native_skin_positive_and_corruption_controls(self):
+        oracle, original = skin_fixture()
+        self.assertEqual(compare(oracle, original, SHA)['status'], 'GREEN')
+        changes = (
+            ('owner', lambda s: s['objects'][6].update(actual_parent=5), 'WRONG_RENDERER_OWNER'),
+            ('mesh', lambda s: s['objects'][6]['mesh_metadata'].update(_vapb_fbx_mesh_receipt_id='wrong'), 'MESH_BRIDGE_MISMATCH'),
+            ('armature', lambda s: s['objects'][6]['armature_modifiers'][0].update(target=999), 'MESH_BRIDGE_MISMATCH'),
+            ('parent', lambda s: s['objects'][7]['bones'][1].update(parent_index=None), 'BONE_BINDING_MISMATCH'),
+            ('root', lambda s: s['objects'][1]['metadata'].update(_vapb_skin_bone_model_uid='808'), 'ROOT_BONE_MISMATCH'),
+            ('disabled', lambda s: s['objects'][9]['constraints'][0].update(muted=True), 'BONE_BINDING_MISMATCH'),
+            ('motion', lambda s: s['native_skin']['skins'][0]['bones'][1].update(pose_delta_pass=False), 'NATIVE_REPRESENTATION_MISMATCH'),
+            ('attachment', lambda s: s['objects'][3].update(actual_parent=5), 'WRONG_PARENT'),
+            ('geometry', lambda s: s['native_skin']['skins'][0]['evaluated_world_triangle_corners'][0].__setitem__(0,1), 'NATIVE_REPRESENTATION_MISMATCH'),
+            ('pose_frame', lambda s: s['native_skin']['skins'][0]['bones'][1]['evaluated_native_world_matrix'][0].__setitem__(0, 2), 'NATIVE_REPRESENTATION_MISMATCH'),
+            ('order', lambda s: s['native_skin']['skins'][0]['bones'].reverse(), 'BONE_BINDING_MISMATCH'),
+        )
+        for label, change, category in changes:
+            with self.subTest(label=label):
+                observed = copy.deepcopy(original)
+                change(observed)
+                result = compare(oracle, observed, SHA)
+                self.assertEqual(result['status'], 'RED')
+                self.assertIn(category, result['counts'])
+
+    def test_root_frame_outside_weighted_slots(self):
+        oracle, observed = skin_fixture()
+        oracle['nodes'][0]['renderers'][0]['rootBone'] = ref(100)
+        observed['objects'][0]['metadata']['_vapb_semantic_id'] = 'frame0'
+        observed['objects'][6]['metadata'].update(
+            _vapb_skin_root_transform_file_id='100', _vapb_skin_root_frame_semantic_id='frame0')
+        observed['native_skin']['skins'][0].update(root_bone_carrier_handle=0,
+            root_bone_model_uid=None, root_representation='ROOT_FRAME_OBJECT')
+        self.assertEqual(compare(oracle, observed, SHA)['status'], 'GREEN')
+        observed['objects'][6]['metadata']['_vapb_skin_root_frame_semantic_id'] = 'wrong'
+        self.assertIn('ROOT_BONE_MISMATCH', compare(oracle, observed, SHA)['counts'])
+
+    def test_geometry_multiset_ignores_order_preserves_corners(self):
+        expected = [dict(x=1,y=2,z=3)]*2
+        self.assertTrue(point_multiset_equal([[-1,-3,2]]*2, expected))
+        self.assertFalse(point_multiset_equal([[-1,-3,2]], expected))
+
     def setUp(self):
         self.oracle, self.snapshot = fixture()
 

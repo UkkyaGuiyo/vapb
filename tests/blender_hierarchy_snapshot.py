@@ -1,10 +1,12 @@
 """Independent Blender observation after normal production Import.
 
 Arguments: package, expected SHA-256, selected prefab Unity asset path, output.
-No Unity Oracle is read and no semantic correspondence is injected.
+Optional exact source witness is passed to normal Import. Independent Oracle
+evidence is read only after Import for observation/comparison.
 """
 import hashlib
 import json
+import os
 from pathlib import Path
 import sys
 import tempfile
@@ -30,11 +32,15 @@ def properties(entity):
 def snapshot(package_sha, assets, import_result):
     bpy.context.view_layer.update()
     objects = list(bpy.context.scene.objects)
+    realized = {o for o in objects if o.get('_vapb_renderer_occurrence_id')}
+    realized.update(m.object for o in tuple(realized) for m in o.modifiers
+                    if m.type == 'ARMATURE' and m.object is not None)
     rows = []
     for index, obj in enumerate(objects):
         metadata = properties(obj)
         classification = ('SEMANTIC' if metadata.get('_vapb_semantic_id') else
-                          'TECHNICAL_ONLY' if metadata.get('_vapb_renderer_occurrences') else
+                          'TECHNICAL_ONLY' if metadata.get('_vapb_renderer_occurrences') or metadata.get('_vapb_technical_bone_proxy') else
+                          'NATIVE_REALIZATION' if obj in realized else
                           'UNMAPPED_REALIZATION' if obj.type in {'MESH', 'ARMATURE'} else
                           'UNCLASSIFIED')
         rows.append(dict(handle=index, diagnostic_name=obj.name,
@@ -43,6 +49,9 @@ def snapshot(package_sha, assets, import_result):
             parent_type=obj.parent_type, parent_bone=obj.parent_bone,
             local_matrix=[list(row) for row in obj.matrix_local],
             world_matrix=[list(row) for row in obj.matrix_world],
+            constraints=[dict(kind=c.type, target=objects.index(c.target) if c.target in objects else None,
+                subtarget=c.subtarget if hasattr(c, 'subtarget') else '', influence=c.influence,
+                muted=c.mute) for c in obj.constraints],
             mesh_metadata=properties(obj.data) if obj.type == 'MESH' else None,
             armature_modifiers=[dict(target=objects.index(m.object) if m.object in objects else None)
                 for m in obj.modifiers if m.type == 'ARMATURE'],
@@ -79,10 +88,20 @@ def main():
     try:
         result = bpy.ops.import_scene.unitypackage(filepath=str(package),
             import_mode='RECONSTRUCT', prefab_choice=choice, keep_extracted=False,
+            model_witness_path=os.environ.get('VAPB_HIERARCHY_WITNESS', ''),
             source_storage_directory=str(output / 'sources'))
         if result != {'FINISHED'}:
             raise AssertionError('Normal Import did not finish')
         observed = snapshot(actual_sha, assets, result)
+        paths = [os.environ.get(key, '') for key in (
+            'VAPB_HIERARCHY_SOURCE_OBSERVATION', 'VAPB_HIERARCHY_PACKAGE_OBSERVATION',
+            'VAPB_HIERARCHY_CONTROL_REPORT')]
+        if any(paths):
+            if not all(paths) or not os.environ.get('VAPB_HIERARCHY_WITNESS'):
+                raise ValueError('Incomplete native observation inputs')
+            from unitypackage_blender_importer.tests.unity_hierarchy_probe.native_skin_observation import observe_native_skin
+            observed['native_skin'] = observe_native_skin(bpy.context, package,
+                os.environ['VAPB_HIERARCHY_WITNESS'], *paths, pose_controls=True)
         (output / 'blender_snapshot.json').write_text(json.dumps(observed, indent=2), encoding='utf-8')
         bpy.ops.wm.save_as_mainfile(filepath=str(output / 'baseline.blend'))
         print('VAPB_HIERARCHY_SNAPSHOT_PASS objects=' + str(len(observed['objects'])))

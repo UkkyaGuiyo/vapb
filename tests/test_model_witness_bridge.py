@@ -3,11 +3,14 @@
 import copy
 import json
 import unittest
+from dataclasses import replace
+from types import SimpleNamespace
 
 from unitypackage_blender_importer.blender.fbx_receipt import FbxModelLink, RawFbxSemanticIndex
 from unitypackage_blender_importer.blender.model_witness_bridge import (
     plan_witness_realizations, plan_witness_material_dependencies,
     find_witness_consumer,
+    plan_witness_skin_carriers,
 )
 from unitypackage_blender_importer.unity.model_identity_witness import (
     ModelAssetRevision, validate_model_witness,
@@ -104,6 +107,67 @@ def root(current):
 
 
 class ModelWitnessBridgeTests(unittest.TestCase):
+    def test_skin_plan_uses_receipts_and_rejects_wrong_parent_root_scope(self):
+        from unitypackage_blender_importer.blender.fbx_receipt import make_bone_receipt, RECEIPT_VERSION
+        from unitypackage_blender_importer.unity.model_identity_witness import ModelWitnessIndex
+        class Entity(Object):
+            __hash__ = object.__hash__
+        class Point:
+            length = 0
+            def __sub__(self, other): return self
+        class Frame:
+            translation = Point()
+            def __matmul__(self, other): return Point()
+        current = record()
+        current['skin'] = {'status': 'EXACT', 'bones': [
+            {'transform_file_id': '1', 'parent_transform_file_id': '0'},
+            {'transform_file_id': '2', 'parent_transform_file_id': '1'}],
+            'root_bone_transform_file_id': '1'}
+        index = ModelWitnessIndex([replace(witness().rows[0], bone_model_uids=(707, 808), root_bone_model_uid=707)], {GUID: FBX_SHA})
+        bones = []
+        for uid in (707, 808):
+            receipt = make_bone_receipt(uid, GUID, FBX_SHA)
+            bone = Entity(_vapb_fbx_model_uid=str(uid), _vapb_fbx_bone_receipt_id=receipt.blender_bone_receipt_id,
+                _vapb_fbx_receipt_version=RECEIPT_VERSION, _vapb_fbx_receipt_evidence=receipt.evidence,
+                _vapb_fbx_bone_realization_id=str(uid))
+            bone.parent = bones[0] if bones else None
+            bone.head_local = Point()
+            bones.append(bone)
+        rig = Entity(_vapb_root_context_id='root-one', obj_type='ARMATURE')
+        rig.data.bones, rig.matrix_world = bones, Frame()
+        mesh = native()
+        mesh.modifiers = [SimpleNamespace(type='ARMATURE', object=rig)]
+        carriers = {}
+        for go in (10, 20):
+            carrier = Entity(_vapb_root_context_id='root-one', obj_type='EMPTY')
+            carrier.constraints, carrier.matrix_world = [], Frame()
+            carriers[go] = carrier
+        prefab = SimpleNamespace(transforms={1: SimpleNamespace(game_object_id=10), 2: SimpleNamespace(game_object_id=20)})
+        plans, issues = plan_witness_skin_carriers([(current, mesh)], index, prefab, carriers)
+        self.assertEqual((2, []), (len(plans), issues))
+        # The Prefab, not the model default, owns a legitimate rootBone override.
+        current['skin']['root_bone_transform_file_id'] = '2'
+        plans, issues = plan_witness_skin_carriers([(current, mesh)], index, prefab, carriers)
+        self.assertEqual((2, []), (len(plans), issues))
+        current['skin']['root_bone_transform_file_id'] = '1'
+        prefab.transforms[3] = SimpleNamespace(game_object_id=30)
+        carriers[30] = Entity(_vapb_root_context_id='root-one', obj_type='EMPTY')
+        current['skin']['root_bone_transform_file_id'] = '3'
+        plans, issues = plan_witness_skin_carriers([(current, mesh)], index, prefab, carriers)
+        self.assertEqual((2, []), (len(plans), issues))
+        current['skin']['root_bone_transform_file_id'] = '1'
+        for change, undo in (
+            (lambda: setattr(bones[1], 'parent', None), lambda: setattr(bones[1], 'parent', bones[0])),
+            (lambda: current['skin'].update(root_bone_transform_file_id='999'), lambda: current['skin'].update(root_bone_transform_file_id='1')),
+            (lambda: rig.update(_vapb_root_context_id='other'), lambda: rig.update(_vapb_root_context_id='root-one')),
+            (lambda: bones[0].update(_vapb_fbx_bone_receipt_id='wrong'), lambda: bones[0].update(_vapb_fbx_bone_receipt_id=make_bone_receipt(707, GUID, FBX_SHA).blender_bone_receipt_id)),
+        ):
+            change()
+            rejected, issues = plan_witness_skin_carriers([(current, mesh)], index, prefab, carriers)
+            self.assertEqual([], rejected)
+            self.assertEqual(1, len(issues))
+            undo()
+
     def test_explicit_null_is_typed_clear_only_with_exact_slot_evidence(self):
         current = record()
         current["materials"] = {0: None}

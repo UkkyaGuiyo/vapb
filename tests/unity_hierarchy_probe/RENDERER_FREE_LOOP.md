@@ -1,5 +1,58 @@
 # Autonomous hierarchy loop — renderer-free nested occurrences
 
+## Hierarchy Parity — exact native Skin bridge checkpoint — 2026-09-30
+
+**CURRENT STATUS: public supported synthetic GREEN; real geometry RED.**
+Resume HEAD `db5a1c62abc0f845f7d71078fb64280156e51404`.
+Old `18.2968` was a credit balance, not remaining token percentage. Latest official
+usage observed **83% remaining**. There is no resource-floor blocker, and this
+checkpoint is not a stop condition. Continue the autonomous loop.
+
+Original Majun and deferred-component/outside-weighted-root followup: **53 EXACT /
+GREEN**. Authored per-Bone pose followup: public RED before fix, then normal Import
+GREEN 53, all-Object/all-Bone rename/save/reopen GREEN 53, six corruption controls
+PASS. Unity exact-source original/no-op/stamped/restored controls and FBX/meta
+restoration hashes PASS. Source cache Bone state and evaluated Mesh geometry are
+unchanged; member rest head/tail/matrix/parent match source exactly. Native
+connected children with authored translation require a member-only disconnect;
+independent Armature deform data also needs independent Mesh data to prevent
+source-cache Bone renames changing member weight channels.
+
+Private identical-byte Unity/Blender differential: **276 nodes / 275 edges / 34
+Skins / 5,440 ordered Bone references / 160 distinct native motion controls**.
+Comparator: **1,254 EXACT, 20 NATIVE_REPRESENTATION_MISMATCH**. All node, parent,
+local/world, owner, Mesh bridge, ordered Bones, rootBone, full native Bone frame
+and motion/attachment checks pass. The remaining failures are Geometry evidence.
+Independent source-cache versus exact Unity FBX-default observation already has
+20 triangle-corner discrepancies before Prefab pose: 14 exact, 14 same-count
+multiplicity differences, six count differences. Vertex coverage passes 32 of 34.
+Prefab point coverage passes 30 of 34; morph/weight effects are not yet attributed.
+These are RED observations, not proof of Geometry corruption or equivalence.
+Source surface diagnostics: all referenced corner pointsets match within 1.01e-5;
+19 native loose vertices account for the two all-vertex coverage discrepancies.
+316 native zero-area triangles have no Unity counterparts. Bidirectional finite
+samples nevertheless find 1,495 distances above 3e-5 across 14 Meshes (maximum
+0.001919), so corner counts alone cannot establish surface equivalence. Six standard
+Blender triangulation controls exited 0 with temporary modifiers restored.
+No global mode eliminated differences: FIXED gave 17/34 corner matches but
+residual sampled differences on 10 Meshes. No production triangulation change
+or false GREEN is claimed.
+
+Python **454 PASS**, compileall and existing Blender integration/Bone receipt/
+hierarchy transform regressions PASS. Mandatory scope review PASS. Only generic
+code and aggregate findings are tracked; raw private assets, IDs, paths, logs,
+.blend and snapshots remain outside Git. Unity remains optional; witness frames
+bridge source importer/native rest axes, while Prefab semantics remain serialized
+package authority. No broad Unity/VRC component restoration or ZIP/Release.
+
+**Exact next automatic action:** measure source geometry surface differences
+independently of triangle-corner multiplicity, isolate actual deformations from
+triangulation/degenerate faces, reduce real findings to public RED, then minimal
+fix / GREEN / full comparator / real recheck. Do not stop at this checkpoint.
+
+Earlier sections below are historical checkpoints, not current stop authority.
+
+
 **STATUS: PARTIAL.** Starting HEAD `ba42f957747f0b9d531dd8691e64b2bdf5c09f32`.
 Exact phase 1 package revision retained:
 `358df2fed2c0b00825c3aacde8f78f8d9027e0b55bf3855a96c4f2ccc6a22098`.

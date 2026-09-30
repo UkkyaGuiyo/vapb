@@ -46,6 +46,37 @@ def fixture():
 
 
 class ModelIdentityWitnessTests(unittest.TestCase):
+    def test_v2_skin_uses_authored_slots_and_raw_membership(self):
+        document, revisions = fixture()
+        document['schema_version'] = 'vapb-model-identity-witness-v2'
+        document['assets'][0]['models'][0]['renderers'][0]['skin'] = {
+            'ordered_bone_model_uids': ['707', '808'],
+            'root_bone_model_uid': '707',
+        }
+        revision = revisions[GUID]
+        revisions[GUID] = ModelAssetRevision(revision.fbx_sha256, revision.meta_sha256,
+            RawFbxSemanticIndex([FbxModelLink(101, 202)], [101, 707, 808]),
+            {101: frozenset({'707', '808'})})
+        row = validate_model_witness(document, PACKAGE_SHA, revisions).mesh(GUID, -606)
+        self.assertEqual(row.bone_model_uids, (707, 808))
+        self.assertEqual(row.root_bone_model_uid, 707)
+        skin = document['assets'][0]['models'][0]['renderers'][0]['skin']
+        frame = [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]
+        skin['source_bone_world_matrices'] = [frame.copy(), frame.copy()]
+        self.assertEqual(len(validate_model_witness(document, PACKAGE_SHA, revisions).mesh(GUID, -606).source_bone_world_matrices), 2)
+        for invalid in ([], [frame], [[float('nan')]*16]*2, [[0]*16]*2):
+            skin['source_bone_world_matrices'] = invalid
+            with self.assertRaises(ModelWitnessError):
+                validate_model_witness(document, PACKAGE_SHA, revisions)
+        skin.pop('source_bone_world_matrices')
+        for slots, root in ((['707', '707'], '707'), (['707', '909'], '707'),
+                            (['707', '808'], '909')):
+            changed = copy.deepcopy(document)
+            changed['assets'][0]['models'][0]['renderers'][0]['skin'] = {
+                'ordered_bone_model_uids': slots, 'root_bone_model_uid': root}
+            with self.subTest(slots=slots, root=root), self.assertRaises(ModelWitnessError):
+                validate_model_witness(changed, PACKAGE_SHA, revisions)
+
     def test_exact_revision_exposes_signed_identity_bridge(self):
         document, revisions = fixture()
         index = validate_model_witness(document, PACKAGE_SHA, revisions)
