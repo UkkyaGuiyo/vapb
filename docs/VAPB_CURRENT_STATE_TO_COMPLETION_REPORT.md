@@ -2,6 +2,36 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Hierarchy Parity — independent Blender baseline / comparator — 2026-09-30
+
+**STATUS: PARTIAL / public synthetic RED.** Exact phase 1 package SHA verified;
+normal production Import in Blender 5.2.1 exited 0. Independent snapshot:
+10 semantic GO Objects, 9 semantic edges, one wrapper, four unmapped native
+Mesh/Armature Objects. Unity Oracle: 12 nodes / 11 edges / two repeated
+accessory occurrences. No production source was changed.
+
+Independent partial comparator: 40 EXACT **dimension checks** (10 nodes,
+10 parents, 10 local, 10 world), 2 MISSING nodes, one MISSING_OCCURRENCE
+group and five unimplemented native Renderer/Skin relation checks reported
+UNSUPPORTED_REPRESENTATION. RED exits 1. It does not self-score native
+realization from source projection. Ten comparator controls PASS;
+new Python tooling compileall PASS; scope review PASS.
+
+The missing renderer-free nested GO expansion is localized to the prefab-local
+GO table / nested occurrence boundary. Current parser exposes ten GO entries
+and two PrefabInstance documents; the source GO occurrences are not expanded
+into the realized hierarchy. Body matrix comparison passes a documented
+float32 scale-aware tolerance; production axis/unit/model transforms unchanged.
+Details: [`BASELINE.md`](../tests/unity_hierarchy_probe/BASELINE.md).
+
+Native Renderer/Bone equivalence, actual rename/save/reopen, synthetic GREEN
+and mandatory real UnityPackage differential remain unverified. No private
+data, Release/ZIP or component restoration. Converged conservatively for
+the hard 15-credit reserve; actual within-turn debit remains unavailable.
+
+**Exact next action:** public renderer-free nested Prefab GO expansion test,
+then minimal identity/instance-based hierarchy realization fix.
+
 ## Hierarchy Parity — independent Unity Oracle checkpoint — 2026-09-30
 
 **STATUS: PARTIAL.** Starting local/remote HEAD was

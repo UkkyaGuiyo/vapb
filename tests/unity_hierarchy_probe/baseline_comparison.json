@@ -1,0 +1,435 @@
+{
+  "status": "RED",
+  "scope": "SINGLE_COMPOSITION_OBJECT_RELATIONS; native skin equivalence unimplemented",
+  "counts": {
+    "EXACT": 40,
+    "UNSUPPORTED_REPRESENTATION": 5,
+    "MISSING": 2,
+    "MISSING_OCCURRENCE": 1
+  },
+  "dimensions": {
+    "bone_representation": {
+      "UNSUPPORTED_REPRESENTATION": 1
+    },
+    "bones_order": {
+      "UNSUPPORTED_REPRESENTATION": 1
+    },
+    "local": {
+      "EXACT": 10
+    },
+    "mesh": {
+      "UNSUPPORTED_REPRESENTATION": 1
+    },
+    "multiplicity": {
+      "MISSING_OCCURRENCE": 1
+    },
+    "node": {
+      "EXACT": 10,
+      "MISSING": 2
+    },
+    "parent": {
+      "EXACT": 10
+    },
+    "renderer_owner": {
+      "UNSUPPORTED_REPRESENTATION": 1
+    },
+    "root_bone": {
+      "UNSUPPORTED_REPRESENTATION": 1
+    },
+    "world": {
+      "EXACT": 10
+    }
+  },
+  "checks": [
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "7853957250760928391"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "7853957250760928391"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "7853957250760928391"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "7853957250760928391"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2464856854281486250"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2464856854281486250"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2464856854281486250"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2464856854281486250"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "3597001707487390534"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "3597001707487390534"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "3597001707487390534"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "3597001707487390534"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "142655916384621550"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "142655916384621550"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "142655916384621550"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "142655916384621550"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "5892722210687117204"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "5892722210687117204"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "5892722210687117204"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "5892722210687117204"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "762256462346776887"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "762256462346776887"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "762256462346776887"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "762256462346776887"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "UNSUPPORTED_REPRESENTATION",
+      "dimension": "renderer_owner",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "UNSUPPORTED_REPRESENTATION",
+      "dimension": "mesh",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "UNSUPPORTED_REPRESENTATION",
+      "dimension": "bones_order",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "UNSUPPORTED_REPRESENTATION",
+      "dimension": "root_bone",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "UNSUPPORTED_REPRESENTATION",
+      "dimension": "bone_representation",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2635037722616705077"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2994816330452807731"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2994816330452807731"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2994816330452807731"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "2994816330452807731"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "4397491060299699561"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "4397491060299699561"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "4397491060299699561"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "4397491060299699561"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "1342098449883561357"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "parent",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "1342098449883561357"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "local",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "1342098449883561357"
+      ]
+    },
+    {
+      "category": "EXACT",
+      "dimension": "world",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "1342098449883561357"
+      ]
+    },
+    {
+      "category": "MISSING",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "7593624049133755249"
+      ]
+    },
+    {
+      "category": "MISSING",
+      "dimension": "node",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "1324042089381417994"
+      ]
+    },
+    {
+      "category": "MISSING_OCCURRENCE",
+      "dimension": "multiplicity",
+      "identity": [
+        "1b7fea67da296c941aaa0a6622363613",
+        "7593624049133755249"
+      ]
+    }
+  ],
+  "blender": {
+    "semantic_nodes": 10,
+    "semantic_edges": 9,
+    "technical_helpers": 1,
+    "unmapped_realizations": 4
+  }
+}
