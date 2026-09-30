@@ -227,12 +227,12 @@ Readable output labels must remain independent of source/Export/post-import
 identity. Material assets may keep GUID/fileID and metadata at a new output
 path, with references restored by GUID. Owner labels require proven composition
 use; genuinely shared assets are staged once, unproved owners remain neutral.
-Hybrid folder/filename organization is the constrained basic policy for later
-implementation. PRODUCT POLICY = NO-GO: do not modify internal Material
+Hybrid folder/filename organization is implemented for static final-state
+Material export; other model/skin routes remain outside the verified checkpoint. PRODUCT POLICY = NO-GO: do not modify internal Material
 `m_Name` or serialized bytes for naming, and do not offer a synchronization option.
 Naming cannot restore a source-geometry-lineage requirement or make original
-input packages runtime dependencies. No production naming behavior is added by
-this document; see [the research evidence and limits](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
+input packages runtime dependencies. Persistent Material usage evidence survives
+source Mesh deletion without inventing geometry lineage; see [the research evidence and limits](VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
 
 ### Mandatory hierarchy parity milestone (2026-09-30)
 

@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import tempfile
 from uuid import uuid4
+from dataclasses import replace
 
 from .fbx_export import FBX_EXPORT_PRESET
 from .manifest import ExportManifest, GeneratorInfo, SCHEMA_VERSION
@@ -17,6 +18,8 @@ from ..blender.identity_registry import load_scene_registry
 from ..unity.asset_database import AssetDatabase
 from ..unity.material_parser import parse_material
 from ..unity.identity import select_package_provider
+from .material_naming import allocate_material_paths
+from ..blender.material_owner_usage import proven_owners
 
 
 def _sha(payload: bytes) -> str:
@@ -164,6 +167,8 @@ def export_final_state_package(context, mesh, output: Path):
     selected = StagingTree()
     material_ids = {}
     source_cache = {}
+    material_entries = {}
+    naming_rows = {}
     for slot in mesh.material_slots:
         material = slot.material
         key = material.as_pointer()
@@ -179,9 +184,24 @@ def export_final_state_package(context, mesh, output: Path):
             if source is None or not source.pathname.lower().endswith(".mat") or not re.search(
                     rb"(?m)^---\s+!u!21\s+&" + re.escape(file_id.encode()) + rb"\b", source.asset_bytes):
                 raise ValueError("Unity Material asset identity is not proven")
-            selected.add(StagedUnityAsset(source.guid, source.pathname, source.asset_bytes,
-                source.meta_bytes, source.preview_bytes, asset_type="MATERIAL_ASSET"))
             data = _material_data(source.asset_bytes)
+            entry = StagedUnityAsset(source.guid, source.pathname, source.asset_bytes,
+                source.meta_bytes, source.preview_bytes, asset_type="MATERIAL_ASSET",
+                source_identity={'source_guid': guid, 'source_path': source.pathname,
+                                 'source_package_id': package_id})
+            owners = proven_owners(material, package_id, guid, file_id, source.asset_bytes)
+            if guid in material_entries:
+                previous = material_entries[guid]
+                if previous.asset_bytes != entry.asset_bytes or previous.meta_bytes != entry.meta_bytes:
+                    raise ValueError('conflicting canonical Material revisions')
+                for owner, label in owners.items():
+                    old = naming_rows[guid]['owners'].get(owner)
+                    if old is not None and old != label:
+                        raise ValueError('conflicting Material owner labels')
+                naming_rows[guid]['owners'].update(owners)
+            else:
+                material_entries[guid] = entry
+                naming_rows[guid] = {'guid': guid, 'name': data.name, 'owners': owners}
             shader, shader_source = _shader_dependency(context.scene, package_id, data, source_cache)
             if shader_source is not None:
                 selected.add(StagedUnityAsset(shader_source.guid, shader_source.pathname,
@@ -205,6 +225,9 @@ def export_final_state_package(context, mesh, output: Path):
                                      "shader": shader, "textures": textures})
     slots = [{"slot_index": index, "export_material_id": material_ids[slot.material.as_pointer()]}
              for index, slot in enumerate(mesh.material_slots)]
+    destinations = allocate_material_paths(naming_rows.values())
+    for guid, entry in material_entries.items():
+        selected.add(replace(entry, pathname=destinations[guid], operation='MOVE'))
 
     model_guid = uuid4().hex
     model_path = f"Assets/VAPBExport/Generated_{object_id.removeprefix('VAPB-OBJ-')}.fbx"
@@ -236,6 +259,7 @@ def export_final_state_package(context, mesh, output: Path):
         export_assets=tuple({"node_id": item.pathname, "node_type": item.asset_type,
             "operation": item.operation, "strategy": item.strategy,
             "desired_export_path": item.pathname,
+            "source_identity": item.source_identity,
             "export_identity": {"export_guid": item.guid}}
             for item in selected.entries),
         export_roots=(object_id,), renderer_mappings=(), mesh_mappings=(),

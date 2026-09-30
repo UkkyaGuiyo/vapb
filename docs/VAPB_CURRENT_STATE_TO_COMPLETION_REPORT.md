@@ -2,6 +2,66 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Human-readable Material naming production — 2026-09-30
+
+**STATUS: PARTIAL (production static final-state route verified; Unity/remaining
+route validation deferred).** Start/remote HEAD `57fa526504e32f443ca905f3cf470c7fe15cb835`
+was reached by clean fast-forward. Original request is Material naming completion,
+not Hierarchy Parity or broad component restoration.
+
+**Implemented:** import copies existing exact Renderer occurrence Material usage
+into persistent Material provenance, including selected root package/member/GUID,
+occurrence and source/root revisions, exact Material GUID/signed localID, provider
+package fingerprint, payload hash and a separate original human label. Late
+providers revisit stored root projections. A unique provider must match exact
+Material identity; conflicting/unknown providers supply no owner claim. Original
+Mesh/root deletion does not delete Material evidence. No Mesh receipt is invented.
+Legacy Materials without this captured evidence remain Unassigned.
+
+The static final-state production exporter now runs a pure allocator before
+staging: owner folder + prefix, neutral Shared/Unassigned, NFC/casefold comparison,
+symmetric GUID-derived suffixes for every colliding member. Sanitized/bounded
+labels only affect paths; original Unity name comes from source payload, never a
+Blender display suffix. All Material GUID/meta/payload bytes are retained. Same
+GUID with differing payload/meta rejects, identical canonical asset stages once.
+Manifest export entries retain original source path/package identity separately
+from desired destination and record MOVE/PRESERVE_VERBATIM.
+
+**Public runtime evidence:** generated package import through normal production,
+five Materials, two semantic owner Prefabs, native FBX and split Texture provider.
+All seven requested cases PASS in Blender 5.2.1: owner separation, Material-only
+provider, Shared once, no-evidence Unassigned, symmetric collision, deleting all
+source Objects and creating new UV Cube, save/reopen path/evidence stability.
+Five Material asset/meta payloads remain byte-identical; m_Name, Shader/Texture
+references are therefore unchanged. Explicit synthetic PREFAB_0 selection avoids
+unrelated automatic composition provider competition. An initial fixture run was
+rejected because the obsolete seed Package duplicated a modified Material GUID;
+fixture seed was removed from discovery (renamed .bin), not production bypassed.
+
+**Regression:** Python 438 PASS (432 + 6); portable path 7 PASS; compileall PASS.
+Production naming Standard unchanged-native-Mesh and replacement-Cube exports
+PASS; Phase2 NONSTANDARD_GATE and CROSS_PACKAGE_PROVIDER PASS; Deferred Shader
+export/save-reopen PASS. Existing Blender integration static/Skin hierarchy,
+Material/binding, receipt rename/save/reload PASS. Register/unregister PASS.
+Owner-capture removal mutation and first-wins collision mutation both detected.
+Scope review PASS. Geometry code unchanged; no broad Geometry Oracle rerun.
+
+**Limits/unverified:** fresh Unity production naming/reimport/Finalizer observation
+not executed this turn. Prior research Unity results do not substitute for it.
+Skin-specific package-export runtime was not rerun; raw model/skin package routes
+are not connected to this allocator by this checkpoint. PARTIAL is retained rather
+than claiming universal naming completion. No UI/user override or m_Name sync.
+No ZIP/release, private data, Hierarchy or broad restoration work.
+
+**Resource:** start and last reported balance both 18.2968137500; no within-turn
+spend reflected. Actual final debit cannot be verified. Preserve >=15 requirement
+by closing this production checkpoint before new Unity/release setup.
+
+**Exact next action:** run fresh Unity 2022.3.22f1 on this production naming Output
+alone, comparing exact GUID/localID/bytes/m_Name/Renderer refs plus save/reimport
+and Finalizer; then close remaining affected route regression before completion.
+After Naming GOAL_VERIFIED, next milestone is Hierarchy Parity; do not start it now.
+
 ## Mandatory Hierarchy Parity milestone — 2026-09-30
 
 **STATUS: SPEC_MANDATED / NOT YET IMPLEMENTED.** The user requires the

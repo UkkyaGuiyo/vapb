@@ -10,7 +10,10 @@ changes paths/filenames; Material payload and m_Name remain byte-identical.
 No current or future synchronization option is authorized.
 
 A subsequent PARTIAL production checkpoint repairs StagingTree portable
-validation/collision rejection; owner naming integration remains unimplemented.
+validation/collision rejection. The following production checkpoint connects
+persistent occurrence usage and the Hybrid allocator to static final-state export;
+production Blender cases 1–7 PASS. Fresh Unity production naming and remaining
+model/skin routes remain unverified; the research results below are historical.
 The case-only acceptance described below is a historical baseline observation.
 See the Current State report for actual current verification.
 

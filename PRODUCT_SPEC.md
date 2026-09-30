@@ -97,7 +97,11 @@ PRODUCT POLICY = NO-GO: human-readable naming must never modify Material
 serialized bytes or `m_Name`, automatically or through a synchronization option.
 Only output pathname/filename may change; GUID and original .meta are retained. Collision naming
 must be deterministic and portable, including casefold/path constraints.
-This is a constrained basic specification, **not implemented naming behavior**.
+Hybrid naming is implemented in the static final-state export route, with
+persistent exact occurrence Material usage, Shared/Unassigned and symmetric
+portable collisions. Legacy/no-evidence Materials remain Unassigned. Other
+model/skin export routes and fresh Unity production naming validation remain
+outside the verified checkpoint; see Current State. No m_Name synchronization.
 See [the measured feasibility study](docs/VAPB_HUMAN_READABLE_EXPORT_NAMING_FEASIBILITY_20260930.md).
 
 Materialの表示はBlender上の近似でよい。Import時はUnity Asset identity、Renderer slot binding、Material GUID、Texture GUIDをsource evidenceとして正しく解釈する。Export時はBlender完成形のMaterial slot構成・face割当を正本とし、VAPB Export ID / Recipeを介して対応するUnity Material asset/stateを新しいRendererへ再装着する。元Unity Rendererのslot構成を、ユーザーが意図的に変更したBlender完成形より優先しない。

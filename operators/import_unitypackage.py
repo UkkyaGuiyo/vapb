@@ -1708,6 +1708,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                                 owner['_vapb_semantic_owner_id'] = semantic_owner_id(record)
                                 owner['_vapb_root_context_id'] = root_context_id
                     prefab_root['_vapb_renderer_occurrences'] = json.dumps(projection.to_dict(), sort_keys=True)
+                    from ..blender.material_owner_usage import capture_owner_usage
+                    prefab_root['_vapb_material_owner_label'] = prefab.display_name
+                    capture_owner_usage(projection.records, prefab.display_name, bpy.data.materials)
                     for member_object in member_objects:
                         member_object['_vapb_root_context_id'] = root_context_id
                         member_object['_vapb_native_object_id'] = str(uuid4())
@@ -1899,6 +1902,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             # every selected provider has created its materials and images.
             self._set_phase(context, "Resolving dependencies")
             dependency_counts = self._performance.measure("dependency_resolution", resolve_after_import, scene)
+            from ..blender.material_owner_usage import capture_scene_owner_usage
+            capture_scene_owner_usage(scene.objects, bpy.data.materials)
             package_kind = "MIXED_PACKAGE" if fbx_paths and (material_library or supported_asset_count > len(fbx_paths)) else "GEOMETRY_PACKAGE" if fbx_paths else "ASSET_PROVIDER_PACKAGE"
             current_registry = load_scene_registry(scene)
             current_package = current_registry.packages.get(package_key.source_package_id)

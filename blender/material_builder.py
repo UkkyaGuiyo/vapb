@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -126,6 +127,7 @@ def _save_metadata(material, data: UnityMaterialData, normalized: NormalizedMate
     if source_package_id:
         material["unity_source_package_id"] = source_package_id
     material["unity_material_name"] = data.name
+    material["_vapb_source_material_sha256"] = hashlib.sha256(data.path.read_bytes()).hexdigest()
     material["unity_shader_guid"] = data.shader_guid
     material["unity_shader_name"] = normalized.shader_name or data.shader_name
     material["unity_shader_family"] = normalized.family
