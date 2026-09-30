@@ -6,9 +6,8 @@ from pathlib import Path
 import sys
 
 
-def main():
+def raw_skin_weights(folder):
     from io_scene_fbx import parse_fbx
-    folder, output = map(Path,sys.argv[sys.argv.index('--')+1:])
     path=folder/'D1.fbx';root,_=parse_fbx.parse(str(path),use_namedtuple=True)
     nodes={n.props[0]:n for n in next(n for n in root.elems if n.id==b'Objects').elems}
     edges={}
@@ -49,6 +48,12 @@ def main():
         for cp,w in zip(ids,weights):
             if cp not in cp_map:raise ValueError('RAW_CP_UNPROVEN')
             raw[(cp_map[cp],label)]=float(w)
+    return raw
+
+
+def main():
+    folder, output = map(Path,sys.argv[sys.argv.index('--')+1:])
+    path=folder/'D1.fbx';raw=raw_skin_weights(folder)
     result=[]
     for name in ['BeforePolicy','D1','RepeatedPolicy']:
         capture=json.loads((folder/(name+'.json')).read_text())

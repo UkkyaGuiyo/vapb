@@ -1,5 +1,34 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Skin numeric representation investigation — 2026-09-30
+
+**GOAL_VERIFIED for bounded numeric characterization; raw Skin equality remains RED.**
+Starting remote `36910d5f8a4a496e7a547a248a2fd7a95730c8c5`.
+
+- Public 20 controls / 60 CP / 183 influences: B0 authored = B1 disposable
+  staging = raw FBX doubles. Actual Unity/reimport retain every positive influence.
+- CASE C Unity renormalization: descending float32 sum/division followed by
+  descending float32 sum/reciprocal multiplication exactly predicts observed bits.
+  This is an output-equivalent model, not a claim about internal Unity code.
+- Exact model: public 183/183; same two private bounded cases 626+6010/6636.
+  B0->F changed 0; raw F->U changed 54+948; unexplained 0; raw max error
+  1.1920928955078125e-7, max 2/4 ULP; predicted/native max 0 ULP.
+- Actual Blender normalization and Unity BakeMesh(true) deformation measured:
+  normalized FBX-vs-U CPU position max ~4.27824e-8m; U CPU-vs-Bake position
+  max ~1.40818e-7m; Blender-vs-Unity displacement max ~1.19209e-7m.
+  These finite controls do not prove zero error or harmlessness for arbitrary poses.
+- Diagnostic comparator stores AUTHORED/FBX_CANONICAL/UNITY_EXPECTED/UNITY_ACTUAL;
+  one-ULP deviation is RED, unsupported revision/context fails closed. No epsilon,
+  no production mutation, no override of legacy raw Skin RED.
+- Python 496 PASS; compileall PASS; current actual Skin Package/fresh Unity,
+  tiny-weight retention, Bone/Material/Finalizer/repeated Apply/invalid mapping,
+  triangle staging/Skin/Shape/source preservation/failure rollback/save-reopen PASS.
+  First/repeated numeric import PASS; private raw evidence remains external.
+
+[Focused numeric evidence](VAPB_SKIN_WEIGHT_NORMALIZATION_20260930.md).
+**Exact next action:** connect bounded bitwise numeric diagnostics to the existing
+full Skin parity report while retaining raw RED and deformation measurements.
+
 ## Small Bone Weight lifecycle repair — 2026-09-30
 
 **GOAL_VERIFIED for measured small positive influence retention; full real Skin
