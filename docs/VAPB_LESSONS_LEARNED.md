@@ -621,7 +621,8 @@ gateで実VRC由来Materialを拒否し、Texture providerもMaterialと同一Pa
 `.mat`のnon-null serialized referenceから列挙し、Package provenanceで一意の
 providerを選ぶ。未知propertyも役割を推測せず依存として保持する。Shader依存は
 Textureと分けて判定する。parserの参照取得範囲とmalformed入力拒否も検証し、
-解析失敗をnullへ変換しない。証拠不足なら完全復元を宣言しない。
+解析失敗をnullへ変換しない。Exportにはopt-inの`strict_references`を使用し、
+Preview用の既定解析と分離する。証拠不足なら完全復元を宣言しない。
 
 **適用範囲:** 新しいstatic final-state Material帰還の設計境界。実データの
 cross-package復元や任意Shaderのfresh Unity成功は未証明。

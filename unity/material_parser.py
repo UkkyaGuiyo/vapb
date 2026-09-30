@@ -12,14 +12,16 @@ from .yaml_parser import parse_scalar
 
 
 _PROPERTY_HEADER_RE = re.compile(r"(?m)^[ \t]*-[ \t]*(_[A-Za-z0-9_]+):(?:[ \t]*(.*?))?[ \t]*$")
+_EXPORT_PROPERTY_HEADER_RE = re.compile(r'''(?m)^[ \t]*-[ \t]*("(?:[^"\\\n]|\\.)*"|'(?:[^'\n]|'')*'|[^:\n]+):(?:[ \t]*(.*?))?[ \t]*$''')
 
 
-def _property_blocks(text: str) -> list[tuple[str, str, str]]:
-    matches = list(_PROPERTY_HEADER_RE.finditer(text))
+def _property_blocks(text: str, all_names: bool = False) -> list[tuple[str, str, str]]:
+    matches = list((_EXPORT_PROPERTY_HEADER_RE if all_names else _PROPERTY_HEADER_RE).finditer(text))
     blocks: list[tuple[str, str, str]] = []
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
-        blocks.append((match.group(1), match.group(2) or "", text[match.end():end]))
+        name = str(parse_scalar(match.group(1))) if all_names else match.group(1)
+        blocks.append((name, match.group(2) or "", text[match.end():end]))
     return blocks
 
 
@@ -82,9 +84,32 @@ def _unity_path(path: Path, asset_db: AssetDatabase) -> str:
         return str(path).replace("\\", "/")
 
 
-def parse_material(path: Path, asset_db: AssetDatabase) -> UnityMaterialData:
+def _strict_texture_reference(body: str) -> dict[str, Any]:
+    matches = re.findall(r"(?m)^[ \t]*m_Texture[ \t]*:[ \t]*\{([^{}\n]*)\}[ \t]*$", body)
+    if len(matches) != 1:
+        raise ValueError("Material texture reference is not one inline mapping")
+    fields: dict[str, str] = {}
+    for entry in matches[0].split(","):
+        key, separator, value = entry.partition(":")
+        key = key.strip()
+        if not separator or key in fields:
+            raise ValueError("Material texture reference has invalid or duplicate fields")
+        fields[key] = value.strip()
+    raw_id = fields.get("fileID", "")
+    if not re.fullmatch(r"-?\d+", raw_id):
+        raise ValueError("Material texture reference has invalid fileID")
+    file_id = int(raw_id)
+    if not -(1 << 63) <= file_id < (1 << 63):
+        raise ValueError("Material texture fileID is outside signed 64-bit range")
+    guid = fields.get("guid", "")
+    if (file_id != 0 or guid) and not re.fullmatch(r"[0-9a-fA-F]{32}", guid):
+        raise ValueError("Material texture reference has invalid GUID")
+    return {"fileID": file_id, "guid": guid.lower()}
+
+
+def parse_material(path: Path, asset_db: AssetDatabase, *, strict_references: bool = False) -> UnityMaterialData:
     path = Path(path)
-    text = path.read_text(encoding="utf-8-sig", errors="replace")
+    text = path.read_text(encoding="utf-8-sig", errors="strict" if strict_references else "replace")
     name_match = re.search(r"(?m)^\s*m_Name:\s*(.*?)\s*$", text)
     name = (name_match.group(1).strip().strip('"\'') if name_match else path.stem) or path.stem
 
@@ -117,9 +142,16 @@ def parse_material(path: Path, asset_db: AssetDatabase) -> UnityMaterialData:
         if keyword not in data.keywords:
             data.keywords.append(keyword)
 
-    for property_name, inline, body in _property_blocks(text):
+    reference_count = 0
+    for property_name, inline, body in _property_blocks(text, all_names=strict_references):
         texture = _inline_map(body, "m_Texture")
-        if texture or "m_Texture:" in body:
+        has_reference = bool(re.search(r"(?m)^[ \t]*m_Texture[ \t]*:", body)) if strict_references else "m_Texture:" in body
+        if texture or has_reference:
+            if strict_references:
+                if property_name in data.textures:
+                    raise ValueError("Material has duplicate texture properties")
+                texture = _strict_texture_reference(body)
+            reference_count += 1
             try:
                 file_id = int(texture.get("fileID", 0))
             except (TypeError, ValueError):
@@ -136,6 +168,9 @@ def parse_material(path: Path, asset_db: AssetDatabase) -> UnityMaterialData:
         color = _parse_color(body, inline)
         if color is not None:
             data.colors[property_name] = color
+
+    if strict_references and reference_count != len(re.findall(r"(?m)^[ \t]*m_Texture[ \t]*:", text)):
+        raise ValueError("Material texture reference coverage is incomplete")
 
     if "_Glossiness" in data.floats:
         data.floats.setdefault("smoothness", data.floats["_Glossiness"])

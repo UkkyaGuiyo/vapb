@@ -14,6 +14,8 @@ from .package_writer import UnityPackageWriter
 from .raw_assets import RawAssetRepository
 from .staging import StagedUnityAsset, StagingTree
 from ..blender.identity_registry import load_scene_registry
+from ..unity.asset_database import AssetDatabase
+from ..unity.material_parser import parse_material
 
 
 def _sha(payload: bytes) -> str:
@@ -35,18 +37,12 @@ def _material_texture_guids(payload: bytes) -> set[str]:
     text = payload.decode("utf-8-sig")
     if not re.search(r"(?m)^\s*m_Shader:\s*\{fileID:\s*46,\s*guid:\s*0000000000000000f000000000000000", text):
         raise ValueError("only the synthetic built-in Standard shader is supported")
-    result = set()
-    for reference in re.findall(r"m_Texture:\s*\{([^{}]*)\}", text):
-        file_id = re.search(r"\bfileID:\s*(-?\d+)", reference)
-        if file_id is None:
-            raise ValueError("Material texture reference has no fileID")
-        if int(file_id.group(1)) == 0:
-            continue
-        guid = re.search(r"\bguid:\s*([0-9a-fA-F]{32})\b", reference)
-        if guid is None:
-            raise ValueError("Material texture reference has no GUID")
-        result.add(guid.group(1).lower())
-    return result
+    with tempfile.TemporaryDirectory(prefix="vapb_material_refs_") as temporary:
+        root = Path(temporary)
+        path = root / "Material.mat"
+        path.write_bytes(payload)
+        material = parse_material(path, AssetDatabase(root), strict_references=True)
+    return {reference.guid for reference in material.textures.values() if reference.file_id != 0}
 
 
 def _source_assets(scene, package_id: str):

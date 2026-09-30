@@ -2,6 +2,52 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Limited Material return: strict reference collection — 2026-09-30
+
+**Status: PARTIAL.** The reference-safety step after diagnostic checkpoint
+`9a284b238ebce2cc6eb14a5beaa9b7b7ee8f41cc` is implemented. `parse_material`
+has an opt-in `strict_references` mode for export: it preserves unknown property
+uses independently of preview roles, preserves leading-zero numeric GUIDs,
+rejects malformed/duplicate reference fields, duplicate properties and invalid
+signed fileIDs, and checks serialized reference coverage. Ordinary preview
+Import keeps its existing default parsing behavior. The final-state exporter
+now uses this strict parser after its existing Standard gate. Asset deduplication
+does not remove separate property uses from the parsed source model.
+
+The previously RED probe moved into normal discovery as
+`tests/test_material_export_reference_safety.py`, with 12 tests including direct
+export-collector coverage. Focused tests pass; full Python discovery is
+**414 PASS, 0 FAIL, 0 ERROR**. compileall and diff whitespace checks pass.
+Two isolated mutations removed broad property recognition and strict fileID
+validation respectively; the corresponding tests detected both mutations.
+Blender 5.2.1 public synthetic
+normal Import/new UV Cube/Export and save/reopen/re-export both passed with
+process exit 0; register/unregister also completed. This verifies that the
+existing Standard route still runs, not the requested non-Standard or private
+fresh Unity restoration. Shader gate and same-Package provider limitation
+remain; no private output or new fresh Unity result is claimed.
+
+A local public-synthetic Blender experiment separated the two remaining
+boundaries. Material and Texture were placed in different generated Packages
+and both imported normally. With an intentionally unresolved non-Standard
+Shader reference, export stopped at the Standard gate. With the original
+built-in Standard reference, export reached and rejected the same-Package
+Texture lookup **despite a matching Image provider already imported from the
+second Package**. Both expected refusals were asserted; Blender process exit
+was 0 and neither wrote an output. This proves independent boundaries, not
+successful non-Standard export or a complete Shader framework fixture.
+
+The earlier full-suite attempt during the unstaged test rename found one hygiene
+test error because Git still listed the removed diagnostic filename. It was an
+index/worktree mismatch, not a parser assertion failure. After staging the rename,
+the full suite passed. Runtime logs and private raw evidence remain local.
+No new ZIP/prerelease is published for this partial implementation: non-Standard
+public/private E2E and exact-ZIP fresh Unity validation are incomplete.
+
+**Exact next action:** create a public non-Standard Material/Texture split-package
+fixture that independently reproduces the retained Shader gate and provider
+boundary, then resolve Shader/framework evidence before broadening export.
+
 ## Limited real Material return mission: reference diagnosis — 2026-09-30
 
 **Status: PARTIAL; no production fix or new E2E success.** The user's latest
@@ -29,8 +75,8 @@ parser as an unchecked export closure collector:
   valid serialized reference under `FutureTexture` is omitted.
 - A non-integer Texture fileID becomes zero instead of raising an error.
 
-The public diagnostic probe is deliberately outside normal `test_*.py`
-discovery. From the repository parent run:
+At diagnostic checkpoint `9a284b2`, the public probe was deliberately outside
+normal `test_*.py` discovery. From the repository parent its command was:
 
 ```text
 python -m unitypackage_blender_importer.tests.material_export_reference_safety_probe
@@ -48,7 +94,7 @@ name, GUID table, or absolute machine path is included.
 
 No Blender/Unity E2E, source-bound static/Skin regression, ZIP installation,
 or prerelease validation was repeated for this diagnostic-only checkpoint.
-**Exact next action:** implement a strict export reference collector with these
+**Next action at that checkpoint:** implement a strict export reference collector with these
 two RED requirements, retaining every serialized use independently of preview
 roles and rejecting malformed references before dependency resolution. Then
 prove the non-Standard gate and cross-package provider cases independently;
