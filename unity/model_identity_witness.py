@@ -31,6 +31,7 @@ class ModelAssetRevision:
     meta_sha256: str
     fbx_index: RawFbxSemanticIndex
     skin_bone_uids: Mapping[int, frozenset[str]] | None = None
+    shape_channel_uids: Mapping[int, Mapping[int, int]] | None = None
 
 
 @dataclass(frozen=True)
@@ -46,6 +47,7 @@ class ModelIdentityRow:
     bone_model_uids: tuple[int, ...] = ()
     root_bone_model_uid: int | None = None
     source_bone_world_matrices: tuple[tuple[float, ...], ...] = ()
+    shape_channels: tuple[tuple[int, int, int], ...] = ()
 
 
 class ModelWitnessIndex:
@@ -89,13 +91,17 @@ def validate_model_witness(document: object, package_sha256: str,
     """Reject the whole sidecar if any identity or source revision is unclear."""
     root = _fields(document, {"schema_version", "source_unitypackage_sha256",
                               "unity_version", "source_validation", "assets"}, "witness")
-    if root["schema_version"] not in ("vapb-model-identity-witness-v1", "vapb-model-identity-witness-v2"):
+    if root["schema_version"] not in ("vapb-model-identity-witness-v1", "vapb-model-identity-witness-v2", "vapb-model-identity-witness-v3"):
         raise ModelWitnessError("Unsupported witness schema")
-    validation = _fields(root["source_validation"],
-                         {"probe_pass", "original_revision_equivalent"},
+    validation_fields = {"probe_pass", "original_revision_equivalent"}
+    if root['schema_version'].endswith('v3'):
+        validation_fields.add('shape_channel_probe_pass')
+    validation = _fields(root["source_validation"], validation_fields,
                          "source validation")
     if validation["probe_pass"] is not True or validation["original_revision_equivalent"] is not True:
         raise ModelWitnessError("Unity source witness did not pass revision checks")
+    if root['schema_version'].endswith('v3') and validation['shape_channel_probe_pass'] is not True:
+        raise ModelWitnessError('CHANNEL_IDENTITY_UNPROVEN')
     expected_package = _hex(package_sha256, _SHA, "source package SHA256")
     if _hex(root["source_unitypackage_sha256"], _SHA, "witness package SHA256") != expected_package:
         raise ModelWitnessError("Source package revision mismatch")
@@ -143,8 +149,10 @@ def validate_model_witness(document: object, package_sha256: str,
                 raise ModelWitnessError("Witness model has no Renderer")
             for renderer_value in renderers:
                 fields = {"class_id", "renderer_local_id", "mesh_local_id"}
-                if root['schema_version'].endswith('v2') and isinstance(renderer_value, dict) and 'skin' in renderer_value:
+                if not root['schema_version'].endswith('v1') and isinstance(renderer_value, dict) and 'skin' in renderer_value:
                     fields.add('skin')
+                if root['schema_version'].endswith('v3') and isinstance(renderer_value, dict) and 'shape_channels' in renderer_value:
+                    fields.add('shape_channels')
                 renderer = _fields(renderer_value, fields, "Renderer")
                 class_id = renderer["class_id"]
                 if type(class_id) is not int or class_id not in (23, 137):
@@ -186,8 +194,27 @@ def validate_model_witness(document: object, package_sha256: str,
                             if abs(a*(e*i-f*h)-b*(d*i-f*g)+c*(d*h-e*g)) < 1e-12:
                                 raise ModelWitnessError('Singular source Bone frame')
                         source_frames = tuple(tuple(float(v) for v in frame) for frame in frames)
+                shape_channels = []
+                if 'shape_channels' in renderer:
+                    values = renderer['shape_channels']
+                    if not isinstance(values, list) or revision.shape_channel_uids is None:
+                        raise ModelWitnessError('CHANNEL_IDENTITY_UNPROVEN')
+                    graph = revision.shape_channel_uids.get(geometry_uid, {})
+                    for value in values:
+                        channel = _fields(value, {'unity_channel_index', 'channel_uid', 'shape_uid', 'frame_weight'}, 'Shape channel')
+                        index = channel['unity_channel_index']
+                        uid = _signed(channel['channel_uid'], 'Shape channel UID')
+                        shape_uid = _signed(channel['shape_uid'], 'Shape UID')
+                        if (type(index) is not int or index < 0 or channel['frame_weight'] != 100.0
+                                or graph.get(uid) != shape_uid):
+                            raise ModelWitnessError('CHANNEL_IDENTITY_UNPROVEN')
+                        shape_channels.append((index, uid, shape_uid))
+                    if (sorted(index for index, _, _ in shape_channels) != list(range(len(graph)))
+                            or len({uid for _, uid, _ in shape_channels}) != len(graph)):
+                        raise ModelWitnessError('CHANNEL_IDENTITY_UNPROVEN')
                 rows.append(ModelIdentityRow(guid, model_uid, geometry_uid, transform_id,
-                                             owner_id, class_id, renderer_id, mesh_id, bone_uids, root_uid, source_frames))
+                                             owner_id, class_id, renderer_id, mesh_id, bone_uids, root_uid, source_frames,
+                                             tuple(shape_channels)))
     return ModelWitnessIndex(rows, {
         asset["asset_guid"].lower(): asset["source_fbx_sha256"].lower()
         for asset in assets
@@ -211,16 +238,22 @@ def load_model_witness(path: Path, package_sha256: str, asset_db) -> ModelWitnes
             if not entry.path.is_file() or not meta.is_file():
                 raise ModelWitnessError("Witness source FBX or importer meta is unavailable")
             skin_membership = {}
-            if document.get('schema_version') == 'vapb-model-identity-witness-v2':
+            if document.get('schema_version') in ('vapb-model-identity-witness-v2', 'vapb-model-identity-witness-v3'):
                 from ..blender.fbx_witness import source_skin_bone_uids
                 for model in asset['models']:
                     if any('skin' in renderer for renderer in model['renderers']):
                         skin_membership[int(model['model_uid'])] = source_skin_bone_uids(
                             entry.path, model['model_uid'], model['geometry_uid'])
+            shapes = None
+            if document.get('schema_version') == 'vapb-model-identity-witness-v3':
+                from ..blender.fbx_witness import source_shape_channel_uids
+                shapes = {int(model['geometry_uid']): source_shape_channel_uids(entry.path, model['geometry_uid'])
+                          for model in asset['models'] if any('shape_channels' in renderer for renderer in model['renderers'])}
             revisions[guid] = ModelAssetRevision(
                 source_sha256(entry.path), source_sha256(meta),
                 RawFbxSemanticIndex.from_file(entry.path),
                 skin_membership,
+                shapes,
             )
         return validate_model_witness(document, package_sha256, revisions)
     except (OSError, UnicodeError, ValueError, TypeError, KeyError, AttributeError) as exc:

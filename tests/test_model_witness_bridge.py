@@ -107,6 +107,21 @@ def root(current):
 
 
 class ModelWitnessBridgeTests(unittest.TestCase):
+    def test_repeated_mesh_requires_explicit_renderer_creation_provenance(self):
+        first, second = record(), record()
+        second['source_key']['renderer_file_id'] = -23
+        second['owner']['owner_game_object_id'] = -12
+        second['occurrence_id'] = occurrence_identity(second)
+        a, b = native(realization='a'), native(realization='b')
+        a['_vapb_renderer_occurrence_id'] = first['occurrence_id']
+        b['_vapb_renderer_occurrence_id'] = second['occurrence_id']
+        bindings, issues = plan_witness_realizations([first, second], [b, a], witness())
+        self.assertEqual(issues, [])
+        self.assertEqual([(r['occurrence_id'], obj['_vapb_fbx_realization_id']) for r, obj in bindings],
+                         [(first['occurrence_id'], 'a'), (second['occurrence_id'], 'b')])
+        b['_vapb_renderer_occurrence_id'] = 'wrong'
+        self.assertTrue(plan_witness_realizations([first, second], [a, b], witness())[1])
+
     def test_skin_plan_uses_receipts_and_rejects_wrong_parent_root_scope(self):
         from unitypackage_blender_importer.blender.fbx_receipt import make_bone_receipt, RECEIPT_VERSION
         from unitypackage_blender_importer.unity.model_identity_witness import ModelWitnessIndex

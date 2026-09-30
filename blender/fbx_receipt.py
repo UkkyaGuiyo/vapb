@@ -9,6 +9,9 @@ from __future__ import annotations
 
 import hashlib
 import inspect
+import json
+import math
+import struct
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,6 +19,78 @@ from typing import Any, Callable
 
 
 RECEIPT_VERSION = "vapb_fbx_realization_receipt_v1"
+
+
+def _shape_fingerprint(key, basis=None):
+    values = bytearray()
+    if basis is not None and len(key.data) != len(basis.data):
+        raise ValueError('MISSING_KEYBLOCK')
+    for index, point in enumerate(key.data):
+        xyz = [float(point.co[axis]) - (float(basis.data[index].co[axis]) if basis else 0)
+               for axis in range(3)]
+        if not all(math.isfinite(value) for value in xyz):
+            raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+        values.extend(struct.pack('<3f', *xyz))
+    return hashlib.sha256(values).hexdigest()
+
+
+def persist_shape_receipts(mesh, sha256, geometry_uid, captures):
+    """Bind the official importer's returned channel UID to its actual KeyBlock.
+
+    KeyBlocks do not support ID properties. Store import-captured handles as
+    Key-local indices with immutable delta/basis corroboration; labels are absent.
+    A reorder/edit invalidates this import proof rather than rebinding by search.
+    """
+    keys = mesh.shape_keys
+    blocks = list(keys.key_blocks)
+    if len(captures) != len(blocks) - 1:
+        raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+    rows = []
+    for channel_uid, shape_uid, key in captures:
+        index = blocks.index(key)
+        if index == 0 or key.relative_key != blocks[0]:
+            raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+        rows.append(dict(channel_uid=int(channel_uid), shape_uid=int(shape_uid), key_index=index,
+                         delta_sha256=_shape_fingerprint(key, blocks[0])))
+    if len({row['channel_uid'] for row in rows}) != len(rows) or len({row['key_index'] for row in rows}) != len(rows):
+        raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+    table = dict(schema='vapb-fbx-shape-receipt-1', fbx_sha256=sha256,
+                 geometry_uid=int(geometry_uid), basis_sha256=_shape_fingerprint(blocks[0]), channels=rows)
+    payload = json.dumps(table, sort_keys=True)
+    keys['_vapb_fbx_shape_receipts'] = payload
+    keys['_vapb_fbx_shape_receipt_sha256'] = hashlib.sha256(payload.encode()).hexdigest()
+
+
+def validate_shape_receipts(mesh, sha256, geometry_uid):
+    """Return receipt-selected KeyBlocks or reject; never rematch edited keys."""
+    keys = getattr(mesh, 'shape_keys', None)
+    try:
+        payload = keys['_vapb_fbx_shape_receipts']
+        if hashlib.sha256(payload.encode()).hexdigest() != keys['_vapb_fbx_shape_receipt_sha256']:
+            raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+        table = json.loads(payload)
+        if (table['schema'] != 'vapb-fbx-shape-receipt-1' or table['fbx_sha256'] != sha256
+                or table['geometry_uid'] != int(geometry_uid)):
+            raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+        blocks = list(keys.key_blocks)
+        rows = table['channels']
+        if len(blocks) != len(rows) + 1 or _shape_fingerprint(blocks[0]) != table['basis_sha256']:
+            raise ValueError('MISSING_KEYBLOCK')
+        mapped = {}
+        used = set()
+        for row in rows:
+            uid, index = row['channel_uid'], row['key_index']
+            if (type(uid) is not int or not uid or uid in mapped or type(index) is not int
+                    or index <= 0 or index >= len(blocks) or index in used):
+                raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+            key = blocks[index]
+            if key.relative_key != blocks[0] or _shape_fingerprint(key, blocks[0]) != row['delta_sha256']:
+                raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+            mapped[uid] = key
+            used.add(index)
+        return mapped
+    except (KeyError, TypeError, AttributeError, IndexError) as exc:
+        raise ValueError('CHANNEL_IDENTITY_UNPROVEN') from exc
 
 
 def _uid(value: Any) -> int | None:
@@ -261,6 +336,22 @@ def import_with_receipts(
     sha256 = source_sha256(path)
     captures: list[tuple[int, Any]] = []
     bone_captures: dict[int, dict[str, str]] = {}
+    shape_captures = {}
+    original_shapes = getattr(native_importer, 'blen_read_shapes', None)
+    shape_supported = (callable(original_shapes) and tuple(inspect.signature(original_shapes).parameters)
+                       == ('fbx_tmpl', 'fbx_data', 'objects', 'me', 'scene'))
+
+    def shape_hook(fbx_tmpl, fbx_data, objects, me, scene):
+        result = original_shapes(fbx_tmpl, fbx_data, objects, me, scene)
+        if result:
+            rows = []
+            for uid, keys in result.items():
+                source = [row for row in fbx_data if row[0] == uid]
+                if len(keys) != 1 or len(source) != 1 or len(source[0][3]) != 1:
+                    continue  # Progressive shapes require independent support.
+                rows.append((uid, source[0][1].props[0], keys[0]))
+            shape_captures[id(me)] = rows
+        return result
 
     def hook(self: Any, fbx_tmpl: Any, settings: Any) -> Any:
         result = original(self, fbx_tmpl, settings)
@@ -292,12 +383,16 @@ def import_with_receipts(
 
     try:
         helper_type.build_node_obj = hook
+        if shape_supported:
+            native_importer.blen_read_shapes = shape_hook
         if bone_supported:
             helper_type.build_skeleton = bone_hook
             helper_type.set_pose_matrix_and_custom_props = pose_hook
         import_call()
     finally:
         helper_type.build_node_obj = original
+        if shape_supported:
+            native_importer.blen_read_shapes = original_shapes
         if bone_supported:
             helper_type.build_skeleton = original_bone
             helper_type.set_pose_matrix_and_custom_props = original_pose
@@ -309,5 +404,7 @@ def import_with_receipts(
             continue
         receipt = make_receipt(model_uid, geometry_uid, source_asset_guid, sha256)
         persist_receipt(obj, receipt)
+        if getattr(obj, 'type', None) == 'MESH' and id(obj.data) in shape_captures:
+            persist_shape_receipts(obj.data, sha256, geometry_uid, shape_captures[id(obj.data)])
         receipts.append(receipt)
     return receipts

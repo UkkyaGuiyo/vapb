@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import hashlib
 import json
+import math
 import re
 from typing import Callable, Sequence
 
@@ -293,6 +294,10 @@ def project_occurrences(
             }
             if renderer.class_id == 137:
                 record["skin"] = _skin_projection(prefab, renderer)
+                weights = renderer.data.get('m_BlendShapeWeights')
+                record['blend_shape_weights'] = ([float(value) for value in weights]
+                    if isinstance(weights, list) and all(type(value) in (int, float) and math.isfinite(value) for value in weights)
+                    else None)
             record["occurrence_id"] = occurrence_identity(record)
             records.append(record)
         for document in prefab.documents:

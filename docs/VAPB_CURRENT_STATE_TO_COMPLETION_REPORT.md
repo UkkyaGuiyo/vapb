@@ -1,5 +1,52 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Geometry / Shape identity checkpoint — 2026-09-30
+
+**SHAPE CHANNEL / OCCURRENCE WEIGHTS: proven in the measured direct scope.**
+**GEOMETRY: still RED; this checkpoint is not a stop condition.**
+
+- Optional exact-revision witness v3 bridges Unity Mesh/channel slots to raw
+  FBX Geometry / BlendShapeChannel / Shape UIDs. Original/no-op/UID-marked/
+  restored Unity controls preserve exact Mesh identity, base geometry and each
+  channel frame signature. The installed native importer returns actual
+  KeyBlock handles; captured UID receipts persist on the Key datablock and
+  validate source, basis, deltas and receipt integrity without name lookup.
+- Public two-Renderer fixture shares one source Mesh but has distinct serialized
+  weights. Normal VAPB Import now creates occurrence-scoped realizations and
+  copies Mesh/Key data only when changing shared state. Source-cache defaults
+  remain unchanged. Public hierarchy **38 EXACT**, geometry **2 EXACT**, and
+  Shape weights **6 EXACT**. Nine actual corruption controls reject false PASS;
+  Object/Bone/KeyBlock rename, save and reopen remain GREEN.
+- Public independent Unity control proves truncated serialized arrays `[25]`
+  and `[]` become `[25,0,0]` and `[0,0,0]`, even with source defaults
+  `[100,100,100]`. Runtime padded-array import is not separately claimed here.
+- Representative private source: **34 Meshes / 11 shaped Meshes / 171 channels**.
+  All independently observed frames are single-frame weight 100. Normal fresh
+  Import and all-Object/all-Bone/all-KeyBlock rename/save/reopen each yield Shape
+  **171 EXACT / GREEN** and hierarchy **1,274 EXACT / GREEN**. Source-cache
+  channel defaults independently match Unity, with zero changes/mismatches.
+- Geometry remains **14 EXACT / 20 GEOMETRY_MISMATCH** before and after the Shape
+  fix. Two previously RED Skins change evaluated corners but remain RED; eighteen
+  remain unchanged. No formerly GREEN Skin regresses. Shapes affect geometry but
+  do not resolve this measured residual. Overall comparator remains RED.
+- Python **467 PASS**, compileall PASS; Blender integration/register/unregister,
+  Bone receipts, Transform and nested-instance creation/reopen PASS. Final
+  bounded scope review PASS. A new missing/empty channel-mapping negative test
+  catches an independent-comparator false PASS; complete oracle channel coverage
+  is now required. One verification invocation passed binary FBX where JSON was
+  required: exit 1; corrected arguments passed all nine actual controls.
+- Nested occurrence Shape state, progressive/multiple frame channels and edited
+  Key deltas are not newly proven. Invalid or stale proof does not authorize a
+  guessed channel fallback. Unity remains optional; no Unity-derived geometry
+  is copied into Blender. No private raw evidence/identity/path is tracked.
+
+**Exact next automatic action:** independently bridge FBX control-point identity
+to Unity triangle vertices with a non-interfering public diagnostic control;
+use it to isolate the remaining nonplanar Geometry RED before any production
+tessellation change. Broad component restoration remains outside this mission.
+
+Earlier next-action sections are historical checkpoints.
+
 ## Hierarchy Parity acceptance closure — 2026-09-30
 
 **HIERARCHY_PARITY: GOAL_VERIFIED for the measured supported scope.**

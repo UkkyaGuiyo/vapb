@@ -7,6 +7,7 @@ projection; callers must not apply a row with an issue.
 from __future__ import annotations
 
 import json
+import math
 
 from ..unity.occurrence_projection import occurrence_identity
 from .fbx_receipt import RECEIPT_VERSION
@@ -78,6 +79,8 @@ def plan_witness_realizations(records, objects, witness):
                           and str(obj.get("_vapb_fbx_model_uid", "")) == str(row.model_uid)
                           and str(obj.get("_vapb_fbx_geometry_uid", "")) == str(row.geometry_uid)
                           and _edge_path(obj) == path
+                          and not obj.get('_vapb_technical_skin_template')
+                          and obj.get('_vapb_renderer_occurrence_id', occurrence) == occurrence
                           and obj.get("_vapb_fbx_realization_id")]
             if not candidates:
                 reject("NATIVE_MISSING")
@@ -98,6 +101,104 @@ def plan_witness_realizations(records, objects, witness):
             issues.append({"occurrence_id": record["occurrence_id"],
                            "code": "NATIVE_AMBIGUOUS"})
     return unique, issues
+
+
+def realize_repeated_shape_occurrences(records, objects, witness, collection):
+    """Create distinct Objects only for proven direct shared-Mesh weight states.
+
+    The existing aggregate member is a receipt-proven template, not a Renderer
+    occurrence. Fresh Object creation is stamped with its serialized occurrence;
+    Mesh/Key data remains shared until differing weights require a copy.
+    """
+    from collections import defaultdict
+    from .fbx_receipt import copy_with_receipt, validate_shape_receipts
+    grouped = defaultdict(list)
+    for record in records:
+        if (record.get('source_key', {}).get('source_kind') == 'PREFAB_LOCAL'
+                and not record['instance_edge_path'] and record.get('skin', {}).get('status') == 'EXACT'
+                and isinstance(record.get('blend_shape_weights'), list)):
+            grouped[(record['mesh']['mesh_guid'], record['mesh']['mesh_file_id'])].append(record)
+    result = list(objects)
+    for (guid, mesh_id), group in grouped.items():
+        row = witness.mesh(guid, mesh_id)
+        if (len(group) < 2 or row is None or not row.shape_channels
+                or len({tuple(r['blend_shape_weights']) for r in group}) < 2):
+            continue
+        candidates = [obj for obj in objects if matches_witnessed_source(obj, guid, witness.source_shas[guid],
+            {(row.model_uid, row.geometry_uid)}) and obj.get('_vapb_root_context_id') == group[0]['root_context_id']
+            and _edge_path(obj) == [] and obj.get('_vapb_fbx_source_realization_id')]
+        if len(candidates) != 1:
+            continue  # Ambiguous receipts still reach the existing rejection.
+        template = candidates[0]
+        try:
+            validate_shape_receipts(template.data, witness.source_shas[guid], row.geometry_uid)
+        except ValueError:
+            continue
+        for record in group:
+            if record['occurrence_id'] != occurrence_identity(record):
+                raise ValueError('OCCURRENCE_IDENTITY_MISMATCH')
+            obj = copy_with_receipt(template)
+            obj['_vapb_fbx_source_realization_id'] = template['_vapb_fbx_source_realization_id']
+            obj['_vapb_renderer_occurrence_id'] = record['occurrence_id']
+            collection.objects.link(obj)
+            result.append(obj)
+        template['_vapb_technical_skin_template'] = True
+        template.hide_set(True)
+        template.hide_render = True
+    return result
+
+
+def renderer_shape_weights(values, count):
+    """Serialized missing tail is zero, as independent Unity controls prove.
+
+    An absent/malformed property remains unknown; it never falls back to FBX
+    source-cache values. Only complete validated channel counts establish length.
+    """
+    if (not isinstance(values, list) or len(values) > count
+            or any(type(value) not in (int, float) or not math.isfinite(value) or abs(value) > 1000 for value in values)):
+        raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+    return [float(value) / 100 for value in values] + [0.0] * (count - len(values))
+
+
+def apply_witness_shape_weights(bindings, witness):
+    """Apply only exact direct Renderer arrays after UID receipts prove channels."""
+    from .fbx_receipt import validate_shape_receipts
+    issues = []
+    for record, obj in bindings:
+        row = witness.mesh(record['mesh']['mesh_guid'], record['mesh']['mesh_file_id'])
+        if row is None or not row.shape_channels:
+            if record.get('blend_shape_weights') and any(record['blend_shape_weights']):
+                issues.append(dict(occurrence_id=record['occurrence_id'], code='CHANNEL_IDENTITY_UNPROVEN'))
+            continue
+        try:
+            weights = record.get('blend_shape_weights')
+            if (record['instance_edge_path'] or record['occurrence_id'] != occurrence_identity(record)
+                    or obj.get('_vapb_renderer_occurrence_id') != record['occurrence_id']
+                    or weights is None):
+                raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+            normalized = renderer_shape_weights(weights, len(row.shape_channels))
+            mapped = validate_shape_receipts(obj.data, witness.source_shas[row.asset_guid], row.geometry_uid)
+            receipts = json.loads(obj.data.shape_keys['_vapb_fbx_shape_receipts'])['channels']
+            if {(r['channel_uid'], r['shape_uid']) for r in receipts} != {(uid, shape) for _, uid, shape in row.shape_channels}:
+                raise ValueError('CHANNEL_IDENTITY_UNPROVEN')
+            targets = [(index, uid, normalized[index]) for index, uid, _ in row.shape_channels]
+            if any(abs(mapped[uid].value - value) > 1e-7 for _, uid, value in targets) and obj.data.users > 1:
+                obj.data = obj.data.copy()
+                obj.data['_vapb_fbx_mesh_session_uid'] = str(obj.data.session_uid)
+                obj.data['_vapb_fbx_mesh_copy_evidence'] = 'OBSERVED_MEMBER_SHAPE_COPY'
+                mapped = validate_shape_receipts(obj.data, witness.source_shas[row.asset_guid], row.geometry_uid)
+            for _, uid, value in targets:
+                key = mapped[uid]
+                key.slider_min = min(key.slider_min, value)
+                key.slider_max = max(key.slider_max, value)
+                key.value = value
+                if abs(key.value - value) > 1e-6:
+                    raise ValueError('WEIGHT_VALUE_MISMATCH')
+            obj['_vapb_shape_weight_occurrence_id'] = record['occurrence_id']
+            obj['_vapb_shape_weight_state'] = json.dumps(weights)
+        except (ValueError, KeyError, TypeError) as exc:
+            issues.append(dict(occurrence_id=record['occurrence_id'], code=str(exc)))
+    return issues
 
 
 def plan_witness_skin_carriers(bindings, witness, prefab, semantic_objects):

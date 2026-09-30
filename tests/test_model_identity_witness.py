@@ -45,6 +45,36 @@ def fixture():
     return document, revisions
 
 
+class ShapeChannelWitnessTests(unittest.TestCase):
+    def fixture(self):
+        document, revisions = fixture()
+        document['schema_version'] = 'vapb-model-identity-witness-v3'
+        document['source_validation']['shape_channel_probe_pass'] = True
+        renderer = document['assets'][0]['models'][0]['renderers'][0]
+        renderer['shape_channels'] = [dict(unity_channel_index=i, channel_uid=str(uid), shape_uid=str(shape), frame_weight=100.0)
+                                      for i, (uid, shape) in enumerate(((77, 88), (79, 90)))]
+        return document, revisions
+
+    def test_verified_shape_channels_require_exact_source_graph(self):
+        document, revisions = self.fixture()
+        self.assertTrue('shape_channel_uids' in ModelAssetRevision.__dataclass_fields__, 'CHANNEL_IDENTITY_UNPROVEN')
+        revision = revisions[GUID]
+        revisions[GUID] = ModelAssetRevision(FBX_SHA, META_SHA, revision.fbx_index, shape_channel_uids={202: {77: 88, 79: 90}})
+        row, = validate_model_witness(document, PACKAGE_SHA, revisions).rows
+        self.assertEqual(row.shape_channels, ((0, 77, 88), (1, 79, 90)))
+        for label in ('duplicate_index', 'wrong_uid', 'wrong_shape', 'missing_control', 'wrong_frame'):
+            import copy
+            bad = copy.deepcopy(document)
+            channels = bad['assets'][0]['models'][0]['renderers'][0]['shape_channels']
+            if label == 'duplicate_index': channels[1]['unity_channel_index'] = 0
+            elif label == 'wrong_uid': channels[0]['channel_uid'] = '999'
+            elif label == 'wrong_shape': channels[0]['shape_uid'] = '999'
+            elif label == 'wrong_frame': channels[0]['frame_weight'] = 50.0
+            else: bad['source_validation']['shape_channel_probe_pass'] = False
+            with self.subTest(label=label), self.assertRaises(ModelWitnessError):
+                validate_model_witness(bad, PACKAGE_SHA, revisions)
+
+
 class ModelIdentityWitnessTests(unittest.TestCase):
     def test_v2_skin_uses_authored_slots_and_raw_membership(self):
         document, revisions = fixture()

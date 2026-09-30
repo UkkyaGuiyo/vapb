@@ -89,6 +89,13 @@ class OccurrenceProjectionTests(unittest.TestCase):
         self.assertEqual(ROOT, record["root_asset_guid"])
         self.assertEqual("EXACT", record["material_status"])
 
+    def test_blend_shape_weights_are_renderer_state_and_malformed_values_are_unknown(self):
+        for text, expected in (('  m_BlendShapeWeights:\n  - 25\n  - 0\n  - 75\n', [25.0, 0.0, 75.0]),
+                               ('  m_BlendShapeWeights:\n  - invalid\n', None)):
+            payload = direct().replace('  m_Materials:', text + '  m_Materials:')
+            record = self.project(self.source(ROOT, payload)).records[0]
+            self.assertEqual(record.get('blend_shape_weights'), expected)
+
     def test_direct_local_skin_refs_preserve_signed_transform_ids(self):
         payload = direct().replace("  m_Materials:", "  m_Bones:\n  - {fileID: -101}\n  - {fileID: -102}\n  m_RootBone: {fileID: -101}\n  m_Materials:")
         payload += """--- !u!1 &11

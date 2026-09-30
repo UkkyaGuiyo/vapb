@@ -1733,6 +1733,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             scoped_records = [record for record in projection.records
                                               if record.get('mesh', {}).get('mesh_guid')
                                               in model_witness.source_shas]
+                            from ..blender.model_witness_bridge import realize_repeated_shape_occurrences, apply_witness_shape_weights
+                            member_objects = realize_repeated_shape_occurrences(scoped_records, member_objects, model_witness, member_collection)
                             bindings, bridge_issues = plan_witness_realizations(
                                 scoped_records,
                                 [obj for obj in member_objects if validate_receipt_continuity(obj)],
@@ -1750,6 +1752,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             if not realize_witness_skin_carriers(skin_plans, member_collection, bindings, prefab_object_map, prefab):
                                 projection.issues.append({'code': 'SKIN_POSE_FRAME_UNSUPPORTED',
                                                           'root_context_id': root_context_id})
+                            projection.issues.extend(apply_witness_shape_weights(bindings, model_witness))
                             pending_witness_dependencies.extend(
                                 plan_witness_material_dependencies(bindings, package_key.sha256)
                             )

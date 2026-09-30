@@ -21,6 +21,42 @@ METHODS = {
 }
 
 
+def source_shape_channel_uids(source, geometry_uid):
+    """Exact OO graph for single-frame/100-percent channels; no label matching."""
+    from io_scene_fbx import parse_fbx
+    root, _ = parse_fbx.parse(str(source), use_namedtuple=True)
+    objects = next(n for n in root.elems if n.id == b'Objects')
+    nodes = {n.props[0]: n for n in objects.elems}
+    if len(nodes) != len(objects.elems):
+        raise ValueError('DUPLICATE_FBX_UID')
+    edges = {}
+    for row in next(n for n in root.elems if n.id == b'Connections').elems:
+        if row.id == b'C' and len(row.props) == 3 and row.props[0] == b'OO':
+            edges.setdefault(row.props[2], []).append(row.props[1])
+
+    def kind(uid, element, subtype):
+        n = nodes.get(uid)
+        return n is not None and n.id == element and len(n.props) > 2 and n.props[2] == subtype
+
+    geometry_uid = int(geometry_uid)
+    if not kind(geometry_uid, b'Geometry', b'Mesh'):
+        raise ValueError('SHAPE_GEOMETRY_MISSING')
+    result = {}
+    for blend in edges.get(geometry_uid, []):
+        if not kind(blend, b'Deformer', b'BlendShape'):
+            continue
+        for channel in edges.get(blend, []):
+            if not kind(channel, b'Deformer', b'BlendShapeChannel'):
+                raise ValueError('SHAPE_CHANNEL_GRAPH_UNPROVEN')
+            shapes = [uid for uid in edges.get(channel, []) if kind(uid, b'Geometry', b'Shape')]
+            full = [n.props[0] for n in nodes[channel].elems if n.id == b'FullWeights']
+            if (len(shapes) != 1 or len(full) != 1 or not len(full[0])
+                    or any(value != 100.0 for value in full[0]) or channel in result):
+                raise ValueError('SHAPE_FRAME_UNSUPPORTED')
+            result[channel] = shapes[0]
+    return result
+
+
 def source_export_scale_options(source, scene_unit_scale):
     """Keep the two verified FBX unit conventions without guessing other units."""
     from io_scene_fbx import parse_fbx
