@@ -1,6 +1,27 @@
-# VAPB — UnityPackage / VRChat Avatar ↔ Blender round-trip bridge
+# VAPB — VRChat / VRCアバターのUnityPackageをBlenderで改変するAdd-on
 
-Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.4.0 candidate。Unity Editorを起動せず、UnityPackageを一時フォルダへ安全に復元し、FBXをBlenderへ読み込みます。
+**VAPB (VRC Avatar Package Bridge)** は、VRChat / VRC向けアバター・衣装・小物の `.unitypackage` をBlenderへ直接読み込み、BlenderでMesh・Bone・Weight・Shape Key・UV・Textureなどを編集し、対応範囲の結果をUnityへ戻す作業を支援する無料・オープンソースのBlender Add-onです。
+
+UnityからFBXを書き出してBlenderで編集し、Unityへ戻したあとにMaterialや各種設定を手作業で貼り直す――というアバター改変の往復作業を減らし、**Blender中心でVRChatアバターを改変できるワークフロー**を目標にしています。
+
+## VRC / VRChatアバターをBlenderで改変したい人へ
+
+VAPBは、たとえば次のような用途を対象にしています。
+
+- **VRCアバターのUnityPackageをBlenderで改変したい**
+- **VRChatアバターをBlenderで編集したい**
+- **UnityPackageをBlenderへ直接Importしたい**
+- **Unityでのアバター改変が面倒なので、Blender中心で作業したい**
+- Blenderで編集したMesh・Bone・Weight・Shape Key・Textureなどを、対応範囲でUnityへ戻したい
+- Avatar本体、衣装、Accessoryなど複数のUnityPackageをBlender側で扱いたい
+
+> **Experimental / Alpha:** VAPBは現在開発中です。すべてのVRChatアバター、Prefab、Shader、VRC Componentの完全な往復を保証する段階ではありません。実装済み・検証済み・未検証の範囲は、このREADMEと `PRODUCT_SPEC.md`、`docs/VAPB_CURRENT_STATE_TO_COMPLETION_REPORT.md` に分けて記録しています。
+
+## What VAPB does
+
+VAPB is an experimental **Blender add-on for importing VRChat / VRC avatar UnityPackage files into Blender**, editing supported avatar geometry and assets in Blender, and returning supported results to Unity. It is designed for workflows such as **UnityPackage to Blender**, **VRChat avatar editing in Blender**, and **Blender-centered avatar customization** without manually rebuilding every Unity-side assignment after each edit.
+
+Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.4.0 candidate。通常のImportではUnity Editorを起動せず、UnityPackageを一時フォルダへ安全に復元し、FBXをBlenderへ読み込みます。
 
 Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と、Blender内部引数を受け取るconstructor形式に対応しています。legacy `bpy.ops.import_scene.fbx` は既存のArmature、Weight、Shape Key、Material Slotの挙動を維持するため継続使用します。
 
