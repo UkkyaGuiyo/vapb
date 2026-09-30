@@ -54,6 +54,18 @@ def compare(oracle, snapshot, expected_sha):
     if len({node['gameObject']['globalId'] for node in oracle['nodes']}) != len(oracle['nodes']):
         raise ValueError('Duplicate Unity occurrence identity')
     assets = {path: guid for guid, path in snapshot['assets'].items()}
+    # Unity-generated selected-prefab GO IDs need not be serialized in source.
+    # Bridge only through exact source GO + ordered public instance handles.
+    aliases = defaultdict(list)
+    for node in oracle['nodes']:
+        chain, handles = node.get('sourceChain', []), node.get('instanceHandles', [])
+        if len(chain) == 1 and handles:
+            alias = (*identity(chain[0]), tuple(identity(h) for h in reversed(handles)))
+            aliases[alias].append(identity(node['gameObject']))
+    contexts = {o['metadata']['_vapb_root_context_id'] for o in snapshot['objects']
+                if o['metadata'].get('_vapb_root_context_id')}
+    if len(contexts) > 1:
+        raise ValueError('Multiple root contexts require explicit selected-root scope')
     candidates = defaultdict(list)
     handles = {obj['handle']: obj for obj in snapshot['objects']}
     by_handle = {}
@@ -64,6 +76,21 @@ def compare(oracle, snapshot, expected_sha):
         if meta.get('unity_source_package_id') != 'sha256:' + expected_sha:
             raise ValueError('Semantic source revision mismatch')
         key = (assets.get(meta.get('unity_asset_path')), str(meta.get('unity_prefab_file_id')))
+        if meta.get('unity_source_prefab_guid') and meta.get('_vapb_model_instance_edge_path'):
+            if not meta.get('_vapb_root_context_id'):
+                raise ValueError('Missing nested occurrence root context')
+            edges = json.loads(meta['_vapb_model_instance_edge_path'])
+            if not edges or edges[-1]['source_prefab_guid'] != meta['unity_source_prefab_guid']:
+                raise ValueError('Invalid nested source edge')
+            if any(e['container_package_id'] != 'sha256:'+expected_sha or
+                   e['source_package_id'] != 'sha256:'+expected_sha for e in edges):
+                raise ValueError('Nested source revision scope mismatch')
+            alias = (meta['unity_source_prefab_guid'], str(meta['unity_prefab_file_id']),
+                     tuple((e['container_asset_guid'], str(e['prefab_instance_file_id'])) for e in edges))
+            targets = aliases.get(alias, [])
+            if len(targets) != 1:
+                raise ValueError('Ambiguous/unproven source-to-occurrence bridge')
+            key = targets[0]
         candidates[key].append(obj)
         by_handle[obj['handle']] = key
     transform_to_go = {identity(n['transform']): identity(n['gameObject']) for n in oracle['nodes']}

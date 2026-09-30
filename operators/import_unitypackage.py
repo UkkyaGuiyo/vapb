@@ -1572,6 +1572,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         package_key.source_package_id,
                         prefab_unity_path,
                         member_collection,
+                        source_loader=projection_source,
+                        root_context_id=root_context_id,
+                        semantic_issues=projection.issues,
                     )
                     physics_snapshot = self._performance.measure("physbone_snapshot", extract_physbone_snapshot, prefab)
                     prefab_root["unity_physbone_source_schema"] = 1

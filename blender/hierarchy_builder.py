@@ -9,7 +9,84 @@ from typing import Iterable
 import bpy  # type: ignore
 from mathutils import Matrix, Quaternion, Vector  # type: ignore
 
-from ..unity.prefab_parser import PrefabData
+from ..unity.prefab_parser import PrefabData, ref_file_id, ref_guid
+from ..unity.prefab_instance_transform import resolve_instance_transform, has_complete_transform
+
+
+def _realize_renderer_free_instances(prefab, mapping, package_id, context_id,
+                                     source_loader, collection, issues):
+    """Expand directly serialized transform-only source trees per exact instance.
+
+    Renderer/model instances keep their existing realization route. Ambiguous,
+    removed/added, deeper nested or modified descendant trees remain unresolved.
+    """
+    transforms = {t.file_id: t for t in prefab.transforms.values()}
+    for instance in prefab.documents:
+        if instance.class_id != 1001:
+            continue
+        guid = ref_guid(instance.data.get('m_SourcePrefab'))
+        source = source_loader(package_id, guid) if guid else None
+        candidates = list(source) if isinstance(source, (list, tuple)) else ([] if source is None else [source])
+        if len(candidates) != 1 or candidates[0].prefab is None:
+            continue  # Existing projection reports source ambiguity/unavailability.
+        source = candidates[0]
+        child = source.prefab
+        if child.renderer_documents():
+            continue
+        modification = instance.data.get('m_Modification') or {}
+        parent_id = ref_file_id(modification.get('m_TransformParent'))
+        parent = mapping.get(transforms[parent_id].game_object_id) if parent_id in transforms else None
+        effective = resolve_instance_transform(prefab, instance.file_id, child)
+        allowed = all((m.property_path == 'm_Name' and m.target_guid == child.asset_guid
+                       and m.target_file_id in child.game_objects) or
+                      (m.target_file_id == (effective.source_transform_id if effective else None)
+                       and m.target_guid == child.asset_guid
+                       and m.property_path.startswith(('m_LocalPosition.', 'm_LocalRotation.', 'm_LocalScale.',
+                                                       'm_LocalEulerAnglesHint.')))
+                      for m in prefab.modifications() if m.prefab_instance_file_id == instance.file_id)
+        transform_ids = {t.file_id for t in child.transforms.values()}
+        complete = (len(child.transforms) == len(child.game_objects)
+                    and {t.game_object_id for t in child.transforms.values()} == set(child.game_objects)
+                    and all(t.game_object_id in child.game_objects
+                            and t.parent_id in transform_ids | {0, None}
+                            and has_complete_transform(child, t.file_id)
+                            for t in child.transforms.values())
+                    and all(set(go.component_ids) <= transform_ids for go in child.game_objects.values()))
+        structural_change = any(modification.get(k) for k in ('m_RemovedComponents', 'm_RemovedGameObjects',
+                                                               'm_AddedComponents', 'm_AddedGameObjects'))
+        if (not context_id or child.asset_guid != guid or source.package_id != package_id
+                or parent is None or not has_complete_transform(prefab, parent_id)
+                or effective is None or not allowed or not complete
+                or structural_change or any(d.class_id == 1001 for d in child.documents)):
+            issues.append({'code': 'RENDERER_FREE_HIERARCHY_UNRESOLVED',
+                           'root_context_id': context_id, 'prefab_instance_file_id': instance.file_id})
+            continue
+        edge = [{'container_package_id': package_id, 'container_asset_guid': prefab.asset_guid,
+                 'prefab_instance_file_id': instance.file_id, 'source_package_id': source.package_id,
+                 'source_prefab_guid': guid}]
+        edge_json = json.dumps(edge, sort_keys=True)
+        nodes = {}
+        for transform in child.transforms.values():
+            go = child.game_objects[transform.game_object_id]
+            labels = [m.value for m in prefab.modifications()
+                      if m.prefab_instance_file_id == instance.file_id
+                      and m.target_guid == guid and m.target_file_id == go.file_id
+                      and m.property_path == 'm_Name']
+            obj = bpy.data.objects.new(str(labels[0]) if len(labels) == 1 else go.name, None)
+            collection.objects.link(obj)
+            obj['unity_source_package_id'] = source.package_id
+            obj['unity_source_prefab_guid'] = guid
+            obj['unity_prefab_file_id'] = str(go.file_id)
+            obj['_vapb_source_local_file_id'] = str(go.file_id)
+            obj['_vapb_source_transform_file_id'] = str(transform.file_id)
+            obj['_vapb_root_context_id'] = context_id
+            obj['_vapb_model_instance_edge_path'] = edge_json
+            obj['_vapb_semantic_id'] = f'v1:{source.package_id}:{guid}:{go.file_id}:{context_id}:{edge_json}'
+            nodes[transform.file_id] = obj
+        for transform in child.transforms.values():
+            obj = nodes[transform.file_id]
+            obj.parent = nodes.get(transform.parent_id, parent)
+            apply_transform(obj, effective if transform.file_id == effective.source_transform_id else transform)
 
 
 # Match native FBX import: Unity is left-handed Y-up, Blender is right-handed
@@ -41,6 +118,9 @@ def build_prefab_hierarchy(
     source_package_id: str = "",
     source_prefab_unity_path: str = "",
     target_collection=None,
+    source_loader=None,
+    root_context_id='',
+    semantic_issues=None,
 ):
     imported = list(imported_objects)
     bpy.context.view_layer.update()
@@ -230,4 +310,8 @@ def build_prefab_hierarchy(
         # Native root world is now local to the scene-only placement. The
         # placement therefore acts exactly once on the entire native model.
         obj.matrix_basis = native_world[obj]
+    if source_loader is not None:
+        _realize_renderer_free_instances(prefab, game_object_map, source_package_id,
+                                        root_context_id, source_loader, collection,
+                                        semantic_issues if semantic_issues is not None else [])
     return root, game_object_map

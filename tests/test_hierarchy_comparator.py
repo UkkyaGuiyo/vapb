@@ -94,3 +94,18 @@ class ComparatorTests(unittest.TestCase):
         self.oracle['nodes'][0]['renderers'] = [dict()]
         self.assertEqual(self.result()['counts']['UNSUPPORTED_REPRESENTATION'], 5)
         self.assertEqual(self.result()['status'], 'RED')
+
+    def test_exact_instance_handle_bridge_and_wrong_edge_rejection(self):
+        for i in (4,5):
+            self.oracle['nodes'][i]['instanceHandles'] = [ref(200+i)]
+            self.snapshot['objects'][i]['metadata'].update(
+                unity_source_prefab_guid=GUID, unity_prefab_file_id='999',
+                _vapb_root_context_id='context', _vapb_model_instance_edge_path=__import__('json').dumps([
+                    dict(container_asset_guid=GUID, prefab_instance_file_id=200+i,
+                         container_package_id='sha256:'+SHA, source_package_id='sha256:'+SHA,
+                         source_prefab_guid=GUID)]))
+        self.assertEqual(self.result()['status'], 'GREEN')
+        self.snapshot['objects'][5]['metadata']['_vapb_model_instance_edge_path'] = self.snapshot['objects'][4]['metadata']['_vapb_model_instance_edge_path']
+        result = self.result()
+        self.assertEqual(result['status'], 'RED')
+        self.assertIn('DUPLICATE_OCCURRENCE', result['counts'])

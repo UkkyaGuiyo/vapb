@@ -2,6 +2,38 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Hierarchy Parity — renderer-free nested production loop — 2026-09-30
+
+**STATUS: PARTIAL; supported semantic Object hierarchy GREEN, full native-Skin
+parity still RED.** Starting HEAD `ba42f957747f0b9d531dd8691e64b2bdf5c09f32`.
+Normal Import focused RED (zero nested occurrences, exit 1) → minimal builder
+source/instance-scoped expansion → two distinct occurrences, exit 0. Source
+GUID/GO/Transform IDs, root context and ordered instance edges are retained;
+no dummy Renderer or name-based correspondence.
+
+Independent Unity source/instance-handle bridge: **12 semantic nodes, 11 edges,
+48 EXACT dimension checks**, zero missing/extra/wrong parent/multiplicity/
+transform issues. Actual rename/save/reopen preserves twelve semantic IDs and
+comparison results. Four builder fail-closed controls and eleven comparator
+tests PASS. Full Python **449 PASS**, compileall PASS; hierarchy transform,
+nested transform create/reopen, Bone receipt and Blender integration PASS.
+Scope review PASS. Only public synthetic input; raw runtime evidence outside Git.
+
+**Current RED / hypothesis:** five native Renderer/Mesh/Bone equivalence facets
+remain unimplemented/unproven; four native Mesh/Armature realizations lack a
+verified semantic binding in this package-only run. Source intent is not actual
+realization evidence. Existing bridge requires an exact revision witness;
+no Skin fix or guessed matching was applied. Real differential NOT RUN.
+
+**Next automatic action:** exact revision Unity witness using existing
+no-op/stamped/restored identity controls, then existing native bridge and
+actual Renderer/Bone comparison. Details and supported bounds:
+[`RENDERER_FREE_LOOP.md`](../tests/unity_hierarchy_probe/RENDERER_FREE_LOOP.md).
+
+Convergence is due to risk to the hard 15-credit floor from the opening
+18.2968 balance after implementation/verification, not a phase/checkpoint STOP.
+Effective final balance remains unconfirmed. Component restoration unstarted.
+
 ## Hierarchy Parity — independent Blender baseline / comparator — 2026-09-30
 
 **STATUS: PARTIAL / public synthetic RED.** Exact phase 1 package SHA verified;

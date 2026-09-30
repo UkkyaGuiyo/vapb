@@ -29,6 +29,22 @@ VAPB開発で得た一般化可能な失敗知識、反証、設計原則を記�
 | LESSON-022 | Preview用TextureとUnity Material依存を分ける | MATERIAL / EXPORT |
 | LESSON-023 | Reference preservationとprovider解決を分ける | MATERIAL / UNITY |
 | LESSON-024 | Path、Asset object名、identityを分ける | NAMING / EXPORT |
+| LESSON-025 | RendererがなくてもPrefab occurrenceは階層に存在する | PREFAB / HIERARCHY |
+
+## LESSON-025 — RendererがなくてもPrefab occurrenceは階層に存在する
+
+**Status:** ACTIVE · **Domain:** PREFAB / HIERARCHY
+
+Renderer occurrenceからnative Modelを展開する経路だけでは、Rendererを持たない
+nested PrefabのGameObjectが欠落する。独立Unity Oracleで12 nodes、通常Importで
+10 nodesだったpublic fixtureは、source GO/Transform identity、selected-root
+context、ordered instance edgeを保持した展開で12 nodesへ一致した。
+同じsource GOでもinstance edgeが違えば別occurrenceである。
+
+Unityが生成したselected-prefab localIDを推測しない。公開APIが示すsource GOと
+instance handleを橋渡しに使い、表示名を変えても対応と親子関係を維持する。
+semantic Emptyの階層が一致してもnative Renderer/Bone接続の証明にはならない。
+source Skin projection、actual native receipt、両者のidentity bridgeを別々に検証する。
 
 ## LESSON-024 — Path、Asset object名、identityを分ける
 
