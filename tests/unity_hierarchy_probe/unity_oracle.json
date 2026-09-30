@@ -1,0 +1,729 @@
+{
+    "unityVersion": "2022.3.22f1",
+    "nodeCount": 12,
+    "parentEdges": 11,
+    "rendererOwners": 1,
+    "skinBones": 2,
+    "repeatedInstances": 2,
+    "nodes": [
+        {
+            "diagnosticName": "Majun",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "7853957250760928391",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-7853957250760928391-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3250659268222007148",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3250659268222007148-0"
+            },
+            "parentTransform": {
+                "guid": "",
+                "localId": "",
+                "globalId": ""
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "Armature",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "2464856854281486250",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-2464856854281486250-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3259926486885025858",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3259926486885025858-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3250659268222007148",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3250659268222007148-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "Rig",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3597001707487390534",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3597001707487390534-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "436995490850485453",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-436995490850485453-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3259926486885025858",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3259926486885025858-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 100.0,
+                "y": 100.0,
+                "z": 100.0
+            },
+            "localRotation": {
+                "x": -0.7071068286895752,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.7071067094802856
+            },
+            "worldMatrix": [
+                100.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.000011920928955078125,
+                -99.99999237060547,
+                0.0,
+                0.0,
+                99.99999237060547,
+                -0.000011920928955078125,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "Hips",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "142655916384621550",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-142655916384621550-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "6308589185144781584",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-6308589185144781584-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "436995490850485453",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-436995490850485453-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.7071068286895752,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.7071067094802856
+            },
+            "worldMatrix": [
+                100.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.99998474121094,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.99998474121094,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "Spine",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "5892722210687117204",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-5892722210687117204-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "239556069629025784",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-239556069629025784-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "6308589185144781584",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-6308589185144781584-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.008999999612569809,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                100.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.99998474121094,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.99998474121094,
+                0.0,
+                0.0,
+                0.8999997973442078,
+                7.105427357601002e-15,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "Attachment",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "762256462346776887",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-762256462346776887-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "6535839242102114458",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-6535839242102114458-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "239556069629025784",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-239556069629025784-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                100.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.99998474121094,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                99.99998474121094,
+                0.0,
+                0.0,
+                0.8999997973442078,
+                7.105427357601002e-15,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "Body",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "2635037722616705077",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-2635037722616705077-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "5160287247289356120",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-5160287247289356120-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3250659268222007148",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3250659268222007148-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.8999999761581421,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 40.0,
+                "y": 30.000001907348634,
+                "z": 179.99998474121095
+            },
+            "localRotation": {
+                "x": -0.7071068286895752,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 0.7071067094802856
+            },
+            "worldMatrix": [
+                40.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                -0.000003576278913897113,
+                -30.0,
+                0.0,
+                0.0,
+                179.99996948242188,
+                -0.00002145767030015122,
+                0.0,
+                0.0,
+                0.8999999761581421,
+                0.0,
+                1.0
+            ],
+            "renderers": [
+                {
+                    "component": {
+                        "guid": "1b7fea67da296c941aaa0a6622363613",
+                        "localId": "1249361819212076787",
+                        "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-1249361819212076787-0"
+                    },
+                    "owner": {
+                        "guid": "1b7fea67da296c941aaa0a6622363613",
+                        "localId": "2635037722616705077",
+                        "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-2635037722616705077-0"
+                    },
+                    "mesh": {
+                        "guid": "e3b1caadc4ce0cc4a9bd37dcfc81b4b8",
+                        "localId": "2959467708922500008",
+                        "globalId": "GlobalObjectId_V1-1-e3b1caadc4ce0cc4a9bd37dcfc81b4b8-2959467708922500008-0"
+                    },
+                    "rootBone": {
+                        "guid": "1b7fea67da296c941aaa0a6622363613",
+                        "localId": "6308589185144781584",
+                        "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-6308589185144781584-0"
+                    },
+                    "bones": [
+                        {
+                            "guid": "1b7fea67da296c941aaa0a6622363613",
+                            "localId": "6308589185144781584",
+                            "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-6308589185144781584-0"
+                        },
+                        {
+                            "guid": "1b7fea67da296c941aaa0a6622363613",
+                            "localId": "239556069629025784",
+                            "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-239556069629025784-0"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "diagnosticName": "Head",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "2994816330452807731",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-2994816330452807731-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "9016556087579531620",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-9016556087579531620-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3250659268222007148",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3250659268222007148-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "Face",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "4397491060299699561",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-4397491060299699561-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "8981461073048937163",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-8981461073048937163-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "9016556087579531620",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-9016556087579531620-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "Hair",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "1342098449883561357",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-1342098449883561357-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3922390692157968241",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3922390692157968241-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "9016556087579531620",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-9016556087579531620-0"
+            },
+            "sourceChain": [],
+            "instanceHandles": [],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "AccessoryLeft",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "7593624049133755249",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-7593624049133755249-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "5758780296498144134",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-5758780296498144134-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3250659268222007148",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3250659268222007148-0"
+            },
+            "sourceChain": [
+                {
+                    "guid": "474475b5217540849b6a156b5eef6174",
+                    "localId": "1325188849331609215",
+                    "globalId": "GlobalObjectId_V1-1-474475b5217540849b6a156b5eef6174-1325188849331609215-0"
+                }
+            ],
+            "instanceHandles": [
+                {
+                    "guid": "1b7fea67da296c941aaa0a6622363613",
+                    "localId": "8864769531130873102",
+                    "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-8864769531130873102-0"
+                }
+            ],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        },
+        {
+            "diagnosticName": "AccessoryRight",
+            "gameObject": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "1324042089381417994",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-1324042089381417994-0"
+            },
+            "transform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3807025750864801021",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3807025750864801021-0"
+            },
+            "parentTransform": {
+                "guid": "1b7fea67da296c941aaa0a6622363613",
+                "localId": "3250659268222007148",
+                "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-3250659268222007148-0"
+            },
+            "sourceChain": [
+                {
+                    "guid": "474475b5217540849b6a156b5eef6174",
+                    "localId": "1325188849331609215",
+                    "globalId": "GlobalObjectId_V1-1-474475b5217540849b6a156b5eef6174-1325188849331609215-0"
+                }
+            ],
+            "instanceHandles": [
+                {
+                    "guid": "1b7fea67da296c941aaa0a6622363613",
+                    "localId": "16876950065171061",
+                    "globalId": "GlobalObjectId_V1-1-1b7fea67da296c941aaa0a6622363613-16876950065171061-0"
+                }
+            ],
+            "localPosition": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "localScale": {
+                "x": 1.0,
+                "y": 1.0,
+                "z": 1.0
+            },
+            "localRotation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0,
+                "w": 1.0
+            },
+            "worldMatrix": [
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "renderers": []
+        }
+    ]
+}

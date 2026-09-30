@@ -2,6 +2,35 @@
 
 This is continuing work. The current original request in PRODUCT_SPEC.md is authoritative; this checkpoint and older history cannot narrow or expand it. V1 is an intermediate milestone. Continue the next safe action without waiting at stage boundaries.
 
+## Hierarchy Parity — independent Unity Oracle checkpoint — 2026-09-30
+
+**STATUS: PARTIAL.** Starting local/remote HEAD was
+`64115a03a65eab9d8f3218a3ac1f5be42950a071`, clean. Production source remains
+unchanged. Public synthetic Majun was generated using Blender 5.2.1 and
+observed/exported in an isolated Unity 2022.3.22f1 project, using documented
+public APIs. Both processes exited 0; the actual Unity Editor compiled and
+ran the probe. Oracle: 12 nodes, 11 parent edges, one Renderer owner, two
+Skin bones with rootBone present, two repeated accessory instances sharing
+one source identity with distinct occurrence handles. One Bone attachment
+is present. The Model root and Rig child are distinct Unity Transforms.
+
+The committed independent Oracle records GUID/signed localID/GlobalObjectId,
+parent/source/instance relations, Renderer/Mesh/ordered bones/rootBone and
+local/world transforms. Names are diagnostic only. No private data was used.
+Reproduction, artifact revision hashes and remaining acceptance conditions:
+[`tests/unity_hierarchy_probe/README.md`](../tests/unity_hierarchy_probe/README.md).
+
+**Hierarchy parity is UNVERIFIED:** normal Blender import/snapshot, comparator,
+RED/GREEN baseline, rename/save/reopen, negative controls and mission-specific
+regression runs remain pending. No production fix or new axis/unit model was
+introduced. The required scope reviewer returned PASS. Convergence at this
+phase preserves the requested 15+ credit reserve; the opening balance was
+18.2968137500 and does not provide reliable within-turn debit evidence.
+
+**Exact next action:** import the exact exported Majun.unitypackage via normal
+VAPB production Import and capture receipt/occurrence-based Blender semantic
+state before changing production. Broad Unity/VRC restoration remains unstarted.
+
 ## Human-readable Material naming fresh Unity closure — 2026-09-30
 
 **NAMING STATUS: COMPLETE / GOAL_VERIFIED for the supported static final-state
