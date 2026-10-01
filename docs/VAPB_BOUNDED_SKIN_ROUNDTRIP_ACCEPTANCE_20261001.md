@@ -1,5 +1,59 @@
 # Bounded Skin round-trip acceptance — 2026-10-01
 
+## External Unity Script closure and real retry — 2026-10-01
+
+**Dependency closure proven; full representative bounded report remains RED.**
+
+The existing `external_dependencies` array now carries exact Unity Script
+references. Each record has `classification=UNRESOLVED_BUT_PRESERVED`,
+`kind=UNITY_SCRIPT`, `status=EXTERNAL_DEPENDENCY_REQUIRED`, canonical lowercase
+GUID, nonzero signed Int64 decimal-string `file_id`, and
+`reference_id=VAPB-REF-<first32hex of SHA256(UNITY_SCRIPT:guid:file_id)>`.
+`required_by` carries declaring asset GUID, exact SHA256 and signed component
+localID. Collection follows selected Skin tasks and serialized class1001 source
+Prefab chains, excludes unrelated Prefabs and contained providers, and deduplicates
+and sorts exact pairs/contexts. No additional registry or SDK hardcoding.
+
+Before witness/import or Variant mutation, Finalizer validates source/context
+revisions and class114 serialized references, then resolves exact MonoScript
+GUID/localID through public APIs. Absent/wrong providers explicitly refuse;
+invalid/conflicting/stale/unrelated declarations refuse without mutation.
+Additional undeclared missing scripts keep the generic missing-script failure.
+No-declaration manifests retain their existing behavior.
+
+Unchanged old Output bytes, with exact locally proven SDK3.10.5 providers,
+resolve missing55→0 and actual Apply/repeated Apply succeed. Earlier three-provider
+counts meant distinct provider GUIDs; the regenerated manifest correctly records
+six distinct GUID/signed-localID pairs. Provider binaries remain outside both
+output and repository. Public production collector/writer output declares one
+reference, is byte-deterministic and preserves source bytes. Actual Unity import
+proves no-provider refusal/no mutation/no Variant, then exact provider later
+resolves the same Package/manifest and initial/repeated Apply succeed. Ten public
+controls cover identity/revision/declaration failures and undeclared missing scripts.
+
+Real normal ACTIVE export declares six pairs. Fresh no-SDK Unity measures
+missing55/resolved0 and explicit refusal/no mutation/no Variant. Exact provider
+resolves6/6/missing0; actual Finalizer/repeat and source/sibling/count preservation
+PASS. Exact public-API source GUID/GO/Transform/PrefabInstance relations bridge
+five nested renderer-free nodes: all276 semantic nodes/parents, selected owner,
+Mesh,160 ordered Bones and root representation are EXACT. Explicit triangles,
+CP bridge, topology and sampled surface are EXACT. Skin6010/6010 bitwise
+influences PASS;948 raw differences and deformation UNMEASURED remain. Shape N/A.
+
+The remaining mandatory real RED is Material face association: imported native
+submesh partitions exchange slot0/2 while Finalizer retains the source Material
+array. Public three-slot FBX→Unity permutation is reproduced; an exact transport
+binding is required. UV float32 CP sets differ322/2360 and remain a separate
+diagnostic boundary, without epsilon/comparator relaxation. Normals differences,
+Tangents UNKNOWN and unsupported contexts remain separate.
+
+Five real subject-corruption controls reject; they do not imply a positive full
+acceptance result. Python524 PASS; compileall and actual Blender triangle/
+Skin/Shape/UV/Material/IDs regression PASS. Real injected rollback, Object rename/
+save/reopen and immutable original blend/Package PASS. Private assets, identities,
+provider paths and raw evidence remain outside the repository. Continue from
+public Material RED to minimal fix and same representative real recheck.
+
 ## Result and scope
 
 **PARTIAL overall. Public bounded round-trip PASS. Real full round-trip UNSUPPORTED.**

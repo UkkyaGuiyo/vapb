@@ -94,7 +94,9 @@ def parse_scalar(value: str) -> Any:
         for part in _split_top_level(value[1:-1]):
             if ":" in part:
                 key, item = part.split(":", 1)
-                parsed[key.strip()] = parse_scalar(item)
+                # Unity GUIDs are fixed-width identity strings, including all-digit GUIDs.
+                parsed[key.strip()] = (item.strip() if key.strip() == 'guid'
+                    and re.fullmatch(r'[0-9a-fA-F]{32}', item.strip()) else parse_scalar(item))
         return parsed
     if value.startswith("[") and value.endswith("]"):
         return [parse_scalar(item) for item in _split_top_level(value[1:-1])]

@@ -76,7 +76,23 @@ public static class VapbModelSkinFinalizer
     private static bool unexpectedWitnessUid;
     private static readonly Dictionary<string, int> callbackCounts = new Dictionary<string, int>(StringComparer.Ordinal);
 
-    [Serializable] private sealed class Manifest { public string schema_version; public Task[] reference_rebind_tasks; }
+    [Serializable] private sealed class Manifest { public string schema_version; public Task[] reference_rebind_tasks; public ExternalDependency[] external_dependencies; }
+    [Serializable] private sealed class ExternalDependency
+    {
+        public string classification;
+        public string kind;
+        public string reference_id;
+        public string guid;
+        public string file_id;
+        public string status;
+        public RequiredBy[] required_by;
+    }
+    [Serializable] private sealed class RequiredBy
+    {
+        public string asset_guid;
+        public string asset_sha256;
+        public string component_file_id;
+    }
     [Serializable] private sealed class Task
     {
         public string kind;
@@ -191,6 +207,7 @@ public static class VapbModelSkinFinalizer
                 manifest.reference_rebind_tasks.Length == 0)
                 Reject("MANIFEST_UNSUPPORTED");
             ValidateBatch(manifest.reference_rebind_tasks);
+            PreflightScriptDependencies(manifest);
             var plans = new List<PreparedTask>();
             foreach (Task task in manifest.reference_rebind_tasks)
                 plans.Add(PrepareWitness(task));
@@ -304,6 +321,107 @@ public static class VapbModelSkinFinalizer
         }
         foreach (string guid in editedGuids)
             if (sourceGuids.Contains(guid)) Reject("TASK_BATCH_INVALID");
+    }
+
+    private static void PreflightScriptDependencies(Manifest manifest)
+    {
+        if (manifest.external_dependencies == null || manifest.external_dependencies.Length == 0) return;
+        var dependencies = new List<ExternalDependency>();
+        var references = new HashSet<string>(StringComparer.Ordinal);
+        foreach (ExternalDependency dependency in manifest.external_dependencies)
+        {
+            if (dependency == null) Reject("EXTERNAL_DEPENDENCY_INVALID");
+            if (dependency.kind != "UNITY_SCRIPT") continue;
+            if (dependency.classification != "UNRESOLVED_BUT_PRESERVED" ||
+                dependency.status != "EXTERNAL_DEPENDENCY_REQUIRED" ||
+                !CanonicalGuid(dependency.guid) || !ValidUid(dependency.file_id) ||
+                dependency.reference_id != "VAPB-REF-" + HashBytes(Encoding.UTF8.GetBytes(
+                    "UNITY_SCRIPT:" + dependency.guid + ":" + dependency.file_id)).Substring(0, 32) ||
+                !references.Add(dependency.reference_id) || dependency.required_by == null ||
+                dependency.required_by.Length == 0) Reject("EXTERNAL_DEPENDENCY_INVALID");
+            dependencies.Add(dependency);
+        }
+        if (dependencies.Count == 0) return;
+        var sourceTexts = new Dictionary<string, string>(StringComparer.Ordinal);
+        var sourceHashes = new Dictionary<string, string>(StringComparer.Ordinal);
+        CollectScriptSourcePrefabs(manifest.reference_rebind_tasks[0].prefab_guid, sourceTexts, sourceHashes);
+        if (!sourceHashes.TryGetValue(manifest.reference_rebind_tasks[0].prefab_guid, out string rootHash) ||
+            !rootHash.Equals(manifest.reference_rebind_tasks[0].prefab_source_sha256,
+                StringComparison.OrdinalIgnoreCase)) Reject("EXTERNAL_DEPENDENCY_INVALID");
+        // Validate every declaration and serialized component before testing provider availability.
+        foreach (ExternalDependency dependency in dependencies)
+        {
+            var contexts = new HashSet<string>(StringComparer.Ordinal);
+            foreach (RequiredBy required in dependency.required_by)
+            {
+                if (required == null || !CanonicalGuid(required.asset_guid) ||
+                    !ValidSha(required.asset_sha256) || !ValidUid(required.component_file_id) ||
+                    !contexts.Add(required.asset_guid + ":" + required.component_file_id) ||
+                    !sourceHashes.TryGetValue(required.asset_guid, out string hash) ||
+                    !hash.Equals(required.asset_sha256, StringComparison.OrdinalIgnoreCase) ||
+                    !ScriptReferenceMatches(sourceTexts[required.asset_guid], required.component_file_id,
+                        dependency.guid, dependency.file_id)) Reject("EXTERNAL_DEPENDENCY_INVALID");
+            }
+        }
+        foreach (ExternalDependency dependency in dependencies)
+        {
+            string path = AssetDatabase.GUIDToAssetPath(dependency.guid);
+            bool resolved = false;
+            if (!String.IsNullOrEmpty(path))
+                foreach (UnityEngine.Object candidate in AssetDatabase.LoadAllAssetsAtPath(path))
+                    if (candidate is MonoScript && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(candidate,
+                        out string guid, out long localId) && guid == dependency.guid &&
+                        localId.ToString(CultureInfo.InvariantCulture) == dependency.file_id)
+                    { resolved = true; break; }
+            if (!resolved) Reject("EXTERNAL_DEPENDENCY_REQUIRED");
+        }
+    }
+
+    private static bool CanonicalGuid(string value)
+    { return value != null && Regex.IsMatch(value, "^[0-9a-f]{32}$"); }
+
+    private static MatchCollection PrefabDocuments(string text)
+    {
+        return Regex.Matches(text, @"^--- !u!(\d+) &(-?\d+)(?: stripped)?\r?\n(.*?)(?=^--- !u!|\z)",
+            RegexOptions.Multiline | RegexOptions.Singleline);
+    }
+
+    private static void CollectScriptSourcePrefabs(string guid, Dictionary<string, string> texts,
+        Dictionary<string, string> hashes)
+    {
+        if (texts.ContainsKey(guid)) return;
+        string path = AssetDatabase.GUIDToAssetPath(guid);
+        if (!PrefabPath(path) || !path.StartsWith("Assets/", StringComparison.Ordinal))
+            Reject("EXTERNAL_DEPENDENCY_INVALID");
+        byte[] bytes = File.ReadAllBytes(Disk(path));
+        string text = Encoding.UTF8.GetString(bytes);
+        texts.Add(guid, text);
+        hashes.Add(guid, HashBytes(bytes));
+        foreach (Match document in PrefabDocuments(text))
+        {
+            if (document.Groups[1].Value != "1001") continue;
+            Match source = Regex.Match(document.Groups[3].Value,
+                @"^  m_SourcePrefab:\s*\{fileID:\s*-?\d+,\s*guid:\s*([0-9a-fA-F]{32}),\s*type:\s*3\}", RegexOptions.Multiline);
+            if (!source.Success) continue;
+            string sourceGuid = source.Groups[1].Value.ToLowerInvariant();
+            if (PrefabPath(AssetDatabase.GUIDToAssetPath(sourceGuid)))
+                CollectScriptSourcePrefabs(sourceGuid, texts, hashes);
+        }
+    }
+
+    private static bool ScriptReferenceMatches(string text, string componentId, string guid, string localId)
+    {
+        int matches = 0;
+        foreach (Match document in PrefabDocuments(text))
+        {
+            if (document.Groups[1].Value != "114" || document.Groups[2].Value != componentId) continue;
+            Match script = Regex.Match(document.Groups[3].Value,
+                @"^  m_Script:\s*\{fileID:\s*(-?\d+),\s*guid:\s*([0-9a-fA-F]{32}),\s*type:\s*3\}", RegexOptions.Multiline);
+            if (!script.Success || script.Groups[1].Value != localId ||
+                script.Groups[2].Value.ToLowerInvariant() != guid) return false;
+            matches++;
+        }
+        return matches == 1;
     }
 
     private static void CheckSourceHashes(Task task)

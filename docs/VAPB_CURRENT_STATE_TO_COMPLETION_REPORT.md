@@ -1,5 +1,57 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## External Script dependency closure and real retry — 2026-10-01
+
+**Dependency closure PROVEN; representative bounded real report remains RED.**
+Starting remote 2cf3c56de54ee58d4c5b45e4968c01942dd62bce.
+The unchanged prior Output Package was retried after supplying exact locally
+proven external framework providers: missing scripts55→0, initial/repeated
+Finalizer Apply PASS. No provider binary was bundled into output or repository.
+
+Production export now records exact external Unity Script GUID/signed-localID
+pairs in existing xternal_dependencies, with SHA-bound selected Prefab
+component contexts. Collection follows only selected source Prefab chains.
+Finalizer validates declarations/context revisions and resolves MonoScript
+subassets through public APIs before witness/import/Variant mutation.
+Unresolved declared providers produce EXTERNAL_DEPENDENCY_REQUIRED; unexplained
+additional missing scripts retain the generic missing-script rejection.
+
+Public production collector/writer output declares1 reference, excludes its
+provider, is byte-deterministic and preserves source bytes. Actual fresh Unity
+no-provider refusal/no Variant/no mutation PASS; exact provider later resolves
+the same output/manifest and initial/repeated Apply PASS. Ten public controls
+cover identity, revision, duplicate declarations, unrelated contexts and
+undeclared missing scripts.
+
+The same representative occurrence was regenerated through normal ACTIVE
+production export:6 exact Script references. Fresh Unity without SDK measured
+missing55, resolved0/6 and explicit refusal/no Variant/source+manifest unchanged.
+Exact local providers resolve6/6, missing0; actual Finalizer and repeated Apply
+PASS, source bytes/siblings/node-component counts preserved. Public-API source
+relations bridge5 renderer-free nested occurrences without name/order matching;
+all276 semantic nodes/parents, selected owner/Mesh,160 ordered Bones and root
+representation prove EXACT. Geometry explicit triangles/topology/sampled surface
+and CP bridge are EXACT. Skin6010/6010 BITWISE_EXACT, missing0/unexplained0;
+948 raw numeric differences remain reported. Shape N/A.
+
+**Remaining real RED:** native FBX/Unity submesh slot0/2 permutation while the
+Finalizer retains the original Material array. Current effective face/Material
+association is incorrect. Investigating a public reproduction before any fix.
+UV322/2360 CP value sets differ in actual Unity float32 bits, maximum measured
+distance about1.79e-6; no epsilon/comparator relaxation. UV is an independent
+boundary, not proof of a Material identity mismatch. Deformation UNMEASURED,
+Normals differences and Tangents UNKNOWN remain separate.
+
+Five real join-corruption controls reject; this is not a positive full real
+acceptance result. Python524 PASS; compileall PASS; actual Blender triangle,
+Skin/Shape/UV/Material/IDs regression PASS; real injected rollback and Object
+rename/save/reopen PASS with immutable original blend/Package. Private assets,
+raw evidence, identities/provider paths remain outside the public repository.
+
+**Next exact action:** reproduce the Material partition permutation publicly,
+then repair the existing model-route transport/Finalizer binding and recheck
+this exact representative occurrence. Do not stop at this checkpoint.
+
 ## Representative real production Skin closure — 2026-10-01
 
 **PARTIAL — production Export/import 1; complete authoritative joins 0/1.**
