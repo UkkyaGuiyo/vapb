@@ -1,11 +1,12 @@
 """Prepare an exact public package revision for the existing Unity witness probe.
-Run: python prepare_exact_witness.py PACKAGE EXPECTED_SHA256 NEW_PROJECT.
+Run: python prepare_exact_witness.py PACKAGE EXPECTED_SHA256 NEW_PROJECT [MODEL_GUID].
 Then run blender_fbx_source_witness.py and Unity VapbBoneWitnessProbe.Run.
 Only generated isolated copies are instrumented; v1 witness output is unchanged.
 """
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 import sys
 import tarfile
@@ -16,7 +17,13 @@ def sha(data):
 
 
 def main():
-    package, expected, project = sys.argv[1:]
+    args = sys.argv[1:]
+    if len(args) not in (3, 4):
+        raise ValueError('PACKAGE_SHA_PROJECT_AND_OPTIONAL_MODEL_GUID_REQUIRED')
+    package, expected, project = args[:3]
+    selected_guid = args[3] if len(args) == 4 else None
+    if selected_guid is not None and not re.fullmatch(r'[0-9a-f]{32}', selected_guid):
+        raise ValueError('MODEL_GUID_INVALID')
     package, project = Path(package).resolve(), Path(project).resolve()
     repo = Path(__file__).resolve().parents[2]
     if project.exists() or project == repo or repo in project.parents:
@@ -26,14 +33,27 @@ def main():
         raise ValueError('PACKAGE_REVISION_MISMATCH')
     with tarfile.open(package, 'r:*') as archive:
         paths = {}
+        seen_members = set()
         for member in archive.getmembers():
+            if member.isfile():
+                if member.name in seen_members:
+                    raise ValueError('PACKAGE_MEMBER_DUPLICATE')
+                seen_members.add(member.name)
             if member.isfile() and member.name.endswith('/pathname'):
                 pathname = archive.extractfile(member).read().decode('utf-8').strip()
                 if pathname.lower().endswith('.fbx'):
-                    paths[member.name.split('/')[0]] = pathname
-        if len(paths) != 1:
+                    guid = member.name.split('/')[0]
+                    if guid in paths:
+                        raise ValueError('PACKAGE_MEMBER_DUPLICATE')
+                    paths[guid] = pathname
+        if selected_guid is not None:
+            if selected_guid not in paths:
+                raise ValueError('MODEL_GUID_NOT_FOUND')
+            guid, pathname = selected_guid, paths[selected_guid]
+        elif len(paths) != 1:
             raise ValueError('EXACT_FBX_AMBIGUOUS')
-        guid, pathname = next(iter(paths.items()))
+        else:
+            guid, pathname = next(iter(paths.items()))
         fbx = archive.extractfile(guid + '/asset').read()
         meta = archive.extractfile(guid + '/asset.meta').read()
     project.mkdir(parents=True)

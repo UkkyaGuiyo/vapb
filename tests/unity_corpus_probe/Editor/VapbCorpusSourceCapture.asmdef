@@ -1,0 +1,6 @@
+{
+  "name": "VapbCorpusSourceCapture",
+  "references": [],
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false
+}

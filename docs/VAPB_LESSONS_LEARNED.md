@@ -727,3 +727,19 @@ Phase-2の独立RED controlは
 4. 新しい `LESSON-XXX` には「以前の考え → 観測・反証 → 現在の原則」と根拠を付ける。
 5. 一度成功しただけの結果をLessonにしない。各Lessonの `Status` はMarkdown内で
    `ACTIVE`、`NARROWED`、`SUPERSEDED` として更新し、過去の判断も追えるようにする。
+
+
+## Corpus campaign corroborated controls — 2026-10-01
+
+- A suffix match is not an archive-file test. A directory ending in
+  `.unitypackage` entered provider discovery and failed an otherwise valid import.
+  Filtering actual files at both entry points has public RED/GREEN and unchanged
+  real-input import/save-reopen GREEN evidence.
+- An injected-failure rollback test must establish that execution reached the
+  injection. An earlier unassigned Material preflight refusal made a combined
+  guard fail; it did not demonstrate a rollback mutation. The adapter now records
+  the existing unsupported scope before editing, with two actual retry controls.
+- Long private evidence paths can prevent extraction independently of input
+  bytes. Same-input long/short path controls measured four extraction errors versus
+  248 assets with zero errors. That control proves an environment boundary, not
+  product round-trip acceptance; retain failed attempts and rerun the real route.

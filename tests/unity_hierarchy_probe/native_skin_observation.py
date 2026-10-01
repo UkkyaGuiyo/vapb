@@ -3,6 +3,8 @@
 Callable observe_native_skin(context, package, witness, source_observation,
 package_observation, control_report) reads exact external public evidence and
 persisted normal-import occurrence records. It changes no identity or Scene data.
+Optional occurrence_id limits the observation to one exact persisted Skin;
+unscoped/selected issues and unknown issue subjects still reject the query.
 CLI: blender --background --python-exit-code 1 --python FILE --
 BLEND PACKAGE WITNESS SOURCE_OBSERVATION PACKAGE_OBSERVATION CONTROL_REPORT OUTPUT [--check-rejections]
 """
@@ -37,8 +39,32 @@ def _unique(rows, key, code):
     return result
 
 
+def observation_records(projection, occurrence_id=None):
+    """Scope a read-only query; never suppress global or unverified issues."""
+    records = [row for row in projection['records'] if row.get('renderer_class_id') == 137]
+    if occurrence_id is None:
+        _require(not projection.get('issues'), 'PERSISTED_PROJECTION_HAS_ISSUES')
+        return records
+    selected = [row for row in records if row.get('occurrence_id') == occurrence_id]
+    _require(len(selected) == 1, 'SELECTED_OCCURRENCE_NOT_UNIQUE')
+    from unitypackage_blender_importer.unity.occurrence_projection import occurrence_identity
+    for issue in projection.get('issues', []):
+        attached = issue.get('occurrence_id')
+        _require(attached and attached != occurrence_id, 'PERSISTED_PROJECTION_HAS_ISSUES')
+        other = [row for row in projection['records'] if row.get('occurrence_id') == attached]
+        _require(len(other) == 1, 'ISSUE_OCCURRENCE_UNPROVEN')
+        try:
+            verified = (occurrence_identity(other[0]) == attached
+                        and other[0]['root_package_id'] == selected[0]['root_package_id']
+                        and other[0]['root_context_id'] == selected[0]['root_context_id'])
+        except (KeyError, TypeError, ValueError):
+            verified = False
+        _require(verified, 'ISSUE_OCCURRENCE_UNPROVEN')
+    return selected
+
+
 def observe_native_skin(context, package, witness, source_observation,
-                        package_observation, control_report, *, pose_controls=False):
+                        package_observation, control_report, *, pose_controls=False, occurrence_id=None):
     from unitypackage_blender_importer.unity.package_reader import UnityPackageReader
     from unitypackage_blender_importer.unity.asset_database import AssetDatabase
     from unitypackage_blender_importer.unity.prefab_parser import parse_prefab
@@ -65,10 +91,6 @@ def observe_native_skin(context, package, witness, source_observation,
              and source.get('unity_version') == public.get('unity_version') == '2022.3.22f1',
              'OBSERVATION_SCHEMA_OR_VERSION_MISMATCH')
     _require(public.get('status') == 'OBSERVED_PUBLIC_API', 'PACKAGE_OBSERVATION_UNKNOWN')
-    source_rows = _unique(source['skinned_renderers'],
-        lambda r: (source['model_guid'], int(r['mesh_local_id'])), 'SOURCE_SKIN_AMBIGUOUS')
-    public_rows = _unique(public['skinned_renderers'],
-        lambda r: (r['renderer']['guid'], int(r['renderer']['local_id'])), 'PREFAB_SKIN_AMBIGUOUS')
     objects = tuple(context.scene.objects)
     handles = {obj: index for index, obj in enumerate(objects)}
     roots = [obj for obj in objects if obj.get('_vapb_renderer_occurrences') is not None]
@@ -77,10 +99,18 @@ def observe_native_skin(context, package, witness, source_observation,
     _require(root.get('_vapb_witness_package_sha256') == package_sha, 'PERSISTED_WITNESS_REVISION_MISMATCH')
     persisted = root['_vapb_renderer_occurrences']
     projection = json.loads(persisted) if isinstance(persisted, str) else persisted
-    _require(not projection.get('issues'), 'PERSISTED_PROJECTION_HAS_ISSUES')
-    records = [r for r in projection['records'] if r.get('renderer_class_id') == 137]
+    records = observation_records(projection, occurrence_id)
     _require(records and all(r['root_package_id'] == 'sha256:' + package_sha for r in records),
              'PERSISTED_PACKAGE_REVISION_MISMATCH')
+    mesh_keys = {(record['mesh']['mesh_guid'], int(record['mesh']['mesh_file_id'])) for record in records}
+    renderer_keys = {(record['source_key']['source_asset_guid'], int(record['source_key']['renderer_file_id']))
+                     for record in records}
+    source_rows = _unique([row for row in source['skinned_renderers'] if occurrence_id is None
+        or (source['model_guid'], int(row['mesh_local_id'])) in mesh_keys],
+        lambda r: (source['model_guid'], int(r['mesh_local_id'])), 'SOURCE_SKIN_AMBIGUOUS')
+    public_rows = _unique([row for row in public['skinned_renderers'] if occurrence_id is None
+        or (row['renderer']['guid'], int(row['renderer']['local_id'])) in renderer_keys],
+        lambda r: (r['renderer']['guid'], int(r['renderer']['local_id'])), 'PREFAB_SKIN_AMBIGUOUS')
     frame_oracle = None
     if any(bone.get('local_to_world_matrix', bone.get('world_matrix')) is not None
         for row in source['skinned_renderers'] for bone in row['ordered_bones']):
@@ -257,10 +287,13 @@ def observe_native_skin(context, package, witness, source_observation,
             parent_type=obj.parent_type, parent_bone_model_uid=parent_bone_uid,
             world_matrix=[list(row) for row in obj.matrix_world], local_matrix=[list(row) for row in obj.matrix_local],
             constraints=_constraint_rows(obj, handles)))
-    return dict(schema_version='vapb-native-skin-observation-1', status='OBSERVED_NOT_COMPARED',
+    result = dict(schema_version='vapb-native-skin-observation-1', status='OBSERVED_NOT_COMPARED',
                 package_sha256=package_sha, source_validated=True, source_control_report_pass=True,
                 unique_native_pose_control_count=len(pose_control_cache),
                 skins=skins, semantic_carriers=carriers)
+    if occurrence_id is not None:
+        result.update(scope='SELECTED_OCCURRENCE_ONLY', selected_occurrence_id=occurrence_id)
+    return result
 
 
 

@@ -1,5 +1,36 @@
 # Current product campaign checkpoint — 2026-09-26
 
+## Private corpus campaign — 2026-10-01 (IN_PROGRESS)
+
+Latest normal Blender import/save-reopen health: **24/24 PASS**, retaining the
+original directory-discovery failure as an earlier attempt. Health is not
+round-trip equivalence. Independent source capture: 163/165 prefab roots,
+1,351 known Skin/root occurrences plus an UNKNOWN blocked population.
+
+One original selected occurrence has bounded Skin E0/E1 PASS. Original,
+supplementary, extra and retry subjects remain separate. Three fresh nested
+witness-equipped imports pass health; source/native joins are proven, but their
+binding and E0/E1 round-trips remain UNPROVEN/unexecuted. No whole-avatar,
+deformation, UV or VRC acceptance is claimed.
+
+A public directory-discovery RED is repaired by excluding directories from
+archive candidates at both entry points; related 39 tests and the affected real
+normal import are GREEN. The model-export adapter now reports its documented
+unassigned Material scope before editing, instead of a misleading rollback error.
+A separate Windows long-work-path extraction failure has a same-input short-path
+control (248 assets, zero errors); fresh extra-subject retries remain running.
+No guessed frame correction or new production identity behavior was introduced.
+
+Regression: Python 571 PASS; compileall exit 0; scope review PASS. Original corpus
+418 file hashes rechecked: changed 0, missing 0. These checks cover this tested
+source tree; they do not turn pending runtime jobs into PASS.
+
+Next automatic action: finish the sealed short-path extra-subject retries, then
+replay the original directory-affected E0/E1 subject and capture the actual nested
+binding guard. Continue remaining population within the campaign stop conditions.
+See [campaign report](VAPB_CORPUS_CAMPAIGN_20261001.md) and its anonymous matrix.
+
+
 ## External Unity Script / representative real closure — 2026-10-01
 
 **GOAL_VERIFIED for one selected representative occurrence.**

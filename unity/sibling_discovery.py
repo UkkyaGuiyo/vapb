@@ -254,7 +254,7 @@ def _candidate_paths(
         resolved = Path(path).resolve()
         if resolved != root_path and resolved.suffix.casefold() == ".unitypackage" and resolved.is_file():
             candidates.add(resolved)
-    return sorted(candidates)
+    return sorted(path for path in candidates if path.is_file())
 
 
 def discover_siblings(
@@ -408,7 +408,7 @@ def inspect_provider_folder(folder: Path, unresolved_guids: set[str]) -> tuple[l
         for child in folder.iterdir():
             if child.is_dir():
                 package_paths.update(child.glob("*.unitypackage"))
-    candidates = [inspect_provider_package(path, unresolved_guids) for path in sorted(package_paths)]
+    candidates = [inspect_provider_package(path, unresolved_guids) for path in sorted(package_paths) if path.is_file()]
     providers: dict[str, list[SiblingPackageCandidate]] = {}
     for candidate in candidates:
         for guid in candidate.matched_guids:
