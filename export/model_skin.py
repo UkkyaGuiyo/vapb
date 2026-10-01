@@ -70,6 +70,19 @@ def _id(value):
     return value
 
 
+def model_skin_material_bindings(materials):
+    """Current assigned Unity Materials, with explicit FBX transport labels."""
+    result = []
+    for material in materials:
+        if material is None:
+            raise ValueError('Unassigned slots are unsupported by model Material transport')
+        guid, file_id = _guid(material.get('guid')), _id(material.get('file_id'))
+        label = 'VAPB-MAT-' + hashlib.sha256(
+            ('MODEL_SKIN_MATERIAL_V1:' + guid + ':' + file_id).encode('ascii')).hexdigest()[:32]
+        result.append(dict(transport_id=label, guid=guid, file_id=file_id))
+    return result
+
+
 def _asset(by_guid, guid, extension, sha):
     source = by_guid.get(guid)
     if source is None or PurePosixPath(source.pathname).suffix.lower() != extension:

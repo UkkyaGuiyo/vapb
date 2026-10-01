@@ -44,7 +44,7 @@ public static class VapbModelBoundedSkinCapture
         public Vector3[] world_positions, world_normals;
         public float[] renderer_local_to_world;
         public UV[] uv_channels; public Submesh[] submeshes; public Bone[] bones;
-        public Weight[] bone_weights; public string[] material_guids;
+        public Weight[] bone_weights; public string[] material_guids, material_file_ids;
     }
     [Serializable] public class Node {
         public string game_object_id, parent_game_object_id, transform_id, parent_transform_id,
@@ -184,6 +184,8 @@ public static class VapbModelBoundedSkinCapture
             renderer_local_to_world = matrix, uv_channels = uv.ToArray(),
             submeshes = Enumerable.Range(0, mesh.subMeshCount).Select(i => new Submesh { indices = mesh.GetIndices(i) }).ToArray(),
             material_guids = target.sharedMaterials.Select(m => AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(m))).ToArray(),
+            material_file_ids = target.sharedMaterials.Select(m => m == null ? "0" :
+                Id(m, AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(m)))).ToArray(),
             shape_count = mesh.blendShapeCount };
     }
     public static void Write() {

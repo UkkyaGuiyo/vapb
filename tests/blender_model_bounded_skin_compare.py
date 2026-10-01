@@ -15,6 +15,7 @@ from unitypackage_blender_importer.tests.bounded_skin_roundtrip import accept, S
 from unitypackage_blender_importer.tests.blender_geometry_abcd_compare import compare, unity_row, skin_parity_report
 from unitypackage_blender_importer.tests.blender_small_weight_real_check import raw_skin_weights
 from unitypackage_blender_importer.unity.yaml_parser import parse_unity_yaml
+from unitypackage_blender_importer.export.model_skin import model_skin_material_bindings
 
 
 def read(path):
@@ -32,6 +33,25 @@ def need(condition, code):
 
 def exact(condition):
     return 'EXACT' if condition else 'RED'
+
+
+def material_comparison_labels(material_ids, bindings, target_guids, target_file_ids):
+    """Label measured Material references for the existing face-partition oracle.
+
+    These diagnostic labels encode GUID/localID identity; the FBX transport
+    carrier labels are independently validated by the existing task builder.
+    """
+    need(bool(bindings), 'MATERIAL_BINDINGS_MISSING')
+    source = sorted(material_ids, key=lambda material: material['slot'])
+    need([m['slot'] for m in source] == list(range(len(bindings)))
+         and [m['guid'] for m in source] == [b['guid'] for b in bindings], 'CURRENT_MATERIAL_BINDING_MISMATCH')
+    need(model_skin_material_bindings(bindings) == bindings, 'MATERIAL_TRANSPORT_LABEL_MISMATCH')
+    refs = {(b['guid'], str(b['file_id'])) for b in bindings}
+    need(len(target_guids) == len(target_file_ids) and all((guid, str(local_id)) in refs
+         for guid, local_id in zip(target_guids, target_file_ids)), 'TARGET_MATERIAL_REFERENCE_MISMATCH')
+    label = lambda guid, local_id: 'VAPB-EXP-MAT-' + guid + ':' + str(local_id)
+    return ([label(b['guid'], b['file_id']) for b in bindings],
+            [label(guid, local_id) for guid, local_id in zip(target_guids, target_file_ids)])
 
 
 def negative_controls(entity, evidence):
@@ -113,7 +133,8 @@ def build(folder, project):
     unity_parent = {n['game_object_id']: n['parent_game_object_id'] or None for n in unity['hierarchy']}
     unity_transforms = {n['transform_id']: n for n in unity['hierarchy']}
     bridge_path = project / 'ModelHierarchyBridge.json'
-    bridge_nodes = []
+    source_fields = ('source_guid', 'source_game_object_id', 'source_transform_id', 'instance_guid', 'prefab_instance_file_id')
+    bridge_nodes = unity['hierarchy'] if all(all(f in n for f in source_fields) for n in unity['hierarchy']) else []
     if bridge_path.exists():
         bridge = read(bridge_path)
         need(bridge['output_sha256'] == lock['output_sha256'] and bridge['prefab_source_sha256'] == task['prefab_source_sha256'],
@@ -226,6 +247,11 @@ def build(folder, project):
     root_proven = root_proven or frame_root_proven
     need(first['shape_count'] == 0 and not before['shapes'], 'SHAPE_SCOPE_UNSUPPORTED')
     first.update(shape_frames=[], vertex_count=len(first['vertex_control_point_indices']), renderer_type='SkinnedMeshRenderer')
+    bindings = task.get('material_bindings')
+    if bindings:
+        before = deepcopy(before)
+        before['material_export_labels'], first['material_export_labels'] = material_comparison_labels(
+            blender['material_ids'], bindings, first['material_guids'], first['material_file_ids'])
     geometry = compare(before, unity_row(first), before['marker_channel'])
     raw = raw_skin_weights(folder / 'Generated', bone_label_property='_vapb_fbx_bone_realization_id')
     policy = read(project / ('Assets/VAPBExport/SkinWeightPolicy_' + task['model_guid'] + '.json'))
@@ -257,8 +283,8 @@ def build(folder, project):
     evidence['skin']['report'] = skin
     material_guids = [m['guid'] for m in sorted(blender['material_ids'], key=lambda m: m['slot'])]
     source_materials = [m.get('guid', '') for m in source_renderer.data['m_Materials']]
-    material_ok = (material_guids == source_materials == first['material_guids']
-        and geometry['topology_by_material_slot'] == 'EXACT')
+    material_ok = (geometry['material_identity_partitions'] == 'EXACT') if bindings else (
+        material_guids == source_materials == first['material_guids'] and geometry['topology_by_material_slot'] == 'EXACT')
     evidence['material']['checks'] = dict(effective_association=exact(material_ok))
     evidence['shape']['checks'] = dict(shape='NOT_APPLICABLE')
     evidence['finalizer']['checks'] = dict(package_import=exact(unity['output_sha256'] == lock['output_sha256']),
@@ -268,7 +294,7 @@ def build(folder, project):
     need(preserved['realization_id'] == task['realization_id'] and preserved['fbx_sha256'] == task['model_sha256'], 'PRESERVATION_REVISION_MISMATCH')
     evidence['preservation']['checks'] = {field: exact(preserved[field]) for field in CHECKS['preservation']}
     evidence['known_boundaries'] = dict(deformation='UNMEASURED', normals=geometry['normals_per_cp_values'],
-        uv=geometry['uv_per_cp_values'], tangents='UNKNOWN',
+        uv=geometry['uv_per_cp_values'], submesh_numbering=geometry['topology_by_material_slot'], tangents='UNKNOWN',
         import_preview='NOT_MEASURED_BY_THIS_CONTROL', shape='NOT_APPLICABLE_NO_SHAPES')
     return dict(entity=entity, evidence=evidence, result=accept(entity, evidence), geometry=geometry,
         negative_controls=negative_controls(entity, evidence))

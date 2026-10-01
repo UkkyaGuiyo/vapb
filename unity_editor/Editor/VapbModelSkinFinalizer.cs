@@ -107,6 +107,7 @@ public static class VapbModelSkinFinalizer
         public string model_sha256;
         public string realization_id;
         public BoneMapping[] bone_mappings;
+        public MaterialBinding[] material_bindings;
         public string variant_path;
         public string witness_noop_path;
         public string witness_noop_sha256;
@@ -114,6 +115,7 @@ public static class VapbModelSkinFinalizer
         public string witness_sha256;
         public string[] source_model_uids;
     }
+    [Serializable] private sealed class MaterialBinding { public string transport_id, guid, file_id; }
     [Serializable] private sealed class InstanceEdge
     {
         public string container_guid;
@@ -146,6 +148,7 @@ public static class VapbModelSkinFinalizer
         public Mesh mesh;
         public string[] editedBoneUids;
         public string rootUid;
+        public Material[] materials;
     }
     private sealed class Snapshot
     {
@@ -215,7 +218,8 @@ public static class VapbModelSkinFinalizer
             foreach (PreparedTask plan in plans)
             {
                 string path = AssetDatabase.GUIDToAssetPath(plan.task.model_guid);
-                if (imported.Add(path)) RefreshEditedModel(path);
+                if (imported.Add(path)) RefreshEditedModel(path,
+                    plan.task.material_bindings != null && plan.task.material_bindings.Length != 0);
             }
             string prefabPath = AssetDatabase.GUIDToAssetPath(plans[0].task.prefab_guid);
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
@@ -894,13 +898,16 @@ public static class VapbModelSkinFinalizer
         return result;
     }
 
-    private static void RefreshEditedModel(string editedPath)
+    private static void RefreshEditedModel(string editedPath, bool materialTransport)
     {
         ModelImporter importer = AssetImporter.GetAtPath(editedPath) as ModelImporter;
         if (importer == null) Reject("EDITED_IMPORTER_MISSING");
-        if (!importer.isReadable)
+        bool changed = !importer.isReadable || (materialTransport &&
+            importer.materialName != ModelImporterMaterialName.BasedOnMaterialName);
+        if (changed)
         {
             importer.isReadable = true;
+            if (materialTransport) importer.materialName = ModelImporterMaterialName.BasedOnMaterialName;
             importer.SaveAndReimport();
         }
         else AssetDatabase.ImportAsset(editedPath,
@@ -966,7 +973,50 @@ public static class VapbModelSkinFinalizer
                 (edited.editedBoneUids[i] != source.rootUid || found.bones[i] != found.rootBone))
                 Reject("BONE_HIERARCHY_UNSUPPORTED");
         }
+        edited.materials = ResolveMaterialTransport(task, found);
         return edited;
+    }
+
+    private static Material[] ResolveMaterialTransport(Task task, SkinnedMeshRenderer native)
+    {
+        if (task.material_bindings == null || task.material_bindings.Length == 0) return null;
+        var materialByLabel = new Dictionary<string, Material>(StringComparer.Ordinal);
+        foreach (MaterialBinding binding in task.material_bindings)
+        {
+            if (binding == null || !CanonicalGuid(binding.guid) || !ValidUid(binding.file_id) ||
+                binding.transport_id != "VAPB-MAT-" + HashBytes(Encoding.ASCII.GetBytes(
+                    "MODEL_SKIN_MATERIAL_V1:" + binding.guid + ":" + binding.file_id)).Substring(0, 32))
+                Reject("MATERIAL_TRANSPORT_INVALID");
+            string path = AssetDatabase.GUIDToAssetPath(binding.guid);
+            Material resolved = null;
+            if (!String.IsNullOrEmpty(path))
+                foreach (UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(path))
+                    if (asset is Material material && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material,
+                        out string guid, out long id) && guid == binding.guid &&
+                        id.ToString(CultureInfo.InvariantCulture) == binding.file_id)
+                    {
+                        if (resolved != null) Reject("MATERIAL_TRANSPORT_AMBIGUOUS");
+                        resolved = material;
+                    }
+            if (resolved == null) Reject("MATERIAL_TRANSPORT_UNRESOLVED");
+            if (materialByLabel.TryGetValue(binding.transport_id, out Material previous) && previous != resolved)
+                Reject("MATERIAL_TRANSPORT_AMBIGUOUS");
+            materialByLabel[binding.transport_id] = resolved;
+        }
+        Material[] carriers = native.sharedMaterials;
+        if (carriers.Length != native.sharedMesh.subMeshCount) Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
+        var assigned = new Material[carriers.Length];
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < carriers.Length; i++)
+        {
+            // Explicit export transport labels, never source display-name identity.
+            Material material = null;
+            if (carriers[i] == null || !materialByLabel.TryGetValue(carriers[i].name, out material))
+                Reject("MATERIAL_TRANSPORT_LABEL_MISSING");
+            assigned[i] = material; used.Add(carriers[i].name);
+        }
+        if (used.Count != materialByLabel.Count) Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
+        return assigned;
     }
 
     private static void CheckSkinCompatibility(WitnessResult witness,
@@ -1067,6 +1117,7 @@ public static class VapbModelSkinFinalizer
                 }
                 target.sharedMesh = plan.edited.mesh;
                 target.bones = bones;
+                if (plan.edited.materials != null) target.sharedMaterials = plan.edited.materials;
                 PrefabUtility.RecordPrefabInstancePropertyModifications(target);
             }
             GameObject variant = PrefabUtility.SaveAsPrefabAsset(instance, path);
@@ -1106,9 +1157,11 @@ public static class VapbModelSkinFinalizer
             if (mod == null || mod.target == null || String.IsNullOrEmpty(mod.propertyPath))
                 Reject("VARIANT_MODIFICATION_UNKNOWN");
             bool skinBinding = mod.target is SkinnedMeshRenderer skinTarget &&
-                expected.ContainsKey(skinTarget) &&
+                expected.TryGetValue(skinTarget, out PreparedTask modifiedPlan) &&
                 (mod.propertyPath == "m_Mesh" || mod.propertyPath == "m_Bones.Array.size" ||
-                 mod.propertyPath.StartsWith("m_Bones.Array.data[", StringComparison.Ordinal));
+                 mod.propertyPath.StartsWith("m_Bones.Array.data[", StringComparison.Ordinal) ||
+                 (modifiedPlan.edited.materials != null && (mod.propertyPath == "m_Materials.Array.size" ||
+                  mod.propertyPath.StartsWith("m_Materials.Array.data[", StringComparison.Ordinal))));
             bool rootDefault = PrefabUtility.IsDefaultOverride(mod) &&
                 (mod.target == original || mod.target == original.transform);
             if (!skinBinding && !rootDefault) Reject("VARIANT_MODIFICATION_UNKNOWN");
@@ -1132,8 +1185,12 @@ public static class VapbModelSkinFinalizer
         foreach (Renderer renderer in variantRenderers)
         {
             Renderer corresponding = PrefabUtility.GetCorrespondingObjectFromSource(renderer) as Renderer;
+            Material[] expectedMaterials = corresponding == null ? null : corresponding.sharedMaterials;
+            if (corresponding is SkinnedMeshRenderer materialSource &&
+                expected.TryGetValue(materialSource, out PreparedTask materialPlan) && materialPlan.edited.materials != null)
+                expectedMaterials = materialPlan.edited.materials;
             if (corresponding == null || renderer.GetType() != corresponding.GetType() ||
-                !SameMaterials(renderer.sharedMaterials, corresponding.sharedMaterials) ||
+                !SameMaterials(renderer.sharedMaterials, expectedMaterials) ||
                 renderer.enabled != corresponding.enabled) Reject("VARIANT_RENDERER_CHANGED");
             if (corresponding is SkinnedMeshRenderer originalSkin &&
                 expected.TryGetValue(originalSkin, out PreparedTask plan))

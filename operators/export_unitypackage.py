@@ -164,14 +164,14 @@ def _validate_skin_subset(mesh, armature, allowed):
 
 
 def _export_staged_skin(context, source, armature, output, skin_binding, *,
-                        scale_options='FBX_SCALE_NONE', source_skin_only=False):
+                        scale_options='FBX_SCALE_NONE', source_skin_only=False, material_bindings=None):
     """Export a private rest-pose rig/mesh copy carrying only allowed identity markers."""
     allowed = {row['edited_bone_realization_id'] for row in skin_binding['mappings']}
     if source_skin_only:
         _validate_skin_subset(source, armature, allowed)
     scene = bpy.data.scenes.new('VAPB Skin Export')
     scene.unit_settings.scale_length = context.scene.unit_settings.scale_length
-    copies, data_blocks = [], []
+    copies, data_blocks, material_copies = [], [], []
     try:
         rig = armature.copy()
         copies.append(rig)
@@ -185,6 +185,22 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *,
         copies.append(mesh)
         mesh.data = source.data.copy()
         data_blocks.append(mesh.data)
+        if material_bindings:
+            if len(material_bindings) != len(mesh.material_slots):
+                raise ValueError('Material transport slot count changed')
+            material_by_label = {}
+            for slot, binding in zip(mesh.material_slots, material_bindings):
+                label = binding['transport_id']
+                if slot.material is None:
+                    raise ValueError('Material transport source is unavailable')
+                if label not in material_by_label:
+                    material = slot.material.copy()
+                    material_copies.append(material)
+                    material.name = label
+                    if material.name != label:
+                        raise ValueError('Material transport label is occupied')
+                    material_by_label[label] = material
+                slot.material = material_by_label[label]
         scene.collection.objects.link(mesh)
         mesh.parent = rig
         mesh.matrix_world = source.matrix_world.copy()
@@ -229,6 +245,9 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *,
         for data in data_blocks:
             if data.users == 0:
                 (bpy.data.meshes if isinstance(data, bpy.types.Mesh) else bpy.data.armatures).remove(data)
+        for material in material_copies:
+            if material.users == 0:
+                bpy.data.materials.remove(material)
         bpy.data.scenes.remove(scene)
 
 
@@ -297,7 +316,7 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False):
     """Defer model Renderer identity to Unity while preserving source assets."""
     from ..blender.fbx_witness import prepare_witness, source_export_scale_options, source_skin_bone_uids
     from ..blender.fbx_receipt import RECEIPT_VERSION
-    from ..export.model_skin import model_skin_task, direct_skin_task
+    from ..export.model_skin import model_skin_task, direct_skin_task, model_skin_material_bindings
     if context.mode != 'OBJECT' or mesh is None or mesh.type != 'MESH':
         raise ValueError('オブジェクトモードでモデル由来のSkin Meshを選択してください')
     if mesh.library or mesh.data.library or len(mesh.users_scene) != 1:
@@ -364,6 +383,7 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False):
         bones.append({'edited_bone_realization_id': str(bone[keys[3]]),
                       'source_model_uid': str(bone[keys[2]])})
     task = (direct_skin_task if direct else model_skin_task)(metadata, bones, assets)
+    task['material_bindings'] = model_skin_material_bindings(_materials(mesh, package_id, assets))
     original = next(a for a in assets if a.guid == task['source_model_guid'])
     guid = hashlib.sha256(('VAPB_MODEL_SKIN_V1:' + package_id + ':' + realization).encode()).hexdigest()[:32]
     path = f'Assets/VAPBExport/EditedSkin_{guid}.fbx'
@@ -388,7 +408,8 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False):
             raise ValueError('BoneのModel UIDが元FBXにありません')
         edited = folder / 'edited.fbx'
         _export_staged_skin(context, mesh, rig, edited, {'mappings': bones},
-                            scale_options=scale_options, source_skin_only=True)
+                            scale_options=scale_options, source_skin_only=True,
+                            material_bindings=task['material_bindings'])
         payload, noop_bytes, witness_bytes = edited.read_bytes(), noop.read_bytes(), witness.read_bytes()
     task.update(model_guid=guid, model_sha256=hashlib.sha256(payload).hexdigest(),
                 witness_noop_path=witness_base + '_Noop.bytes',
