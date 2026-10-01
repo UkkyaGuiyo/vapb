@@ -76,3 +76,12 @@ not full numeric or roundtrip acceptance. Real Skin loss remains unexplained.
 The remaining next-batch six subjects / twelve modes and separately prepared
 four subjects / eight modes are NOT_RUN. The overall corpus goal is NOT MET.
 No deformation, tangent, broad VRC or whole-avatar acceptance is claimed.
+
+The unchanged production Skin importer helper was then tested in a fresh
+public-only Unity target with the exact D1 FBX and existing policy runner.
+No-policy, exact-policy and repeated-policy observations all retain only two
+of the three explicit triangles: topology RED in all three. Unity exits 0,
+Console errors and warnings are both zero, and source input/helper hashes stay
+unchanged. This is a production-helper-specific public RED, separate from the
+previous weld-only causal control and the unresolved real Skin influence RED.
+It does not establish full normal-package roundtrip acceptance.

@@ -47,7 +47,9 @@ missing associations with weldVertices false. These are separate issues; no
 production importer fix is applied. A public parameter grid measures zero
 missing labels after policy application, without claiming full numeric parity.
 
-Next automatic action: establish a public production-helper RED/GREEN control for explicit triangle preservation under the exact generated-model importer policy; apply a minimal fix only after that control proves the cause. Resume remaining occurrence expansion after checkpoint convergence and resource renewal.
+Unchanged production-helper public RED is now measured: exact-policy and repeated-policy imports both lose one of three explicit triangles, with Unity errors/warnings zero and source/helper hashes unchanged.
+
+Next automatic action: minimally preserve explicit triangles in the exact generated-model importer policy, then require public GREEN and a fresh normal-production real zero-area recheck before claiming a fix. Keep the separate Skin influence loss RED unchanged. Resume remaining occurrence expansion after resource renewal.
 See [campaign report](VAPB_CORPUS_CAMPAIGN_20261001.md) and its anonymous matrix.
 
 
