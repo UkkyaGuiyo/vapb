@@ -34,3 +34,14 @@ yield 2 export-only successes and 4 MODEL_MATERIAL_OTHER_PACKAGE_UNSUPPORTED
 refusals. All six full roundtrips remain NOT_MEASURED; these attempts do not
 replace the direct-adapter baseline. Pass 2 is NOT COMPLETE; these
 health/diagnostic rows do not establish an all-package representative baseline.
+
+## Latest exact-policy fix replay
+
+Public no-policy control remains topology RED; exact-policy and repeated-policy
+imports are topology GREEN with the runtime-tested one-line importer change.
+The same real zero-area subject has two fresh normal-production replay modes:
+E0/E1 both UNPROVEN/HARNESS_ERROR (missing bounded target capture), with actual
+Finalizer TOPOLOGY_OR_LAYOUT_CHANGED / FIRST_APPLY_FAILED. Target parity is
+NOT_MEASURED; compiler errors are zero. Source/rollback/rename-save-reopen
+checks pass. This is an additional fix replay, not a replacement for earlier
+RED/UNPROVEN attempts or an added selected subject.

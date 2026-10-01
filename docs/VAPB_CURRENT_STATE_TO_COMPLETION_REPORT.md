@@ -49,7 +49,9 @@ missing labels after policy application, without claiming full numeric parity.
 
 Unchanged production-helper public RED is now measured: exact-policy and repeated-policy imports both lose one of three explicit triangles, with Unity errors/warnings zero and source/helper hashes unchanged.
 
-Next automatic action: minimally preserve explicit triangles in the exact generated-model importer policy, then require public GREEN and a fresh normal-production real zero-area recheck before claiming a fix. Keep the separate Skin influence loss RED unchanged. Resume remaining occurrence expansion after resource renewal.
+The minimal exact-revision importer policy now disables welding. Its byte-exact public initial/repeat control is topology GREEN (3-to-3), UV and measured Skin numeric sets EXACT. Fresh Python 571 PASS, compileall and scope review PASS. Normal real E0/E1 both reach a separate Finalizer refusal (TOPOLOGY_OR_LAYOUT_CHANGED / FIRST_APPLY_FAILED); target parity is NOT_MEASURED.
+
+Next automatic action: reproduce the Finalizer source-layout versus Blender-final topology boundary in a public synthetic RED, then assess a minimal Product Model-aligned correction with Bone/Cloth guards preserved. The separate Skin influence loss remains RED. Resource floor reached; further controls and expansion await renewal.
 See [campaign report](VAPB_CORPUS_CAMPAIGN_20261001.md) and its anonymous matrix.
 
 

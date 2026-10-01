@@ -117,7 +117,7 @@ False: 3-to-3 triangles, topology EXACT. Both measured sampled surfaces are
 SAMPLED_EXACT. Other settings and source FBX remain unchanged; original meta
 bytes and settings are restored. This proves a causal flag effect for the
 public control, not Unity's internal removal mechanism or full Skin acceptance.
-No production importer change has been applied.
+At that control checkpoint, no production importer change had yet been applied.
 
 The separate real Skin control changes weldVertices to false with the same
 generated FBX and policy. It still reports 2,414 missing positive associations
@@ -144,3 +144,21 @@ Console errors and warnings are both zero, and source input/helper hashes stay
 unchanged. This is a production-helper-specific public RED, separate from the
 previous weld-only causal control and the unresolved real Skin influence RED.
 It does not establish full normal-package roundtrip acceptance.
+
+## Exact generated-model importer candidate
+
+The exact-policy helper now assigns `ModelImporter.weldVertices = false` after
+existing version/GUID/SHA validation. This one-line change is byte-identical to
+the runtime-tested helper: no-policy remains 3-to-2 topology RED; exact policy
+and repeated import retain 3-to-3 topology EXACT. UV and measured Skin numeric
+sets remain EXACT; Console errors/warnings are zero. These are bounded public
+controls, not whole-avatar or complete Skin identity acceptance. The default
+behavior for models without a matching policy is unchanged.
+
+Fresh Python focused tests: 2 PASS; full suite: 571 PASS; compileall exit 0.
+Mandatory scope review PASS. Fresh normal-production real E0/E1 recheck is FINISHED: both are
+UNPROVEN/HARNESS_ERROR with UNITY_EXPLICIT_CAPTURE_MISSING. Unity exits 1
+after TOPOLOGY_OR_LAYOUT_CHANGED / FIRST_APPLY_FAILED; compiler errors are
+zero. Target topology/Skin parity is NOT_MEASURED. Source invariance, rollback
+and rename/save-reopen checks pass for both modes. The earlier caller-containment failures are preserved separately.
+The previous real Skin control's 2,414 missing influences remains a distinct RED.

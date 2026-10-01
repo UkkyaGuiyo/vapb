@@ -58,7 +58,7 @@ False: 3-to-3 triangles, topology EXACT. Both measured sampled surfaces are
 SAMPLED_EXACT. Other settings and source FBX remain unchanged; original meta
 bytes and settings are restored. This proves a causal flag effect for the
 public control, not Unity's internal removal mechanism or full Skin acceptance.
-No production importer change has been applied.
+At that control checkpoint, no production importer change had yet been applied.
 
 The separate real Skin control changes weldVertices to false with the same
 generated FBX and policy. It still reports 2,414 missing positive associations
@@ -85,3 +85,26 @@ Console errors and warnings are both zero, and source input/helper hashes stay
 unchanged. This is a production-helper-specific public RED, separate from the
 previous weld-only causal control and the unresolved real Skin influence RED.
 It does not establish full normal-package roundtrip acceptance.
+
+## Policy preservation and remaining Finalizer boundary
+
+The exact generated-model policy now assigns weldVertices=false after its
+existing revision check. A byte-identical public initial/repeat runtime control
+retains 3-to-3 topology EXACT, UV EXACT and measured Skin numeric sets EXACT,
+with errors/warnings zero. No-policy remains topology RED. Fresh focused tests
+2 PASS, full Python 571 PASS, compileall and scope review PASS.
+
+The fresh normal-production real E0 includes the exact modified helper, but
+Unity exits 1: Finalizer TOPOLOGY_OR_LAYOUT_CHANGED followed by FIRST_APPLY_FAILED.
+No bounded target capture is produced. This is not a real roundtrip GREEN.
+Source inspection identifies an equality guard for source and regenerated
+submesh index-array lengths, including the direct route. The exact failing
+predicate still needs a pre-apply layout control; do not assume the reason code
+uniquely identifies that guard or relax it without a public RED.
+
+The corresponding fresh E1 also finishes with the same Finalizer refusal.
+Both modes have zero compiler errors and preserved stage inputs; source
+invariance, rollback and rename/save-reopen controls pass. Both target parity
+results remain NOT_MEASURED. No Finalizer guard was changed. The caller's
+earlier invalid result-path attempts are retained as HARNESS_ERROR, separately
+from these actual normal-export/fresh-Unity runs.

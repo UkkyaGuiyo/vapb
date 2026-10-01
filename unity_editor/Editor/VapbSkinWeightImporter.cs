@@ -28,5 +28,6 @@ public sealed class VapbSkinWeightImporter : AssetPostprocessor
         // The post-import getter clamps to .001 in 2022.3.22f1. Set at this stage
         // on every import; stored .meta or a setter after import is insufficient.
         importer.minBoneWeight = 0;
+        importer.weldVertices = false;
     }
 }
