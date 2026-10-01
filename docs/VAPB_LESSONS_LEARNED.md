@@ -743,3 +743,26 @@ Phase-2の独立RED controlは
   bytes. Same-input long/short path controls measured four extraction errors versus
   248 assets with zero errors. That control proves an environment boundary, not
   product round-trip acceptance; retain failed attempts and rerun the real route.
+
+### Exact bone provenance does not choose a rest-frame authority
+
+A unique FBX Model UID and geometry-scoped deformer graph can prove which
+Cluster and BindPose records belong to a bone while their matrices still
+disagree. Inspect the installed importer selection rule and matrix convention
+before interpreting a runtime mismatch. Blender 5.2.1's FBX importer decodes
+both through the same column-major helper and lets Cluster TransformLink
+replace the earlier BindPose value. This proves its source-reference choice;
+it does not prove the entire source-to-runtime frame conversion or Unity's
+choice. Keep unresolved frame parity fail-closed; do not fit an offset or use
+matrix proximity to invent identity.
+
+### Corpus diagnostic boundary — callback versus effective target evidence
+
+A callback trace can prove exact revision, invocation and a public setting
+assignment without proving target fidelity. Compiled-helper forced reimport
+retained the same missing positive associations in an actual corpus control.
+A getter returning a default-like minimum value did not prove that threshold
+caused the loss; prior public small-weight controls differ in outcome. Preserve
+the RED and compare actual associations instead of widening tolerance or
+inferring a cause from the getter. JSON key-type normalization can remove a
+diagnostic caller mismatch while leaving a separate semantic-owner refusal.

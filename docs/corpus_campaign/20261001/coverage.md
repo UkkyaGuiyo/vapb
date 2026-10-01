@@ -11,12 +11,13 @@
 | Source Skin occurrences | 1,351 known plus UNKNOWN | Occurrences span roots; they are not unique native meshes. |
 | Original representative modes | 26 attempted across 13 selected subjects | Only 2 have bounded Skin PASS; remaining source occurrences are not covered by those results. |
 | First extra-subject batch | 8 subjects / 16 completed modes: 4 dependency BLOCKED, 12 extraction HARNESS_ERROR | Separate from original and supplementary populations. |
-| Fresh short-output retries | 6 subjects / 12 modes IN_PROGRESS | Pending results excluded. |
+| Fresh short-output retries | 6 subjects / 12 completed modes: 10 bounded PASS, 1 geometry RED, 1 UNPROVEN | Retried extra subjects only; earlier long-path attempts retained. |
 | Next short-output batch | 8 subjects / 16 modes READY_NOT_RUN | Verified inputs are not actual acceptance. |
 | Nested witness-equipped normal health | 3 PASS; observers have native join true and binding UNPROVEN | E0/E1 remains unexecuted for all three subjects. |
 
 All 418 inventoried source files remain hash-unchanged; 0 missing. The affected
-original representative's post-fix E0/E1 replay is NOT_RUN, despite its health PASS.
+original representative's post-fix E0/E1 both finish Skin RED. Its health PASS
+does not establish successful roundtrip.
 
 Every known source occurrence remains in the private population plan, including
 shape, nested and currently unsupported scopes. Subject selection is separate
@@ -26,3 +27,7 @@ Source roots, renderers and native mesh records have separate denominators.
 No corpus completion percentage is asserted. Pass 2 is NOT COMPLETE; no
 all-package representative baseline completion is claimed. Final validation and
 push are pending.
+
+Additional existing nested model-route attempts cover 3 subjects / 6 modes:
+2 export-only completions and 4 explicit other-package Material refusals.
+Full target roundtrip acceptance remains NOT_MEASURED in all six.

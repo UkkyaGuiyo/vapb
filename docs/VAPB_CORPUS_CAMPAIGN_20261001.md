@@ -42,8 +42,12 @@ The first extra-subject batch completed 16 modes: 4 BLOCKED/DEPENDENCY_MISSING
 across two subjects with actual destination refusal, and 12
 UNPROVEN/HARNESS_ERROR across six subjects during package extraction. These
 results remain separate from the original baseline. Twelve fresh short-output
-retries are IN_PROGRESS; a further eight subjects / sixteen modes are READY_NOT_RUN.
-Neither unfinished group contributes completed verdicts.
+retries completed: 10 bounded PASS, 1 geometry RED and 1 UNPROVEN/HARNESS_ERROR.
+Five selected subjects pass both modes. The remaining E0 retains all triangles
+in generated FBX but loses exact zero-area triangles in fresh Unity; its E1 is
+refused before target measurement. Those modes are not combined into a single
+verdict. A further eight subjects / sixteen modes are READY_NOT_RUN and do not
+contribute completed verdicts.
 Selected-subject witnesses do not cover all source roots, Skin occurrences,
 shapes, scripts or destination behaviors. See the [completed matrix](corpus_campaign/20261001/matrix.md),
 [coverage](corpus_campaign/20261001/coverage.md) and [issues](corpus_campaign/20261001/issues.md).
@@ -59,7 +63,7 @@ shapes, scripts or destination behaviors. See the [completed matrix](corpus_camp
   scope; earlier rollback-guard errors remain recorded.
 - Directory candidates are filtered at both discovery entry points. The focused
   public suite has 39 PASS. The affected package's fresh normal import and
-  save/reopen both PASS with source unchanged; its original E0/E1 replay is NOT_RUN.
+  save/reopen both PASS with source unchanged; its original E0/E1 replay finishes with separate Skin REDs.
 - Three fresh witness-equipped normal health imports PASS. Three subsequent
   read-only nested observers prove native witness joins, while stored projection
   binding remains UNPROVEN. These observations do not establish full roundtrip.
@@ -74,7 +78,30 @@ acceptance of pending runtime jobs.
 
 ## Remaining status
 
-Pass 2 is **NOT COMPLETE**: three nested subjects have unexecuted E0/E1 modes.
-Pass 3, final validation and push remain **PENDING**. No all-package representative
+Pass 2 is **NOT COMPLETE**: normal nested model-route attempts yield 2 export-only
+successes and 4 other-package Material refusals; full target roundtrips remain
+NOT_MEASURED.
+Further Pass 3 expansion and final validation remain **PENDING**. No all-package representative
 baseline completion is claimed. This report must be updated
 from completed runtime evidence before any final acceptance claim.
+
+## Post-checkpoint diagnostics
+
+The original directory-affected subject finishes E0/E1 with Skin RED; topology,
+UV and Material partitions are EXACT in both. An isolated Importer-lifecycle
+control proves exact callback invocation and min-weight zero assignment. Forced
+reimport after compiled helpers leaves the target associations unchanged, with
+the same 2,414 missing positive influences. Callback absence/startup timing
+alone is refuted; the importer/numeric mechanism remains UNPROVEN.
+
+The explicit public zero-area fixture reaches generated-FBX and fresh Unity
+capture. The unchanged D-only comparator measures D0 and production D1 as
+3-to-2 topology RED with source unchanged. Full A/B/C/D comparison stops at a
+separate C-side CP-marker/vertex alias assertion. This does not identify the
+importer cause or prove a triangle-staging regression.
+
+Read-only typed-caller nested controls preserve exact identity and serialized
+payload and remove the diagnostic key-type mismatch. All three still refuse
+missing semantic-owner identity. Independent registered model Export attempts
+finish in six modes: two export-only successes and four
+MODEL_MATERIAL_OTHER_PACKAGE_UNSUPPORTED refusals. Full roundtrips are unmeasured.
