@@ -46,8 +46,7 @@ retries completed: 10 bounded PASS, 1 geometry RED and 1 UNPROVEN/HARNESS_ERROR.
 Five selected subjects pass both modes. The remaining E0 retains all triangles
 in generated FBX but loses exact zero-area triangles in fresh Unity; its E1 is
 refused before target measurement. Those modes are not combined into a single
-verdict. A further eight subjects / sixteen modes are READY_NOT_RUN and do not
-contribute completed verdicts.
+verdict. The next short-output batch has completed two further subjects / four modes, all bounded PASS. Its six remaining subjects / twelve modes are READY_NOT_RUN. A separate four-subject / eight-mode batch is prepared but NOT_RUN. These pending modes do not contribute completed verdicts.
 Selected-subject witnesses do not cover all source roots, Skin occurrences,
 shapes, scripts or destination behaviors. See the [completed matrix](corpus_campaign/20261001/matrix.md),
 [coverage](corpus_campaign/20261001/coverage.md) and [issues](corpus_campaign/20261001/issues.md).
@@ -105,3 +104,34 @@ payload and remove the diagnostic key-type mismatch. All three still refuse
 missing semantic-owner identity. Independent registered model Export attempts
 finish in six modes: two export-only successes and four
 MODEL_MATERIAL_OTHER_PACKAGE_UNSUPPORTED refusals. Full roundtrips are unmeasured.
+
+## Latest bounded controls and pending work
+
+Two further selected subjects completed four short-output E0/E1 modes, all
+bounded PASS. Earlier retries remain 10 PASS / 1 geometry RED / 1 UNPROVEN.
+Original, supplementary and extra-subject denominators remain separate.
+
+The public zero-area D1 control uses the same generated FBX and changes only
+ModelImporter.weldVertices. Original true: 3-to-2 triangles, topology mismatch.
+False: 3-to-3 triangles, topology EXACT. Both measured sampled surfaces are
+SAMPLED_EXACT. Other settings and source FBX remain unchanged; original meta
+bytes and settings are restored. This proves a causal flag effect for the
+public control, not Unity's internal removal mechanism or full Skin acceptance.
+No production importer change has been applied.
+
+The separate real Skin control changes weldVertices to false with the same
+generated FBX and policy. It still reports 2,414 missing positive associations
+out of 33,408: Skin RED. Original meta is byte-restored. The first comparison
+refused missing diagnostic-context files; byte-exact copies of the existing
+manifest and policy completed that context, then the unchanged comparator
+measured the RED. The public topology result does not solve this Skin issue.
+
+Loss-pattern diagnostics refute a universal four-influence cap and a global
+monotonic threshold in the examined raw/source-normalized weight domains.
+A separate public two-influence parameter grid captures zero missing positive
+labels after exact policy application and repeat import; capture success is
+not full numeric or roundtrip acceptance. Real Skin loss remains unexplained.
+
+The remaining next-batch six subjects / twelve modes and separately prepared
+four subjects / eight modes are NOT_RUN. The overall corpus goal is NOT MET.
+No deformation, tangent, broad VRC or whole-avatar acceptance is claimed.

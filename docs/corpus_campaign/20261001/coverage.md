@@ -12,7 +12,7 @@
 | Original representative modes | 26 attempted across 13 selected subjects | Only 2 have bounded Skin PASS; remaining source occurrences are not covered by those results. |
 | First extra-subject batch | 8 subjects / 16 completed modes: 4 dependency BLOCKED, 12 extraction HARNESS_ERROR | Separate from original and supplementary populations. |
 | Fresh short-output retries | 6 subjects / 12 completed modes: 10 bounded PASS, 1 geometry RED, 1 UNPROVEN | Retried extra subjects only; earlier long-path attempts retained. |
-| Next short-output batch | 8 subjects / 16 modes READY_NOT_RUN | Verified inputs are not actual acceptance. |
+| Next short-output batch | 2 subjects / 4 completed modes, all bounded PASS; 6 subjects / 12 modes READY_NOT_RUN | Selected occurrences only; no package-wide acceptance. |
 | Nested witness-equipped normal health | 3 PASS; observers have native join true and binding UNPROVEN | E0/E1 remains unexecuted for all three subjects. |
 
 All 418 inventoried source files remain hash-unchanged; 0 missing. The affected
@@ -25,8 +25,7 @@ from identity proof; names, ordering and matching counts are not identity eviden
 Source roots, renderers and native mesh records have separate denominators.
 
 No corpus completion percentage is asserted. Pass 2 is NOT COMPLETE; no
-all-package representative baseline completion is claimed. Final validation and
-push are pending.
+all-package representative baseline completion is claimed. Runtime expansion remains pending. Checkpoint validation is separate from campaign completion.
 
 Additional existing nested model-route attempts cover 3 subjects / 6 modes:
 2 export-only completions and 4 explicit other-package Material refusals.

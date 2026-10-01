@@ -40,8 +40,14 @@ and min-weight zero assignment; compiled-helper reimport leaves the same 2,414
 missing associations. Callback absence/startup timing alone cannot explain it.
 No importer mechanism or production fix is claimed.
 
-Next automatic action: finish the running next short-output expansion subset,
-then measure the prepared weld-only public control within campaign stop conditions.
+Latest controls: four additional bounded modes PASS. Public zero-area D1
+changes from 3-to-2 topology RED to 3-to-3 EXACT when only weldVertices is false;
+original meta/settings are restored. The real Skin control retains all 2,414
+missing associations with weldVertices false. These are separate issues; no
+production importer fix is applied. A public parameter grid measures zero
+missing labels after policy application, without claiming full numeric parity.
+
+Next automatic action: establish a public production-helper RED/GREEN control for explicit triangle preservation under the exact generated-model importer policy; apply a minimal fix only after that control proves the cause. Resume remaining occurrence expansion after checkpoint convergence and resource renewal.
 See [campaign report](VAPB_CORPUS_CAMPAIGN_20261001.md) and its anonymous matrix.
 
 

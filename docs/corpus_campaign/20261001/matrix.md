@@ -24,7 +24,7 @@ never an acceptance verdict.
 
 Completed first extra batch: 8 subjects / 16 modes. Fresh short-output retries of
 its six extraction-failing subjects completed 12 modes, separately recorded above.
-The next eight subjects / sixteen short-output modes are READY_NOT_RUN.
+The next short-output batch has completed two subjects / four modes, all bounded PASS. Six subjects / twelve modes remain READY_NOT_RUN. A separately prepared four-subject / eight-mode batch is also NOT_RUN; preparation is not acceptance.
 
 The directory-affected original subject's fresh E0 is Skin RED with
 INFLUENCE_ASSOCIATION_MISMATCH; topology, UV and material partitions are EXACT.
