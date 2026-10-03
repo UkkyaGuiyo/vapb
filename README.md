@@ -1,5 +1,9 @@
 # VAPB — VRChat / VRCアバターのUnityPackageをBlenderで改変するAdd-on
 
+## Current handoff
+
+For the current branch, evidence status, and exact next action, start at [START_HERE.md](START_HERE.md). The real-corpus campaign is incomplete; this link is a handoff, not a completion claim.
+
 **VAPB (VRC Avatar Package Bridge)** は、VRChat / VRC向けアバター・衣装・小物の `.unitypackage` をBlenderへ直接読み込み、BlenderでMesh・Bone・Weight・Shape Key・UV・Textureなどを編集し、対応範囲の結果をUnityへ戻す作業を支援する無料・オープンソースのBlender Add-onです。
 
 UnityからFBXを書き出してBlenderで編集し、Unityへ戻したあとにMaterialや各種設定を手作業で貼り直す――というアバター改変の往復作業を減らし、**Blender中心でVRChatアバターを改変できるワークフロー**を目標にしています。
