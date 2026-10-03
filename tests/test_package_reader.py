@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from unitypackage_blender_importer.unity.asset_database import AssetDatabase
-from unitypackage_blender_importer.unity.package_reader import UnityPackageReader
+from unitypackage_blender_importer.unity.package_reader import PackageAsset, UnityPackageReader
 from unitypackage_blender_importer.unity.prefab_parser import parse_prefab
 
 
@@ -118,6 +118,111 @@ class PackageReaderTests(unittest.TestCase):
             extracted = UnityPackageReader(package).extract(root / "out")
             self.assertEqual(0, len(extracted.assets))
             self.assertTrue(any("Absolute pathname" in error for error in extracted.errors))
+
+    def test_package_index_never_indexes_unextracted_paths_outside_extraction_root(self):
+        with tempfile.TemporaryDirectory() as temp:
+            base = Path(temp)
+            outside_prefab = base / "outside.prefab"
+            outside_fbx = base / "outside.fbx"
+            outside_material = base / "outside.mat"
+            external_bytes = {
+                outside_prefab: b"synthetic prefab",
+                outside_fbx: b"synthetic fbx",
+                outside_material: b"synthetic material",
+            }
+            for path, content in external_bytes.items():
+                path.write_bytes(content)
+
+            package = base / "indexed.unitypackage"
+            good_guid = "1" * 32
+            missing_guid = "2" * 32
+            hostile_prefab_guid = "3" * 32
+            hostile_fbx_guid = "4" * 32
+            hostile_material_guid = "5" * 32
+            mismatched_extraction_guid = "6" * 32
+            unicode_guid = "7" * 32
+            unc_slash_guid = "8" * 32
+            unc_backslash_guid = "9" * 32
+            drive_relative_guid = "a" * 32
+            make_package(
+                package,
+                [
+                    (good_guid, "Assets/Good.fbx", b"good", None),
+                    (missing_guid, "Assets/Missing.fbx", b"missing", None),
+                    (hostile_prefab_guid, outside_prefab.resolve().as_posix(), b"hostile", None),
+                    (hostile_fbx_guid, "../outside.fbx", b"hostile", None),
+                    (hostile_material_guid, "../outside.mat", b"hostile", None),
+                    (mismatched_extraction_guid, "Assets/Mismatched.mat", b"in package", None),
+                    (unicode_guid, "Assets\\日本語\\Backslash.fbx", b"unicode", None),
+                    (unc_slash_guid, "//server/share/asset.prefab", b"remote path", None),
+                    (unc_backslash_guid, r"\\server\share\asset.prefab", b"remote path", None),
+                    (drive_relative_guid, "C:foo.mat", b"drive-relative path", None),
+                ],
+            )
+            reader = UnityPackageReader(package)
+            index = reader.build_index()
+
+            first_root = base / "first-extraction"
+            first_extraction = reader.extract_selective(
+                first_root,
+                index,
+                {
+                    good_guid,
+                    hostile_prefab_guid,
+                    hostile_fbx_guid,
+                    hostile_material_guid,
+                    unicode_guid,
+                    unc_slash_guid,
+                    unc_backslash_guid,
+                    drive_relative_guid,
+                },
+            )
+            self.assertEqual([good_guid, unicode_guid], [asset.guid for asset in first_extraction.assets])
+            self.assertGreaterEqual(len(first_extraction.errors), 6)
+            self.assertTrue(all("extraction failed" in error for error in first_extraction.errors))
+            first_db = AssetDatabase.from_package_index(first_root, index, first_extraction.assets)
+
+            self.assertEqual(first_root / "Assets/Good.fbx", first_db.find_guid(good_guid).path)
+            unicode_path = first_root / "Assets/日本語/Backslash.fbx"
+            self.assertEqual(unicode_path, first_db.find_path("Assets/日本語/Backslash.fbx").path)
+            self.assertEqual(first_db.find_path("Assets/日本語/Backslash.fbx"), first_db.find_guid(unicode_guid))
+            self.assertEqual("Assets/Missing.fbx", first_db.find_guid(missing_guid).unity_path)
+            self.assertNotIn(first_root / "Assets/Missing.fbx", first_db.fbxs())
+            rejected_guids = (
+                hostile_prefab_guid,
+                hostile_fbx_guid,
+                hostile_material_guid,
+                unc_slash_guid,
+                unc_backslash_guid,
+                drive_relative_guid,
+            )
+            for guid in rejected_guids:
+                self.assertIsNone(first_db.find_guid(guid))
+            self.assertEqual([], first_db.prefabs())
+            self.assertEqual([first_root / "Assets/Good.fbx", unicode_path], first_db.fbxs())
+            self.assertEqual([], first_db.materials())
+
+            second_root = base / "second-extraction"
+            second_root.mkdir()
+            mismatched = PackageAsset(
+                mismatched_extraction_guid,
+                "Assets/Mismatched.mat",
+                outside_material,
+                None,
+            )
+            second_db = AssetDatabase.from_package_index(
+                second_root,
+                index,
+                [mismatched],
+            )
+            for guid in rejected_guids:
+                self.assertIsNone(second_db.find_guid(guid))
+            self.assertEqual([], second_db.prefabs())
+            self.assertEqual([], second_db.fbxs())
+            self.assertEqual([], second_db.materials())
+            self.assertIsNone(second_db.find_guid(mismatched_extraction_guid))
+            self.assertNotIn(outside_material, second_db.materials())
+            self.assertEqual(external_bytes, {path: path.read_bytes() for path in external_bytes})
 
     def test_prefab_parser_extracts_hierarchy_and_refs(self):
         with tempfile.TemporaryDirectory() as temp:

@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from typing import Iterable, Optional
 
-from .package_reader import PackageAsset, PackageIndex
+from .package_reader import PackageAsset, PackageIndex, UnityPackageError, safe_relative_path
 
 
 @dataclass(frozen=True)
@@ -50,12 +50,17 @@ class AssetDatabase:
         assets: Iterable[PackageAsset] = (),
         source_package_id: str = "LEGACY_UNSCOPED",
     ) -> "AssetDatabase":
-        """Index all package GUIDs, including records not yet extracted."""
+        """Index safe package paths, including records not yet extracted."""
         db = cls(root, source_package_id=source_package_id)
         extracted_by_guid = {asset.guid.lower(): asset for asset in assets}
         for guid, record in index.records.items():
-            asset = extracted_by_guid.get(guid.lower())
-            path = asset.extracted_path if asset is not None else Path(root) / record.unity_path
+            try:
+                path = safe_relative_path(Path(root), record.unity_path)
+                asset = extracted_by_guid.get(guid.lower())
+                if asset is not None and Path(asset.extracted_path).resolve() != path:
+                    continue
+            except (OSError, RuntimeError, UnityPackageError):
+                continue
             db.add(AssetEntry(guid, record.unity_path, path, db.source_package_id))
         return db
 
