@@ -40,3 +40,15 @@ When saving:
 The Atlas does not need to be read in full each time. Use this sequence:
 
 INDEX → search → relevant lessons only.
+
+
+## GitHub 保存状態の報告契約
+
+正規リポジトリ: https://github.com/UkkyaGuiyo/vapb
+
+- 新しい Codex スレッドでも最初にこのルート `AGENTS.md` を読み、各進捗・完了報告に Project、作業項目、現在の作業ルート、対象 branch と SHA を明記する。報告に未置換のプレースホルダーを使わない。
+- 作業開始時と報告前に、実際の Git remote を上記の正規リポジトリと照合する。SSH/HTTPS と末尾の `.git` の違いは正規化して比較する。不一致や確認不能なら変更・push を止めて確認する。スレッドの題名や到着順でプロジェクトを決めない。GitHub API のみの場合は checkout がない旨と対象 repository・branch・path を作業ルートとして示し、API のリポジトリ情報で同一性を確認する。
+- 実際に remote 保存・push を行い、GitHub 上の対象 commit とファイルを再読込して確認できた場合だけ、「このGitHubに保存したので見てね」＋リポジトリ URL＋commit／ファイルの直接 URL＋branch／SHA を報告する。
+- 未保存・ローカルのみ・読み取りのみの場合は、「私はこのGitHubを使用しています」＋リポジトリ URL＋未保存の変更内容＋branch／基準 SHA を報告する。変更がなければ「未保存の変更なし」、読み取りのみならその旨を明記する。ローカル commit を GitHub 保存済みと扱わない。
+- 確認者がリンク先の GitHub を読んで検証できるようにする。未公開のローカル差分は GitHub では見えないため、保存済みの内容と分けて報告する。
+- この報告契約は、編集・push・公開・merge・実装再開の権限を追加しない。現在のユーザー依頼の範囲と既存の承認条件を守る。
