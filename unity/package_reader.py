@@ -355,6 +355,7 @@ class UnityPackageReader:
             open_started = perf_counter()
             with tarfile.open(self.package_path, mode="r:*") as archive:
                 self.last_timings["package_open"] += perf_counter() - open_started
+                guid_spellings: dict[str, str] = {}
                 for member in archive:
                     if cancel_check is not None and cancel_check():
                         raise UnityPackageError("Import cancelled")
@@ -363,8 +364,18 @@ class UnityPackageReader:
                         continue
                     guid, entry = parts
                     state = states.get(guid)
+                    if state is None:
+                        state = states.get(guid.lower())
                     if state is None or entry not in {"asset", "asset.meta", "pathname"} or not member.isfile():
                         continue
+                    canonical_guid = guid.lower()
+                    previous_spelling = guid_spellings.get(canonical_guid)
+                    if previous_spelling is not None and previous_spelling != guid:
+                        raise UnityPackageError(
+                            f"UnityPackage case-variant GUID directories collide: "
+                            f"{previous_spelling} and {guid}"
+                        )
+                    guid_spellings[canonical_guid] = guid
                     try:
                         if entry == "pathname":
                             unity_path = _decode_path(self._read_small_member(archive, member))

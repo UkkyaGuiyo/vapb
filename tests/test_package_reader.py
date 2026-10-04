@@ -100,6 +100,71 @@ class PackageReaderTests(unittest.TestCase):
             self.assertFalse((root / "out/Assets/Ignored.png").exists())
             self.assertFalse((root / "out/Assets/Ignored.png.meta").exists())
 
+    def test_selective_extract_matches_uppercase_archive_guid(self):
+        guids = (
+            ("ABCDEF0123456789ABCDEF0123456789", "abcdef0123456789abcdef0123456789"),
+            ("aBcDeF0123456789abCDef0123456789", "ABCDEF0123456789ABCDEF0123456789"),
+        )
+        for archive_guid, requested_guid in guids:
+            with self.subTest(archive_guid=archive_guid), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                package = root / "case-guid.unitypackage"
+                canonical_guid = archive_guid.lower()
+                make_package(
+                    package,
+                    [
+                        (archive_guid, "Assets/Selected.prefab", b"selected payload", b"guid: " + archive_guid.encode()),
+                        ("f" * 32, "Assets/Ignored.txt", b"ignored", None),
+                    ],
+                )
+                reader = UnityPackageReader(package)
+                index = reader.build_index()
+                self.assertIn(canonical_guid, index.records)
+
+                extracted = reader.extract_selective(root / "selective", index, {requested_guid})
+
+                self.assertEqual([], extracted.errors)
+                self.assertEqual([canonical_guid], [asset.guid for asset in extracted.assets])
+                self.assertEqual(b"selected payload", (root / "selective/Assets/Selected.prefab").read_bytes())
+                self.assertEqual(
+                    b"guid: " + archive_guid.encode(),
+                    (root / "selective/Assets/Selected.prefab.meta").read_bytes(),
+                )
+                self.assertFalse((root / "selective/Assets/Ignored.txt").exists())
+
+                full = reader.extract(root / "full")
+                self.assertEqual([], full.errors)
+                self.assertIn(archive_guid, [asset.guid for asset in full.assets])
+                self.assertEqual(b"selected payload", (root / "full/Assets/Selected.prefab").read_bytes())
+
+    def test_selective_extract_rejects_case_variant_guid_directories(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            package = root / "case-variant-guid.unitypackage"
+            uppercase_guid = "ABCDEF0123456789ABCDEF0123456789"
+            lowercase_guid = uppercase_guid.lower()
+            make_package(
+                package,
+                [
+                    (uppercase_guid, "Assets/First.txt", b"first payload", None),
+                    (lowercase_guid, "Assets/Second.txt", b"second payload", None),
+                ],
+            )
+            reader = UnityPackageReader(package)
+            index = reader.build_index()
+
+            with self.assertRaisesRegex(UnityPackageError, "case-variant GUID"):
+                reader.extract_selective(root / "out", index, {lowercase_guid})
+
+            self.assertFalse((root / "out/Assets").exists())
+            self.assertEqual([], list((root / "out").glob(".unitypackage_spool_*")))
+
+            with self.assertRaisesRegex(UnityPackageError, "case-variant GUID"):
+                reader.extract(root / "full-out")
+
+            self.assertFalse((root / "full-out/Assets").exists())
+            self.assertEqual([], list((root / "full-out").glob(".unitypackage_spool_*")))
+
     def test_rejects_traversal(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
