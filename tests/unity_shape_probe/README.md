@@ -116,3 +116,23 @@ Public API references:
 
 - [GetBlendShapeFrameVertices](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Mesh.GetBlendShapeFrameVertices.html)
 - [GetBlendShapeWeight](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/SkinnedMeshRenderer.GetBlendShapeWeight.html)
+
+## Blender Material option Skin/Shape parity
+
+After the public creator package and promoted v3 witness above exist, exercise
+the real Blender package import operator with Materials enabled and disabled.
+The runner checks the two distinct non-zero Shape weight arrays, receipt-mapped
+channels, Skin pose matrices, evaluated world geometry, Spine attachment motion,
+and save/reopen parity for each option. It then compares both option results.
+This is Blender import-option regression evidence; it does not claim a new Unity
+observation or make the optional witness a general import prerequisite.
+
+```powershell
+$Evidence = 'C:/external/shape-evidence'
+$Package = "$Evidence/creator/ShapeOccurrences.unitypackage"
+$Witness = "$Evidence/witness/ShapeModelWitness.v3.json"
+$Result = "$Evidence/material-option-parity"
+& $Blender --background --factory-startup --python-exit-code 1 `
+  --python tests/blender_skin_shape_material_option_test.py -- `
+  "$Package" "$Witness" "$Result"
+```
