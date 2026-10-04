@@ -51,11 +51,13 @@ def assert_close_tree(expected, actual, label):
 
 
 def import_case(package, witness, use_materials, source_store):
-    assert bpy.ops.import_scene.unitypackage(
-        filepath=str(package), import_mode="RECONSTRUCT", prefab_choice="AUTO",
-        model_witness_path=str(witness), keep_extracted=False,
-        source_storage_directory=str(source_store),
-        use_materials=use_materials) == {"FINISHED"}
+    options = {"filepath": str(package), "import_mode": "RECONSTRUCT",
+               "prefab_choice": "AUTO", "keep_extracted": False,
+               "source_storage_directory": str(source_store),
+               "use_materials": use_materials}
+    if witness is not None:
+        options["model_witness_path"] = str(witness)
+    assert bpy.ops.import_scene.unitypackage(**options) == {"FINISHED"}
 
 
 def scene_records():
@@ -80,6 +82,167 @@ def find_occurrence_mesh(record):
     assert len(matches) == 1, ("SKIN_OCCURRENCE_OBJECT_AMBIGUOUS",
                                record["occurrence_id"], len(matches))
     return matches[0]
+
+
+def assert_builtin_preview_resolution(use_materials):
+    from unitypackage_blender_importer.blender.dependency_resolver import (
+        load_dependency_registry, resolve_after_import)
+
+    if not use_materials:
+        registry = load_dependency_registry(bpy.context.scene)
+        assert not [record for record in registry["dependencies"]
+                    if record.get("dependency_type") == "PREFAB_RENDERER_MATERIAL"], (
+            "MATERIALS_OFF_MUST_NOT_CAPTURE_RENDERER_MATERIALS")
+        assert not [material for material in bpy.data.materials
+                    if material.get("_vapb_builtin_preview_provider")], (
+            "MATERIALS_OFF_MUST_NOT_CREATE_BUILTIN_PREVIEW")
+        return
+
+    registry = load_dependency_registry(bpy.context.scene)
+    records = [record for record in registry["dependencies"]
+               if record.get("dependency_type") == "PREFAB_RENDERER_MATERIAL"
+               and record.get("target_guid", "").lower() ==
+               "0000000000000000f000000000000000"
+               and str(record.get("target_file_id", "")) == "10303"]
+    assert len(records) == 2, ("EXPECTED_TWO_BUILTIN_MATERIAL_OCCURRENCES", len(records))
+    assert all(record.get("status") == "RESOLVED_BUILTIN_PREVIEW"
+               and record.get("binding_status") == "BOUND"
+               and record.get("resolution_provenance") == "UNITY_BUILTIN_PREVIEW_APPROXIMATE"
+               for record in records), ("BUILTIN_PREVIEW_NOT_CLASSIFIED", records)
+    assert records[0]["consumer_occurrence_id"] != records[1]["consumer_occurrence_id"]
+    assigned = []
+    for record in records:
+        obj = next(obj for obj in bpy.context.scene.objects
+                   if obj.get("_vapb_renderer_occurrence_id") ==
+                   record["consumer_occurrence_id"])
+        slot = int(record["consumer_slot_index"])
+        assert slot < len(obj.material_slots)
+        material = obj.material_slots[slot].material
+        assert material is not None and material.get("_vapb_builtin_preview_provider") == \
+            "UNITY_DEFAULT_MATERIAL"
+        assert material.get("_vapb_builtin_preview_guid") == \
+            "0000000000000000f000000000000000"
+        assert str(material.get("_vapb_builtin_preview_file_id")) == "10303"
+        assigned.append((obj, slot, material))
+    names_before = {material.name for material in bpy.data.materials
+                    if material.get("_vapb_builtin_preview_provider")}
+    assert len(names_before) == 1, ("EXPECTED_SHARED_APPROXIMATE_PREVIEW", names_before)
+    first_counts = resolve_after_import(bpy.context.scene)
+    assert first_counts["builtin_preview_bound"] == 2, first_counts
+    assert first_counts["unresolved"] == 0, first_counts
+    assert {material.name for material in bpy.data.materials
+            if material.get("_vapb_builtin_preview_provider")} == names_before
+    for obj, slot, material in assigned:
+        assert obj.material_slots[slot].material == material
+    from unitypackage_blender_importer.blender.import_outcome import scene_import_outcome
+    outcome = scene_import_outcome(bpy.context.scene)
+    assert outcome["overall"] == "PARTIAL", outcome
+    assert "BUILTIN_PREVIEW_APPROXIMATE" in {
+        item["code"] for item in outcome["items"]}, outcome
+
+    # A user edit is occurrence-local and must survive another resolve pass.
+    edited_obj, edited_slot, _ = assigned[0]
+    user_material = bpy.data.materials.new("Synthetic user slot edit")
+    edited_obj.material_slots[edited_slot].link = "OBJECT"
+    edited_obj.material_slots[edited_slot].material = user_material
+    second_counts = resolve_after_import(bpy.context.scene)
+    assert second_counts["user_edit_preserved"] == 1, second_counts
+    assert second_counts["builtin_preview_bound"] == 1, second_counts
+    assert edited_obj.material_slots[edited_slot].material == user_material
+    assert assigned[1][0].material_slots[assigned[1][1]].material == assigned[1][2]
+    assert len([material for material in bpy.data.materials
+                if material.get("_vapb_builtin_preview_provider")]) == 1
+
+    # Near misses and explicit null stay outside the built-in preview allowlist.
+    from unitypackage_blender_importer.blender.dependency_resolver import (
+        _is_builtin_preview_reference, capture_dependency)
+    from unitypackage_blender_importer.unity.prefab_parser import ref_file_id
+
+    def negative_control(suffix, *, kind="PREFAB_RENDERER_MATERIAL",
+                         guid="0000000000000000f000000000000000",
+                         file_id=10304, raw_file_id=None):
+        control = dict(records[0])
+        control.update({"dependency_type": kind, "consumer_slot_index": 17,
+                        "target_guid": guid, "target_file_id": str(file_id),
+                        "target_file_id_raw": raw_file_id,
+                        "consumer_occurrence_id": "synthetic-" + suffix})
+        control.pop("initial_slot_state", None)
+        control.pop("applied_slot_state", None)
+        assert not _is_builtin_preview_reference(control), control
+        capture_dependency(bpy.context.scene, control)
+
+    negative_control("wrong-file", file_id=10304, raw_file_id=10304)
+    negative_control("wrong-guid", guid="1" * 32, file_id=10303, raw_file_id=10303)
+    negative_control("wrong-kind", kind="FBX_EXTERNAL_MATERIAL",
+                     file_id=10303, raw_file_id=10303)
+    # The existing parser truncates this fractional YAML scalar to 10303.
+    # Carrying the raw value into the dependency record keeps the allowlist fail-closed.
+    fractional_ref = {"fileID": 10303.9, "guid": "0000000000000000f000000000000000"}
+    fractional_record_file_id = ref_file_id(fractional_ref)
+    assert fractional_record_file_id == 10303
+    negative_control("fractional-file", file_id=fractional_record_file_id,
+                     raw_file_id=fractional_ref["fileID"])
+    negative_control("ordinary-missing", guid="2" * 32,
+                     file_id=2100000, raw_file_id=2100000)
+    null_ref = dict(records[0])
+    null_ref.update({"consumer_slot_index": 18, "target_guid": "", "target_file_id": "0",
+                     "target_file_id_raw": 0})
+    null_ref["consumer_occurrence_id"] = "synthetic-explicit-null-control"
+    capture_dependency(bpy.context.scene, null_ref)
+    result = resolve_after_import(bpy.context.scene)
+    final = load_dependency_registry(bpy.context.scene)
+    null_row = next(row for row in final["dependencies"]
+                    if row.get("consumer_occurrence_id") == "synthetic-explicit-null-control")
+    negative_rows = [row for row in final["dependencies"]
+                     if str(row.get("consumer_occurrence_id", "")).startswith("synthetic-")]
+    assert len(negative_rows) == 6, negative_rows
+    assert all(row["status"] == "UNRESOLVED" for row in negative_rows), negative_rows
+    assert null_row["status"] == "UNRESOLVED", null_row
+    assert result["builtin_preview_bound"] == 1, result
+    print("BUILTIN_PREVIEW_BOUNDARY_PASS", flush=True)
+
+
+def assert_builtin_preview_after_reopen(use_materials):
+    from unitypackage_blender_importer.blender.dependency_resolver import (
+        load_dependency_registry, resolve_after_import)
+    registry = load_dependency_registry(bpy.context.scene)
+    rows = [row for row in registry["dependencies"]
+            if row.get("dependency_type") == "PREFAB_RENDERER_MATERIAL"
+            and row.get("target_guid", "").lower() ==
+            "0000000000000000f000000000000000"
+            and str(row.get("target_file_id", "")) == "10303"
+            and type(row.get("target_file_id_raw")) is int
+            and row.get("target_file_id_raw") == 10303]
+    previews = [material for material in bpy.data.materials
+                if material.get("_vapb_builtin_preview_provider") == "UNITY_DEFAULT_MATERIAL"]
+    if not use_materials:
+        assert not rows and not previews, (rows, previews)
+        return
+    assert len(rows) == 2 and len(previews) == 1, (len(rows), len(previews))
+    assert sorted(row["status"] for row in rows) == [
+        "RESOLVED_BUILTIN_PREVIEW", "USER_EDIT_PRESERVED"]
+    fractional = next(row for row in registry["dependencies"]
+                      if row.get("consumer_occurrence_id") == "synthetic-fractional-file")
+    assert fractional["status"] == "UNRESOLVED", fractional
+    before = {obj.name: [(slot.link, slot.material.name if slot.material else None)
+                         for slot in obj.material_slots]
+              for obj in bpy.context.scene.objects
+              if obj.get("_vapb_renderer_occurrence_id")}
+    counts = resolve_after_import(bpy.context.scene)
+    assert counts["builtin_preview_bound"] == 1
+    assert counts["user_edit_preserved"] == 1
+    assert len([material for material in bpy.data.materials
+                if material.get("_vapb_builtin_preview_provider") == "UNITY_DEFAULT_MATERIAL"]) == 1
+    after = {obj.name: [(slot.link, slot.material.name if slot.material else None)
+                        for slot in obj.material_slots]
+             for obj in bpy.context.scene.objects
+             if obj.get("_vapb_renderer_occurrence_id")}
+    assert before == after, (before, after)
+    from unitypackage_blender_importer.blender.import_outcome import scene_import_outcome
+    outcome = scene_import_outcome(bpy.context.scene)
+    assert outcome["overall"] == "PARTIAL"
+    assert "BUILTIN_PREVIEW_APPROXIMATE" in {
+        item["code"] for item in outcome["items"]}
 
 
 def snapshot(witness, records):
@@ -176,6 +339,7 @@ def run_mode(package, witness_path, output_dir, mode):
     source_store = output_dir / ("sources_" + mode)
     bpy.ops.wm.read_factory_settings(use_empty=True)
     import_case(package, witness_path, use_materials, source_store)
+    assert_builtin_preview_resolution(use_materials)
     witness = load_witness(package, witness_path, output_dir)
     records = scene_records()
     baseline = snapshot(witness, records)
@@ -188,6 +352,7 @@ def run_mode(package, witness_path, output_dir, mode):
                    "spine_pose": matrix_values(bone.matrix)}
     assert bpy.ops.wm.save_as_mainfile(filepath=str(blend)) == {"FINISHED"}
     assert bpy.ops.wm.open_mainfile(filepath=str(blend)) == {"FINISHED"}
+    assert_builtin_preview_after_reopen(use_materials)
     witness = load_witness(package, witness_path, output_dir)
     records = scene_records()
     attachments = [obj for obj in bpy.context.scene.objects
@@ -246,6 +411,24 @@ def main():
                   "witness_sha256": __import__("hashlib").sha256(witness.read_bytes()).hexdigest(),
                   "materials_on_off_parity": True,
                   "saved_reopen_parity": True,
+                  "builtin_preview": {
+                      "dependency_type": "PREFAB_RENDERER_MATERIAL",
+                      "target_guid": "0000000000000000f000000000000000",
+                      "target_file_id": 10303,
+                      "status": "RESOLVED_BUILTIN_PREVIEW",
+                      "resolution_provenance": "UNITY_BUILTIN_PREVIEW_APPROXIMATE",
+                      "bound_occurrences": 2,
+                      "unique_preview_materials": 1,
+                      "repeat_resolution": True,
+                      "saved_reopen": True,
+                      "user_edit_preserved": True,
+                      "materials_off_creates_no_preview": True,
+                      "negative_controls": ["wrong_file_id", "wrong_guid", "wrong_dependency_type",
+                                            "fractional_raw_file_id", "ordinary_missing_provider",
+                                            "explicit_null"],
+                      "scene_import_outcome": "PARTIAL",
+                      "optional_model_witness_used_for_exact_occurrence_mapping": True,
+                  },
                   "occurrence_weight_sets": sorted(on["occurrences"])}
         (output_dir / "SkinShapeMaterialOptionResult.json").write_text(
             json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")

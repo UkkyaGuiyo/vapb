@@ -118,14 +118,17 @@ def occurrence_identity(record: dict) -> str:
     return hashlib.sha256(json.dumps(scope, separators=(",", ":"), ensure_ascii=True).encode("ascii")).hexdigest()
 
 
-def _reference(value: object) -> dict | None:
+def _reference(value: object, *, preserve_raw_file_id: bool = False) -> dict | None:
     if not isinstance(value, dict):
         return None
     guid = ref_guid(value)
     file_id = ref_file_id(value)
     if not guid or file_id is None or file_id == 0:
         return None
-    return {"guid": guid.lower(), "file_id": file_id}
+    reference = {"guid": guid.lower(), "file_id": file_id}
+    if preserve_raw_file_id:
+        reference["raw_file_id"] = value.get("fileID")
+    return reference
 
 
 def _source_guid(source: PrefabSource) -> str:
@@ -264,7 +267,7 @@ def project_occurrences(
             for slot, value in enumerate(values):
                 if isinstance(value, dict) and ref_file_id(value) == 0:
                     materials[slot] = None
-                elif reference := _reference(value):
+                elif reference := _reference(value, preserve_raw_file_id=True):
                     materials[slot] = {**reference, "source_package_id": source.package_id}
                 else:
                     material_status = "UNKNOWN"
@@ -362,7 +365,7 @@ def project_occurrences(
                 matches = [record for record in child_records
                            if record["source_key"]["source_asset_guid"] == modification.target_guid.lower()
                            and record["source_key"]["renderer_file_id"] == modification.target_file_id]
-                material = _reference(modification.object_reference)
+                material = _reference(modification.object_reference, preserve_raw_file_id=True)
                 explicit_null = (isinstance(modification.object_reference, dict)
                                  and ref_file_id(modification.object_reference) == 0
                                  and not ref_guid(modification.object_reference))

@@ -23,6 +23,10 @@ USER_EDIT_PRESERVED = "USER_EDIT_PRESERVED"
 UNVERIFIED_SLOT_STATE = "UNVERIFIED_SLOT_STATE"
 UNVERIFIED_TEXTURE_STATE = "UNVERIFIED_TEXTURE_STATE"
 UNSUPPORTED = "UNSUPPORTED"
+RESOLVED_BUILTIN_PREVIEW = "RESOLVED_BUILTIN_PREVIEW"
+BUILTIN_PREVIEW_GUID = "0000000000000000f000000000000000"
+BUILTIN_PREVIEW_FILE_ID = "10303"
+BUILTIN_PREVIEW_MARKER = "_vapb_builtin_preview_provider"
 
 
 def load_dependency_registry(scene: Any) -> dict[str, Any]:
@@ -170,11 +174,24 @@ def _bind_material(record: dict[str, Any], material: Any) -> bool:
     if consumer is None or not getattr(consumer, "data", None) or not hasattr(consumer.data, "materials"):
         record["status"] = MISSING_CONSUMER
         return False
-    if (record.get("identity_bridge") == "UNITY_MODEL_WITNESS"
-            and (str(material.get("unity_material_file_id", "")) != str(record.get("target_file_id", ""))
-                 or str(material.get("unity_material_guid", "")).lower() != str(record.get("target_guid", "")).lower())):
-        record["status"] = MISSING_CONSUMER
-        return False
+    if record.get("identity_bridge") == "UNITY_MODEL_WITNESS":
+        is_builtin_preview = (
+            material.get(BUILTIN_PREVIEW_MARKER) == "UNITY_DEFAULT_MATERIAL"
+            and material.get("_vapb_builtin_preview_approximate") is True)
+        if is_builtin_preview:
+            identity_matches = (
+                record.get("dependency_type") == "PREFAB_RENDERER_MATERIAL"
+                and str(record.get("target_file_id", "")) == BUILTIN_PREVIEW_FILE_ID
+                and str(record.get("target_guid", "")).lower() == BUILTIN_PREVIEW_GUID
+                and str(material.get("_vapb_builtin_preview_file_id", "")) == BUILTIN_PREVIEW_FILE_ID
+                and str(material.get("_vapb_builtin_preview_guid", "")).lower() == BUILTIN_PREVIEW_GUID)
+        else:
+            identity_matches = (
+                str(material.get("unity_material_file_id", "")) == str(record.get("target_file_id", ""))
+                and str(material.get("unity_material_guid", "")).lower() == str(record.get("target_guid", "")).lower())
+        if not identity_matches:
+            record["status"] = MISSING_CONSUMER
+            return False
     slot = int(record.get("consumer_slot_index", 0))
     if slot < 0:
         record["status"] = MISSING_CONSUMER
@@ -330,13 +347,46 @@ def _clear_material_slot(record: dict[str, Any]) -> bool:
     return True
 
 
+def _is_builtin_preview_reference(record: dict[str, Any]) -> bool:
+    raw_file_id = record.get("target_file_id_raw")
+    return (record.get("dependency_type") == "PREFAB_RENDERER_MATERIAL"
+            and str(record.get("target_guid", "")).lower() == BUILTIN_PREVIEW_GUID
+            and str(record.get("target_file_id", "")) == BUILTIN_PREVIEW_FILE_ID
+            and type(raw_file_id) is int and raw_file_id == int(BUILTIN_PREVIEW_FILE_ID))
+
+
+def _builtin_preview_material() -> Any:
+    candidates = [material for material in bpy.data.materials
+                  if material.get(BUILTIN_PREVIEW_MARKER) == "UNITY_DEFAULT_MATERIAL"
+                  and str(material.get("_vapb_builtin_preview_guid", "")).lower() == BUILTIN_PREVIEW_GUID
+                  and str(material.get("_vapb_builtin_preview_file_id", "")) == BUILTIN_PREVIEW_FILE_ID]
+    if len(candidates) == 1:
+        return candidates[0]
+    if len(candidates) > 1:
+        return None
+    material = bpy.data.materials.new("Unity Built-in Default (Approximate Preview)")
+    preview_color = (0.72, 0.72, 0.72, 1.0)
+    material.diffuse_color = preview_color
+    material.use_nodes = True
+    shader = next((node for node in material.node_tree.nodes
+                   if node.type == "BSDF_PRINCIPLED"), None)
+    if shader is not None and shader.inputs.get("Base Color") is not None:
+        shader.inputs["Base Color"].default_value = preview_color
+    material[BUILTIN_PREVIEW_MARKER] = "UNITY_DEFAULT_MATERIAL"
+    material["_vapb_builtin_preview_guid"] = BUILTIN_PREVIEW_GUID
+    material["_vapb_builtin_preview_file_id"] = BUILTIN_PREVIEW_FILE_ID
+    material["_vapb_builtin_preview_approximate"] = True
+    material["_vapb_builtin_preview_note"] = "Display aid only; not a captured Unity Material asset."
+    return material
+
+
 def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
     registry = load_dependency_registry(scene)
     try:
         provider_provenance = json.loads(str(scene.get("unitypackage_provider_provenance", "{}")))
     except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
         provider_provenance = {}
-    counts = {"resolved_local": 0, "resolved_cross_package": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "unverified_texture_state": 0, "null_realized": 0, "late_bindings_applied": 0}
+    counts = {"resolved_local": 0, "resolved_cross_package": 0, "builtin_preview_bound": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "unverified_texture_state": 0, "null_realized": 0, "late_bindings_applied": 0}
     changed = False
     for record in registry.get("dependencies", []):
         if record.get("dependency_type") == "CLEAR_MATERIAL_SLOT":
@@ -352,6 +402,35 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                         UNVERIFIED_SLOT_STATE: "unverified_slot_state"}.get(
                             record["status"], "missing_consumer")] += 1
             record["resolution_provenance"] = "SERIALIZED_EXPLICIT_NULL"
+            changed = True
+            continue
+        if _is_builtin_preview_reference(record):
+            record["provider_status"] = "ENGINE_RESIDENT_BUILTIN"
+            preview = _builtin_preview_material()
+            applied = preview is not None and _bind_material(record, preview)
+            if applied:
+                record["status"] = RESOLVED_BUILTIN_PREVIEW
+                record["binding_status"] = "BOUND"
+                record["resolved_provider_package_id"] = ""
+                record["resolved_provider_guid"] = BUILTIN_PREVIEW_GUID
+                record["resolved_provider_asset_path"] = ""
+                record["resolution_provenance"] = "UNITY_BUILTIN_PREVIEW_APPROXIMATE"
+                record["binding_source"] = "builtin_preview_resolver"
+                counts["builtin_preview_bound"] += 1
+                counts["late_bindings_applied"] += 1
+            else:
+                blocked_status = record.get("status") if record.get("status") in {
+                    USER_EDIT_PRESERVED, UNVERIFIED_SLOT_STATE, UNVERIFIED_TEXTURE_STATE
+                } else MISSING_CONSUMER
+                record["status"] = blocked_status
+                record["binding_status"] = blocked_status
+                record["resolution_provenance"] = "UNITY_BUILTIN_PREVIEW_APPROXIMATE"
+                if blocked_status == USER_EDIT_PRESERVED:
+                    counts["user_edit_preserved"] += 1
+                elif blocked_status == UNVERIFIED_SLOT_STATE:
+                    counts["unverified_slot_state"] += 1
+                else:
+                    counts["missing_consumer"] += 1
             changed = True
             continue
         provider_type = "Material" if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"} else "Image"

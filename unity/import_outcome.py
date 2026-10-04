@@ -109,11 +109,18 @@ def summarize_import_outcome(projections: list[dict], dependencies: list[dict],
             continue
         if kind == "MATERIAL_TEXTURE" and record.get("texture_label") == "Preserve Only":
             continue
+        scope = "Materialスロット" if kind in _MATERIAL_TYPES else "MaterialのTexture参照"
+        if (status == "RESOLVED_BUILTIN_PREVIEW"
+                and record.get("binding_status") == "BOUND"
+                and record.get("resolution_provenance") == "UNITY_BUILTIN_PREVIEW_APPROXIMATE"):
+            add("PARTIAL", "BUILTIN_PREVIEW_APPROXIMATE", scope,
+                "Unity Built-in Materialの概略表示用プレビューを割り当てました。元のUnity Material資産の再現ではありません。",
+                "プレビューはBlenderで編集できます。Unity用出力に必要な材料は別途確認してください。")
+            continue
         if status in {"RESOLVED_LOCAL", "RESOLVED_CROSS_PACKAGE"} and record.get("binding_status") == "BOUND":
             if kind in _MATERIAL_TYPES:
                 counts["RESOLVED"] += 1
             continue
-        scope = "Materialスロット" if kind in _MATERIAL_TYPES else "MaterialのTexture参照"
         if status == "UNRESOLVED":
             add("MISSING_DEPENDENCY", status, scope,
                 "参照先のMaterialまたはTextureが見つかりません。",

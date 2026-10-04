@@ -89,6 +89,16 @@ class OccurrenceProjectionTests(unittest.TestCase):
         self.assertEqual(ROOT, record["root_asset_guid"])
         self.assertEqual("EXACT", record["material_status"])
 
+    def test_material_projection_preserves_raw_fractional_file_id(self):
+        payload = direct().replace(
+            "fileID: 2100000, guid: " + MAT,
+            "fileID: 2100000.9, guid: " + MAT)
+        record = self.project(self.source(ROOT, payload)).records[0]
+        # Legacy normalization truncates via int(); exact-provider gates must
+        # retain the original scalar so they can reject this malformed value.
+        self.assertEqual(2100000, record["materials"][0]["file_id"])
+        self.assertEqual(2100000.9, record["materials"][0]["raw_file_id"])
+
     def test_blend_shape_weights_are_renderer_state_and_malformed_values_are_unknown(self):
         for text, expected in (('  m_BlendShapeWeights:\n  - 25\n  - 0\n  - 75\n', [25.0, 0.0, 75.0]),
                                ('  m_BlendShapeWeights:\n  - invalid\n', None)):

@@ -522,6 +522,7 @@ def apply_prefab_materials(prefab: PrefabData, object_map: dict[int, bpy.types.O
                         "consumer_slot_index": index,
                         "target_guid": guid,
                         "target_file_id": ref_file_id(reference) or "",
+                        "target_file_id_raw": reference.get("fileID") if isinstance(reference, dict) else None,
                         "source_prefab_asset_path": obj.get("unity_asset_path", ""),
                     })
                 continue

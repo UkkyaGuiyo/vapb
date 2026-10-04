@@ -45,6 +45,19 @@ class ImportOutcomeTests(unittest.TestCase):
         self.assertEqual(result["counts"]["MISSING_DEPENDENCY"], 1)
         self.assertEqual(result["counts"]["UNRESOLVED_IDENTITY"], 0)
 
+    def test_builtin_preview_is_explained_partial_not_exact_material_success(self):
+        result = summarize_import_outcome([], [{
+            "dependency_type": "PREFAB_RENDERER_MATERIAL",
+            "status": "RESOLVED_BUILTIN_PREVIEW",
+            "binding_status": "BOUND",
+            "resolution_provenance": "UNITY_BUILTIN_PREVIEW_APPROXIMATE",
+        }])
+        self.assertEqual(result["overall"], "PARTIAL")
+        self.assertEqual(result["counts"]["RESOLVED"], 0)
+        self.assertEqual(result["counts"]["MISSING_DEPENDENCY"], 0)
+        self.assertEqual(result["counts"]["PARTIAL"], 1)
+        self.assertEqual(result["items"][0]["code"], "BUILTIN_PREVIEW_APPROXIMATE")
+
     def test_e_alias_uncertainty_keeps_nested_scope_without_guessing_object(self):
         issue = {"code": "UNRESOLVED_ALIAS_OVERRIDE", "uncertainty_scope": "NESTED_INSTANCE"}
         result = summarize_import_outcome([projection(issues=[issue])], [])

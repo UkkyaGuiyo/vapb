@@ -68,7 +68,7 @@ def record(edge=(), material="e" * 32):
              "mesh": {"mesh_guid": GUID, "mesh_file_id": -606,
                       "source_package_id": "pkg", "source_sha256": FBX_SHA},
              "materials": {0: {"guid": material, "file_id": 2100000,
-                                "source_package_id": "pkg"}},
+                                "raw_file_id": 2100000, "source_package_id": "pkg"}},
              "material_slot_count": 1, "material_status": "EXACT"}
     value["occurrence_id"] = occurrence_identity(value)
     return value
@@ -365,6 +365,7 @@ class ModelWitnessBridgeTests(unittest.TestCase):
         self.assertEqual((current["occurrence_id"], "native-one", "e" * 32, "2100000"),
                          (dep["consumer_occurrence_id"], dep["consumer_native_realization_id"],
                           dep["target_guid"], dep["target_file_id"]))
+        self.assertEqual(2100000, dep["target_file_id_raw"])
         self.assertIs(obj, find_witness_consumer(dep, [root(current), obj]))
         self.assertIsNone(find_witness_consumer(dep, [root(current), obj, native()]))
         unknown = copy.deepcopy(current)

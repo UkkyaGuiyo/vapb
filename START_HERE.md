@@ -2,6 +2,13 @@
 
 This is a continuation handoff, not a product-completion statement. **STOPPED / INCOMPLETE** applies only to the earlier private-corpus compatibility campaign; it does not suspend public synthetic development. For the normal `.unitypackage`-to-Blender workflow, Unity project import and manual FBX export are not user prerequisites. The add-on handles temporary extraction/FBX interchange internally; Unity Editor/projects serve as development verification oracles, while importing the finished output package into Unity is a separate return step.
 
+## Current public synthetic checkpoint (2026-10-04)
+
+- Active development branch: `feature/r2-material-slot-reorder` (verify the current remote before continuing).
+- Current bounded code/evidence update: [`docs/R2_BUILTIN_MATERIAL_PREVIEW_CHECKPOINT_20261004.md`](docs/R2_BUILTIN_MATERIAL_PREVIEW_CHECKPOINT_20261004.md).
+- This checkpoint covers only the exact Unity built-in default Material identity stated in that note. The Blender preview is approximate and import outcome remains `PARTIAL`; it does not establish Material export restoration or general Renderer mapping.
+- The source/evidence checkpoint below is historical handoff context. Retain it; it does not describe the current branch tip.
+
 ## Canonical source
 
 - Repository: [UkkyaGuiyo/vapb](https://github.com/UkkyaGuiyo/vapb)

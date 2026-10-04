@@ -436,6 +436,8 @@ def plan_witness_material_dependencies(bindings, package_sha256):
             if not explicit_null:
                 dependency["target_guid"] = str(reference["guid"]).lower()
                 dependency["target_file_id"] = str(reference["file_id"])
+                if "raw_file_id" in reference:
+                    dependency["target_file_id_raw"] = reference["raw_file_id"]
             dependencies.append(dependency)
     return dependencies
 
