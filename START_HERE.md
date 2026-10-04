@@ -1,6 +1,6 @@
 # VAPB development handoff
 
-This is a continuation handoff, not a product-completion statement. The private-corpus compatibility campaign is **STOPPED / INCOMPLETE**. Resume only when the user asks to continue.
+This is a continuation handoff, not a product-completion statement. **STOPPED / INCOMPLETE** applies only to the earlier private-corpus compatibility campaign; it does not suspend public synthetic development. For the normal `.unitypackage`-to-Blender workflow, Unity project import and manual FBX export are not user prerequisites. The add-on handles temporary extraction/FBX interchange internally; Unity Editor/projects serve as development verification oracles, while importing the finished output package into Unity is a separate return step.
 
 ## Canonical source
 

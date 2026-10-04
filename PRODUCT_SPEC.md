@@ -12,6 +12,10 @@ VAPB's primary product goal is to eliminate the manual workflow:
 Unity → FBX → Blender → edit → FBX → Unity → manually reassign Materials / restore Unity-VRC settings
 ```
 
+## User entry workflow
+
+The normal input path is `.unitypackage` directly into Blender. Users are not required to import the input package into a Unity project or manually export an FBX first; temporary extraction and FBX interchange are internal implementation details. A Unity Editor/project is a development verification oracle, not an import-time user prerequisite. Importing the finished output package into Unity is a separate return step.
+
 The normative replacement is:
 
 ```text

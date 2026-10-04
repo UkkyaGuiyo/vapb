@@ -23,6 +23,8 @@ VAPBは、たとえば次のような用途を対象にしています。
 
 ## What VAPB does
 
+For the normal `.unitypackage`-to-Blender editing workflow, users do not need to import the input package into a Unity project or manually export an FBX first. Any temporary extraction and FBX interchange is handled internally by the add-on. A Unity Editor/project is a development verification oracle, not a prerequisite for starting the Blender import; importing the finished output package into Unity is a separate return step.
+
 VAPB is an experimental **Blender add-on for importing VRChat / VRC avatar UnityPackage files into Blender**, editing supported avatar geometry and assets in Blender, and returning supported results to Unity. It is designed for workflows such as **UnityPackage to Blender**, **VRChat avatar editing in Blender**, and **Blender-centered avatar customization** without manually rebuilding every Unity-side assignment after each edit.
 
 Blender 5.2.1 LTS専用の `.unitypackage` インポーターです。Version 0.4.0 candidate。通常のImportではUnity Editorを起動せず、UnityPackageを一時フォルダへ安全に復元し、FBXをBlenderへ読み込みます。
