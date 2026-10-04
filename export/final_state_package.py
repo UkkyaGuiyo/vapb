@@ -38,6 +38,39 @@ def _id(block, prefix: str, key: str, collection) -> str:
     return prefix + uuid4().hex
 
 
+def _material_slot_export_ids(slots, collection):
+    """Resolve one package ID per distinct Material and retain slot multiplicity."""
+    ids_by_pointer = {}
+    pointers_by_id = {}
+    slot_ids = []
+    for slot in slots:
+        material = slot.material
+        if material is None:
+            raise ValueError("each current Mesh material slot needs a Unity-derived Material")
+        pointer = material.as_pointer()
+        if pointer not in ids_by_pointer:
+            material_id = _id(material, "VAPB-MAT-", "_vapb_export_material_id", collection)
+            other_pointer = pointers_by_id.get(material_id)
+            if other_pointer is not None and other_pointer != pointer:
+                raise ValueError("duplicate VAPB Export Material ID in package")
+            ids_by_pointer[pointer] = material_id
+            pointers_by_id[material_id] = pointer
+        slot_ids.append(ids_by_pointer[pointer])
+    return ids_by_pointer, slot_ids
+
+
+def _reject_unused_material_slots(slots, polygons) -> None:
+    """Refuse exports whose material slot layout contains slots with no faces."""
+    used = {polygon.material_index for polygon in polygons}
+    invalid = sorted(index for index in used if index < 0 or index >= len(slots))
+    if invalid:
+        raise ValueError("Mesh polygons reference a missing material slot")
+    unused = sorted(set(range(len(slots))) - used)
+    if unused:
+        raise ValueError(
+            f"unused material slot(s) at indices {unused}; remove unused slots and re-export")
+
+
 def _material_data(payload: bytes):
     with tempfile.TemporaryDirectory(prefix="vapb_material_refs_") as temporary:
         root = Path(temporary)
@@ -164,18 +197,22 @@ def export_final_state_package(context, mesh, output: Path):
         raise ValueError("this first final-state route requires a static UV Mesh")
     if not mesh.material_slots or any(slot.material is None for slot in mesh.material_slots):
         raise ValueError("each current Mesh material slot needs a Unity-derived Material")
+    _reject_unused_material_slots(mesh.material_slots, mesh.data.polygons)
     object_id = _id(mesh, "VAPB-OBJ-", "_vapb_export_object_id", bpy.data.objects)
     material_records = []
     selected = StagingTree()
-    material_ids = {}
+    material_ids, slot_material_ids = _material_slot_export_ids(
+        mesh.material_slots, bpy.data.materials)
+    processed_materials = set()
     source_cache = {}
     material_entries = {}
     naming_rows = {}
     for slot in mesh.material_slots:
         material = slot.material
         key = material.as_pointer()
-        if key not in material_ids:
-            material_id = _id(material, "VAPB-MAT-", "_vapb_export_material_id", bpy.data.materials)
+        if key not in processed_materials:
+            processed_materials.add(key)
+            material_id = material_ids[key]
             package_id = str(material.get("unity_source_package_id", ""))
             guid = str(material.get("unity_material_guid", "")).lower()
             file_id = str(material.get("unity_material_file_id", ""))
@@ -220,13 +257,12 @@ def export_final_state_package(context, mesh, output: Path):
                     texture.meta_bytes, texture.preview_bytes, asset_type="TEXTURE_ASSET"))
                 textures.append({"property_name": reference.property_name, "guid": reference.guid,
                                  "file_id": str(reference.file_id)})
-            material_ids[key] = material_id
             material_records.append({"export_material_id": material_id,
                                      "guid": guid, "file_id": file_id,
                                      "asset_sha256": _sha(source.asset_bytes),
                                      "shader": shader, "textures": textures})
-    slots = [{"slot_index": index, "export_material_id": material_ids[slot.material.as_pointer()]}
-             for index, slot in enumerate(mesh.material_slots)]
+    slots = [{"slot_index": index, "export_material_id": material_id}
+             for index, material_id in enumerate(slot_material_ids)]
     destinations = allocate_material_paths(naming_rows.values())
     for guid, entry in material_entries.items():
         selected.add(replace(entry, pathname=destinations[guid], operation='MOVE'))
