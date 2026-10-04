@@ -172,9 +172,19 @@ public sealed class ModelSkinRouteCompatibilityTests
             new Vector3(0f, 0f, bounds.max.z + tolerance)
         };
         for (int i = 0; i < exactEdges.Length; i++)
-            Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", exactEdges[i], bounds, tolerance),
+        {
+            Vector3 point = exactEdges[i];
+            bool manualWithin = point.x >= bounds.min.x - tolerance && point.x <= bounds.max.x + tolerance &&
+                point.y >= bounds.min.y - tolerance && point.y <= bounds.max.y + tolerance &&
+                point.z >= bounds.min.z - tolerance && point.z <= bounds.max.z + tolerance;
+            Assert.IsTrue(manualWithin, "Raw float predicate unexpectedly rejected edge=" + i +
+                " x=" + point.x.ToString("R") + " min=" + bounds.min.x.ToString("R") +
+                " tol=" + tolerance.ToString("R"));
+            Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", point, bounds, tolerance),
                 "A point computed by the same min/max +/- tolerance expression must be included; edge=" +
-                i + " point=" + exactEdges[i]);
+                i + " point=" + point + " x=" + point.x.ToString("R") + " lower=" +
+                (bounds.min.x - tolerance).ToString("R"));
+        }
     }
 
     private static Type FindFinalizer()
