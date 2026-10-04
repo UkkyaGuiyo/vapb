@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from unitypackage_blender_importer.unity.asset_database import AssetDatabase
-from unitypackage_blender_importer.unity.package_reader import PackageAsset, UnityPackageReader
+from unitypackage_blender_importer.unity.package_reader import PackageAsset, UnityPackageError, UnityPackageReader
 from unitypackage_blender_importer.unity.prefab_parser import parse_prefab
 
 
@@ -109,6 +109,176 @@ class PackageReaderTests(unittest.TestCase):
             self.assertEqual(0, len(extracted.assets))
             self.assertTrue(any("Unsafe pathname" in error for error in extracted.errors))
             self.assertFalse((root / "escape.fbx").exists())
+
+    def test_rejects_duplicate_destinations_before_publishing_any_assets(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            package = root / "duplicate.unitypackage"
+            output = root / "out"
+            output.mkdir()
+            target = output / "Assets" / "Duplicate.prefab"
+            target.parent.mkdir(parents=True)
+            target.write_bytes(b"preexisting asset sentinel")
+            target.with_name(target.name + ".meta").write_bytes(b"preexisting meta sentinel")
+            first_guid = "1" * 32
+            second_guid = "2" * 32
+            make_package(
+                package,
+                [
+                    (second_guid, "Assets/Duplicate.prefab", b"second payload", b"guid: " + second_guid.encode()),
+                    ("0" * 32, "Assets/Unrelated.txt", b"must not publish", None),
+                    (first_guid, "Assets/Duplicate.prefab", b"first payload", b"guid: " + first_guid.encode()),
+                ],
+            )
+
+            with self.assertRaisesRegex(UnityPackageError, "destination collision"):
+                UnityPackageReader(package).extract(output)
+
+            self.assertEqual(b"preexisting asset sentinel", target.read_bytes())
+            self.assertEqual(b"preexisting meta sentinel", target.with_name(target.name + ".meta").read_bytes())
+            self.assertFalse((output / "Assets" / "Unrelated.txt").exists())
+            self.assertEqual([], list(output.glob(".unitypackage_spool_*")))
+
+    def test_rejects_portable_path_aliases(self):
+        aliases = [
+            ("casefold", "Assets/Case/Body.prefab", "assets/case/body.PREFAB"),
+            ("unicode", "Assets/Caf\u00e9/Body.prefab", "Assets/Cafe\u0301/Body.prefab"),
+            ("separator_and_dot", "Assets/Slash/Body.prefab", "Assets\\Slash\\.\\Body.prefab"),
+            ("windows_trailing_dot", "Assets/WindowsAlias/Body.prefab", "Assets/WindowsAlias/Body.prefab."),
+        ]
+        for name, first_path, second_path in aliases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                package = root / "alias.unitypackage"
+                make_package(
+                    package,
+                    [
+                        ("1" * 32, first_path, b"first", None),
+                        ("2" * 32, second_path, b"second", None),
+                    ],
+                )
+                output = root / "out"
+                reader = UnityPackageReader(package)
+                index = reader.build_index()
+                with self.assertRaises(UnityPackageError):
+                    reader.extract_selective(output, index, {"1" * 32, "2" * 32})
+                self.assertFalse((output / "Assets").exists())
+                self.assertEqual([], list(output.glob(".unitypackage_spool_*")))
+
+    def test_rejects_metadata_file_and_parent_directory_collisions(self):
+        cases = [
+            (
+                "asset_meta_alias",
+                [
+                    ("1" * 32, "Assets/Artifact", b"asset", None),
+                    ("2" * 32, "Assets/Artifact.meta", b"other asset", None),
+                ],
+            ),
+            (
+                "file_as_parent_directory",
+                [
+                    ("1" * 32, "Assets/Parent", b"file", None),
+                    ("2" * 32, "Assets/Parent/Child.asset", b"child", None),
+                ],
+            ),
+            (
+                "duplicate_explicit_folders",
+                [
+                    ("1" * 32, "Assets/Folder", b"", b"guid: " + b"1" * 32 + b"\nfolderAsset: true\n"),
+                    ("2" * 32, "Assets/Folder", b"", b"guid: " + b"2" * 32 + b"\nfolderAsset: true\n"),
+                ],
+            ),
+        ]
+        for name, records in cases:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                package = root / "collision.unitypackage"
+                make_package(package, records)
+                output = root / "out"
+                with self.assertRaisesRegex(UnityPackageError, "destination collision"):
+                    UnityPackageReader(package).extract(output)
+                self.assertFalse((output / "Assets").exists())
+                self.assertEqual([], list(output.glob(".unitypackage_spool_*")))
+
+    def test_allows_explicit_folder_and_child_asset(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            package = root / "folder-and-child.unitypackage"
+            folder_guid = "1" * 32
+            child_guid = "2" * 32
+            make_package(
+                package,
+                [
+                    (folder_guid, "Assets/Folder", b"", b"guid: " + folder_guid.encode() + b"\nfolderAsset: true\n"),
+                    (child_guid, "Assets/Folder/Child.txt", b"child", None),
+                ],
+            )
+            extracted = UnityPackageReader(package).extract(root / "out")
+            self.assertEqual([], extracted.errors)
+            self.assertEqual({folder_guid, child_guid}, {asset.guid for asset in extracted.assets})
+            self.assertTrue((root / "out/Assets/Folder").is_dir())
+            self.assertEqual(b"child", (root / "out/Assets/Folder/Child.txt").read_bytes())
+
+    def test_rejects_existing_output_file_directory_type_conflicts_before_publication(self):
+        cases = ("directory_blocks_file", "file_blocks_folder")
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp)
+                output = root / "out"
+                blocked = output / "Assets" / "Blocked"
+                blocked.parent.mkdir(parents=True)
+                if case == "directory_blocks_file":
+                    blocked.mkdir()
+                    blocked_path = "Assets/Blocked"
+                    blocked_record = ("2" * 32, blocked_path, b"payload", None)
+                else:
+                    blocked.write_bytes(b"existing file sentinel")
+                    folder_guid = "2" * 32
+                    blocked_record = (
+                        folder_guid,
+                        "Assets/Blocked",
+                        b"",
+                        b"guid: " + folder_guid.encode() + b"\nfolderAsset: true\n",
+                    )
+                package = root / "existing-output-conflict.unitypackage"
+                make_package(
+                    package,
+                    [
+                        ("1" * 32, "Assets/Unrelated.txt", b"must not publish", None),
+                        blocked_record,
+                    ],
+                )
+
+                with self.assertRaisesRegex(UnityPackageError, "destination collision"):
+                    UnityPackageReader(package).extract(output)
+
+                self.assertFalse((output / "Assets" / "Unrelated.txt").exists())
+                self.assertEqual([], list(output.glob(".unitypackage_spool_*")))
+                if case == "file_blocks_folder":
+                    self.assertEqual(b"existing file sentinel", blocked.read_bytes())
+
+    def test_checks_each_unicode_directory_spelling_before_publication(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            output = root / "out"
+            blocked_parent = output / "Assets" / "Cafe\u0301"
+            blocked_parent.parent.mkdir(parents=True)
+            blocked_parent.write_bytes(b"blocked directory sentinel")
+            package = root / "unicode-parent-obstruction.unitypackage"
+            make_package(
+                package,
+                [
+                    ("1" * 32, "Assets/Caf\u00e9/First.txt", b"must not publish", None),
+                    ("2" * 32, "Assets/Cafe\u0301/Second.txt", b"blocked", None),
+                ],
+            )
+
+            with self.assertRaises(UnityPackageError):
+                UnityPackageReader(package).extract(output)
+
+            self.assertFalse((output / "Assets" / "Caf\u00e9" / "First.txt").exists())
+            self.assertEqual(b"blocked directory sentinel", blocked_parent.read_bytes())
+            self.assertEqual([], list(output.glob(".unitypackage_spool_*")))
 
     def test_rejects_absolute_path(self):
         with tempfile.TemporaryDirectory() as temp:

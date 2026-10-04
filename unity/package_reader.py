@@ -11,6 +11,7 @@ import tarfile
 import tempfile
 from time import perf_counter
 from typing import Callable, Dict, Optional
+import unicodedata
 
 from ..blender.performance import diagnostic_add
 
@@ -65,6 +66,116 @@ class _SequentialAssetState:
     meta_bytes: Optional[bytes] = None
     meta_spool: Optional[Path] = None
     error: Optional[str] = None
+
+
+def _destination_key(root: Path, path: Path) -> tuple[str, ...]:
+    try:
+        parts = path.relative_to(root).parts
+    except ValueError as exc:
+        raise UnityPackageError(f"Extraction destination escapes output directory: {path}") from exc
+    # Match portable import identity and Win32 trailing-dot/space aliases.
+    return tuple(unicodedata.normalize("NFC", part.rstrip(" .")).casefold() for part in parts)
+
+
+def _is_folder_asset(state: _SequentialAssetState) -> bool:
+    meta_probe = state.meta_bytes
+    if (
+        meta_probe is None
+        and state.meta_spool is not None
+        and state.meta_spool.exists()
+        and state.meta_spool.stat().st_size <= 4096
+    ):
+        meta_probe = state.meta_spool.read_bytes()
+    folder_asset = bool(
+        meta_probe
+        and re.search(rb"(?m)^folderAsset:\s*(?:yes|true|1)\s*$", meta_probe, re.IGNORECASE)
+    )
+    if state.asset_spool is not None and state.pathname is not None:
+        folder_asset = folder_asset or (
+            state.pathname.endswith("/") and state.asset_spool.stat().st_size == 0
+        )
+    return folder_asset
+
+
+def _preflight_destinations(
+    output_dir: Path,
+    states: Dict[str, _SequentialAssetState],
+) -> tuple[dict[str, bool], dict[str, Path]]:
+    """Reject package destination aliases before publishing any extracted payload."""
+    root = output_dir.resolve()
+    file_claims: dict[tuple[str, ...], tuple[str, str, Path]] = {}
+    directories: dict[tuple[str, ...], dict[str, tuple[str, Path]]] = {}
+    explicit_directories: dict[tuple[str, ...], tuple[str, Path]] = {}
+    folder_assets: dict[str, bool] = {}
+    metadata_targets: dict[str, Path] = {}
+
+    def collision(reason: str, path: Path, first_guid: str, second_guid: str) -> None:
+        raise UnityPackageError(
+            f"UnityPackage destination collision ({reason}) at {path} "
+            f"between GUIDs {first_guid} and {second_guid}"
+        )
+
+    def add_directory(path: Path, guid: str, *, explicit: bool = False) -> None:
+        key = _destination_key(root, path)
+        previous = explicit_directories.get(key)
+        if explicit and previous is not None and previous[0] != guid:
+            collision("duplicate folder", path, previous[0], guid)
+        if explicit:
+            explicit_directories[key] = (guid, path)
+        directories.setdefault(key, {}).setdefault(str(path), (guid, path))
+
+    def add_parent_directories(path: Path, guid: str) -> None:
+        parent = path.parent
+        while parent != root and root in parent.parents:
+            add_directory(parent, guid)
+            parent = parent.parent
+
+    def add_file(path: Path, guid: str, role: str) -> None:
+        key = _destination_key(root, path)
+        previous = file_claims.get(key)
+        if previous is not None and previous[0] != guid:
+            collision(f"duplicate {role}/{previous[1]}", path, previous[0], guid)
+        file_claims[key] = (guid, role, path)
+        add_parent_directories(path, guid)
+
+    for guid, state in sorted(states.items()):
+        if state.pathname is None or state.error is not None or state.target is None:
+            continue
+        folder_asset = _is_folder_asset(state)
+        folder_assets[guid] = folder_asset
+        if folder_asset:
+            add_directory(state.target, guid, explicit=True)
+            add_parent_directories(state.target, guid)
+        else:
+            add_file(state.target, guid, "asset")
+
+        # Reserve the sidecar path even if this record lacks metadata. Another
+        # record's asset at that path would otherwise be mistaken for this asset's
+        # .meta by later scans.
+        meta_target = safe_relative_path(output_dir, state.pathname + ".meta")
+        metadata_targets[guid] = meta_target
+        add_file(meta_target, guid, "metadata")
+
+    for key, claims_by_path in directories.items():
+        claims = list(claims_by_path.values())
+        file_claim = file_claims.get(key)
+        if file_claim is not None:
+            collision("file/directory", claims[0][1], file_claim[0], claims[0][0])
+        for guid, path in claims:
+            if path.is_file():
+                raise UnityPackageError(
+                    f"UnityPackage destination collision (existing file blocks directory) "
+                    f"at {path} claimed by GUID {guid}"
+                )
+
+    for key, (guid, role, path) in file_claims.items():
+        if path.is_dir():
+            raise UnityPackageError(
+                f"UnityPackage destination collision (existing directory blocks {role}) "
+                f"at {path} claimed by GUID {guid}"
+            )
+
+    return folder_assets, metadata_targets
 
 
 def _decode_path(raw: bytes) -> str:
@@ -276,6 +387,7 @@ class UnityPackageReader:
                         state.error = str(exc)
             self.last_timings["extract_sequential"] = self.last_timings.get("extract_sequential", 0.0) + perf_counter() - sequential_started
 
+            folder_assets, metadata_targets = _preflight_destinations(output_dir, states)
             for guid, state in sorted(states.items()):
                 if state.pathname is None:
                     errors.append(f"{guid}: missing pathname")
@@ -288,10 +400,7 @@ class UnityPackageReader:
                     errors.append(f"{guid}: invalid pathname")
                     continue
                 try:
-                    meta_probe = state.meta_bytes
-                    if meta_probe is None and state.meta_spool is not None and state.meta_spool.exists() and state.meta_spool.stat().st_size <= 4096:
-                        meta_probe = state.meta_spool.read_bytes()
-                    is_folder_asset = bool(meta_probe and re.search(rb"(?m)^folderAsset:\s*(?:yes|true|1)\s*$", meta_probe, re.IGNORECASE))
+                    is_folder_asset = folder_assets[guid]
                     if state.asset_spool is not None:
                         if is_folder_asset or (state.pathname.endswith("/") and state.asset_spool.stat().st_size == 0):
                             state.asset_spool.unlink(missing_ok=True)
@@ -303,7 +412,7 @@ class UnityPackageReader:
                         target.mkdir(parents=True, exist_ok=True)
                     meta_target: Optional[Path] = None
                     if state.meta_bytes is not None or state.meta_spool is not None:
-                        meta_target = safe_relative_path(output_dir, state.pathname + ".meta")
+                        meta_target = metadata_targets[guid]
                         meta_target.parent.mkdir(parents=True, exist_ok=True)
                         if state.meta_bytes is not None:
                             meta_target.write_bytes(state.meta_bytes)
