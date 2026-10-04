@@ -1,0 +1,38 @@
+{
+    "pass": true,
+    "error": "NONE",
+    "package_sha256": "157eee6379cc435ad9829db2011c1dabeb6f44259d97c385d6e47e3c2db8da73",
+    "manifest_sha256": "f26639122cf44d782821a61a6cf817542c8cc58c5415ac250ec99d0ea2dcc812",
+    "prefab_path": "Assets/VapbSkinRoundtrip/Avatar.prefab",
+    "source_model_path": "Assets/VapbSkinRoundtrip/Input.fbx",
+    "edited_model_path": "Assets/VAPBExport/EditedSkin_defd390bf9c2aaf30f387716c927c40a.fbx",
+    "source_model_sha256": "78f0c552b59ca8ce3ff8e283a0f1f8bbc4add38d8bf6757e2b1fd6fad4dea1af",
+    "source_model_meta_sha256": "b8db1243ab1dc67673d0c4283c066a668725c506c888785888931876ff56390f",
+    "edited_model_sha256": "a95d28bdcff674b8fcacd7d8684ba8b78a4eb9b91b6355b576e4992549baf703",
+    "edited_model_meta_sha256": "c2baf0c9ec3cf32629f820173a7082df16644df451a9d2c881b940848f62bba0",
+    "prefab_sha256": "ccb0338b8e67970d23bc5d0949ff0977072d2621031cd0f5d65b5e32ce11d4b2",
+    "prefab_meta_sha256": "56af97c8212679996b4cb4e3d5af8888eef54686a0f0948fab019e2fdffe3b23",
+    "task_kind": "RESTORE_MODEL_SKIN_VARIANT_V1",
+    "source_vertices": 4,
+    "source_triangles": 2,
+    "source_indices": 6,
+    "source_bones": 2,
+    "source_materials": 1,
+    "final_vertices": 6,
+    "final_triangles": 2,
+    "final_indices": 6,
+    "final_bones": 2,
+    "final_materials": 1,
+    "source_shapes": 0,
+    "final_shapes": 0,
+    "source_and_edited_import_settings_stable": true,
+    "source_and_edited_assets_match_task_hashes": true,
+    "variant_absent": true,
+    "realization_ids": [
+        "73a35b48-2761-422d-9f67-5468f3c86dcf"
+    ],
+    "bone_realization_ids": [
+        "348d1d5b-573c-42c4-9b9b-a4a00889023b",
+        "f89eeb5e-fdd4-435a-bb0a-45f5884cfec7"
+    ]
+}
