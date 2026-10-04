@@ -3,6 +3,7 @@
 import copy
 import json
 import unittest
+from unittest import mock
 from dataclasses import replace
 from types import SimpleNamespace
 
@@ -15,6 +16,7 @@ from unitypackage_blender_importer.blender.model_witness_bridge import (
 from unitypackage_blender_importer.unity.model_identity_witness import (
     ModelAssetRevision, validate_model_witness,
 )
+from unitypackage_blender_importer.unity.import_outcome import summarize_import_outcome
 from unitypackage_blender_importer.unity.occurrence_projection import occurrence_identity
 
 
@@ -107,6 +109,80 @@ def root(current):
 
 
 class ModelWitnessBridgeTests(unittest.TestCase):
+    def test_materials_disabled_still_restores_witnessed_shape_and_skin_state(self):
+        import unitypackage_blender_importer.blender.model_witness_bridge as bridge
+        restore = getattr(bridge, "restore_witnessed_prefab_state", None)
+        self.assertTrue(callable(restore), "witness restoration must be independent of material import")
+
+        edge = ({"container_package_id": "pkg", "container_asset_guid": "f" * 32,
+                 "prefab_instance_file_id": 1, "source_package_id": "pkg",
+                 "source_prefab_guid": GUID},)
+        current, obj, model_witness = record(edge), native(edge), witness()
+        collection = SimpleNamespace(objects=SimpleNamespace(link=lambda value: None))
+        view_layer = SimpleNamespace(update=lambda: None)
+        prefab = SimpleNamespace(transforms={})
+        semantic_objects = {}
+        bindings = [(current, obj)]
+        skin_issues = [{"code": "SKIN_SYNTHETIC", "occurrence_id": current["occurrence_id"]}]
+        shape_issues = [{"code": "SHAPE_SYNTHETIC", "occurrence_id": current["occurrence_id"]}]
+        with mock.patch.object(bridge, "realize_repeated_shape_occurrences", return_value=[obj]) as shapes, \
+             mock.patch.object(bridge, "plan_witness_realizations", return_value=(bindings, [])), \
+             mock.patch.object(bridge, "plan_witness_skin_carriers", return_value=([], skin_issues)) as skin_plan, \
+             mock.patch.object(bridge, "realize_witness_skin_carriers", return_value=True) as skin_realize, \
+             mock.patch.object(bridge, "apply_witness_shape_weights", return_value=shape_issues) as weights, \
+             mock.patch.object(bridge, "plan_witness_material_dependencies") as materials:
+            member_objects, actual_bindings, issues, dependencies = restore(
+                [current], [obj], model_witness, collection, view_layer, prefab, semantic_objects,
+                PACKAGE_SHA, restore_materials=False)
+
+        self.assertEqual([obj], member_objects)
+        self.assertEqual(bindings, actual_bindings)
+        self.assertEqual([
+            {"code": "SKIN_SYNTHETIC", "occurrence_id": current["occurrence_id"], "root_context_id": "root-one"},
+            {"code": "SHAPE_SYNTHETIC", "occurrence_id": current["occurrence_id"], "root_context_id": "root-one"},
+        ], issues)
+        self.assertEqual([], dependencies)
+        self.assertEqual(current["occurrence_id"], obj["_vapb_renderer_occurrence_id"])
+        nested_clear = summarize_import_outcome(
+            [{"records": [current], "issues": []}], [],
+            realized_renderer_occurrences={obj["_vapb_renderer_occurrence_id"]})
+        self.assertEqual("SUCCESS", nested_clear["overall"])
+        self.assertNotIn("NESTED_PREFAB_RENDERER_NOT_REALIZED",
+                         {item["code"] for item in nested_clear["items"]})
+        unresolved_state = summarize_import_outcome(
+            [{"records": [current], "issues": issues}], [],
+            realized_renderer_occurrences={obj["_vapb_renderer_occurrence_id"]})
+        self.assertEqual("PARTIAL", unresolved_state["overall"])
+        self.assertNotIn("NESTED_PREFAB_RENDERER_NOT_REALIZED",
+                         {item["code"] for item in unresolved_state["items"]})
+        shapes.assert_called_once()
+        skin_plan.assert_called_once_with(bindings, model_witness, prefab, semantic_objects)
+        skin_realize.assert_called_once_with([], collection, bindings, semantic_objects, prefab)
+        weights.assert_called_once_with(bindings, model_witness)
+        materials.assert_not_called()
+
+    def test_material_dependencies_are_planned_when_materials_are_enabled(self):
+        import unitypackage_blender_importer.blender.model_witness_bridge as bridge
+        restore = getattr(bridge, "restore_witnessed_prefab_state", None)
+        self.assertTrue(callable(restore), "material gate belongs only to material dependency planning")
+
+        current, obj, model_witness = record(), native(), witness()
+        bindings = [(current, obj)]
+        dependencies = [{"dependency_type": "PREFAB_RENDERER_MATERIAL"}]
+        with mock.patch.object(bridge, "realize_repeated_shape_occurrences", return_value=[obj]), \
+             mock.patch.object(bridge, "plan_witness_realizations", return_value=(bindings, [])), \
+             mock.patch.object(bridge, "plan_witness_skin_carriers", return_value=([], [])), \
+             mock.patch.object(bridge, "realize_witness_skin_carriers", return_value=True), \
+             mock.patch.object(bridge, "apply_witness_shape_weights", return_value=[]), \
+             mock.patch.object(bridge, "plan_witness_material_dependencies", return_value=dependencies) as materials:
+            _, _, _, actual_dependencies = restore(
+                [current], [obj], model_witness, SimpleNamespace(objects=SimpleNamespace(link=lambda value: None)),
+                SimpleNamespace(update=lambda: None), SimpleNamespace(transforms={}), {},
+                PACKAGE_SHA, restore_materials=True)
+
+        self.assertEqual(dependencies, actual_dependencies)
+        materials.assert_called_once_with(bindings, PACKAGE_SHA)
+
     def test_repeated_mesh_requires_explicit_renderer_creation_provenance(self):
         first, second = record(), record()
         second['source_key']['renderer_file_id'] = -23

@@ -522,3 +522,43 @@ def reserve_witness_slots(dependencies, objects):
             obj.data.materials.append(None)
         ready.append(dependency)
     return ready, rejected
+
+
+def restore_witnessed_prefab_state(records, objects, witness, collection, view_layer,
+                                   prefab, semantic_objects, package_sha256, *, restore_materials):
+    """Restore witnessed mesh state regardless of whether Material import is enabled.
+
+    Only Material dependency planning follows ``restore_materials``. Shape and
+    skin/pose restoration are independent parts of the model witness contract.
+    """
+    from .fbx_receipt import validate_receipt_continuity
+
+    scoped_records = [record for record in records
+                      if record.get('mesh', {}).get('mesh_guid') in witness.source_shas]
+    member_objects = realize_repeated_shape_occurrences(scoped_records, objects, witness, collection)
+    bindings, bridge_issues = plan_witness_realizations(
+        scoped_records,
+        [obj for obj in member_objects if validate_receipt_continuity(obj)],
+        witness,
+    )
+    for record, obj in bindings:
+        obj['_vapb_renderer_occurrence_id'] = record['occurrence_id']
+    issues = [dict(issue) for issue in bridge_issues]
+
+    view_layer.update()
+    skin_plans, skin_issues = plan_witness_skin_carriers(bindings, witness, prefab, semantic_objects)
+    issues.extend(skin_issues)
+    if not realize_witness_skin_carriers(skin_plans, collection, bindings, semantic_objects, prefab):
+        issues.append({'code': 'SKIN_POSE_FRAME_UNSUPPORTED',
+                       'root_context_id': scoped_records[0].get('root_context_id', '') if scoped_records else ''})
+    issues.extend(apply_witness_shape_weights(bindings, witness))
+    root_context_by_occurrence = {record.get('occurrence_id'): record.get('root_context_id', '')
+                                  for record in scoped_records}
+    default_root_context_id = scoped_records[0].get('root_context_id', '') if scoped_records else ''
+    for issue in issues:
+        if not issue.get('root_context_id'):
+            issue['root_context_id'] = root_context_by_occurrence.get(
+                issue.get('occurrence_id'), default_root_context_id)
+    dependencies = (plan_witness_material_dependencies(bindings, package_sha256)
+                    if restore_materials else [])
+    return member_objects, bindings, issues, dependencies

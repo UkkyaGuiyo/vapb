@@ -23,7 +23,7 @@ from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 from ..blender.fbx_importer import apply_import_options, import_fbx_files, summarize_fbx_results
 from ..blender.fbx_receipt import copy_with_receipt, source_sha256, validate_receipt_continuity
 from ..blender.direct_mesh_frame import root_direct_mesh_file_id, verified_direct_mesh_frame
-from ..blender.model_witness_bridge import matches_witnessed_source, plan_witness_realizations, plan_witness_material_dependencies, reserve_witness_slots
+from ..blender.model_witness_bridge import matches_witnessed_source, restore_witnessed_prefab_state, reserve_witness_slots
 from ..blender.renderer_binding import semantic_owner_id
 from ..blender.hierarchy_builder import apply_transform, build_prefab_hierarchy
 from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package, save_scene_registry
@@ -1731,34 +1731,15 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                             prefab, member_object_map, asset_db, material_library, context.scene,
                             member_id=member_id,
                         )
-                        if model_witness is not None:
-                            scoped_records = [record for record in projection.records
-                                              if record.get('mesh', {}).get('mesh_guid')
-                                              in model_witness.source_shas]
-                            from ..blender.model_witness_bridge import realize_repeated_shape_occurrences, apply_witness_shape_weights
-                            member_objects = realize_repeated_shape_occurrences(scoped_records, member_objects, model_witness, member_collection)
-                            bindings, bridge_issues = plan_witness_realizations(
-                                scoped_records,
-                                [obj for obj in member_objects if validate_receipt_continuity(obj)],
-                                model_witness,
-                            )
-                            for issue in bridge_issues:
-                                projection.issues.append({"code": issue["code"],
-                                                          "root_context_id": root_context_id,
-                                                          "occurrence_id": issue["occurrence_id"]})
-                            from ..blender.model_witness_bridge import plan_witness_skin_carriers, realize_witness_skin_carriers
-                            context.view_layer.update()
-                            skin_plans, skin_issues = plan_witness_skin_carriers(
-                                bindings, model_witness, prefab, prefab_object_map)
-                            projection.issues.extend(skin_issues)
-                            if not realize_witness_skin_carriers(skin_plans, member_collection, bindings, prefab_object_map, prefab):
-                                projection.issues.append({'code': 'SKIN_POSE_FRAME_UNSUPPORTED',
-                                                          'root_context_id': root_context_id})
-                            projection.issues.extend(apply_witness_shape_weights(bindings, model_witness))
-                            pending_witness_dependencies.extend(
-                                plan_witness_material_dependencies(bindings, package_key.sha256)
-                            )
-                            prefab_root['_vapb_renderer_occurrences'] = json.dumps(projection.to_dict(), sort_keys=True)
+                    if model_witness is not None:
+                        member_objects, _, witness_issues, witness_dependencies = restore_witnessed_prefab_state(
+                            projection.records, member_objects, model_witness, member_collection,
+                            context.view_layer, prefab, prefab_object_map, package_key.sha256,
+                            restore_materials=self.use_materials,
+                        )
+                        projection.issues.extend(witness_issues)
+                        pending_witness_dependencies.extend(witness_dependencies)
+                        prefab_root['_vapb_renderer_occurrences'] = json.dumps(projection.to_dict(), sort_keys=True)
                 if pending_witness_dependencies:
                     ready, rejected = reserve_witness_slots(pending_witness_dependencies, bpy.data.objects)
                     for dependency in ready:
