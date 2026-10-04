@@ -114,6 +114,34 @@ class ImportOutcomeTests(unittest.TestCase):
         self.assertEqual("PARTIAL", edited["overall"])
         self.assertEqual(["USER_EDIT_PRESERVED"], [item["code"] for item in edited["items"]])
 
+    def test_nested_non_null_renderer_without_blender_occurrence_is_partial(self):
+        row = {
+            "root_context_id": "root",
+            "occurrence_id": "nested-renderer",
+            "instance_edge_path": [{"source_prefab_guid": "synthetic"}],
+            "source_key": {"source_kind": "PREFAB_LOCAL"},
+            "material_status": "EXACT",
+            "materials": {"0": {"guid": "material"}},
+        }
+        result = summarize_import_outcome([projection(records=[row])], [])
+        self.assertEqual("PARTIAL", result["overall"])
+        self.assertIn("NESTED_PREFAB_RENDERER_NOT_REALIZED", {item["code"] for item in result["items"]})
+
+    def test_nested_renderer_with_realized_occurrence_has_no_geometry_warning(self):
+        row = {
+            "root_context_id": "root",
+            "occurrence_id": "nested-renderer",
+            "instance_edge_path": [{"source_prefab_guid": "synthetic"}],
+            "source_key": {"source_kind": "PREFAB_LOCAL"},
+            "material_status": "EXACT",
+            "materials": {"0": {"guid": "material"}},
+        }
+        result = summarize_import_outcome(
+            [projection(records=[row])], [],
+            realized_renderer_occurrences={"nested-renderer"},
+        )
+        self.assertEqual("SUCCESS", result["overall"])
+
 
 if __name__ == "__main__":
     unittest.main()

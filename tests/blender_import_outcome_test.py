@@ -33,11 +33,19 @@ def main():
     addon.register()
     try:
         assert VAPB_PT_import_outcome.bl_category == "VAPB Result"
+        nested_occurrence = "synthetic-nested-renderer"
         if mode == "write":
             root = bpy.data.objects.new("Synthetic import root", None)
             bpy.context.scene.collection.objects.link(root)
             root["_vapb_renderer_occurrences"] = json.dumps({
-                "records": [],
+                "records": [{
+                    "root_context_id": "synthetic-root",
+                    "occurrence_id": nested_occurrence,
+                    "instance_edge_path": [{"source_prefab_guid": "synthetic-child"}],
+                    "source_key": {"source_kind": "PREFAB_LOCAL"},
+                    "material_status": "EXACT",
+                    "materials": {"0": {"guid": "synthetic-material"}},
+                }],
                 "issues": [{"code": "UNRESOLVED_SOURCE", "instance_edge_path": [{}]}],
             })
             bpy.context.scene["unitypackage_dependency_registry"] = json.dumps({
@@ -45,10 +53,20 @@ def main():
                 "dependencies": [{"dependency_type": "PREFAB_RENDERER_MATERIAL",
                                   "status": "MISSING_CONSUMER"}],
             })
+        elif mode == "read":
+            mesh = bpy.data.meshes.new("Synthetic realized nested mesh")
+            occurrence = bpy.data.objects.new("Synthetic nested occurrence", mesh)
+            bpy.context.scene.collection.objects.link(occurrence)
+            occurrence["_vapb_renderer_occurrence_id"] = nested_occurrence
         report = scene_import_outcome(bpy.context.scene)
         assert report["overall"] == "PARTIAL", report
         assert report["counts"]["UNRESOLVED_IDENTITY"] == 2, report
         assert report["counts"]["MISSING_DEPENDENCY"] == 0, report
+        nested_codes = {item["code"] for item in report["items"]}
+        if mode == "write":
+            assert "NESTED_PREFAB_RENDERER_NOT_REALIZED" in nested_codes, report
+        else:
+            assert "NESTED_PREFAB_RENDERER_NOT_REALIZED" not in nested_codes, report
         layout = Layout()
         VAPB_PT_import_outcome.draw(SimpleNamespace(layout=layout),
                                      SimpleNamespace(scene=bpy.context.scene))

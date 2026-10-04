@@ -45,7 +45,8 @@ def _scope(issue: dict, root_number: int) -> str:
 
 
 def summarize_import_outcome(projections: list[dict], dependencies: list[dict],
-                             verified_null_slots=(), edited_null_slots=()) -> dict:
+                             verified_null_slots=(), edited_null_slots=(),
+                             realized_renderer_occurrences=()) -> dict:
     """Classify existing projection issues and dependency outcomes only.
 
     `RESOLVED` is the number of bound Material dependency records, not an
@@ -58,6 +59,7 @@ def summarize_import_outcome(projections: list[dict], dependencies: list[dict],
     items: list[dict] = []
     verified_null_slots = set(verified_null_slots)
     edited_null_slots = set(edited_null_slots)
+    realized_renderer_occurrences = set(realized_renderer_occurrences)
 
     def add(category: str, code: str, scope: str, reason: str, action: str) -> None:
         counts[category] += 1
@@ -80,6 +82,14 @@ def summarize_import_outcome(projections: list[dict], dependencies: list[dict],
                 action = "復元済みと扱わず、VAPB開発者へ報告してください。"
             add(category, code, scope, reason, action)
         for record in projection.get("records", ()):
+            source_kind = (record.get("source_key") or {}).get("source_kind")
+            edge_path = record.get("instance_edge_path")
+            occurrence_id = record.get("occurrence_id")
+            if (source_kind == "PREFAB_LOCAL" and isinstance(edge_path, list) and edge_path
+                    and occurrence_id not in realized_renderer_occurrences):
+                add("PARTIAL", "NESTED_PREFAB_RENDERER_NOT_REALIZED", _scope(record, number),
+                    "入れ子PrefabのRendererはsource evidenceにありますが、対応するBlender Mesh occurrenceの実体化を確認できません。",
+                    "Partialとして続行するか、nested RendererとFBXの実体化状態を確認してください。")
             materials = record.get("materials", {})
             if record.get("material_status") in {"EXACT", "PARTIAL"} and isinstance(materials, dict):
                 for slot, value in materials.items():

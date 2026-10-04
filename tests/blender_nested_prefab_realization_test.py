@@ -166,7 +166,10 @@ def check_scene(renamed=False, root_context_id=None):
     # The public raw FBX has no Material. The source Prefab's A is an Object
     # binding, so the shared DATA table must stay at its original None value.
     assert source_obj.data.materials[0] is None
-    assert scene_import_outcome(bpy.context.scene)["overall"] == "SUCCESS"
+    outcome = scene_import_outcome(bpy.context.scene)
+    assert outcome["overall"] == "SUCCESS", outcome
+    assert "NESTED_PREFAB_RENDERER_NOT_REALIZED" not in {
+        item["code"] for item in outcome["items"]}, outcome
     if TRANSFORM_ORACLE:
         source_obj["_vapb_geometry_frame_status"] = "UNVERIFIED"
         uncertain = scene_import_outcome(bpy.context.scene)
@@ -296,6 +299,7 @@ def main():
                         and obj.get("_vapb_root_context_id") == context_id]
             codes = {item["code"] for item in scene_import_outcome(bpy.context.scene)["items"]}
             assert "NULL_MATERIAL_REALIZATION_UNVERIFIED" in codes, codes
+            assert "NESTED_PREFAB_RENDERER_NOT_REALIZED" in codes, codes
             print("NESTED_NO_WITNESS_FAIL_CLOSED_PASS")
             if zip_path:
                 assert bpy.ops.preferences.addon_disable(module=PACKAGE_MODULE) == {"FINISHED"}
