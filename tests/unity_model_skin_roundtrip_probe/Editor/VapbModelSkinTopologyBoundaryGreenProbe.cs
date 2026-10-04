@@ -9,17 +9,15 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-// Public synthetic RED only. It expects the current normal-Kind rejection and
-// refuses any input that is not the exact minimal fixture. The product's
-// hash-bound witness may temporarily rewrite/reimport the source FBX; it must
-// restore the source bytes and metadata before Apply and after the rejection.
-// This probe never creates or changes manifests, Prefabs, or existing Variants.
-public static class VapbModelSkinTopologyBoundaryRedProbe
+// Public synthetic GREEN regression for whole-final-Mesh assignment. Its
+// fixture-specific source/final comparisons validate this exact input only;
+// they are not product acceptance predicates. The hash-bound witness may
+// temporarily rewrite/reimport source FBX, then must restore bytes and metadata.
+public static class VapbModelSkinTopologyBoundaryGreenProbe
 {
     private const string ManifestPath = "Assets/VAPBExport/manifest.json";
-    private const string ResultName = "VapbModelSkinTopologyBoundaryRedResult.json";
+    private const string ResultName = "VapbModelSkinTopologyBoundaryGreenResult.json";
     private const string ExpectedKind = "RESTORE_MODEL_SKIN_VARIANT_V1";
-    private const string ExpectedRejection = "TOPOLOGY_OR_LAYOUT_CHANGED";
     private const string RootMarker = ".vapb-stage3-owned-test-root";
     private const string SourceMarker = ".vapb-stage3-owned-source-project";
     private const string TargetMarker = ".vapb-disposable-unity-test-project";
@@ -38,18 +36,34 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
         public BoneMapping[] bone_mappings;
         public string witness_noop_path;
         public string witness_path;
+        public MaterialBinding[] material_bindings;
     }
     [Serializable] private sealed class BoneMapping
     {
         public string edited_bone_realization_id;
         public string source_model_uid;
     }
+    [Serializable] private sealed class MaterialBinding
+    {
+        public string transport_id;
+        public string guid;
+        public string file_id;
+    }
     [Serializable] private sealed class Report
     {
         public bool pass;
         public string error;
-        public string expected_rejection;
-        public string observed_rejection;
+        public bool finalizer_applied;
+        public bool variant_created;
+        public bool variant_is_source_prefab_child;
+        public bool variant_uses_exact_final_mesh;
+        public bool variant_bones_match_exported_uids;
+        public bool variant_materials_match_transport;
+        public bool variant_renderer_state_preserved;
+        public bool variant_structure_preserved;
+        public bool repeat_apply_idempotent;
+        public string prefab_guid_before;
+        public string prefab_guid_after;
         public string task_kind;
         public int source_vertex_count;
         public int final_vertex_count;
@@ -73,7 +87,6 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
         public bool edited_model_unchanged;
         public bool prefab_unchanged;
         public bool manifest_unchanged;
-        public bool variant_absent;
         public string unknown_index_dependent_components;
     }
     [Serializable] private sealed class BoneRestRow
@@ -96,7 +109,6 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
     public static void Run()
     {
         var report = new Report {
-            expected_rejection = ExpectedRejection,
             unknown_index_dependent_components =
                 "UNSUPPORTED: this fixture permits only Transform, SkinnedMeshRenderer and VAPB markers"
         };
@@ -105,20 +117,22 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
         string guardError = ValidateOwnedProject(projectRoot);
         if (guardError != null)
         {
-            Debug.LogError("VAPB_MODEL_SKIN_TOPOLOGY_BOUNDARY_RED_BLOCKED=" + guardError);
+            Debug.LogError("VAPB_MODEL_SKIN_TOPOLOGY_BOUNDARY_GREEN_BLOCKED=" + guardError);
             return;
         }
         if (Occupied(resultFile))
         {
-            Debug.LogError("VAPB_MODEL_SKIN_TOPOLOGY_BOUNDARY_RED_BLOCKED=RESULT_ALREADY_EXISTS");
+            Debug.LogError("VAPB_MODEL_SKIN_TOPOLOGY_BOUNDARY_GREEN_BLOCKED=RESULT_ALREADY_EXISTS");
             return;
         }
 
         string observedLog = null;
+        int appliedLogCount = 0;
         Application.LogCallback capture = (condition, stackTrace, type) => {
+            if (condition.StartsWith("VAPB_MODEL_SKIN_VARIANT_APPLIED=", StringComparison.Ordinal))
+                appliedLogCount++;
             if (type == LogType.Error && condition.StartsWith(
-                "VAPB_MODEL_SKIN_VARIANT_REJECTED=", StringComparison.Ordinal))
-                observedLog = condition;
+                "VAPB_MODEL_SKIN_VARIANT_REJECTED=", StringComparison.Ordinal)) observedLog = condition;
         };
         Application.logMessageReceived += capture;
         try
@@ -175,6 +189,14 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
                 throw new InvalidOperationException("VARIANT_ALREADY_EXISTS");
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefab == null) throw new InvalidOperationException("PREFAB_MISSING");
+            report.prefab_guid_before = AssetDatabase.AssetPathToGUID(prefabPath);
+            SkinnedMeshRenderer prefabSkin = SingleSkin(prefab);
+            if (prefabSkin == null || prefabSkin.sharedMesh == null || prefabSkin.sharedMesh.blendShapeCount != 0)
+                throw new InvalidOperationException("SOURCE_PREFAB_SKIN_SCOPE_INVALID");
+            Bounds prefabLocalBounds = prefabSkin.localBounds;
+            if (!Finite(prefabLocalBounds.center) || !Finite(prefabLocalBounds.extents) ||
+                prefabLocalBounds.extents.x < 0 || prefabLocalBounds.extents.y < 0 || prefabLocalBounds.extents.z < 0)
+                throw new InvalidOperationException("SOURCE_LOCAL_BOUNDS_INVALID");
             foreach (Component component in prefab.GetComponentsInChildren<Component>(true))
             {
                 if (component == null) throw new InvalidOperationException("MISSING_COMPONENT_UNSUPPORTED");
@@ -229,9 +251,33 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
                 !report.same_root_uid || !report.same_parent_uids || !report.rest_bindpose_parity)
                 throw new InvalidOperationException("FIXTURE_SEMANTIC_PRECONDITION_FAILED");
 
-            bool applied = VapbModelSkinFinalizer.Apply(ManifestPath);
-            report.observed_rejection = observedLog == null ? "NO_FINALIZER_REJECTION_LOG" :
-                observedLog.Substring("VAPB_MODEL_SKIN_VARIANT_REJECTED=".Length);
+            report.finalizer_applied = VapbModelSkinFinalizer.Apply(ManifestPath);
+            report.variant_created = report.finalizer_applied && Occupied(variantFile);
+            GameObject variant = report.finalizer_applied ?
+                AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path) : null;
+            report.variant_is_source_prefab_child = variant != null &&
+                PrefabUtility.GetPrefabAssetType(variant) == PrefabAssetType.Variant &&
+                AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(variant)) == prefabPath;
+            SkinnedMeshRenderer variantSkin = variant == null ? null : SkinForSource(variant, prefabSkin);
+            report.variant_uses_exact_final_mesh = variantSkin != null && variantSkin.sharedMesh == finalMesh;
+            report.variant_bones_match_exported_uids = variantSkin != null &&
+                SameVariantBones(variantSkin, edited, task, sourcePath, localIdToUid);
+            Material[] expectedMaterials = ResolveExpectedMaterials(task, edited);
+            report.variant_materials_match_transport = variantSkin != null && expectedMaterials != null &&
+                variantSkin.sharedMaterials.SequenceEqual(expectedMaterials);
+            report.variant_renderer_state_preserved = variantSkin != null &&
+                variantSkin.enabled == prefabSkin.enabled &&
+                variantSkin.shadowCastingMode == prefabSkin.shadowCastingMode &&
+                variantSkin.receiveShadows == prefabSkin.receiveShadows &&
+                SameBounds(variantSkin.localBounds, prefabLocalBounds) &&
+                variantSkin.sharedMesh != null && variantSkin.sharedMesh.blendShapeCount == 0 &&
+                BoundsContainsImportedRestMesh(variantSkin, edited, 0.001f);
+            report.variant_structure_preserved = variant != null &&
+                PrefabUtility.GetAddedComponents(variant).Count == 0 &&
+                PrefabUtility.GetRemovedComponents(variant).Count == 0 &&
+                PrefabUtility.GetAddedGameObjects(variant).Count == 0 &&
+                PrefabUtility.GetRemovedGameObjects(variant).Count == 0;
+            report.prefab_guid_after = AssetDatabase.AssetPathToGUID(prefabPath);
             report.source_model_unchanged = SameBytes(sourceBefore, ReadIfPresent(sourceFile)) &&
                 SameBytes(sourceMetaBefore, ReadIfPresent(sourceFile + ".meta"));
             report.edited_model_unchanged = SameBytes(editedBefore, ReadIfPresent(editedFile)) &&
@@ -240,13 +286,30 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
                 SameBytes(prefabMetaBefore, ReadIfPresent(prefabFile + ".meta"));
             report.manifest_unchanged = SameBytes(manifestBefore, ReadIfPresent(manifestFile)) &&
                 SameBytes(manifestMetaBefore, ReadIfPresent(manifestFile + ".meta"));
-            report.variant_absent = !Occupied(variantFile) &&
-                AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path) == null;
-            report.pass = !applied && report.observed_rejection == ExpectedRejection &&
-                report.source_model_unchanged && report.edited_model_unchanged && report.prefab_unchanged &&
-                report.manifest_unchanged &&
-                report.variant_absent;
-            report.error = report.pass ? "NONE" : "RED_ASSERTION_FAILED";
+            bool firstApplyStable = report.finalizer_applied && report.variant_created &&
+                report.variant_is_source_prefab_child && report.variant_uses_exact_final_mesh &&
+                report.variant_bones_match_exported_uids && report.variant_materials_match_transport &&
+                report.variant_renderer_state_preserved && report.variant_structure_preserved &&
+                report.prefab_guid_before == report.prefab_guid_after && report.source_model_unchanged &&
+                report.edited_model_unchanged && report.prefab_unchanged && report.manifest_unchanged;
+            string variantHash = firstApplyStable ? Hash(variantFile) : null;
+            string variantMetaHash = firstApplyStable ? Hash(variantFile + ".meta") : null;
+            string variantGuid = firstApplyStable ? AssetDatabase.AssetPathToGUID(task.variant_path) : null;
+            if (firstApplyStable)
+            {
+                bool repeated = VapbModelSkinFinalizer.Apply(ManifestPath);
+                AssetDatabase.ImportAsset(task.variant_path,
+                    ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                GameObject repeatedVariant = AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path);
+                SkinnedMeshRenderer repeatedSkin = repeatedVariant == null ? null : SkinForSource(repeatedVariant, prefabSkin);
+                report.repeat_apply_idempotent = repeated && repeatedSkin != null &&
+                    repeatedSkin.sharedMesh == finalMesh && Hash(variantFile) == variantHash &&
+                    Hash(variantFile + ".meta") == variantMetaHash &&
+                    AssetDatabase.AssetPathToGUID(task.variant_path) == variantGuid && appliedLogCount == 2;
+            }
+            report.pass = firstApplyStable && report.repeat_apply_idempotent;
+            report.error = report.pass ? "NONE" : observedLog == null ? "GREEN_ASSERTION_FAILED" :
+                observedLog.Substring("VAPB_MODEL_SKIN_VARIANT_REJECTED=".Length);
         }
         catch (Exception error) { report.pass = false; report.error = error.Message; }
         finally { Application.logMessageReceived -= capture; }
@@ -257,8 +320,8 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
                 stream.Write(bytes, 0, bytes.Length);
         }
         catch { report.pass = false; report.error = "RESULT_WRITE_FAILED_OR_ALREADY_EXISTS"; }
-        Debug.Log(report.pass ? "VAPB_MODEL_SKIN_TOPOLOGY_BOUNDARY_RED_PASS" :
-            "VAPB_MODEL_SKIN_TOPOLOGY_BOUNDARY_RED_FAIL=" + report.error);
+        Debug.Log(report.pass ? "VAPB_MODEL_SKIN_TOPOLOGY_BOUNDARY_GREEN_PASS" :
+            "VAPB_MODEL_SKIN_TOPOLOGY_BOUNDARY_GREEN_FAIL=" + report.error);
         EditorApplication.Exit(report.pass ? 0 : 1);
     }
 
@@ -345,6 +408,115 @@ public static class VapbModelSkinTopologyBoundaryRedProbe
     {
         return File.Exists(path) || Directory.Exists(path) || File.Exists(path + ".meta") ||
             Directory.Exists(path + ".meta");
+    }
+    private static bool Finite(Vector3 value)
+    {
+        return !Single.IsNaN(value.x) && !Single.IsInfinity(value.x) &&
+            !Single.IsNaN(value.y) && !Single.IsInfinity(value.y) &&
+            !Single.IsNaN(value.z) && !Single.IsInfinity(value.z);
+    }
+    private static bool SameBounds(Bounds left, Bounds right)
+    {
+        return left.center == right.center && left.extents == right.extents;
+    }
+    private static SkinnedMeshRenderer SkinForSource(GameObject variant, SkinnedMeshRenderer source)
+    {
+        if (variant == null || source == null) return null;
+        SkinnedMeshRenderer found = null;
+        foreach (SkinnedMeshRenderer skin in variant.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (PrefabUtility.GetCorrespondingObjectFromSource(skin) != source) continue;
+            if (found != null) return null;
+            found = skin;
+        }
+        return found;
+    }
+    private static bool SameVariantBones(SkinnedMeshRenderer actual, SkinnedMeshRenderer edited,
+        Task task, string sourceModelPath, Dictionary<string, string> localIdToUid)
+    {
+        if (actual == null || edited == null || actual.bones == null || edited.bones == null ||
+            actual.bones.Length != edited.bones.Length || task.bone_mappings == null) return false;
+        var receiptToUid = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (BoneMapping mapping in task.bone_mappings)
+        {
+            if (mapping == null || String.IsNullOrEmpty(mapping.edited_bone_realization_id) ||
+                String.IsNullOrEmpty(mapping.source_model_uid) ||
+                receiptToUid.ContainsKey(mapping.edited_bone_realization_id)) return false;
+            receiptToUid.Add(mapping.edited_bone_realization_id, mapping.source_model_uid);
+        }
+        string modelGuid = AssetDatabase.AssetPathToGUID(sourceModelPath);
+        if (String.IsNullOrEmpty(modelGuid)) return false;
+        for (int i = 0; i < actual.bones.Length; i++)
+        {
+            Transform bone = actual.bones[i];
+            VapbRealizationMarker marker = edited.bones[i] == null ? null :
+                edited.bones[i].GetComponent<VapbRealizationMarker>();
+            string expected;
+            if (bone == null || marker == null ||
+                !receiptToUid.TryGetValue(marker.boneRealizationId, out expected) ||
+                PrefabSourceUid(bone, modelGuid, localIdToUid) != expected) return false;
+        }
+        Transform actualRoot = actual.rootBone;
+        Transform expectedRoot = edited.rootBone;
+        VapbRealizationMarker rootMarker = expectedRoot == null ? null :
+            expectedRoot.GetComponent<VapbRealizationMarker>();
+        string expectedRootUid;
+        return actualRoot != null && rootMarker != null &&
+            receiptToUid.TryGetValue(rootMarker.boneRealizationId, out expectedRootUid) &&
+            PrefabSourceUid(actualRoot, modelGuid, localIdToUid) == expectedRootUid;
+    }
+    private static Material[] ResolveExpectedMaterials(Task task, SkinnedMeshRenderer edited)
+    {
+        if (task == null || edited == null || task.material_bindings == null ||
+            task.material_bindings.Length != edited.sharedMaterials.Length) return null;
+        var byTransportId = new Dictionary<string, Material>(StringComparer.Ordinal);
+        foreach (MaterialBinding binding in task.material_bindings)
+        {
+            if (binding == null || String.IsNullOrEmpty(binding.transport_id) ||
+                String.IsNullOrEmpty(binding.guid) || String.IsNullOrEmpty(binding.file_id) ||
+                byTransportId.ContainsKey(binding.transport_id)) return null;
+            string path = AssetDatabase.GUIDToAssetPath(binding.guid);
+            if (String.IsNullOrEmpty(path)) return null;
+            Material match = null;
+            foreach (Material candidate in AssetDatabase.LoadAllAssetsAtPath(path).OfType<Material>())
+            {
+                string guid; long localId;
+                if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(candidate, out guid, out localId) ||
+                    guid != binding.guid || localId.ToString(CultureInfo.InvariantCulture) != binding.file_id) continue;
+                if (match != null) return null;
+                match = candidate;
+            }
+            if (match == null) return null;
+            byTransportId.Add(binding.transport_id, match);
+        }
+        var ordered = new Material[edited.sharedMaterials.Length];
+        for (int i = 0; i < ordered.Length; i++)
+        {
+            Material carrier = edited.sharedMaterials[i];
+            Material expected;
+            if (carrier == null || !byTransportId.TryGetValue(carrier.name, out expected)) return null;
+            ordered[i] = expected;
+        }
+        return ordered;
+    }
+    private static bool BoundsContainsImportedRestMesh(SkinnedMeshRenderer target,
+        SkinnedMeshRenderer edited, float tolerance)
+    {
+        if (target == null || edited == null || target.sharedMesh == null || edited.sharedMesh == null ||
+            !Finite(target.localBounds.center) || !Finite(target.localBounds.extents) || tolerance < 0f) return false;
+        Bounds bounds = target.localBounds;
+        Bounds meshBounds = edited.sharedMesh.bounds;
+        for (int mask = 0; mask < 8; mask++)
+        {
+            Vector3 corner = new Vector3((mask & 1) == 0 ? meshBounds.min.x : meshBounds.max.x,
+                (mask & 2) == 0 ? meshBounds.min.y : meshBounds.max.y,
+                (mask & 4) == 0 ? meshBounds.min.z : meshBounds.max.z);
+            Vector3 local = target.transform.InverseTransformPoint(edited.transform.TransformPoint(corner));
+            if (!Finite(local) || local.x < bounds.min.x - tolerance || local.x > bounds.max.x + tolerance ||
+                local.y < bounds.min.y - tolerance || local.y > bounds.max.y + tolerance ||
+                local.z < bounds.min.z - tolerance || local.z > bounds.max.z + tolerance) return false;
+        }
+        return true;
     }
     private static int TriangleCount(Mesh mesh)
     {
