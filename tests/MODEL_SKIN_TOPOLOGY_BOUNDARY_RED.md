@@ -102,6 +102,17 @@ counts, shape/submesh differences, a pre-existing Variant, missing
 components, or any component outside Transform, SkinnedMeshRenderer, and VAPB
 realization/export markers.
 
+This reviewed run also relies on the existing Target-only runtime definition
+`Assets/VAPBFinalState/VapbExportObjectMarker.cs`, which is outside the eight
+fixture staging files moved before package import and outside the 12 package
+paths. Its SHA256 is
+`01e692ecda93ed309f284c743e32caa6c46f94d6b81c51ca91d5a94495b41eb1`, matching
+`unity_editor/VapbExportObjectMarker.cs` at the reviewed repo HEAD. The
+`VapbModelSkinTopologyBoundaryRedProbe` references that type when checking the
+allowed component set. This fixture is not self-contained on a clean Target:
+preserve/provide the reviewed runtime marker dependency before compiling the
+probe. Do not move or alter `VAPBFinalState` as part of this run.
+
 Current verified fixture artifacts: source FBX export passed at 4 vertices,
 2 faces/6 indices, and 2 bones; SourceProject generated the nested-instance
 package; the Blender importer/exporter completed the vertex-split package;
