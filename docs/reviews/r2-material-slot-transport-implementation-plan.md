@@ -1,6 +1,6 @@
 # R2 implementation plan: material identity transport
 
-Status: plan for review. Product implementation has not started. The approved design candidate defines intended behavior; it does not mean any guard or V1 rejection is implemented.
+Status: Stage 1 implementation is complete and pushed; Stage 2 has not started. This plan governs remaining work. The approved design candidate defines intended behavior; it does not mean any guard or V1 rejection beyond Stage 1 is implemented.
 
 ## Scope and invariants
 
