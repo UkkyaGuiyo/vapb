@@ -32,6 +32,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 // Only the manifest-authorized edited model and the synchronous source witness may create markers.
 public sealed class VapbModelSkinPostprocessor : AssetPostprocessor
@@ -71,6 +72,7 @@ public static class VapbModelSkinFinalizer
     private const string Kind = "RESTORE_MODEL_SKIN_VARIANT_V1";
     private const string DirectKind = "RESTORE_DIRECT_SKIN_VARIANT_V1";
     private const string Schema = "vapb-export-manifest-1";
+    private const string ExportMarkerSourceSha256 = "01e692ecda93ed309f284c743e32caa6c46f94d6b81c51ca91d5a94495b41eb1";
     private static string witnessPath;
     private static HashSet<string> witnessUids;
     private static bool unexpectedWitnessUid;
@@ -230,6 +232,7 @@ public static class VapbModelSkinFinalizer
                 ResolvePrepared(plan, prefab);
                 if (!targets.Add(plan.target)) Reject("TARGET_DUPLICATE");
             }
+            ValidateModelSkinReplacementScope(prefab, plans);
             foreach (PreparedTask plan in plans)
             {
                 CheckSourceHashes(plan.task);
@@ -600,6 +603,26 @@ public static class VapbModelSkinFinalizer
     private static string Disk(string path) { if (String.IsNullOrEmpty(path) || !path.StartsWith("Assets/", StringComparison.Ordinal) || path.Contains("..")) Reject("PATH_INVALID"); return Path.Combine(Application.dataPath, path.Substring(7).Replace('/', Path.DirectorySeparatorChar)); }
     private static byte[] Payload(string path, string hash) { byte[] bytes = File.ReadAllBytes(Disk(path)); if (bytes.Length == 0 || !HashBytes(bytes).Equals(hash, StringComparison.OrdinalIgnoreCase)) Reject("PAYLOAD_HASH_MISMATCH"); return bytes; }
     private static string FileHash(string path) { return HashBytes(File.ReadAllBytes(path)); }
+    private static bool HasReparseComponent(string path)
+    {
+        try
+        {
+            string root = Path.GetFullPath(Application.dataPath).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string current = Path.GetFullPath(path);
+            string prefix = root + Path.DirectorySeparatorChar;
+            if (!current.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return true;
+            while (true)
+            {
+                if ((File.GetAttributes(current) & FileAttributes.ReparsePoint) != 0) return true;
+                if (String.Equals(current, root, StringComparison.OrdinalIgnoreCase)) return false;
+                current = Path.GetDirectoryName(current);
+                if (String.IsNullOrEmpty(current)) return true;
+                if (String.Equals(current, root, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!current.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+        }
+        catch { return true; }
+    }
     private static string HashBytes(byte[] bytes) { using (SHA256 sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant(); }
     private static void Reject(string code) { throw new InvalidOperationException(code); }
     private static string SafeError(Exception error) { return error is InvalidOperationException && Regex.IsMatch(error.Message, "^[A-Z_]+$") ? error.Message : "UNEXPECTED_EXCEPTION"; }
@@ -1024,28 +1047,31 @@ public static class VapbModelSkinFinalizer
     {
         MeshLayout old = witness.sourceLayout;
         Mesh mesh = edited.mesh;
-        if (old == null || (!direct && old.vertexCount != mesh.vertexCount) ||
-            old.topologies.Length != mesh.subMeshCount || mesh.bindposes.Length != edited.editedBoneUids.Length ||
-            !SameBlendShapes(old, mesh)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
-        bool layoutChanged = old.vertexCount != mesh.vertexCount;
-        for (int i = 0; i < old.topologies.Length; i++)
-        {
-            if (old.topologies[i] != mesh.GetTopology(i)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
-            int[] a = old.indices[i];
-            int[] b = mesh.GetIndices(i);
-            if (a.Length != b.Length) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
-            for (int j = 0; j < a.Length; j++)
-                if (a[j] != b[j])
-                {
-                    if (!direct) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
-                    layoutChanged = true;
-                }
-        }
+        if (old == null || mesh.bindposes.Length != edited.editedBoneUids.Length)
+            Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
         if (direct)
         {
+            if (old.topologies.Length != mesh.subMeshCount || !SameBlendShapes(old, mesh))
+                Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+            bool layoutChanged = old.vertexCount != mesh.vertexCount;
+            for (int i = 0; i < old.topologies.Length; i++)
+            {
+                if (old.topologies[i] != mesh.GetTopology(i)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+                int[] a = old.indices[i];
+                int[] b = mesh.GetIndices(i);
+                if (a.Length != b.Length) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+                for (int j = 0; j < a.Length; j++)
+                    if (a[j] != b[j]) layoutChanged = true;
+            }
             if (layoutChanged && target.GetComponent<Cloth>() != null)
                 Reject("CLOTH_INDEX_STATE_UNSUPPORTED");
             ValidateMeshStreams(mesh);
+        }
+        else
+        {
+            if (old.shapeNames.Length != 0 || mesh.blendShapeCount != 0)
+                Reject("MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED");
+            ValidateModelSkinReplacementMesh(target, edited, source);
         }
         var sourceSlots = new Dictionary<string, int>(StringComparer.Ordinal);
         if (direct)
@@ -1072,6 +1098,205 @@ public static class VapbModelSkinFinalizer
                 !SameMatrix(mesh.bindposes[i], expected, 0.001f)) Reject("EDITED_REST_MISMATCH");
         }
         ValidateWeights(mesh, edited.editedBoneUids.Length);
+    }
+
+    private static void ValidateModelSkinReplacementScope(GameObject original, List<PreparedTask> plans)
+    {
+        bool hasModelSkin = false;
+        bool hasOtherKind = false;
+        foreach (PreparedTask plan in plans)
+        {
+            if (plan.task.kind == Kind) hasModelSkin = true;
+            else hasOtherKind = true;
+        }
+        if (!hasModelSkin) return;
+        if (hasOtherKind || plans.Count != 1) Reject("MODEL_SKIN_REPLACEMENT_SCOPE_UNSUPPORTED");
+        var targets = new HashSet<SkinnedMeshRenderer>();
+        foreach (PreparedTask plan in plans) targets.Add(plan.target);
+        int skinCount = 0;
+        foreach (Component component in original.GetComponentsInChildren<Component>(true))
+        {
+            if (component == null) Reject("SOURCE_COMPONENT_SCOPE_UNSUPPORTED");
+            if (component is Transform || component is VapbRealizationMarker || IsReviewedExportMarker(component))
+                continue;
+            if (component is SkinnedMeshRenderer skin)
+            {
+                skinCount++;
+                if (!targets.Contains(skin)) Reject("SOURCE_RENDERER_SCOPE_UNSUPPORTED");
+                continue;
+            }
+            Reject("SOURCE_COMPONENT_SCOPE_UNSUPPORTED");
+        }
+        if (skinCount != plans.Count) Reject("SOURCE_RENDERER_SCOPE_UNSUPPORTED");
+    }
+
+    private static bool IsReviewedExportMarker(Component component)
+    {
+        // Optional legacy marker: verify its canonical script bytes without linking its package type.
+        MonoBehaviour behaviour = component as MonoBehaviour;
+        if (behaviour == null || !String.Equals(component.GetType().FullName,
+            "VapbExportObjectMarker", StringComparison.Ordinal)) return false;
+        MonoScript script = MonoScript.FromMonoBehaviour(behaviour);
+        string path = script == null ? null : AssetDatabase.GetAssetPath(script);
+        if (String.IsNullOrEmpty(path) || !path.StartsWith("Assets/", StringComparison.Ordinal) ||
+            !path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)) return false;
+        string disk = Disk(path);
+        return File.Exists(disk) && !HasReparseComponent(disk) &&
+            FileHash(disk).Equals(ExportMarkerSourceSha256, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void ValidateModelSkinReplacementMesh(SkinnedMeshRenderer target, EditedIdentity edited, SourceIdentity source)
+    {
+        Mesh mesh = edited.mesh;
+        if (target.sharedMesh == null || target.sharedMesh.blendShapeCount != 0 || mesh.blendShapeCount != 0)
+            Reject("MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED");
+        if (target.GetComponent<Cloth>() != null) Reject("CLOTH_INDEX_STATE_UNSUPPORTED");
+        if (mesh.vertexCount == 0 || mesh.subMeshCount == 0 || edited.materials == null ||
+            edited.materials.Length != mesh.subMeshCount)
+            Reject("EDITED_STREAM_INVALID");
+        var allowed = new HashSet<VertexAttribute> {
+            VertexAttribute.Position, VertexAttribute.Normal, VertexAttribute.Tangent, VertexAttribute.Color,
+            VertexAttribute.TexCoord0, VertexAttribute.TexCoord1, VertexAttribute.TexCoord2, VertexAttribute.TexCoord3,
+            VertexAttribute.TexCoord4, VertexAttribute.TexCoord5, VertexAttribute.TexCoord6, VertexAttribute.TexCoord7,
+            VertexAttribute.BlendWeight, VertexAttribute.BlendIndices
+        };
+        bool position = false;
+        foreach (VertexAttributeDescriptor descriptor in mesh.GetVertexAttributes())
+        {
+            if (!allowed.Contains(descriptor.attribute) || descriptor.dimension < 1 || descriptor.dimension > 4)
+                Reject("EDITED_VERTEX_ATTRIBUTE_UNSUPPORTED");
+            if (descriptor.attribute == VertexAttribute.Position)
+            {
+                if (position || descriptor.dimension != 3) Reject("EDITED_VERTEX_ATTRIBUTE_UNSUPPORTED");
+                position = true;
+            }
+        }
+        // Unity's imported skinned Mesh can expose bone weights through the bone-weight APIs without
+        // reporting a symmetric BlendWeight/BlendIndices descriptor pair. Validate skin data through
+        // GetBonesPerVertex/GetAllBoneWeights below instead of requiring descriptor symmetry.
+        if (!position) Reject("EDITED_VERTEX_ATTRIBUTE_UNSUPPORTED");
+        ValidateMeshStreams(mesh);
+
+        int indexBufferLength = 0;
+        using (Mesh.MeshDataArray dataArray = Mesh.AcquireReadOnlyMeshData(mesh))
+        {
+            Mesh.MeshData data = dataArray[0];
+            if (mesh.indexFormat == IndexFormat.UInt16)
+                indexBufferLength = data.GetIndexData<ushort>().Length;
+            else if (mesh.indexFormat == IndexFormat.UInt32)
+                indexBufferLength = data.GetIndexData<uint>().Length;
+            else Reject("EDITED_INDEX_LAYOUT_INVALID");
+        }
+        for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+        {
+            SubMeshDescriptor descriptor = mesh.GetSubMesh(submesh);
+            long end = (long)descriptor.indexStart + descriptor.indexCount;
+            if (descriptor.topology != MeshTopology.Triangles || mesh.GetTopology(submesh) != MeshTopology.Triangles ||
+                descriptor.indexStart < 0 || descriptor.indexCount < 0 || descriptor.indexCount % 3 != 0 ||
+                end > indexBufferLength || mesh.GetIndexCount(submesh) != (uint)descriptor.indexCount)
+                Reject("EDITED_INDEX_LAYOUT_INVALID");
+            int[] indices = mesh.GetIndices(submesh, false);
+            if (indices.LongLength != descriptor.indexCount) Reject("EDITED_INDEX_LAYOUT_INVALID");
+            for (int i = 0; i < indices.Length; i++)
+            {
+                long effectiveIndex = (long)indices[i] + descriptor.baseVertex;
+                if (effectiveIndex < 0 || effectiveIndex >= mesh.vertexCount)
+                    Reject("EDITED_INDEX_LAYOUT_INVALID");
+            }
+        }
+
+        Bounds localBounds = target.localBounds;
+        if (!Finite(localBounds.center) || !Finite(localBounds.extents) ||
+            localBounds.extents.x < 0 || localBounds.extents.y < 0 || localBounds.extents.z < 0)
+            Reject("TARGET_LOCAL_BOUNDS_INVALID");
+        if (!BoundsContainVertices(mesh.bounds, mesh.vertices, 0.001f))
+            Reject("EDITED_MESH_BOUNDS_INVALID");
+        if (!BoundsContainsRestMesh(target, mesh, MappedTargetBones(edited, source), 0.001f))
+            Reject("TARGET_LOCAL_BOUNDS_INSUFFICIENT");
+    }
+
+    private static Transform[] MappedTargetBones(EditedIdentity edited, SourceIdentity source)
+    {
+        if (edited == null || source == null || edited.editedBoneUids == null) return null;
+        var mapped = new Transform[edited.editedBoneUids.Length];
+        for (int i = 0; i < mapped.Length; i++)
+            if (!source.bonesByUid.TryGetValue(edited.editedBoneUids[i], out mapped[i]) || mapped[i] == null)
+                return null;
+        return mapped;
+    }
+
+    private static bool BoundsContainsRestMesh(SkinnedMeshRenderer target, Mesh mesh,
+        Transform[] boneFrames, float tolerance)
+    {
+        if (target == null || target.rootBone == null || mesh == null || boneFrames == null ||
+            boneFrames.Length == 0 || tolerance < 0 || !Finite(target.localBounds.center) ||
+            !Finite(target.localBounds.extents) || target.localBounds.extents.x < 0 ||
+            target.localBounds.extents.y < 0 || target.localBounds.extents.z < 0 ||
+            mesh.bindposes == null || mesh.bindposes.Length != boneFrames.Length) return false;
+        Bounds bounds = target.localBounds;
+        Matrix4x4 rootWorldToLocal = target.rootBone.worldToLocalMatrix;
+        Matrix4x4 rootLocalToWorld = target.rootBone.localToWorldMatrix;
+        if (!FiniteMatrix(rootWorldToLocal) || !FiniteMatrix(rootLocalToWorld) ||
+            !SameMatrix(rootWorldToLocal * rootLocalToWorld, Matrix4x4.identity, 0.001f)) return false;
+        Matrix4x4[] bindposes = mesh.bindposes;
+        if (bindposes == null || bindposes.Length != boneFrames.Length) return false;
+        var rootSkinByBone = new Matrix4x4[boneFrames.Length];
+        for (int bone = 0; bone < boneFrames.Length; bone++)
+        {
+            if (boneFrames[bone] == null || !FiniteMatrix(bindposes[bone])) return false;
+            rootSkinByBone[bone] = rootWorldToLocal * boneFrames[bone].localToWorldMatrix * bindposes[bone];
+            if (!FiniteMatrix(rootSkinByBone[bone])) return false;
+        }
+        if (!FiniteMatrix(rootWorldToLocal)) return false;
+        Vector3[] vertices = mesh.vertices;
+        if (vertices == null || vertices.Length == 0) return false;
+        var counts = mesh.GetBonesPerVertex();
+        var weights = mesh.GetAllBoneWeights();
+        try
+        {
+            if (counts.Length != vertices.Length) return false;
+            int weightIndex = 0;
+            for (int vertex = 0; vertex < vertices.Length; vertex++)
+            {
+                int count = counts[vertex];
+                if (count <= 0 || weightIndex + count > weights.Length || !Finite(vertices[vertex])) return false;
+                Vector3 rootLocalPoint = Vector3.zero;
+                float totalWeight = 0f;
+                for (int influence = 0; influence < count; influence++)
+                {
+                    BoneWeight1 weight = weights[weightIndex++];
+                    if (weight.boneIndex < 0 || weight.boneIndex >= rootSkinByBone.Length ||
+                        !Finite(weight.weight) || weight.weight <= 0f) return false;
+                    Vector3 rootInfluence = rootSkinByBone[weight.boneIndex].MultiplyPoint3x4(vertices[vertex]);
+                    if (!Finite(rootInfluence)) return false;
+                    rootLocalPoint += rootInfluence * weight.weight;
+                    totalWeight += weight.weight;
+                }
+                if (!Finite(rootLocalPoint) || Mathf.Abs(totalWeight - 1f) > 0.01f) return false;
+                if (rootLocalPoint.x < bounds.min.x - tolerance ||
+                    rootLocalPoint.x > bounds.max.x + tolerance || rootLocalPoint.y < bounds.min.y - tolerance ||
+                    rootLocalPoint.y > bounds.max.y + tolerance || rootLocalPoint.z < bounds.min.z - tolerance ||
+                    rootLocalPoint.z > bounds.max.z + tolerance) return false;
+            }
+            return weightIndex == weights.Length;
+        }
+        finally { counts.Dispose(); weights.Dispose(); }
+    }
+    private static bool BoundsContainVertices(Bounds bounds, Vector3[] vertices, float tolerance)
+    {
+        if (vertices == null || vertices.Length == 0 || tolerance < 0 ||
+            !Finite(bounds.center) || !Finite(bounds.extents) || bounds.extents.x < 0 ||
+            bounds.extents.y < 0 || bounds.extents.z < 0) return false;
+        foreach (Vector3 vertex in vertices)
+            if (!Finite(vertex) || vertex.x < bounds.min.x - tolerance || vertex.x > bounds.max.x + tolerance ||
+                vertex.y < bounds.min.y - tolerance || vertex.y > bounds.max.y + tolerance ||
+                vertex.z < bounds.min.z - tolerance || vertex.z > bounds.max.z + tolerance) return false;
+        return true;
+    }
+
+    private static bool SameBounds(Bounds left, Bounds right)
+    {
+        return left.center.Equals(right.center) && left.extents.Equals(right.extents);
     }
 
     private static void SaveVariant(List<PreparedTask> plans, GameObject original)
@@ -1201,6 +1426,12 @@ public static class VapbModelSkinFinalizer
                 if (skin.sharedMesh != plan.edited.mesh || skin.rootBone == null ||
                     FollowSource(skin.rootBone, 1) != plan.target.rootBone ||
                     skin.bones.Length != plan.edited.editedBoneUids.Length) Reject("VARIANT_MISMATCH");
+                if (plan.task.kind == Kind && (skin.sharedMesh.blendShapeCount != 0 ||
+                    skin.shadowCastingMode != plan.target.shadowCastingMode ||
+                    skin.receiveShadows != plan.target.receiveShadows ||
+                    !SameBounds(skin.localBounds, plan.target.localBounds) ||
+                    !BoundsContainsRestMesh(skin, skin.sharedMesh, skin.bones, 0.001f)))
+                    Reject("VARIANT_RENDERER_STATE_CHANGED");
                 for (int i = 0; i < skin.bones.Length; i++)
                     if (FollowSource(skin.bones[i], 1) !=
                         plan.source.bonesByUid[plan.edited.editedBoneUids[i]])
