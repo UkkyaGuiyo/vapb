@@ -171,9 +171,10 @@ public sealed class ModelSkinRouteCompatibilityTests
             new Vector3(0f, 0f, bounds.min.z - tolerance),
             new Vector3(0f, 0f, bounds.max.z + tolerance)
         };
-        foreach (Vector3 point in exactEdges)
-            Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", point, bounds, tolerance),
-                "A point computed by the same min/max +/- tolerance expression must be included.");
+        for (int i = 0; i < exactEdges.Length; i++)
+            Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", exactEdges[i], bounds, tolerance),
+                "A point computed by the same min/max +/- tolerance expression must be included; edge=" +
+                i + " point=" + exactEdges[i]);
     }
 
     private static Type FindFinalizer()
