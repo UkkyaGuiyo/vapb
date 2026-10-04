@@ -13,12 +13,20 @@ import tarfile
 ROOT_MARKER = ".vapb-stage3-owned-test-root"
 TARGET_MARKER = ".vapb-disposable-unity-test-project"
 ROOT_VALUE = "VAPB_STAGE3_OWNED_TEST_ROOT_V1"
-REQUIRED = {
+APPROVED_PACKAGE_SHA256 = "157eee6379cc435ad9829db2011c1dabeb6f44259d97c385d6e47e3c2db8da73"
+EXPECTED_PACKAGE_PATHS = {
     "Assets/VAPBExport/manifest.json",
+    "Assets/VAPBExport/EditedSkin_defd390bf9c2aaf30f387716c927c40a.fbx",
     "Assets/VAPBExport/VapbRealizationMarker.cs",
     "Assets/VAPBExport/Editor/VapbReferenceFinalizer.cs",
     "Assets/VAPBExport/Editor/VapbModelSkinFinalizer.cs",
     "Assets/VAPBExport/Editor/VapbSkinWeightImporter.cs",
+    "Assets/VAPBExport/SkinWeightPolicy_defd390bf9c2aaf30f387716c927c40a.json",
+    "Assets/VAPBExport/Witness_defd390bf9c2aaf30f387716c927c40a_Noop.bytes",
+    "Assets/VAPBExport/Witness_defd390bf9c2aaf30f387716c927c40a_Source.bytes",
+    "Assets/VapbSkinRoundtrip/Avatar.prefab",
+    "Assets/VapbSkinRoundtrip/Input.fbx",
+    "Assets/VapbSkinRoundtrip/Original.mat",
 }
 
 
@@ -97,10 +105,16 @@ def run(root: Path) -> dict:
             (target / "ProjectSettings/ProjectVersion.txt").read_text(encoding="utf-8")):
         raise ValueError("OWNERSHIP_OR_UNITY_VERSION_INVALID")
     package_hash = sha(package.read_bytes())
+    if package_hash != APPROVED_PACKAGE_SHA256:
+        raise ValueError("PACKAGE_HASH_NOT_APPROVED_FOR_THIS_FIXTURE")
     rows = _unitypackage_assets(package)
     by_path = {row["path"]: row for row in rows}
-    if not REQUIRED.issubset(by_path):
-        raise ValueError("REQUIRED_PACKAGE_ASSET_MISSING")
+    actual_paths = set(by_path)
+    if actual_paths != EXPECTED_PACKAGE_PATHS:
+        raise ValueError("PACKAGE_PATH_SET_MISMATCH:" + json.dumps({
+            "missing": sorted(EXPECTED_PACKAGE_PATHS - actual_paths),
+            "extra": sorted(actual_paths - EXPECTED_PACKAGE_PATHS),
+        }, sort_keys=True))
     helpers = {
         "Assets/VAPBExport/VapbRealizationMarker.cs": "VapbRealizationMarker.cs",
         "Assets/VAPBExport/Editor/VapbReferenceFinalizer.cs": "Editor/VapbReferenceFinalizer.cs",

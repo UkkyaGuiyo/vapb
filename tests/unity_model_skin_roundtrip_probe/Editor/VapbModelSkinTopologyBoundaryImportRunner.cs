@@ -20,6 +20,8 @@ public static class VapbModelSkinTopologyBoundaryImportRunner
     private const string ResultName = "VapbModelSkinTopologyBoundaryRedResult.json";
     private const string ManifestPath = "Assets/VAPBExport/manifest.json";
     private const string Kind = "RESTORE_MODEL_SKIN_VARIANT_V1";
+    private const string ApprovedPackageSha256 = "157eee6379cc435ad9829db2011c1dabeb6f44259d97c385d6e47e3c2db8da73";
+    private const string ApprovedInventorySha256 = "e8dd9cec0cdee54eb777c4e3779f47d8347fd620f3e7fe701cf62852a800255f";
     private static bool verificationQueued;
 
     [Serializable] private sealed class Manifest { public Task[] reference_rebind_tasks; }
@@ -86,9 +88,12 @@ public static class VapbModelSkinTopologyBoundaryImportRunner
                 Occupied(Path.Combine(projectRoot, ResultName)) || !File.Exists(inventoryFile) ||
                 HasReparseComponent(inventoryFile) || HasReparseComponent(inventoryFile + ".meta"))
                 throw new InvalidOperationException("OUTPUT_OR_EVIDENCE_PATH_INVALID");
+            string packageHash = Hash(package);
+            if (packageHash != ApprovedPackageSha256 || Hash(inventoryFile) != ApprovedInventorySha256)
+                throw new InvalidOperationException("PACKAGE_OR_INVENTORY_NOT_PARENT_REVIEWED");
             PackageInventory inventory = JsonUtility.FromJson<PackageInventory>(File.ReadAllText(inventoryFile));
-            if (inventory == null || !inventory.pass || inventory.asset_count <= 0 || inventory.task_count != 1 ||
-                inventory.task_kind != Kind || inventory.package_sha256 != Hash(package))
+            if (inventory == null || !inventory.pass || inventory.asset_count != 12 || inventory.task_count != 1 ||
+                inventory.task_kind != Kind || inventory.package_sha256 != packageHash)
                 throw new InvalidOperationException("PACKAGE_PREFLIGHT_EVIDENCE_MISMATCH");
             string[] packagePaths = {
                 ManifestPath,
@@ -102,7 +107,7 @@ public static class VapbModelSkinTopologyBoundaryImportRunner
                 if (Occupied(disk) || HasReparseComponent(disk) || HasReparseComponent(disk + ".meta"))
                     throw new InvalidOperationException("PACKAGE_ASSET_PATH_OCCUPIED:" + path);
             }
-            report.package_sha256 = Hash(package);
+            report.package_sha256 = packageHash;
             SessionState.SetFloat(StartKey, (float)EditorApplication.timeSinceStartup);
             SessionState.SetString(StateKey, "importing");
             Subscribe();

@@ -57,12 +57,16 @@ The prepared route uses only synthetic assets and the product exporter:
    `Output.unitypackage` and `TopologyBoundaryEvidence.json`.
 4. Copy that package to `<run-root>/Output.unitypackage`. Run
    `model_skin_topology_boundary_package_preflight.py -- <run-root>` before
-   importing it. The preflight checks every package asset pathname, GUID,
-   payload/meta pair, the canonical support-script payloads, all TargetProject
-   path/GUID collisions, and requires exactly one normal
-   `RESTORE_MODEL_SKIN_VARIANT_V1` task. It writes
-   `OutputPackageInventory.json`; ImportRunner checks the inventory pass and
-   package SHA before `AssetDatabase.ImportPackage`.
+   importing it. For this reviewed disposable run, the preflight requires the
+   exact 12-path set and package SHA256
+   `157eee6379cc435ad9829db2011c1dabeb6f44259d97c385d6e47e3c2db8da73`.
+   It verifies every package asset pathname, GUID, payload/meta pair, the four
+   canonical support-script payloads, all TargetProject path/GUID collisions,
+   and exactly one normal `RESTORE_MODEL_SKIN_VARIANT_V1` task. It writes
+   `OutputPackageInventory.json`; ImportRunner accepts only that exact package
+   SHA and the reviewed inventory SHA256
+   `e8dd9cec0cdee54eb777c4e3779f47d8347fd620f3e7fe701cf62852a800255f` before
+   `AssetDatabase.ImportPackage`.
 5. Before package import, move only the already-staged
    `Assets/VAPBModelSkinTopologyBoundary` fixture folder (including its folder
    `.meta`) outside TargetProject/Assets and preserve its inventory/hashes. The
