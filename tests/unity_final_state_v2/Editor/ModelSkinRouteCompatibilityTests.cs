@@ -157,6 +157,25 @@ public sealed class ModelSkinRouteCompatibilityTests
             .MultiplyVector(Vector3.right * 0.001f).magnitude, 0.00001f);
     }
 
+    [Test]
+    public void BoundsToleranceIncludesComputedMinAndMaxEdges()
+    {
+        Type finalizer = FindFinalizer();
+        Bounds bounds = new Bounds(Vector3.zero, Vector3.one * 2f);
+        const float tolerance = 0.001f;
+        Vector3[] exactEdges = {
+            new Vector3(bounds.min.x - tolerance, 0f, 0f),
+            new Vector3(bounds.max.x + tolerance, 0f, 0f),
+            new Vector3(0f, bounds.min.y - tolerance, 0f),
+            new Vector3(0f, bounds.max.y + tolerance, 0f),
+            new Vector3(0f, 0f, bounds.min.z - tolerance),
+            new Vector3(0f, 0f, bounds.max.z + tolerance)
+        };
+        foreach (Vector3 point in exactEdges)
+            Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", point, bounds, tolerance),
+                "A point computed by the same min/max +/- tolerance expression must be included.");
+    }
+
     private static Type FindFinalizer()
     {
         foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
