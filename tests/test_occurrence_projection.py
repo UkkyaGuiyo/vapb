@@ -153,6 +153,18 @@ Transform:
         self.assertNotEqual(result.records[0]["occurrence_id"], result.records[1]["occurrence_id"])
         self.assertEqual([CHILD, CHILD], [r["source_key"]["source_asset_guid"] for r in result.records])
 
+    def test_variant_fractional_builtin_file_id_is_not_normalized_into_preview_allowlist(self):
+        root_text = instance(target=-20).replace(
+            "fileID: 2100000, guid: " + OVERRIDE,
+            "fileID: 10303.9, guid: 0000000000000000f000000000000000")
+        root = self.source(ROOT, root_text)
+        result = self.project(root, self.source(CHILD, direct()))
+        reference = result.records[0]["materials"][0]
+        self.assertEqual("0000000000000000f000000000000000", reference["guid"])
+        self.assertEqual(10303, reference["file_id"])
+        self.assertEqual("10303.9", reference["raw_file_id"])
+        self.assertIsNot(type(reference["raw_file_id"]), int)
+
     def test_no_cross_product_or_wrong_guid_collision(self):
         unrelated = "f" * 32
         root = self.source(ROOT, instance(ids=(10,)))

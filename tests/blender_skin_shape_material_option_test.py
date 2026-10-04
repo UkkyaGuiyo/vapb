@@ -245,6 +245,61 @@ def assert_builtin_preview_after_reopen(use_materials):
         item["code"] for item in outcome["items"]}
 
 
+def assert_builtin_preview_candidate_safety():
+    import json
+    from unitypackage_blender_importer.blender.dependency_resolver import (
+        BUILTIN_PREVIEW_FILE_ID, BUILTIN_PREVIEW_GUID, BUILTIN_PREVIEW_MARKER,
+        SCENE_DEPENDENCY_REGISTRY, _builtin_preview_material, resolve_scene_dependencies)
+
+    def make_candidate(name, *, approximate):
+        material = bpy.data.materials.new(name)
+        material[BUILTIN_PREVIEW_MARKER] = "UNITY_DEFAULT_MATERIAL"
+        material["_vapb_builtin_preview_guid"] = BUILTIN_PREVIEW_GUID
+        material["_vapb_builtin_preview_file_id"] = BUILTIN_PREVIEW_FILE_ID
+        if approximate:
+            material["_vapb_builtin_preview_approximate"] = True
+        return material
+
+    def make_scene():
+        scene = bpy.data.scenes.new("Synthetic built-in preview candidate check")
+        scene[SCENE_DEPENDENCY_REGISTRY] = json.dumps({"schema_version": 1, "dependencies": [{
+            "dependency_type": "PREFAB_RENDERER_MATERIAL",
+            "target_guid": BUILTIN_PREVIEW_GUID,
+            "target_file_id": BUILTIN_PREVIEW_FILE_ID,
+            "target_file_id_raw": 10303,
+            "consumer_slot_index": 0,
+        }]})
+        return scene
+
+    candidates = []
+    scenes = []
+    try:
+        candidates.extend((make_candidate("Synthetic duplicate A", approximate=True),
+                          make_candidate("Synthetic duplicate B", approximate=True)))
+        assert _builtin_preview_material() is None
+        ambiguous_scene = make_scene()
+        scenes.append(ambiguous_scene)
+        counts = resolve_scene_dependencies(ambiguous_scene)
+        record = json.loads(ambiguous_scene[SCENE_DEPENDENCY_REGISTRY])["dependencies"][0]
+        assert counts["ambiguous"] == 1 and record["status"] == "AMBIGUOUS_PROVIDER", (counts, record)
+        for material in candidates:
+            bpy.data.materials.remove(material)
+        candidates.clear()
+        candidates.append(make_candidate("Synthetic incomplete candidate", approximate=False))
+        assert _builtin_preview_material() is None
+        incomplete_scene = make_scene()
+        scenes.append(incomplete_scene)
+        counts = resolve_scene_dependencies(incomplete_scene)
+        record = json.loads(incomplete_scene[SCENE_DEPENDENCY_REGISTRY])["dependencies"][0]
+        assert counts["unresolved"] == 1 and record["status"] == "UNSUPPORTED", (counts, record)
+        print("BUILTIN_PREVIEW_CANDIDATE_SAFETY_PASS", flush=True)
+    finally:
+        for scene in scenes:
+            bpy.data.scenes.remove(scene)
+        for material in candidates:
+            bpy.data.materials.remove(material)
+
+
 def snapshot(witness, records):
     from unitypackage_blender_importer.blender.fbx_receipt import validate_shape_receipts
 
@@ -403,6 +458,7 @@ def main():
     import unitypackage_blender_importer as addon
     addon.register()
     try:
+        assert_builtin_preview_candidate_safety()
         on = run_mode(package, witness, output_dir, "on")
         off = run_mode(package, witness, output_dir, "off")
         assert_close_tree(on, off, "MATERIAL_OPTION_PARITY")

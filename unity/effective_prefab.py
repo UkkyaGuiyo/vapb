@@ -344,7 +344,10 @@ class EffectivePrefabResolver:
                 except ValueError:
                     continue
                 if modification.object_reference is not None:
-                    state.material_slots[slot] = dict(modification.object_reference)
+                    state.material_slots[slot] = {
+                        key: value for key, value in modification.object_reference.items()
+                        if key != "raw_file_id"
+                    }
             else:
                 state.properties[modification.property_path] = modification.value
 

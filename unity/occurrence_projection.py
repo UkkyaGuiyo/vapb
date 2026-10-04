@@ -127,7 +127,7 @@ def _reference(value: object, *, preserve_raw_file_id: bool = False) -> dict | N
         return None
     reference = {"guid": guid.lower(), "file_id": file_id}
     if preserve_raw_file_id:
-        reference["raw_file_id"] = value.get("fileID")
+        reference["raw_file_id"] = value.get("raw_file_id", value.get("fileID"))
     return reference
 
 

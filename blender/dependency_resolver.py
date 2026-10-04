@@ -361,7 +361,9 @@ def _builtin_preview_material() -> Any:
                   and str(material.get("_vapb_builtin_preview_guid", "")).lower() == BUILTIN_PREVIEW_GUID
                   and str(material.get("_vapb_builtin_preview_file_id", "")) == BUILTIN_PREVIEW_FILE_ID]
     if len(candidates) == 1:
-        return candidates[0]
+        candidate = candidates[0]
+        return (candidate if candidate.get("_vapb_builtin_preview_approximate") is True
+                else None)
     if len(candidates) > 1:
         return None
     material = bpy.data.materials.new("Unity Built-in Default (Approximate Preview)")
@@ -405,8 +407,15 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
             changed = True
             continue
         if _is_builtin_preview_reference(record):
-            record["provider_status"] = "ENGINE_RESIDENT_BUILTIN"
             preview = _builtin_preview_material()
+            preview_candidates = [material for material in bpy.data.materials
+                                  if material.get(BUILTIN_PREVIEW_MARKER) == "UNITY_DEFAULT_MATERIAL"
+                                  and str(material.get("_vapb_builtin_preview_guid", "")).lower() == BUILTIN_PREVIEW_GUID
+                                  and str(material.get("_vapb_builtin_preview_file_id", "")) == BUILTIN_PREVIEW_FILE_ID]
+            preview_block = (AMBIGUOUS_PROVIDER if len(preview_candidates) > 1
+                             else UNSUPPORTED if preview_candidates and preview is None
+                             else None)
+            record["provider_status"] = preview_block or "ENGINE_RESIDENT_BUILTIN"
             applied = preview is not None and _bind_material(record, preview)
             if applied:
                 record["status"] = RESOLVED_BUILTIN_PREVIEW
@@ -421,7 +430,7 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
             else:
                 blocked_status = record.get("status") if record.get("status") in {
                     USER_EDIT_PRESERVED, UNVERIFIED_SLOT_STATE, UNVERIFIED_TEXTURE_STATE
-                } else MISSING_CONSUMER
+                } else preview_block or MISSING_CONSUMER
                 record["status"] = blocked_status
                 record["binding_status"] = blocked_status
                 record["resolution_provenance"] = "UNITY_BUILTIN_PREVIEW_APPROXIMATE"
@@ -429,6 +438,10 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                     counts["user_edit_preserved"] += 1
                 elif blocked_status == UNVERIFIED_SLOT_STATE:
                     counts["unverified_slot_state"] += 1
+                elif blocked_status == AMBIGUOUS_PROVIDER:
+                    counts["ambiguous"] += 1
+                elif blocked_status == UNSUPPORTED:
+                    counts["unresolved"] += 1
                 else:
                     counts["missing_consumer"] += 1
             changed = True

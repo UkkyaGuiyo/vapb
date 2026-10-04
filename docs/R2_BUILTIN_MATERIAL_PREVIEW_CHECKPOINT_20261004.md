@@ -26,12 +26,20 @@ Final GREEN used Blender `5.2.1 LTS`, the same package (`SHA-256 9020b4f5072bc86
 - Materials ON bound the two exact occurrences to one reusable preview datablock, reported no unresolved package dependency, preserved one user-edited slot through repeated resolve and save/reopen, and kept overall outcome `PARTIAL`;
 - Materials OFF created no preview Material;
 - negative controls for wrong fileID/GUID/type, fractional raw fileID, ordinary missing provider, and explicit null remained unresolved and unbound;
-- focused Python suite: 68 tests passed, including import outcome, Prefab parsing, occurrence projection, and witness bridge;
+- focused Python suite: 70 tests passed, including import outcome, Prefab parsing, occurrence projection, and witness bridge;
 - `compileall` over Blender, Unity, operator, and test Python modules passed; `git diff --check` passed.
 
-The generated `SkinShapeMaterialOptionResult.json` reports the fixture/package/witness SHA, Materials ON/OFF parity, save/reopen parity, preview provenance, negative controls, and `PARTIAL` outcome. It is local run evidence, not committed as a machine-specific log. Unity was not launched for this checkpoint. A separate cross-package Blender runner was attempted but stopped on Windows access denied at Blender's default AppData source-storage path; that path was not redirected or bypassed. The focused late material slot Blender regression passed.
+The generated `SkinShapeMaterialOptionResult.json` reports the fixture/package/witness SHA, Materials ON/OFF parity, save/reopen parity, preview provenance, negative controls, and `PARTIAL` outcome. It is local run evidence, not committed as a machine-specific log. Unity was not launched for this checkpoint. The focused late material slot Blender regression passed.
 
-GPT-6.1 SOL medium read-only review found that integer normalization could admit a fractional raw fileID and that the witness route needed raw-value transport. The raw identity is now carried to dependency resolution; the fractional case is covered through parser normalization and the resolver's fail-closed negative control. The updated code was not submitted for a second SOL review.
+## Final SOL review and follow-up
+
+GPT-6.1 SOL medium read-only final review found a remaining variant-path issue: `PrefabData.modifications()` extracted the integer prefix of a fractional `objectReference.fileID` before occurrence projection. The parser now preserves the raw scalar, accepting it as raw `int` only when the entire scalar is integer syntax; `10303.9` stays a string through variant projection and witness dependency capture and therefore fails the preview allowlist. The compatibility override capture also carries the raw field. Parser and variant projection regressions cover this route. The internal effective-prefab comparison view intentionally omits the auxiliary raw field.
+
+The same review found that duplicate existing preview candidates were refused but mislabeled as missing consumer, and a lone candidate without the approximate marker could be reused on the compatibility route. Duplicate candidates now report `AMBIGUOUS_PROVIDER`; an incomplete sole candidate reports `UNSUPPORTED` and remains unbound. Persistent Blender integration assertions cover both cases. SOL reviewed the corrected final diff and reported no remaining blocking findings.
+
+After those changes, the focused Python suite passed 70 tests. Blender `5.2.1 LTS` reran the public synthetic import with Materials ON/OFF, occurrence-level slot edit preservation, save/reopen, fractional-ID negative control, duplicate/incomplete preview candidate checks, and Skin/Shape parity; `BUILTIN_PREVIEW_CANDIDATE_SAFETY_PASS`, `BUILTIN_PREVIEW_BOUNDARY_PASS`, both mode PASS markers, and overall parity PASS were observed. Unity and actual Material export were not run.
+
+The separate cross-package synthetic Blender runner first hit `WinError 5` at its default AppData source-storage path under ordinary sandbox execution. The same runner was then submitted via the formal approved execution path, without redirecting that path; it got past access and failed at its own grouped-fixture assertion (`AttributeError: 'NoneType' object has no attribute 'materials'`, `tests/blender_cross_package_dependency_test.py:169`) because its synthetic `Coat` object had no mesh data. This is a runner/fixture failure, not evidence of a Unity license or runtime problem, and does not establish an importer product defect. The runner remains non-passing and requires separate fixture diagnosis.
 
 ## Boundaries
 

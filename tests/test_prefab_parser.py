@@ -209,6 +209,7 @@ PrefabInstance:
             "object_name": "Coat",
             "prefab_instance_file_id": "100",
             "material_file_id": "2100000",
+            "material_file_id_raw": 2100000,
         }])
 
     def test_modification_identity_retains_instance_and_source_scope(self):
@@ -240,6 +241,26 @@ PrefabInstance:
         self.assertEqual(["-21", "22"], [o["material_file_id"] for o in overrides])
         self.assertEqual([3] * 4, [m.target_type for m in modifications])
         self.assertEqual([2, 2], [m.object_reference["type"] for m in modifications if m.object_reference])
+
+    def test_variant_material_override_preserves_fractional_raw_file_id(self):
+        text = f"""%YAML 1.1
+--- !u!1001 &100
+PrefabInstance:
+  m_Modification:
+    m_Modifications:
+    - target: {{fileID: -123, guid: {'a' * 32}, type: 3}}
+      propertyPath: m_Materials.Array.data[0]
+      value:
+      objectReference: {{fileID: 10303.9, guid: 0000000000000000f000000000000000, type: 2}}
+"""
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "Variant.prefab"
+            path.write_text(text, encoding="utf-8")
+            modification = parse_prefab(path).modifications()[0]
+            override = parse_prefab(path).modification_materials()[0]
+        self.assertEqual(10303, modification.object_reference["fileID"])
+        self.assertEqual("10303.9", modification.object_reference["raw_file_id"])
+        self.assertEqual("10303.9", override["material_file_id_raw"])
 
     def test_effective_prefab_preserves_target_identity_and_last_override(self):
         text = """%YAML 1.1

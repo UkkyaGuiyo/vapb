@@ -554,6 +554,7 @@ def apply_prefab_modification_materials(prefab: PrefabData, source_to_member, as
                 "consumer_slot_index": int(override["slot_index"]),
                 "target_guid": str(override["material_guid"]),
                 "target_file_id": str(override.get("material_file_id", "")),
+                "target_file_id_raw": override.get("material_file_id_raw"),
                 "source_prefab_asset_path": str(prefab.path),
             })
 

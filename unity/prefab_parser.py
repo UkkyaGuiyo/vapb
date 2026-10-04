@@ -123,6 +123,8 @@ class PrefabData:
                 "object_name": names.get((item.prefab_instance_file_id, item.target_guid, item.target_file_id), ""),
                 "prefab_instance_file_id": str(item.prefab_instance_file_id),
                 "material_file_id": str(ref_file_id(item.object_reference)),
+                "material_file_id_raw": item.object_reference.get(
+                    "raw_file_id", item.object_reference.get("fileID")),
             })
         return result
 
@@ -146,12 +148,18 @@ class PrefabData:
                 if ref_match:
                     fields = ref_match.group(1)
                     file_id = re.search(r"\bfileID:\s*(-?\d+)\b", fields)
+                    raw_file_id = re.search(r"\bfileID:\s*([^,}\s]+)", fields)
                     ref_guid_match = re.search(r"\bguid:\s*([0-9a-fA-F]{32})\b", fields)
                     ref_type = re.search(r"\btype:\s*(-?\d+)\b", fields)
                     if re.fullmatch(r"\s*fileID:\s*0\s*", fields):
                         reference = {"fileID": 0}
                     elif file_id and ref_guid_match:
                         reference = {"fileID": int(file_id.group(1)), "guid": ref_guid_match.group(1).lower()}
+                        if raw_file_id:
+                            raw_scalar = raw_file_id.group(1)
+                            reference["raw_file_id"] = (int(raw_scalar)
+                                                         if re.fullmatch(r"-?\d+", raw_scalar)
+                                                         else raw_scalar)
                         if ref_type:
                             reference["type"] = int(ref_type.group(1))
                 result.append(PrefabModification(
