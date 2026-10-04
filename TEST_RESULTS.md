@@ -1,4 +1,10 @@
-# Current 0.3.0 Baseline Test Results
+# VAPB Test Results and Checkpoints
+
+## Latest checkpoint: 2026-10-04 R2 Stage 3
+
+- Public-safe implementation checkpoint: canonical decimal-string material slot indexes with Unity JsonUtility exact invariant comparison; scanner removed.
+- Blender 5.2.1 background regressions: 64 passed. C# reference-only compile passed; Unity Editor compile and EditMode tests remain unrun.
+- Unity JsonUtility raw-number coercion and duplicate-key behavior remain unverified. Stage 3 is not proven complete or release-ready. See [R2 Stage 3 checkpoint](docs/R2_STAGE3_CHECKPOINT_20261004.md).
 
 ## 0.4.0 candidate Centered Import Loading Overlay (2026-09-17)
 

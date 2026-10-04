@@ -71,6 +71,40 @@ def _reject_unused_material_slots(slots, polygons) -> None:
             f"unused material slot(s) at indices {unused}; remove unused slots and re-export")
 
 
+def _validate_final_state_material_table(material_records, slot_material_ids):
+    """Validate package-scoped declarations and their slot references."""
+    by_id = {}
+    for record in material_records:
+        material_id = record.get("export_material_id") if isinstance(record, dict) else None
+        if not isinstance(material_id, str) or not re.fullmatch(
+                r"VAPB-MAT-[0-9a-f]{32}", material_id):
+            raise ValueError("invalid final-state export material ID")
+        if material_id in by_id:
+            raise ValueError("duplicate final-state export material ID")
+        by_id[material_id] = record
+    if not slot_material_ids:
+        raise ValueError("final-state material slots are missing")
+    if any(not isinstance(material_id, str) or material_id not in by_id
+           for material_id in slot_material_ids):
+        raise ValueError("final-state material slot references an unknown material ID")
+    used = set(slot_material_ids)
+    if used != set(by_id):
+        raise ValueError("final-state material declaration is unused by all slots")
+    return by_id
+
+
+def _build_final_state_task(export_object_id, model_guid, model_sha256, prefab_path,
+                            material_records, slot_material_ids):
+    """Build the explicit V2 identity-transport task without collapsing slots."""
+    _validate_final_state_material_table(material_records, slot_material_ids)
+    slots = [{"slot_index": str(index), "export_material_id": material_id}
+             for index, material_id in enumerate(slot_material_ids)]
+    return {"kind": "BUILD_EXPORTED_STATIC_V2", "material_transport_version": 2,
+            "export_object_id": export_object_id, "model_guid": model_guid,
+            "model_sha256": model_sha256, "prefab_path": prefab_path,
+            "materials": material_records, "material_slots": slots}
+
+
 def _material_data(payload: bytes):
     with tempfile.TemporaryDirectory(prefix="vapb_material_refs_") as temporary:
         root = Path(temporary)
@@ -291,8 +325,6 @@ def export_final_state_package(context, mesh, output: Path):
                                      "guid": guid, "file_id": file_id,
                                      "asset_sha256": _sha(source.asset_bytes),
                                      "shader": shader, "textures": textures})
-    slots = [{"slot_index": index, "export_material_id": material_id}
-             for index, material_id in enumerate(slot_material_ids)]
     destinations = allocate_material_paths(naming_rows.values())
     for guid, entry in material_entries.items():
         selected.add(replace(entry, pathname=destinations[guid], operation='MOVE'))
@@ -308,9 +340,8 @@ def export_final_state_package(context, mesh, output: Path):
         f"fileFormatVersion: 2\nguid: {model_guid}\n".encode("ascii"),
         asset_type="MESH_ASSET", operation="CREATE", strategy="REGENERATE_FROM_BLENDER",
         export_identity={"export_object_id": object_id}))
-    task = {"kind": "BUILD_EXPORTED_STATIC_V1", "export_object_id": object_id,
-            "model_guid": model_guid, "model_sha256": _sha(payload),
-            "prefab_path": prefab_path, "materials": material_records, "material_slots": slots}
+    task = _build_final_state_task(object_id, model_guid, _sha(payload), prefab_path,
+                                  material_records, slot_material_ids)
     first_party = Path(__file__).resolve().parents[1] / "unity_editor"
     support = (
         ("Assets/VAPBExport/VapbExportObjectMarker.cs", first_party / "VapbExportObjectMarker.cs"),

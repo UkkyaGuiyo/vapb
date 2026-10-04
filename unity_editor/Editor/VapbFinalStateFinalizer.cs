@@ -45,7 +45,10 @@ public static class VapbFinalStateFinalizer
     }
     public static ReferenceResult[] LastReferences { get; private set; } = new ReferenceResult[0];
     private const string ManifestPath = "Assets/VAPBExport/manifest.json";
-    private const string TaskKind = "BUILD_EXPORTED_STATIC_V1";
+    private const string TaskKind = "BUILD_EXPORTED_STATIC_V2";
+    private const string ReexportRequiredPrefix = "FINAL_STATE_REEXPORT_REQUIRED:";
+    private const string ReexportRequiredMessage = ReexportRequiredPrefix +
+        " This package predates material identity transport. Re-export the final-state package from Blender, then import the new package. Existing assets were not rewritten.";
     [Serializable] private sealed class Manifest
     {
         public string schema_version;
@@ -54,6 +57,7 @@ public static class VapbFinalStateFinalizer
     [Serializable] private sealed class Task
     {
         public string kind;
+        public int material_transport_version;
         public string export_object_id;
         public string model_guid;
         public string model_sha256;
@@ -87,7 +91,7 @@ public static class VapbFinalStateFinalizer
     }
     [Serializable] private sealed class SlotRecord
     {
-        public int slot_index;
+        public string slot_index;
         public string export_material_id;
     }
 
@@ -129,21 +133,52 @@ public static class VapbFinalStateFinalizer
     {
         if (manifestPath != ManifestPath || AssetDatabase.LoadAssetAtPath<TextAsset>(manifestPath) == null)
             throw new InvalidOperationException("MANIFEST_UNAVAILABLE");
-        Manifest manifest = JsonUtility.FromJson<Manifest>(File.ReadAllText(DiskPath(manifestPath)));
+        string json = File.ReadAllText(DiskPath(manifestPath));
+        Manifest manifest = JsonUtility.FromJson<Manifest>(json);
         if (manifest == null || manifest.schema_version != "vapb-export-manifest-1" ||
             manifest.reference_rebind_tasks == null || manifest.reference_rebind_tasks.Length != 1)
             throw new InvalidOperationException("MANIFEST_UNSUPPORTED");
         Task task = manifest.reference_rebind_tasks[0];
-        if (task == null || task.kind != TaskKind ||
-            !Regex.IsMatch(task.export_object_id ?? "", @"^VAPB-OBJ-[0-9a-f]{32}$") ||
-            !Regex.IsMatch(task.model_guid ?? "", @"^[0-9a-f]{32}$") ||
-            !Regex.IsMatch(task.model_sha256 ?? "", @"^[0-9a-f]{64}$") ||
+        if (task != null && task.kind == "BUILD_EXPORTED_STATIC_V1")
+            throw new InvalidOperationException(ReexportRequiredMessage);
+        ValidateV2Task(task);
+        return task;
+    }
+
+    private static void ValidateV2Task(Task task)
+    {
+        if (task == null || task.kind != TaskKind || task.material_transport_version != 2 ||
+            !Regex.IsMatch(task.export_object_id ?? "", @"\AVAPB-OBJ-[0-9a-f]{32}\z") ||
+            !Regex.IsMatch(task.model_guid ?? "", @"\A[0-9a-f]{32}\z") ||
+            !Regex.IsMatch(task.model_sha256 ?? "", @"\A[0-9a-f]{64}\z") ||
             task.prefab_path != "Assets/VAPBExport/Generated_" +
                 task.export_object_id.Substring("VAPB-OBJ-".Length) + ".prefab" ||
             task.materials == null || task.materials.Length == 0 ||
             task.material_slots == null || task.material_slots.Length == 0)
             throw new InvalidOperationException("TASK_UNSUPPORTED");
-        return task;
+        var declared = new HashSet<string>(StringComparer.Ordinal);
+        foreach (MaterialRecord record in task.materials)
+        {
+            if (record == null ||
+                !Regex.IsMatch(record.export_material_id ?? "", @"\AVAPB-MAT-[0-9a-f]{32}\z") ||
+                !declared.Add(record.export_material_id) ||
+                !Regex.IsMatch(record.guid ?? "", @"\A[0-9a-f]{32}\z") ||
+                !long.TryParse(record.file_id, out _) ||
+                !Regex.IsMatch(record.asset_sha256 ?? "", @"\A[0-9a-f]{64}\z") ||
+                record.shader == null || record.textures == null)
+                throw new InvalidOperationException("MATERIAL_DECLARATION_INVALID");
+        }
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < task.material_slots.Length; i++)
+        {
+            SlotRecord slot = task.material_slots[i];
+            if (slot == null || slot.slot_index != i.ToString(System.Globalization.CultureInfo.InvariantCulture) ||
+                !declared.Contains(slot.export_material_id ?? ""))
+                throw new InvalidOperationException("MATERIAL_SLOT_INVALID");
+            used.Add(slot.export_material_id);
+        }
+        if (!used.SetEquals(declared))
+            throw new InvalidOperationException("MATERIAL_DECLARATION_UNUSED");
     }
 
     internal static bool IsAuthorizedExportObject(string modelPath, string exportId)
@@ -164,8 +199,8 @@ public static class VapbFinalStateFinalizer
         foreach (MaterialRecord record in task.materials)
         {
             if (record == null ||
-                !Regex.IsMatch(record.export_material_id ?? "", @"^VAPB-MAT-[0-9a-f]{32}$") ||
-                !Regex.IsMatch(record.guid ?? "", @"^[0-9a-f]{32}$") ||
+                !Regex.IsMatch(record.export_material_id ?? "", @"\AVAPB-MAT-[0-9a-f]{32}\z") ||
+                !Regex.IsMatch(record.guid ?? "", @"\A[0-9a-f]{32}\z") ||
                 !long.TryParse(record.file_id, out long fileId) || !byId.TryAdd(record.export_material_id, null))
                 throw new InvalidOperationException("MATERIAL_ID_INVALID");
             string path = AssetDatabase.GUIDToAssetPath(record.guid);
@@ -178,33 +213,51 @@ public static class VapbFinalStateFinalizer
             ValidateDependencies(record, material, path, references);
             byId[record.export_material_id] = material;
         }
-        var result = new Material[task.material_slots.Length];
-        var used = new HashSet<int>();
+        var result = new Material[task.materials.Length];
+        for (int i = 0; i < task.materials.Length; i++)
+            result[i] = byId[task.materials[i].export_material_id];
+        return result;
+    }
+
+    private static int[] ResolveNativeMaterialOrder(Task task, string[] nativeLabels, int subMeshCount)
+    {
+        ValidateV2Task(task);
+        if (nativeLabels == null || nativeLabels.Length != task.material_slots.Length ||
+            nativeLabels.Length != subMeshCount)
+            throw new InvalidOperationException("NATIVE_MATERIAL_CARDINALITY_MISMATCH");
+        var materialIndexes = new Dictionary<string, int>(StringComparer.Ordinal);
+        for (int i = 0; i < task.materials.Length; i++)
+            materialIndexes.Add(task.materials[i].export_material_id, i);
+        var expectedCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (SlotRecord slot in task.material_slots)
         {
-            if (slot == null || slot.slot_index < 0 || slot.slot_index >= result.Length ||
-                !used.Add(slot.slot_index) || !byId.TryGetValue(slot.export_material_id ?? "", out Material material))
-                throw new InvalidOperationException("MATERIAL_SLOT_INVALID");
-            result[slot.slot_index] = material;
+            expectedCounts.TryGetValue(slot.export_material_id, out int count);
+            expectedCounts[slot.export_material_id] = count + 1;
         }
-        if (used.Count != result.Length)
-            throw new InvalidOperationException("MATERIAL_SLOT_INVALID");
+        var actualCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        var result = new int[nativeLabels.Length];
+        for (int i = 0; i < nativeLabels.Length; i++)
+        {
+            string label = nativeLabels[i];
+            if (!Regex.IsMatch(label ?? "", @"\AVAPB-MAT-[0-9a-f]{32}\z") ||
+                !materialIndexes.TryGetValue(label, out result[i]))
+                throw new InvalidOperationException("NATIVE_MATERIAL_LABEL_INVALID");
+            actualCounts.TryGetValue(label, out int count);
+            actualCounts[label] = count + 1;
+        }
+        if (expectedCounts.Count != actualCounts.Count)
+            throw new InvalidOperationException("NATIVE_MATERIAL_MULTIPLICITY_MISMATCH");
+        foreach (var expected in expectedCounts)
+            if (!actualCounts.TryGetValue(expected.Key, out int count) || count != expected.Value)
+                throw new InvalidOperationException("NATIVE_MATERIAL_MULTIPLICITY_MISMATCH");
         return result;
     }
 
     private static void ValidateDependencies(MaterialRecord record, Material material, string path,
         List<ReferenceResult> references)
     {
-        // Older Standard-only recipes had no dependency records. Keep that
-        // bounded route; new recipes must pass every explicit identity check.
-        if (record.shader == null && record.textures == null && string.IsNullOrEmpty(record.asset_sha256))
-        {
-            if (material.shader == null || !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material.shader,
-                out string legacyGuid, out long legacyId) || legacyGuid != "0000000000000000f000000000000000" || legacyId != 46)
-                throw new InvalidOperationException("LEGACY_SHADER_UNSUPPORTED");
-            return;
-        }
-        if (!Regex.IsMatch(record.asset_sha256 ?? "", @"^[0-9a-f]{64}$") ||
+        if (record.shader == null || record.textures == null ||
+            !Regex.IsMatch(record.asset_sha256 ?? "", @"\A[0-9a-f]{64}\z") ||
             HashFile(path) != record.asset_sha256)
             throw new InvalidOperationException("MATERIAL_REVISION_MISMATCH");
         ShaderRecord shader = record.shader;
@@ -212,7 +265,7 @@ public static class VapbFinalStateFinalizer
         if (shader != null && shader.classification == "UNRESOLVED_BUT_PRESERVED")
         {
             if (shader.kind != "SHADER" || shader.status != "UNRESOLVED_BUT_PRESERVED" ||
-                !Regex.IsMatch(shader.guid ?? "", @"^[0-9a-f]{32}$") ||
+                !Regex.IsMatch(shader.guid ?? "", @"\A[0-9a-f]{32}\z") ||
                 shader.guid == new string('0', 32) || !long.TryParse(shader.file_id, out long deferredId) || deferredId == 0 ||
                 shader.reference_id != ReferenceId(shader.guid, deferredId))
                 throw new InvalidOperationException("INVALID_REFERENCE");
@@ -252,7 +305,7 @@ public static class VapbFinalStateFinalizer
         {
             if (reference == null || string.IsNullOrEmpty(reference.property_name) ||
                 !properties.Add(reference.property_name) ||
-                !Regex.IsMatch(reference.guid ?? "", @"^[0-9a-f]{32}$") ||
+                !Regex.IsMatch(reference.guid ?? "", @"\A[0-9a-f]{32}\z") ||
                 !long.TryParse(reference.file_id, out long textureId))
                 throw new InvalidOperationException("TEXTURE_REFERENCE_INVALID");
             string texturePath = AssetDatabase.GUIDToAssetPath(reference.guid);
@@ -307,10 +360,13 @@ public static class VapbFinalStateFinalizer
                 HashFile(modelPath) != task.model_sha256)
                 throw new InvalidOperationException("MODEL_REVISION_MISMATCH");
             var references = new List<ReferenceResult>();
-            Material[] materials = ResolveMaterials(task, references);
-            // The initial package import can precede its manifest. Reimport after
-            // authorization so the user-property callback can persist the ID.
-            AssetDatabase.ImportAsset(modelPath, ImportAssetOptions.ForceUpdate);
+            Material[] materialsById = ResolveMaterials(task, references);
+            // V2 carrier names are the only native identity channel. Persist the
+            // importer setting and complete reimport before reading its Mesh.
+            ModelImporter importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
+            if (importer == null) throw new InvalidOperationException("MODEL_IMPORTER_UNAVAILABLE");
+            importer.materialName = ModelImporterMaterialName.BasedOnMaterialName;
+            importer.SaveAndReimport();
             GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (model == null) throw new InvalidOperationException("MODEL_UNAVAILABLE");
             VapbExportObjectMarker[] markers = model.GetComponentsInChildren<VapbExportObjectMarker>(true);
@@ -319,9 +375,22 @@ public static class VapbFinalStateFinalizer
             MeshRenderer renderer = markers[0].GetComponent<MeshRenderer>();
             MeshFilter filter = markers[0].GetComponent<MeshFilter>();
             if (renderer == null || filter == null || filter.sharedMesh == null ||
-                renderer.sharedMaterials.Length != materials.Length ||
                 renderer.GetComponents<Renderer>().Length != 1)
                 throw new InvalidOperationException("MODEL_STRUCTURE_UNSUPPORTED");
+            Material[] nativeMaterials = renderer.sharedMaterials;
+            if (nativeMaterials == null) throw new InvalidOperationException("MODEL_STRUCTURE_UNSUPPORTED");
+            var nativeLabels = new string[nativeMaterials.Length];
+            for (int i = 0; i < nativeMaterials.Length; i++)
+            {
+                if (nativeMaterials[i] == null)
+                    throw new InvalidOperationException("NATIVE_MATERIAL_LABEL_INVALID");
+                nativeLabels[i] = nativeMaterials[i].name;
+            }
+            int[] nativeOrder = ResolveNativeMaterialOrder(task, nativeLabels,
+                filter.sharedMesh.subMeshCount);
+            var materials = new Material[nativeOrder.Length];
+            for (int i = 0; i < nativeOrder.Length; i++)
+                materials[i] = materialsById[nativeOrder[i]];
 
             GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(task.prefab_path);
             if (existing != null)
@@ -351,6 +420,8 @@ public static class VapbFinalStateFinalizer
         }
         catch (Exception exception)
         {
+            if (exception.Message.StartsWith(ReexportRequiredPrefix, StringComparison.Ordinal))
+                LastResult = "FINAL_STATE_REEXPORT_REQUIRED";
             Debug.LogError("VAPB_FINAL_STATE_REJECTED=" + exception.Message);
             return false;
         }
