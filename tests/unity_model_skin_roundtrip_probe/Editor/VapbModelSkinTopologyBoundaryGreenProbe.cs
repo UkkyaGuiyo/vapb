@@ -91,10 +91,16 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
         public float[] variant_renderer_world_bounds_min;
         public float[] variant_renderer_world_bounds_max;
         public bool variant_final_skin_bounds_contained;
+        public bool variant_baked_skin_bounds_contained;
+        public float variant_baked_vs_skin_equation_bounds_delta;
         public float[] variant_final_skin_root_bounds_min;
         public float[] variant_final_skin_root_bounds_max;
         public float[] variant_final_skin_world_bounds_min;
         public float[] variant_final_skin_world_bounds_max;
+        public float[] variant_baked_skin_root_bounds_min;
+        public float[] variant_baked_skin_root_bounds_max;
+        public float[] variant_baked_skin_world_bounds_min;
+        public float[] variant_baked_skin_world_bounds_max;
         public float[] source_baked_bounds_min;
         public float[] source_baked_bounds_max;
         public float[] edited_baked_bounds_min;
@@ -363,13 +369,24 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
             report.variant_final_skin_root_bounds_max = finalRootBoundsMax;
             report.variant_final_skin_world_bounds_min = finalWorldBoundsMin;
             report.variant_final_skin_world_bounds_max = finalWorldBoundsMax;
+            float[] bakedRootMin = null, bakedRootMax = null, bakedWorldMin = null, bakedWorldMax = null;
+            report.variant_baked_skin_bounds_contained = variantSkin != null && BakedSkinWithinRootBounds(
+                variantSkin, 0.001f, out bakedRootMin, out bakedRootMax, out bakedWorldMin, out bakedWorldMax,
+                out report.baked_bounds_error);
+            report.variant_baked_skin_root_bounds_min = bakedRootMin;
+            report.variant_baked_skin_root_bounds_max = bakedRootMax;
+            report.variant_baked_skin_world_bounds_min = bakedWorldMin;
+            report.variant_baked_skin_world_bounds_max = bakedWorldMax;
+            report.variant_baked_vs_skin_equation_bounds_delta = BoundsPairDelta(
+                finalRootBoundsMin, finalRootBoundsMax, bakedRootMin, bakedRootMax);
+            report.variant_baked_skin_bounds_contained &= report.variant_baked_vs_skin_equation_bounds_delta <= 0.001f;
             report.variant_renderer_state_preserved = variantSkin != null &&
                 variantSkin.enabled == prefabSkin.enabled &&
                 variantSkin.shadowCastingMode == prefabSkin.shadowCastingMode &&
                 variantSkin.receiveShadows == prefabSkin.receiveShadows &&
                 SameBounds(variantSkin.localBounds, prefabLocalBounds) &&
                 variantSkin.sharedMesh != null && variantSkin.sharedMesh.blendShapeCount == 0 &&
-                finalSkinBoundsContained;
+                finalSkinBoundsContained && report.variant_baked_skin_bounds_contained;
             report.variant_structure_preserved = VariantStructurePreserved(variant, prefab, prefabSkin);
             report.prefab_guid_after = AssetDatabase.AssetPathToGUID(prefabPath);
             report.source_model_unchanged = SameBytes(sourceBefore, ReadIfPresent(sourceFile)) &&
@@ -431,23 +448,37 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
                 report.variant_materials_match_transport = repeatedSkin != null && repeatedExpectedMaterials != null &&
                     repeatedSkin.sharedMaterials.SequenceEqual(repeatedExpectedMaterials);
                 float[] repeatedRootBoundsMin = null, repeatedRootBoundsMax = null, repeatedWorldBoundsMin = null, repeatedWorldBoundsMax = null;
-            bool repeatedSkinBoundsContained = repeatedSkin != null && repeatedFinalMesh != null &&
-                BoundsContainsImportedRestMesh(repeatedSkin, repeatedFinalMesh, repeatedSkin.bones, 0.001f,
-                    out repeatedRootBoundsMin, out repeatedRootBoundsMax, out repeatedWorldBoundsMin, out repeatedWorldBoundsMax);
-            report.variant_final_skin_bounds_contained = repeatedSkinBoundsContained;
-            report.variant_renderer_world_bounds_min = repeatedSkin == null ? null : Vector3Values(repeatedSkin.bounds.min);
-            report.variant_renderer_world_bounds_max = repeatedSkin == null ? null : Vector3Values(repeatedSkin.bounds.max);
-            report.variant_final_skin_root_bounds_min = repeatedRootBoundsMin;
-            report.variant_final_skin_root_bounds_max = repeatedRootBoundsMax;
-            report.variant_final_skin_world_bounds_min = repeatedWorldBoundsMin;
-            report.variant_final_skin_world_bounds_max = repeatedWorldBoundsMax;
-            report.variant_renderer_state_preserved = repeatedSkin != null &&
+                bool repeatedSkinBoundsContained = repeatedSkin != null && repeatedFinalMesh != null &&
+                    BoundsContainsImportedRestMesh(repeatedSkin, repeatedFinalMesh, repeatedSkin.bones, 0.001f,
+                        out repeatedRootBoundsMin, out repeatedRootBoundsMax, out repeatedWorldBoundsMin, out repeatedWorldBoundsMax);
+                report.variant_final_skin_bounds_contained = repeatedSkinBoundsContained;
+                report.variant_renderer_world_bounds_min = repeatedSkin == null ? null : Vector3Values(repeatedSkin.bounds.min);
+                report.variant_renderer_world_bounds_max = repeatedSkin == null ? null : Vector3Values(repeatedSkin.bounds.max);
+                report.variant_final_skin_root_bounds_min = repeatedRootBoundsMin;
+                report.variant_final_skin_root_bounds_max = repeatedRootBoundsMax;
+                report.variant_final_skin_world_bounds_min = repeatedWorldBoundsMin;
+                report.variant_final_skin_world_bounds_max = repeatedWorldBoundsMax;
+                float[] repeatedBakedRootMin = null, repeatedBakedRootMax = null;
+                float[] repeatedBakedWorldMin = null, repeatedBakedWorldMax = null;
+                string repeatedBakeError = null;
+                bool repeatedBakeContained = repeatedSkin != null && BakedSkinWithinRootBounds(
+                    repeatedSkin, 0.001f, out repeatedBakedRootMin, out repeatedBakedRootMax,
+                    out repeatedBakedWorldMin, out repeatedBakedWorldMax, out repeatedBakeError);
+                float repeatedBoundsDelta = BoundsPairDelta(repeatedRootBoundsMin, repeatedRootBoundsMax,
+                    repeatedBakedRootMin, repeatedBakedRootMax);
+                repeatedBakeContained &= repeatedBoundsDelta <= 0.001f;
+                report.variant_baked_skin_bounds_contained &= repeatedBakeContained;
+                report.variant_baked_vs_skin_equation_bounds_delta = Mathf.Max(
+                    report.variant_baked_vs_skin_equation_bounds_delta, repeatedBoundsDelta);
+                report.baked_bounds_error = String.IsNullOrEmpty(report.baked_bounds_error)
+                    ? repeatedBakeError : report.baked_bounds_error;
+                report.variant_renderer_state_preserved = repeatedSkin != null &&
                     repeatedSkin.enabled == prefabSkin.enabled &&
                     repeatedSkin.shadowCastingMode == prefabSkin.shadowCastingMode &&
                     repeatedSkin.receiveShadows == prefabSkin.receiveShadows &&
                     SameBounds(repeatedSkin.localBounds, prefabLocalBounds) && repeatedFinalMesh != null &&
                     repeatedFinalMesh.blendShapeCount == 0 &&
-                    repeatedSkinBoundsContained;
+                    repeatedSkinBoundsContained && repeatedBakeContained;
                 report.variant_structure_preserved = VariantStructurePreserved(repeatedVariant, prefab, prefabSkin);
                 report.prefab_guid_after = AssetDatabase.AssetPathToGUID(prefabPath);
                 report.variant_is_source_prefab_child = repeatedVariant != null &&
@@ -1020,6 +1051,66 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
             minimum = Vector3Values(low); maximum = Vector3Values(high);
         }
         finally { UnityEngine.Object.DestroyImmediate(baked); }
+    }
+    private static bool BakedSkinWithinRootBounds(SkinnedMeshRenderer renderer, float tolerance,
+        out float[] rootMinimum, out float[] rootMaximum, out float[] worldMinimum, out float[] worldMaximum,
+        out string error)
+    {
+        rootMinimum = rootMaximum = worldMinimum = worldMaximum = null;
+        error = null;
+        if (renderer == null || renderer.rootBone == null || tolerance < 0f) return false;
+        Mesh baked = new Mesh { hideFlags = HideFlags.HideAndDontSave };
+        try
+        {
+            // Unity's own skinning path is the independent oracle. BakeMesh(useScale:true) returns
+            // the deformed vertices; transform them through the renderer frame, then into rootBone.
+            renderer.BakeMesh(baked, true);
+            Vector3[] vertices = baked.vertices;
+            if (vertices == null || vertices.Length == 0) return false;
+            Matrix4x4 rendererLocalToWorld = renderer.transform.localToWorldMatrix;
+            Matrix4x4 rootWorldToLocal = renderer.rootBone.worldToLocalMatrix;
+            Vector3 rootLow = Vector3.zero, rootHigh = Vector3.zero;
+            Vector3 worldLow = Vector3.zero, worldHigh = Vector3.zero;
+            for (int i = 0; i < vertices.Length; i++)
+            {
+                if (!Finite(vertices[i])) return false;
+                Vector3 world = rendererLocalToWorld.MultiplyPoint3x4(vertices[i]);
+                Vector3 root = rootWorldToLocal.MultiplyPoint3x4(world);
+                if (!Finite(world) || !Finite(root)) return false;
+                if (i == 0) { rootLow = rootHigh = root; worldLow = worldHigh = world; }
+                else
+                {
+                    rootLow = Vector3.Min(rootLow, root); rootHigh = Vector3.Max(rootHigh, root);
+                    worldLow = Vector3.Min(worldLow, world); worldHigh = Vector3.Max(worldHigh, world);
+                }
+                Bounds bounds = renderer.localBounds;
+                if (root.x < bounds.min.x - tolerance || root.x > bounds.max.x + tolerance ||
+                    root.y < bounds.min.y - tolerance || root.y > bounds.max.y + tolerance ||
+                    root.z < bounds.min.z - tolerance || root.z > bounds.max.z + tolerance) return false;
+            }
+            rootMinimum = Vector3Values(rootLow); rootMaximum = Vector3Values(rootHigh);
+            worldMinimum = Vector3Values(worldLow); worldMaximum = Vector3Values(worldHigh);
+            return true;
+        }
+        catch (Exception bakeError)
+        {
+            error = bakeError.GetType().Name + ":" + bakeError.Message;
+            return false;
+        }
+        finally { UnityEngine.Object.DestroyImmediate(baked); }
+    }
+    private static float BoundsPairDelta(float[] leftMin, float[] leftMax, float[] rightMin, float[] rightMax)
+    {
+        if (leftMin == null || leftMax == null || rightMin == null || rightMax == null ||
+            leftMin.Length != 3 || leftMax.Length != 3 || rightMin.Length != 3 || rightMax.Length != 3)
+            return Single.PositiveInfinity;
+        float maximum = 0f;
+        for (int axis = 0; axis < 3; axis++)
+        {
+            maximum = Mathf.Max(maximum, Mathf.Abs(leftMin[axis] - rightMin[axis]));
+            maximum = Mathf.Max(maximum, Mathf.Abs(leftMax[axis] - rightMax[axis]));
+        }
+        return maximum;
     }
     private static float[] Vector3Values(Vector3 value) { return new[] { value.x, value.y, value.z }; }
     private static float[] MatrixValues(Matrix4x4 matrix)

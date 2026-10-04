@@ -188,6 +188,7 @@ public static class VapbModelSkinFinalizer
         public SourceIdentity source;
         public EditedIdentity edited;
         public string sourceMetaHash;
+        public bool requiresReplacementEligibility;
     }
 
     public static bool Handles(string manifestAssetPath)
@@ -232,7 +233,8 @@ public static class VapbModelSkinFinalizer
                 ResolvePrepared(plan, prefab);
                 if (!targets.Add(plan.target)) Reject("TARGET_DUPLICATE");
             }
-            ValidateModelSkinReplacementScope(prefab, plans);
+            if (plans.Exists(plan => plan.requiresReplacementEligibility))
+                ValidateModelSkinReplacementScope(prefab, plans);
             foreach (PreparedTask plan in plans)
             {
                 CheckSourceHashes(plan.task);
@@ -526,6 +528,8 @@ public static class VapbModelSkinFinalizer
             source.bonesByUid.Add(source.rootUid, target.rootBone);
         EditedIdentity edited = ResolveEdited(task, editedPath, mapping, source);
         CheckSkinCompatibility(mapping, target, edited, source, direct);
+        plan.requiresReplacementEligibility = RequiresReplacementEligibility(task.kind,
+            mapping.sourceLayout, edited.mesh);
         plan.target = target;
         plan.source = source;
         plan.edited = edited;
@@ -1069,9 +1073,16 @@ public static class VapbModelSkinFinalizer
         }
         else
         {
-            if (old.shapeNames.Length != 0 || mesh.blendShapeCount != 0)
-                Reject("MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED");
-            ValidateModelSkinReplacementMesh(target, edited, source);
+            if (SameNormalSkinIndexLayout(old, mesh))
+            {
+                if (!SameBlendShapes(old, mesh)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+            }
+            else
+            {
+                if (!HasNoBlendShapesForReplacement(old, mesh))
+                    Reject("MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED");
+                ValidateModelSkinReplacementMesh(target, edited, source);
+            }
         }
         var sourceSlots = new Dictionary<string, int>(StringComparer.Ordinal);
         if (direct)
@@ -1100,17 +1111,38 @@ public static class VapbModelSkinFinalizer
         ValidateWeights(mesh, edited.editedBoneUids.Length);
     }
 
+    private static bool SameNormalSkinIndexLayout(MeshLayout old, Mesh mesh)
+    {
+        if (old == null || mesh == null || old.vertexCount != mesh.vertexCount ||
+            old.topologies == null || old.indices == null || old.topologies.Length != mesh.subMeshCount ||
+            old.indices.Length != old.topologies.Length) return false;
+        for (int submesh = 0; submesh < old.topologies.Length; submesh++)
+        {
+            if (old.topologies[submesh] != mesh.GetTopology(submesh)) return false;
+            int[] previous = old.indices[submesh];
+            int[] current = mesh.GetIndices(submesh);
+            if (previous == null || current.Length != previous.Length) return false;
+            for (int index = 0; index < previous.Length; index++)
+                if (previous[index] != current[index]) return false;
+        }
+        return true;
+    }
+
+    private static bool RequiresReplacementEligibility(string kind, MeshLayout old, Mesh mesh)
+    { return kind == Kind && !SameNormalSkinIndexLayout(old, mesh); }
+
+    private static bool HasNoBlendShapesForReplacement(MeshLayout old, Mesh mesh)
+    {
+        return old != null && old.shapeNames != null && old.shapeNames.Length == 0 &&
+            mesh != null && mesh.blendShapeCount == 0;
+    }
+
     private static void ValidateModelSkinReplacementScope(GameObject original, List<PreparedTask> plans)
     {
-        bool hasModelSkin = false;
-        bool hasOtherKind = false;
-        foreach (PreparedTask plan in plans)
-        {
-            if (plan.task.kind == Kind) hasModelSkin = true;
-            else hasOtherKind = true;
-        }
-        if (!hasModelSkin) return;
-        if (hasOtherKind || plans.Count != 1) Reject("MODEL_SKIN_REPLACEMENT_SCOPE_UNSUPPORTED");
+        bool replacementRoute = plans.Exists(plan => plan.requiresReplacementEligibility);
+        if (!replacementRoute) return;
+        if (plans.Count != 1 || plans.Exists(plan => plan.task.kind != Kind))
+            Reject("MODEL_SKIN_REPLACEMENT_SCOPE_UNSUPPORTED");
         var targets = new HashSet<SkinnedMeshRenderer>();
         foreach (PreparedTask plan in plans) targets.Add(plan.target);
         int skinCount = 0;
@@ -1273,14 +1305,19 @@ public static class VapbModelSkinFinalizer
                     totalWeight += weight.weight;
                 }
                 if (!Finite(rootLocalPoint) || Mathf.Abs(totalWeight - 1f) > 0.01f) return false;
-                if (rootLocalPoint.x < bounds.min.x - tolerance ||
-                    rootLocalPoint.x > bounds.max.x + tolerance || rootLocalPoint.y < bounds.min.y - tolerance ||
-                    rootLocalPoint.y > bounds.max.y + tolerance || rootLocalPoint.z < bounds.min.z - tolerance ||
-                    rootLocalPoint.z > bounds.max.z + tolerance) return false;
+                if (!BoundsContainsPoint(rootLocalPoint, bounds, tolerance)) return false;
             }
             return weightIndex == weights.Length;
         }
         finally { counts.Dispose(); weights.Dispose(); }
+    }
+    private static bool BoundsContainsPoint(Vector3 point, Bounds bounds, float tolerance)
+    {
+        return Finite(point) && Finite(bounds.center) && Finite(bounds.extents) && tolerance >= 0f &&
+            bounds.extents.x >= 0f && bounds.extents.y >= 0f && bounds.extents.z >= 0f &&
+            point.x >= bounds.min.x - tolerance && point.x <= bounds.max.x + tolerance &&
+            point.y >= bounds.min.y - tolerance && point.y <= bounds.max.y + tolerance &&
+            point.z >= bounds.min.z - tolerance && point.z <= bounds.max.z + tolerance;
     }
     private static bool BoundsContainVertices(Bounds bounds, Vector3[] vertices, float tolerance)
     {
@@ -1426,7 +1463,7 @@ public static class VapbModelSkinFinalizer
                 if (skin.sharedMesh != plan.edited.mesh || skin.rootBone == null ||
                     FollowSource(skin.rootBone, 1) != plan.target.rootBone ||
                     skin.bones.Length != plan.edited.editedBoneUids.Length) Reject("VARIANT_MISMATCH");
-                if (plan.task.kind == Kind && (skin.sharedMesh.blendShapeCount != 0 ||
+                if (plan.requiresReplacementEligibility && (skin.sharedMesh.blendShapeCount != 0 ||
                     skin.shadowCastingMode != plan.target.shadowCastingMode ||
                     skin.receiveShadows != plan.target.receiveShadows ||
                     !SameBounds(skin.localBounds, plan.target.localBounds) ||
