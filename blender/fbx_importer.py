@@ -44,21 +44,44 @@ def import_fbx_files(
     source_package_id: str = "",
     progress: Callable[[Path, int, int, bool], None] | None = None,
     source_asset_guids: dict[str, str] | None = None,
+    file_results: list[dict] | None = None,
 ) -> list[bpy.types.Object]:
     imported: list[bpy.types.Object] = []
     paths = list(paths)
     for index, path in enumerate(paths, 1):
+        status = "FAILED"
+        object_count = 0
         try:
             if progress is not None:
                 progress(path, index, len(paths), True)
             source_guid = (source_asset_guids or {}).get(str(path.resolve()), "")
-            imported.extend(import_fbx(path, source_package_id=source_package_id, source_asset_guid=source_guid))
+            objects = import_fbx(path, source_package_id=source_package_id, source_asset_guid=source_guid)
+            object_count = len(objects)
+            status = "IMPORTED" if object_count else "NO_OBJECTS"
+            imported.extend(objects)
         except (OSError, RuntimeError) as exc:
             print(f"[UnityPackage Importer] FBX import failed: {path}: {exc}")
         finally:
+            if file_results is not None:
+                file_results.append({
+                    "asset_name": path.name,
+                    "status": status,
+                    "object_count": object_count,
+                })
             if progress is not None:
                 progress(path, index, len(paths), False)
     return imported
+
+
+def summarize_fbx_results(file_results: Iterable[dict]) -> dict[str, int]:
+    """Summarize successful per-file imports without counting attempted files as imported."""
+    results = list(file_results)
+    imported_count = sum(item.get("status") == "IMPORTED" for item in results)
+    return {
+        "total": len(results),
+        "imported": imported_count,
+        "failed": len(results) - imported_count,
+    }
 
 
 def apply_import_options(

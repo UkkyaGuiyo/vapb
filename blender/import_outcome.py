@@ -58,6 +58,17 @@ def scene_import_outcome(scene):
         projections, dependencies, verified_null_slots, edited_null_slots,
         realized_renderer_occurrences,
     )
+    failed_fbx_count = scene.get("unitypackage_fbx_failed_count", 0)
+    if isinstance(failed_fbx_count, int) and not isinstance(failed_fbx_count, bool) and failed_fbx_count > 0:
+        outcome["counts"]["PARTIAL"] += 1
+        outcome["items"].append({
+            "category": "PARTIAL",
+            "code": "FBX_IMPORT_PARTIAL_FAILURE",
+            "scope": "FBX import",
+            "reason": f"{failed_fbx_count}件のFBXが失敗するか、Blender Objectを生成しませんでした。",
+            "action": "FBX別の状態を確認し、不足するモデルを確認してください。",
+        })
+        outcome["overall"] = "PARTIAL"
     for obj in scene.objects:
         if obj.get("_vapb_geometry_frame_status") != "UNVERIFIED":
             continue

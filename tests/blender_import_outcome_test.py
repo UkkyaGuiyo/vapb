@@ -53,6 +53,7 @@ def main():
                 "dependencies": [{"dependency_type": "PREFAB_RENDERER_MATERIAL",
                                   "status": "MISSING_CONSUMER"}],
             })
+            bpy.context.scene["unitypackage_fbx_failed_count"] = 1
         elif mode == "read":
             mesh = bpy.data.meshes.new("Synthetic realized nested mesh")
             occurrence = bpy.data.objects.new("Synthetic nested occurrence", mesh)
@@ -63,6 +64,7 @@ def main():
         assert report["counts"]["UNRESOLVED_IDENTITY"] == 2, report
         assert report["counts"]["MISSING_DEPENDENCY"] == 0, report
         nested_codes = {item["code"] for item in report["items"]}
+        assert "FBX_IMPORT_PARTIAL_FAILURE" in nested_codes, report
         if mode == "write":
             assert "NESTED_PREFAB_RENDERER_NOT_REALIZED" in nested_codes, report
         else:
@@ -70,6 +72,7 @@ def main():
         layout = Layout()
         VAPB_PT_import_outcome.draw(SimpleNamespace(layout=layout),
                                      SimpleNamespace(scene=bpy.context.scene))
+        assert any("一部未確認" in line for line in layout.labels), layout.labels
         assert any("一部の復元を保留" in line for line in layout.labels), layout.labels
         assert "対象Objectは証拠だけでは特定できません" in "".join(layout.labels), layout.labels
         if mode == "write":

@@ -14,7 +14,7 @@ _CATEGORY_LABELS = {
     "AMBIGUOUS": "候補が複数",
     "UNSUPPORTED": "未対応",
     "ERROR": "エラー",
-    "PARTIAL": "手動変更を保持",
+    "PARTIAL": "一部未確認",
 }
 
 

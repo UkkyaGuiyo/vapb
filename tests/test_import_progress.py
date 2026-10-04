@@ -173,6 +173,28 @@ class ImportProgressModelTests(unittest.TestCase):
             )
         self.assertEqual([True, False], events)
 
+    def test_fbx_partial_failures_are_returned_as_per_file_results(self):
+        from unitypackage_blender_importer.tests.test_ui_lifecycle import _install_blender_stubs
+        _install_blender_stubs()
+        from unitypackage_blender_importer.blender import fbx_importer
+
+        imported_object = object()
+        results = []
+        with patch.object(fbx_importer, "import_fbx", side_effect=[
+                [imported_object], RuntimeError("native failure"), []]):
+            imported = fbx_importer.import_fbx_files(
+                [Path("Good.fbx"), Path("Broken.fbx"), Path("Empty.fbx")],
+                file_results=results,
+            )
+        self.assertEqual([imported_object], imported)
+        self.assertEqual([
+            {"asset_name": "Good.fbx", "status": "IMPORTED", "object_count": 1},
+            {"asset_name": "Broken.fbx", "status": "FAILED", "object_count": 0},
+            {"asset_name": "Empty.fbx", "status": "NO_OBJECTS", "object_count": 0},
+        ], results)
+        self.assertEqual({"total": 3, "imported": 1, "failed": 2},
+                         fbx_importer.summarize_fbx_results(results))
+
     def test_ipm_012_prefab_analysis_emits_actual_candidate_count(self):
         from unitypackage_blender_importer.unity import prefab_candidate_analyzer as module
 
