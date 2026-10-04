@@ -62,6 +62,7 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
         public bool variant_renderer_state_preserved;
         public bool variant_structure_preserved;
         public bool repeat_apply_idempotent;
+        public bool bounds_tolerance_boundary_verified;
         public string prefab_guid_before;
         public string prefab_guid_after;
         public string task_kind;
@@ -252,6 +253,16 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
                 throw new InvalidOperationException("FIXTURE_SEMANTIC_PRECONDITION_FAILED");
 
             report.finalizer_applied = VapbModelSkinFinalizer.Apply(ManifestPath);
+            AssetDatabase.ImportAsset(sourcePath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            AssetDatabase.ImportAsset(editedPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            AssetDatabase.ImportAsset(prefabPath, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            source = SingleSkin(AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath));
+            edited = SingleSkin(AssetDatabase.LoadAssetAtPath<GameObject>(editedPath));
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            prefabSkin = SingleSkin(prefab);
+            if (source == null || edited == null || prefabSkin == null || edited.sharedMesh == null)
+                throw new InvalidOperationException("ASSET_RELOAD_AFTER_APPLY_FAILED");
+            finalMesh = edited.sharedMesh;
             report.variant_created = report.finalizer_applied && Occupied(variantFile);
             GameObject variant = report.finalizer_applied ?
                 AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path) : null;
@@ -259,7 +270,8 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
                 PrefabUtility.GetPrefabAssetType(variant) == PrefabAssetType.Variant &&
                 AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(variant)) == prefabPath;
             SkinnedMeshRenderer variantSkin = variant == null ? null : SkinForSource(variant, prefabSkin);
-            report.variant_uses_exact_final_mesh = variantSkin != null && variantSkin.sharedMesh == finalMesh;
+            report.variant_uses_exact_final_mesh = variantSkin != null &&
+                SameAssetIdentity(variantSkin.sharedMesh, finalMesh);
             report.variant_bones_match_exported_uids = variantSkin != null &&
                 SameVariantBones(variantSkin, edited, task, sourcePath, localIdToUid);
             Material[] expectedMaterials = ResolveExpectedMaterials(task, edited);
@@ -272,11 +284,7 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
                 SameBounds(variantSkin.localBounds, prefabLocalBounds) &&
                 variantSkin.sharedMesh != null && variantSkin.sharedMesh.blendShapeCount == 0 &&
                 BoundsContainsImportedRestMesh(variantSkin, edited, 0.001f);
-            report.variant_structure_preserved = variant != null &&
-                PrefabUtility.GetAddedComponents(variant).Count == 0 &&
-                PrefabUtility.GetRemovedComponents(variant).Count == 0 &&
-                PrefabUtility.GetAddedGameObjects(variant).Count == 0 &&
-                PrefabUtility.GetRemovedGameObjects(variant).Count == 0;
+            report.variant_structure_preserved = VariantStructurePreserved(variant, prefab, prefabSkin);
             report.prefab_guid_after = AssetDatabase.AssetPathToGUID(prefabPath);
             report.source_model_unchanged = SameBytes(sourceBefore, ReadIfPresent(sourceFile)) &&
                 SameBytes(sourceMetaBefore, ReadIfPresent(sourceFile + ".meta"));
@@ -298,16 +306,70 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
             if (firstApplyStable)
             {
                 bool repeated = VapbModelSkinFinalizer.Apply(ManifestPath);
+                AssetDatabase.ImportAsset(sourcePath,
+                    ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                AssetDatabase.ImportAsset(editedPath,
+                    ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                AssetDatabase.ImportAsset(prefabPath,
+                    ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
                 AssetDatabase.ImportAsset(task.variant_path,
                     ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
                 GameObject repeatedVariant = AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path);
-                SkinnedMeshRenderer repeatedSkin = repeatedVariant == null ? null : SkinForSource(repeatedVariant, prefabSkin);
+                edited = SingleSkin(AssetDatabase.LoadAssetAtPath<GameObject>(editedPath));
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                prefabSkin = SingleSkin(prefab);
+                SkinnedMeshRenderer repeatedSkin = repeatedVariant == null || prefabSkin == null ? null :
+                    SkinForSource(repeatedVariant, prefabSkin);
+                bool repeatAssetState = SameBytes(sourceBefore, ReadIfPresent(sourceFile)) &&
+                    SameBytes(sourceMetaBefore, ReadIfPresent(sourceFile + ".meta")) &&
+                    SameBytes(editedBefore, ReadIfPresent(editedFile)) &&
+                    SameBytes(editedMetaBefore, ReadIfPresent(editedFile + ".meta")) &&
+                    SameBytes(prefabBefore, ReadIfPresent(prefabFile)) &&
+                    SameBytes(prefabMetaBefore, ReadIfPresent(prefabFile + ".meta")) &&
+                    SameBytes(manifestBefore, ReadIfPresent(manifestFile)) &&
+                    SameBytes(manifestMetaBefore, ReadIfPresent(manifestFile + ".meta"));
+                report.source_model_unchanged = SameBytes(sourceBefore, ReadIfPresent(sourceFile)) &&
+                    SameBytes(sourceMetaBefore, ReadIfPresent(sourceFile + ".meta"));
+                report.edited_model_unchanged = SameBytes(editedBefore, ReadIfPresent(editedFile)) &&
+                    SameBytes(editedMetaBefore, ReadIfPresent(editedFile + ".meta"));
+                report.prefab_unchanged = SameBytes(prefabBefore, ReadIfPresent(prefabFile)) &&
+                    SameBytes(prefabMetaBefore, ReadIfPresent(prefabFile + ".meta"));
+                report.manifest_unchanged = SameBytes(manifestBefore, ReadIfPresent(manifestFile)) &&
+                    SameBytes(manifestMetaBefore, ReadIfPresent(manifestFile + ".meta"));
+                Mesh repeatedFinalMesh = edited == null ? null : edited.sharedMesh;
+                Material[] repeatedExpectedMaterials = edited == null ? null : ResolveExpectedMaterials(task, edited);
+                report.variant_uses_exact_final_mesh = repeatedSkin != null && repeatedFinalMesh != null &&
+                    SameAssetIdentity(repeatedSkin.sharedMesh, repeatedFinalMesh);
+                report.variant_bones_match_exported_uids = repeatedSkin != null && edited != null &&
+                    SameVariantBones(repeatedSkin, edited, task, sourcePath, localIdToUid);
+                report.variant_materials_match_transport = repeatedSkin != null && repeatedExpectedMaterials != null &&
+                    repeatedSkin.sharedMaterials.SequenceEqual(repeatedExpectedMaterials);
+                report.variant_renderer_state_preserved = repeatedSkin != null &&
+                    repeatedSkin.enabled == prefabSkin.enabled &&
+                    repeatedSkin.shadowCastingMode == prefabSkin.shadowCastingMode &&
+                    repeatedSkin.receiveShadows == prefabSkin.receiveShadows &&
+                    SameBounds(repeatedSkin.localBounds, prefabLocalBounds) && repeatedFinalMesh != null &&
+                    repeatedFinalMesh.blendShapeCount == 0 &&
+                    BoundsContainsImportedRestMesh(repeatedSkin, edited, 0.001f);
+                report.variant_structure_preserved = VariantStructurePreserved(repeatedVariant, prefab, prefabSkin);
+                report.prefab_guid_after = AssetDatabase.AssetPathToGUID(prefabPath);
+                report.variant_is_source_prefab_child = repeatedVariant != null &&
+                    PrefabUtility.GetPrefabAssetType(repeatedVariant) == PrefabAssetType.Variant &&
+                    AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(repeatedVariant)) == prefabPath;
                 report.repeat_apply_idempotent = repeated && repeatedSkin != null &&
-                    repeatedSkin.sharedMesh == finalMesh && Hash(variantFile) == variantHash &&
+                    repeatedFinalMesh != null && SameAssetIdentity(repeatedSkin.sharedMesh, repeatedFinalMesh) &&
+                    report.variant_is_source_prefab_child && report.variant_uses_exact_final_mesh &&
+                    report.variant_bones_match_exported_uids && report.variant_materials_match_transport &&
+                    report.variant_renderer_state_preserved && report.variant_structure_preserved &&
+                    report.prefab_guid_before == report.prefab_guid_after && repeatAssetState &&
+                    report.source_model_unchanged && report.edited_model_unchanged &&
+                    report.prefab_unchanged && report.manifest_unchanged && Hash(variantFile) == variantHash &&
                     Hash(variantFile + ".meta") == variantMetaHash &&
                     AssetDatabase.AssetPathToGUID(task.variant_path) == variantGuid && appliedLogCount == 2;
             }
-            report.pass = firstApplyStable && report.repeat_apply_idempotent;
+            report.bounds_tolerance_boundary_verified = BoundsToleranceBoundaryVerified();
+            report.pass = firstApplyStable && report.repeat_apply_idempotent &&
+                report.bounds_tolerance_boundary_verified;
             report.error = report.pass ? "NONE" : observedLog == null ? "GREEN_ASSERTION_FAILED" :
                 observedLog.Substring("VAPB_MODEL_SKIN_VARIANT_REJECTED=".Length);
         }
@@ -363,6 +425,8 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
         if (File.ReadAllText(rootMarker).Trim() != "VAPB_STAGE3_OWNED_TEST_ROOT_V1" ||
             File.ReadAllText(sourceMarker).Trim() != "VAPB_STAGE3_OWNED_SOURCE_PROJECT_V1")
             return "OWNERSHIP_MARKER_INVALID";
+        if (File.ReadAllText(targetMarker).Trim() != "VAPB_DISPOSABLE_UNITY_TEST_PROJECT_V1")
+            return "TARGET_OWNERSHIP_MARKER_INVALID";
         string sourceVersion = Path.Combine(source, "ProjectSettings", "ProjectVersion.txt");
         string targetVersion = Path.Combine(target, "ProjectSettings", "ProjectVersion.txt");
         if (!File.Exists(sourceVersion) || !File.Exists(targetVersion) ||
@@ -417,7 +481,15 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
     }
     private static bool SameBounds(Bounds left, Bounds right)
     {
-        return left.center == right.center && left.extents == right.extents;
+        return left.center.Equals(right.center) && left.extents.Equals(right.extents);
+    }
+    private static bool SameAssetIdentity(UnityEngine.Object left, UnityEngine.Object right)
+    {
+        if (left == null || right == null) return false;
+        string leftGuid, rightGuid; long leftId, rightId;
+        return AssetDatabase.TryGetGUIDAndLocalFileIdentifier(left, out leftGuid, out leftId) &&
+            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(right, out rightGuid, out rightId) &&
+            leftGuid == rightGuid && leftId == rightId;
     }
     private static SkinnedMeshRenderer SkinForSource(GameObject variant, SkinnedMeshRenderer source)
     {
@@ -430,6 +502,46 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
             found = skin;
         }
         return found;
+    }
+    private static bool VariantStructurePreserved(GameObject variant, GameObject prefab,
+        SkinnedMeshRenderer prefabSkin)
+    {
+        if (variant == null || prefab == null || prefabSkin == null ||
+            PrefabUtility.GetAddedComponents(variant).Count != 0 ||
+            PrefabUtility.GetRemovedComponents(variant).Count != 0 ||
+            PrefabUtility.GetAddedGameObjects(variant).Count != 0 ||
+            PrefabUtility.GetRemovedGameObjects(variant).Count != 0) return false;
+        Transform[] actualTransforms = variant.GetComponentsInChildren<Transform>(true);
+        if (actualTransforms.Length != prefab.GetComponentsInChildren<Transform>(true).Length) return false;
+        foreach (Transform actual in actualTransforms)
+        {
+            Transform source = PrefabUtility.GetCorrespondingObjectFromSource(actual) as Transform;
+            if (source == null || (actual != variant.transform && actual.name != source.name) ||
+                actual.gameObject.activeSelf != source.gameObject.activeSelf ||
+                actual.GetSiblingIndex() != source.GetSiblingIndex() || actual.childCount != source.childCount ||
+                actual.localPosition != source.localPosition || actual.localRotation != source.localRotation ||
+                actual.localScale != source.localScale) return false;
+        }
+        PropertyModification[] modifications = PrefabUtility.GetPropertyModifications(variant);
+        if (modifications == null) return false;
+        foreach (PropertyModification modification in modifications)
+        {
+            if (modification == null || modification.target == null ||
+                String.IsNullOrEmpty(modification.propertyPath)) return false;
+            bool skinBinding = modification.target == prefabSkin &&
+                AllowedSkinOverridePath(modification.propertyPath);
+            bool rootDefault = PrefabUtility.IsDefaultOverride(modification) &&
+                (modification.target == prefab || modification.target == prefab.transform);
+            if (!skinBinding && !rootDefault) return false;
+        }
+        return true;
+    }
+    private static bool AllowedSkinOverridePath(string path)
+    {
+        if (path == "m_Mesh" || path == "m_RootBone") return true;
+        return path == "m_Bones.Array.size" || path == "m_Materials.Array.size" ||
+            path.StartsWith("m_Bones.Array.data[", StringComparison.Ordinal) ||
+            path.StartsWith("m_Materials.Array.data[", StringComparison.Ordinal);
     }
     private static bool SameVariantBones(SkinnedMeshRenderer actual, SkinnedMeshRenderer edited,
         Task task, string sourceModelPath, Dictionary<string, string> localIdToUid)
@@ -512,11 +624,22 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
                 (mask & 2) == 0 ? meshBounds.min.y : meshBounds.max.y,
                 (mask & 4) == 0 ? meshBounds.min.z : meshBounds.max.z);
             Vector3 local = target.transform.InverseTransformPoint(edited.transform.TransformPoint(corner));
-            if (!Finite(local) || local.x < bounds.min.x - tolerance || local.x > bounds.max.x + tolerance ||
-                local.y < bounds.min.y - tolerance || local.y > bounds.max.y + tolerance ||
-                local.z < bounds.min.z - tolerance || local.z > bounds.max.z + tolerance) return false;
+            if (!Finite(local) || !WithinBounds(local, bounds, tolerance)) return false;
         }
         return true;
+    }
+    private static bool WithinBounds(Vector3 point, Bounds bounds, float tolerance)
+    {
+        return point.x >= bounds.min.x - tolerance && point.x <= bounds.max.x + tolerance &&
+            point.y >= bounds.min.y - tolerance && point.y <= bounds.max.y + tolerance &&
+            point.z >= bounds.min.z - tolerance && point.z <= bounds.max.z + tolerance;
+    }
+    private static bool BoundsToleranceBoundaryVerified()
+    {
+        var bounds = new Bounds(Vector3.zero, Vector3.one * 2f);
+        return WithinBounds(new Vector3(1f, 0f, 0f), bounds, 0.001f) &&
+            WithinBounds(new Vector3(1.0005f, 0f, 0f), bounds, 0.001f) &&
+            !WithinBounds(new Vector3(1.0015f, 0f, 0f), bounds, 0.001f);
     }
     private static int TriangleCount(Mesh mesh)
     {
