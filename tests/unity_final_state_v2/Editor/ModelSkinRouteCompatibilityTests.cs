@@ -179,7 +179,14 @@ public sealed class ModelSkinRouteCompatibilityTests
                 point.z >= bounds.min.z - tolerance && point.z <= bounds.max.z + tolerance;
             Assert.IsTrue(manualWithin, "Raw float predicate unexpectedly rejected edge=" + i +
                 " x=" + point.x.ToString("R") + " min=" + bounds.min.x.ToString("R") +
-                " tol=" + tolerance.ToString("R"));
+                " tol=" + tolerance.ToString("R") + " xMin=" + (point.x >= bounds.min.x - tolerance) +
+                " xMax=" + (point.x <= bounds.max.x + tolerance) +
+                " yMin=" + (point.y >= bounds.min.y - tolerance) +
+                " yMax=" + (point.y <= bounds.max.y + tolerance) +
+                " zMin=" + (point.z >= bounds.min.z - tolerance) +
+                " zMax=" + (point.z <= bounds.max.z + tolerance) +
+                " pBits=" + BitConverter.ToInt32(BitConverter.GetBytes(point.x), 0).ToString("X8") +
+                " minBits=" + BitConverter.ToInt32(BitConverter.GetBytes(bounds.min.x - tolerance), 0).ToString("X8"));
             Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", point, bounds, tolerance),
                 "A point computed by the same min/max +/- tolerance expression must be included; edge=" +
                 i + " point=" + point + " x=" + point.x.ToString("R") + " lower=" +
