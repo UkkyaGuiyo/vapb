@@ -17,7 +17,7 @@ using UnityEngine.Rendering;
 public static class VapbModelSkinTopologyBoundaryGreenProbe
 {
     private const string ManifestPath = "Assets/VAPBExport/manifest.json";
-    private const string ResultName = "VapbModelSkinTopologyBoundaryReplacementV7Result.json";
+    private const string ResultName = "VapbModelSkinTopologyBoundaryReplacementV8Result.json";
     private const string ExpectedKind = "RESTORE_MODEL_SKIN_VARIANT_V1";
     private const string RootMarker = ".vapb-stage3-owned-test-root";
     private const string SourceMarker = ".vapb-stage3-owned-source-project";
@@ -108,6 +108,8 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
         public float[] target_baked_bounds_min;
         public float[] target_baked_bounds_max;
         public string baked_bounds_error;
+        public bool baked_mesh_use_scale;
+        public string baked_mesh_world_transform_mode;
         public int source_triangle_count;
         public int final_triangle_count;
         public int source_index_count;
@@ -370,6 +372,8 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
             report.variant_final_skin_world_bounds_min = finalWorldBoundsMin;
             report.variant_final_skin_world_bounds_max = finalWorldBoundsMax;
             float[] bakedRootMin = null, bakedRootMax = null, bakedWorldMin = null, bakedWorldMax = null;
+            report.baked_mesh_use_scale = true;
+            report.baked_mesh_world_transform_mode = "POSITION_ROTATION_NO_SCALE";
             report.variant_baked_skin_bounds_contained = variantSkin != null && BakedSkinWithinRootBounds(
                 variantSkin, 0.001f, out bakedRootMin, out bakedRootMax, out bakedWorldMin, out bakedWorldMax,
                 out report.baked_bounds_error);
@@ -461,6 +465,8 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
                 float[] repeatedBakedRootMin = null, repeatedBakedRootMax = null;
                 float[] repeatedBakedWorldMin = null, repeatedBakedWorldMax = null;
                 string repeatedBakeError = null;
+                report.baked_mesh_use_scale = true;
+                report.baked_mesh_world_transform_mode = "POSITION_ROTATION_NO_SCALE";
                 bool repeatedBakeContained = repeatedSkin != null && BakedSkinWithinRootBounds(
                     repeatedSkin, 0.001f, out repeatedBakedRootMin, out repeatedBakedRootMax,
                     out repeatedBakedWorldMin, out repeatedBakedWorldMax, out repeatedBakeError);
@@ -601,6 +607,8 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
         return File.Exists(path) || Directory.Exists(path) || File.Exists(path + ".meta") ||
             Directory.Exists(path + ".meta");
     }
+    private static bool Finite(float value)
+    { return !Single.IsNaN(value) && !Single.IsInfinity(value); }
     private static bool Finite(Vector3 value)
     {
         return !Single.IsNaN(value.x) && !Single.IsInfinity(value.x) &&
@@ -1062,19 +1070,20 @@ public static class VapbModelSkinTopologyBoundaryGreenProbe
         Mesh baked = new Mesh { hideFlags = HideFlags.HideAndDontSave };
         try
         {
-            // Unity's own skinning path is the independent oracle. BakeMesh(useScale:true) returns
-            // the deformed vertices; transform them through the renderer frame, then into rootBone.
+            // BakeMesh(useScale:true) includes the renderer scale but remains renderer-local.
+            // Apply only world position and rotation; applying localToWorld would scale it twice.
             renderer.BakeMesh(baked, true);
             Vector3[] vertices = baked.vertices;
             if (vertices == null || vertices.Length == 0) return false;
-            Matrix4x4 rendererLocalToWorld = renderer.transform.localToWorldMatrix;
+            Matrix4x4 rendererPositionRotation = Matrix4x4.TRS(
+                renderer.transform.position, renderer.transform.rotation, Vector3.one);
             Matrix4x4 rootWorldToLocal = renderer.rootBone.worldToLocalMatrix;
             Vector3 rootLow = Vector3.zero, rootHigh = Vector3.zero;
             Vector3 worldLow = Vector3.zero, worldHigh = Vector3.zero;
             for (int i = 0; i < vertices.Length; i++)
             {
                 if (!Finite(vertices[i])) return false;
-                Vector3 world = rendererLocalToWorld.MultiplyPoint3x4(vertices[i]);
+                Vector3 world = rendererPositionRotation.MultiplyPoint3x4(vertices[i]);
                 Vector3 root = rootWorldToLocal.MultiplyPoint3x4(world);
                 if (!Finite(world) || !Finite(root)) return false;
                 if (i == 0) { rootLow = rootHigh = root; worldLow = worldHigh = world; }

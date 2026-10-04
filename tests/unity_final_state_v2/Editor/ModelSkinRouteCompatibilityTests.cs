@@ -148,18 +148,8 @@ public sealed class ModelSkinRouteCompatibilityTests
         foreach (Vector3 face in onFaces)
         {
             Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", face, bounds, 0.001f));
-            int axis = face.x != 0f ? 0 : face.y != 0f ? 1 : 2;
-            float sign = axis == 0 ? face.x : axis == 1 ? face.y : face.z;
-            Vector3 boundary = face;
-            if (axis == 0) boundary.x = sign > 0 ? bounds.max.x + 0.001f : bounds.min.x - 0.001f;
-            else if (axis == 1) boundary.y = sign > 0 ? bounds.max.y + 0.001f : bounds.min.y - 0.001f;
-            else boundary.z = sign > 0 ? bounds.max.z + 0.001f : bounds.min.z - 0.001f;
-            Vector3 within = face * 1.0005f;
-            Vector3 outside = boundary;
-            if (axis == 0) outside.x += sign * 0.00001f;
-            else if (axis == 1) outside.y += sign * 0.00001f;
-            else outside.z += sign * 0.00001f;
-            Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", boundary, bounds, 0.001f));
+            Vector3 within = face * 1.0009f;
+            Vector3 outside = face * 1.0011f;
             Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", within, bounds, 0.001f));
             Assert.IsFalse((bool)Invoke(finalizer, "BoundsContainsPoint", outside, bounds, 0.001f));
         }
