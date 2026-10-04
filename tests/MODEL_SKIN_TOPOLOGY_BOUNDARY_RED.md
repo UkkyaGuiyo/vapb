@@ -59,7 +59,10 @@ The prepared route uses only synthetic assets and the product exporter:
    `model_skin_topology_boundary_package_preflight.py -- <run-root>` before
    importing it. For this reviewed disposable run, the preflight requires the
    exact 12-path set and package SHA256
-   `157eee6379cc435ad9829db2011c1dabeb6f44259d97c385d6e47e3c2db8da73`.
+   `157eee6379cc435ad9829db2011c1dabeb6f44259d97c385d6e47e3c2db8da73`. This
+   hash pins this one reviewed run, including its generated FBX bytes; it is not
+   a reusable hash for regenerated FBX fixtures. A regenerated package must be
+   independently reviewed and receive its own exact package/inventory pins.
    It verifies every package asset pathname, GUID, payload/meta pair, the four
    canonical support-script payloads, all TargetProject path/GUID collisions,
    and exactly one normal `RESTORE_MODEL_SKIN_VARIANT_V1` task. It writes
