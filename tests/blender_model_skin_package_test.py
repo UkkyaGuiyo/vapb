@@ -32,6 +32,95 @@ def package_asset(path, guid):
         return archive.extractfile(f'{guid}/asset').read()
 
 
+def apply_topology_boundary_vertex_split(mesh):
+    # Keep the installed --addon-zip path independent of repository-only tests.
+    repo = Path(__file__).resolve().parents[1]
+    if not (repo / 'tests' / 'model_skin_topology_boundary_fixture.py').is_file():
+        raise RuntimeError('TOPOLOGY_FIXTURE_REQUIRES_REPOSITORY_CHECKOUT')
+    if str(repo) not in sys.path:
+        sys.path.insert(0, str(repo))
+    from tests.model_skin_topology_boundary_fixture import (
+        make_vertex_split_contract, validate_vertex_split_contract,
+    )
+    old = mesh.data
+    if old.shape_keys or len(old.uv_layers) != 1 or old.uv_layers.active is None:
+        raise ValueError('FIXTURE_REQUIRES_ONE_UV_LAYER_AND_NO_SHAPES')
+    if len(old.materials) != 1 or any(poly.material_index != 0 for poly in old.polygons):
+        raise ValueError('FIXTURE_MUST_HAVE_ONE_MATERIAL_SUBMESH')
+    group_names = {group.index: group.name for group in mesh.vertex_groups}
+    weights = tuple(tuple(sorted((group_names[item.group], float(item.weight))
+                                  for item in vertex.groups))
+                    for vertex in old.vertices)
+    faces = tuple(tuple(int(index) for index in polygon.vertices) for polygon in old.polygons)
+    vertices = tuple(tuple(float(axis) for axis in vertex.co) for vertex in old.vertices)
+    face_uvs = tuple(tuple(tuple(float(axis) for axis in old.uv_layers.active.data[loop_index].uv)
+                           for loop_index in polygon.loop_indices)
+                     for polygon in old.polygons)
+    contract = make_vertex_split_contract(vertices, faces, weights, face_uvs)
+    assert validate_vertex_split_contract(contract)
+
+    replacement = bpy.data.meshes.new(old.name + '_VertexSplit')
+    replacement.from_pydata(contract['final_vertices'], [], contract['final_faces'])
+    final_uv_layer = replacement.uv_layers.new(name=old.uv_layers.active.name)
+    for polygon_index, polygon in enumerate(replacement.polygons):
+        for corner, loop_index in enumerate(polygon.loop_indices):
+            final_uv_layer.data[loop_index].uv = contract['final_face_uvs'][polygon_index][corner]
+    for material in old.materials:
+        replacement.materials.append(material)
+    for index, source_poly in enumerate(old.polygons):
+        replacement.polygons[index].material_index = source_poly.material_index
+        replacement.polygons[index].use_smooth = source_poly.use_smooth
+    for key in old.keys():
+        replacement[key] = old[key]
+    mesh.data = replacement
+    rebuilt_groups = {}
+    for group_name in sorted({name for row in contract['final_bone_weights'] for name, _ in row}):
+        group = mesh.vertex_groups.get(group_name)
+        if group is None:
+            group = mesh.vertex_groups.new(name=group_name)
+        rebuilt_groups[group_name] = group
+    group_names = {group.index: group.name for group in mesh.vertex_groups}
+    for vertex_index, influences in enumerate(contract['final_bone_weights']):
+        for group_name, weight in influences:
+            rebuilt_groups[group_name].add([vertex_index], weight, 'REPLACE')
+    replacement.update()
+    actual_faces = tuple(tuple(int(index) for index in polygon.vertices)
+                         for polygon in replacement.polygons)
+    actual_weights = tuple(tuple(sorted((group_names[item.group], float(item.weight))
+                                        for item in vertex.groups))
+                           for vertex in replacement.vertices)
+    actual_uvs = tuple(tuple(tuple(float(axis) for axis in replacement.uv_layers.active.data[loop_index].uv)
+                             for loop_index in polygon.loop_indices)
+                       for polygon in replacement.polygons)
+    if (actual_faces != contract['final_faces'] or
+            actual_weights != contract['final_bone_weights'] or
+            actual_uvs != contract['final_face_uvs']):
+        raise ValueError(('FIXTURE_REBUILD_MISMATCH', actual_faces,
+                          actual_weights, actual_uvs))
+    if old.users == 0:
+        bpy.data.meshes.remove(old)
+    return contract
+
+
+def bind_topology_boundary_source_material(mesh):
+    """Bind the fixture to its one package-backed Unity material identity."""
+    package_id = mesh.get('unity_source_package_id', '')
+    candidates = [material for material in bpy.data.materials
+                 if material.get('unity_source_package_id') == package_id
+                 and material.get('unity_material_guid')
+                 and material.get('unity_material_file_id')]
+    if not package_id or len(candidates) != 1 or len(mesh.data.materials) != 1:
+        raise ValueError('TOPOLOGY_FIXTURE_SOURCE_MATERIAL_IDENTITY_INVALID')
+    material = candidates[0]
+    mesh.data.materials[0] = material
+    return {
+        'guid': str(material['unity_material_guid']),
+        'file_id': str(material['unity_material_file_id']),
+        'asset_path': str(material.get('unity_material_path', '')),
+        'source_package_id': str(material['unity_source_package_id']),
+    }
+
+
 def main():
     folder = Path(sys.argv[sys.argv.index('--') + 1]).resolve()
     repo = Path(__file__).resolve().parents[1]
@@ -73,6 +162,8 @@ def main():
             mesh = max(candidates, key=lambda o: len(json.loads(o['_vapb_model_instance_edge_path'])))
         realization = mesh['_vapb_fbx_realization_id']
         mesh.data = mesh.data.copy()
+        topology_boundary = None
+        topology_material_identity = None
         texture = None
         if config.get('texture_edit'):
             from unitypackage_blender_importer.operators.texture_editing import (
@@ -134,7 +225,10 @@ def main():
             texture = (texture_guid, source_archive_sha, original_png, working_path, working_png,
                        identity, texture_mode)
         if not config.get('already_edited'):
-            if config.get('uv_shape_split'):
+            if config.get('vertex_split_only'):
+                topology_material_identity = bind_topology_boundary_source_material(mesh)
+                topology_boundary = apply_topology_boundary_vertex_split(mesh)
+            elif config.get('uv_shape_split'):
                 assert len(mesh.data.vertices) == 4 and len(mesh.data.polygons) == 2
                 keys = mesh.data.shape_keys.key_blocks
                 assert len(keys) == 3 and mesh.data.uv_layers.active is not None
@@ -162,6 +256,62 @@ def main():
         matches = [o for o in bpy.context.scene.objects if o.get('_vapb_fbx_realization_id') == realization]
         assert len(matches) == 1
         mesh = matches[0]
+        if topology_boundary is not None:
+            repo = Path(__file__).resolve().parents[1]
+            if str(repo) not in sys.path:
+                sys.path.insert(0, str(repo))
+            from tests.model_skin_topology_boundary_fixture import validate_vertex_split_contract
+            validate_vertex_split_contract(topology_boundary)
+            assert len(mesh.data.vertices) == 6 and len(mesh.data.polygons) == 2
+            assert sum(len(polygon.vertices) for polygon in mesh.data.polygons) == 6
+            actual_faces = tuple(tuple(int(index) for index in polygon.vertices)
+                                 for polygon in mesh.data.polygons)
+            group_names = {group.index: group.name for group in mesh.vertex_groups}
+            actual_weights = tuple(
+                tuple(sorted((group_names[item.group], float(item.weight))
+                             for item in vertex.groups))
+                for vertex in mesh.data.vertices
+            )
+            assert actual_faces == topology_boundary['final_faces']
+            assert actual_weights == topology_boundary['final_bone_weights']
+            actual_uvs = tuple(tuple(tuple(float(axis) for axis in mesh.data.uv_layers.active.data[loop_index].uv)
+                                     for loop_index in polygon.loop_indices)
+                               for polygon in mesh.data.polygons)
+            assert actual_uvs == topology_boundary['final_face_uvs']
+            assert len(mesh.material_slots) == 1 and mesh.material_slots[0].material is not None
+            reopened_material = mesh.material_slots[0].material
+            reopened_material_identity = {
+                'guid': str(reopened_material.get('unity_material_guid', '')),
+                'file_id': str(reopened_material.get('unity_material_file_id', '')),
+                'asset_path': str(reopened_material.get('unity_material_path', '')),
+                'source_package_id': str(reopened_material.get('unity_source_package_id', '')),
+            }
+            assert reopened_material_identity == topology_material_identity
+            evidence_path = folder / 'TopologyBoundaryEvidence.json'
+            if evidence_path.exists():
+                raise ValueError('EVIDENCE_ALREADY_EXISTS')
+            evidence_path.write_text(json.dumps({
+                'purpose': 'Public synthetic normal model-skin vertex-layout RED fixture',
+                'task_kind_expected': 'RESTORE_MODEL_SKIN_VARIANT_V1',
+                'source_vertices': 4,
+                'source_faces': 2,
+                'source_indices': 6,
+                'final_vertices': 6,
+                'final_faces': 2,
+                'final_indices': 6,
+                'source_faces_by_vertex': topology_boundary['source_faces'],
+                'final_faces_by_vertex': topology_boundary['final_faces'],
+                'source_bone_weights': topology_boundary['source_bone_weights'],
+                'final_bone_weights': topology_boundary['final_bone_weights'],
+                'source_face_uvs': topology_boundary['source_face_uvs'],
+                'final_face_uvs': topology_boundary['final_face_uvs'],
+                'expected_current_finalizer_rejection': 'TOPOLOGY_OR_LAYOUT_CHANGED',
+                'source_material_identity': topology_material_identity,
+                'save_reopen_material_identity': reopened_material_identity,
+                'unknown_index_dependent_components': 'UNSUPPORTED; not exercised by this minimal fixture',
+            }, indent=2), encoding='utf-8')
+            print('SKIN_TOPOLOGY_BOUNDARY_MATERIAL_IDENTITY_PASS ' +
+                  json.dumps(topology_material_identity, sort_keys=True))
         if texture:
             texture_guid, source_archive_sha, original_png, working_path, working_png, identity, texture_mode = texture
             reopened = [image for image in bpy.data.images

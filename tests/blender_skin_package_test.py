@@ -7,6 +7,7 @@ import bpy
 import bmesh
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import unitypackage_blender_importer as addon
 
 
@@ -14,23 +15,49 @@ def prepare(root):
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete(use_global=False)
     uv_shape_split = '--uv-shape-split' in sys.argv
-    if uv_shape_split:
+    topology_boundary_split = '--topology-boundary-vertex-split' in sys.argv
+    if uv_shape_split and topology_boundary_split:
+        raise ValueError('FIXTURE_MODES_ARE_EXCLUSIVE')
+    if topology_boundary_split:
+        from tests.model_skin_topology_boundary_fixture import (
+            SOURCE_BONE_WEIGHTS, SOURCE_FACE_UVS, SOURCE_FACES, SOURCE_VERTICES,
+            validate_vertex_split_contract, make_vertex_split_contract,
+        )
+        source_contract = make_vertex_split_contract()
+        assert validate_vertex_split_contract(source_contract)
+    if uv_shape_split or topology_boundary_split:
+        if topology_boundary_split:
+            vertices, faces = SOURCE_VERTICES, SOURCE_FACES
+        else:
+            vertices = ((-1, -1, 0), (1, -1, 0), (1, 1, 0), (-1, 1, 0))
+            faces = ((0, 1, 2), (0, 2, 3))
         data = bpy.data.meshes.new('SyntheticSplitQuad')
-        data.from_pydata([(-1, -1, 0), (1, -1, 0), (1, 1, 0), (-1, 1, 0)], [],
-                         [(0, 1, 2), (0, 2, 3)])
+        data.from_pydata(vertices, [], faces)
         data.update()
         mesh = bpy.data.objects.new('SyntheticSkin', data)
         bpy.context.collection.objects.link(mesh)
         mesh.select_set(True)
-        uv = data.uv_layers.new(name='UVMap')
-        coordinates = ((0, 0), (1, 0), (1, 1), (0, 1))
-        for loop in data.loops:
-            uv.data[loop.index].uv = coordinates[loop.vertex_index]
-        for polygon in data.polygons:
-            polygon.use_smooth = True
-        mesh.shape_key_add(name='Basis')
-        mesh.shape_key_add(name='ShapeA').data[0].co.z += 0.1
-        mesh.shape_key_add(name='ShapeB').data[1].co.z += 0.1
+        if uv_shape_split or topology_boundary_split:
+            uv = data.uv_layers.new(name='UVMap')
+            if topology_boundary_split:
+                for polygon_index, polygon in enumerate(data.polygons):
+                    for corner, loop_index in enumerate(polygon.loop_indices):
+                        uv.data[loop_index].uv = SOURCE_FACE_UVS[polygon_index][corner]
+            else:
+                coordinates = ((0, 0), (1, 0), (1, 1), (0, 1))
+                for loop in data.loops:
+                    uv.data[loop.index].uv = coordinates[loop.vertex_index]
+            for polygon in data.polygons:
+                polygon.use_smooth = True
+            if uv_shape_split:
+                mesh.shape_key_add(name='Basis')
+                mesh.shape_key_add(name='ShapeA').data[0].co.z += 0.1
+                mesh.shape_key_add(name='ShapeB').data[1].co.z += 0.1
+        if topology_boundary_split:
+            carrier = bpy.data.materials.new('SyntheticTopologyBoundaryMaterial')
+            data.materials.append(carrier)
+            for polygon in data.polygons:
+                polygon.material_index = 0
     else:
         bpy.ops.mesh.primitive_cube_add()
         mesh = bpy.context.object
@@ -51,10 +78,16 @@ def prepare(root):
     bpy.ops.object.mode_set(mode='OBJECT')
     if '--skin-bone-subset' in sys.argv:
         rig.pose.bones['OtherBranch']['_vapb_fixture_unused_skin_bone'] = 'yes'
-    mesh.vertex_groups.new(name='Root').add([0, 1] if uv_shape_split else [0, 1, 2, 3],
-                                            1.0, 'REPLACE')
-    mesh.vertex_groups.new(name='Child').add([2, 3] if uv_shape_split else [4, 5, 6, 7],
-                                             1.0, 'REPLACE')
+    root_group = mesh.vertex_groups.new(name='Root')
+    child_group = mesh.vertex_groups.new(name='Child')
+    if topology_boundary_split:
+        for index, influences in enumerate(SOURCE_BONE_WEIGHTS):
+            for name, weight in influences:
+                (root_group if name == 'Root' else child_group).add(
+                    [index], weight, 'REPLACE')
+    else:
+        root_group.add([0, 1] if uv_shape_split else [0, 1, 2, 3], 1.0, 'REPLACE')
+        child_group.add([2, 3] if uv_shape_split else [4, 5, 6, 7], 1.0, 'REPLACE')
     mesh.modifiers.new('Skin', 'ARMATURE').object = rig
     mesh.parent = rig
     if '--two-model-skins' in sys.argv:
@@ -70,12 +103,18 @@ def prepare(root):
     assert bpy.ops.export_scene.fbx(filepath=str(target), use_selection=True,
         object_types={'MESH', 'ARMATURE'}, add_leaf_bones=False, bake_anim=False,
         use_custom_props=True, use_armature_deform_only=False,
-        use_mesh_modifiers=not uv_shape_split,
+        use_mesh_modifiers=not (uv_shape_split or topology_boundary_split),
         apply_scale_options=('FBX_SCALE_ALL' if '--source-units-in-fbx' in sys.argv
                              else 'FBX_SCALE_NONE')) == {'FINISHED'}
     if '--skin-bone-subset' in sys.argv:
         remove_fixture_unused_cluster(target)
-    print('SKIN_SOURCE_FBX_PASS')
+    if topology_boundary_split:
+        assert len(mesh.data.vertices) == 4 and len(mesh.data.polygons) == 2
+        assert sum(len(poly.vertices) for poly in mesh.data.polygons) == 6
+        assert len(mesh.data.materials) == 1 and len(mesh.vertex_groups) == 2
+        print('SKIN_TOPOLOGY_BOUNDARY_SOURCE_PASS vertices=4 faces=2 indices=6 bones=2')
+    else:
+        print('SKIN_SOURCE_FBX_PASS')
 
 
 def remove_fixture_unused_cluster(target):
