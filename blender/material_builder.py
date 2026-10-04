@@ -9,7 +9,11 @@ from typing import Iterable, Optional
 
 import bpy  # type: ignore
 
-from ..unity.material_mapping import resolve_material_entry, strip_material_suffix
+from ..unity.material_mapping import (
+    external_object_guid_for_name,
+    resolve_material_entry,
+    strip_material_suffix,
+)
 from ..unity.material_model import NormalizedMaterial, UnityMaterialData, UnityTextureRef
 from ..unity.material_parser import parse_material
 from ..unity.prefab_parser import PrefabData, ref_file_id, ref_guid
@@ -341,8 +345,10 @@ def apply_materials_by_name(
         for index, slot in enumerate(obj.data.materials):
             if slot is None:
                 continue
+            externally_mapped, target_guid = external_object_guid_for_name(
+                external_objects, slot.name
+            )
             if scene and external_objects:
-                target_guid = external_objects.get(slot.name) or external_objects.get(strip_material_suffix(slot.name))
                 if target_guid and asset_db.find_guid(target_guid) is None:
                     capture_dependency(scene, {
                         "dependency_type": "FBX_EXTERNAL_MATERIAL",
@@ -358,7 +364,7 @@ def apply_materials_by_name(
                 entry = resolve_material_entry(meta_text, slot.name, asset_db)
                 if entry:
                     replacement = material_library.get(str(entry.path)) or by_guid.get(entry.guid)
-            if replacement is None:
+            if replacement is None and not externally_mapped:
                 replacement = by_name.get(slot.name.casefold()) or by_name.get(strip_material_suffix(slot.name).casefold())
             if replacement is not None:
                 obj.data.materials[index] = replacement

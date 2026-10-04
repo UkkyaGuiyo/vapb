@@ -65,18 +65,32 @@ def find_material_entry_by_name(
     return candidates[0]
 
 
+def external_object_guid_for_name(
+    external_objects: dict[str, str], material_name: str
+) -> tuple[bool, Optional[str]]:
+    """Return whether a slot is explicitly mapped and its target GUID."""
+    for name in (material_name, strip_material_suffix(material_name)):
+        if name in external_objects:
+            return True, external_objects[name]
+    return False, None
+
+
 def resolve_material_entry(
     model_meta_text: str,
     material_name: str,
     asset_db: AssetDatabase,
 ) -> Optional[AssetEntry]:
-    """Resolve a model slot using externalObjects before name matching."""
+    """Resolve a model slot using externalObjects before name matching.
+
+    An explicit externalObjects mapping is authoritative even when its
+    provider is absent or is not a Material. Name fallback is only safe when
+    the model metadata did not declare an external mapping for this slot.
+    """
     external = parse_external_objects(model_meta_text)
-    names = (material_name, strip_material_suffix(material_name))
-    for name in names:
-        guid = external.get(name)
-        if guid:
-            entry = asset_db.find_guid(guid)
-            if entry and entry.path.suffix.lower() == ".mat":
-                return entry
+    mapped, guid = external_object_guid_for_name(external, material_name)
+    if mapped:
+        entry = asset_db.find_guid(guid)
+        if entry and entry.path.suffix.lower() == ".mat":
+            return entry
+        return None
     return find_material_entry_by_name(material_name, asset_db)

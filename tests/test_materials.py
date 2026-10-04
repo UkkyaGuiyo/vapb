@@ -6,6 +6,7 @@ import unittest
 
 from unitypackage_blender_importer.unity.asset_database import AssetDatabase, AssetEntry
 from unitypackage_blender_importer.unity.material_mapping import (
+    external_object_guid_for_name,
     find_material_entry_by_name,
     parse_external_objects,
     resolve_material_entry,
@@ -223,6 +224,51 @@ class MaterialParserTests(unittest.TestCase):
         db = self.db()
         self.assertEqual(parse_external_objects(meta), {"BodyMaterial": expected_guid})
         self.assertEqual(resolve_material_entry(meta, "BodyMaterial", db).guid, expected_guid)
+
+    def test_external_mapping_presence_is_distinct_from_provider_resolution(self):
+        meta = """externalObjects:
+  - first:
+      type: 23
+      assembly: UnityEngine.CoreModule
+      name: Body
+    second: {fileID: 2100000, guid: 77777777777777777777777777777777, type: 2}
+"""
+        mapping = parse_external_objects(meta)
+        self.assertEqual(
+            (True, "7" * 32), external_object_guid_for_name(mapping, "Body.001")
+        )
+        self.assertEqual((False, None), external_object_guid_for_name(mapping, "Other"))
+
+    def test_missing_explicit_external_guid_does_not_fallback_by_name(self):
+        self.write_material("Body.mat", "6" * 32, material_text("Body", "{fileID: 46}", ""))
+        meta = """externalObjects:
+  - first:
+      type: 23
+      assembly: UnityEngine.CoreModule
+      name: Body
+    second: {fileID: 2100000, guid: 77777777777777777777777777777777, type: 2}
+"""
+        self.assertIsNone(resolve_material_entry(meta, "Body", self.db()))
+
+    def test_explicit_non_material_guid_does_not_fallback_by_name(self):
+        self.write_material("Body.mat", "6" * 32, material_text("Body", "{fileID: 46}", ""))
+        texture_path = self.material_dir / "Body.png"
+        texture_path.write_bytes(b"synthetic texture")
+        self.entries.append(AssetEntry("8" * 32, "Assets/Materials/Body.png", texture_path))
+        meta = """externalObjects:
+  - first:
+      type: 23
+      assembly: UnityEngine.CoreModule
+      name: Body
+    second: {fileID: 2800000, guid: 88888888888888888888888888888888, type: 3}
+"""
+        self.assertIsNone(resolve_material_entry(meta, "Body", self.db()))
+
+    def test_name_fallback_remains_available_without_external_mapping(self):
+        self.write_material("Body.mat", "6" * 32, material_text("Body", "{fileID: 46}", ""))
+        resolved = resolve_material_entry("externalObjects: []\n", "Body", self.db())
+        self.assertIsNotNone(resolved)
+        self.assertEqual("6" * 32, resolved.guid)
 
     def test_ambiguous_name_fallback_is_rejected(self):
         self.write_material("Left.mat", "4" * 32, material_text("Shared", "{fileID: 46}", ""))
