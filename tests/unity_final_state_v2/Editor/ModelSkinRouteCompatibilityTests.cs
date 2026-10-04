@@ -174,27 +174,40 @@ public sealed class ModelSkinRouteCompatibilityTests
         for (int i = 0; i < exactEdges.Length; i++)
         {
             Vector3 point = exactEdges[i];
-            float roundedLowerX = BitConverter.ToSingle(BitConverter.GetBytes(bounds.min.x - tolerance), 0);
-            bool roundedLowerContains = point.x >= roundedLowerX;
-            bool manualWithin = point.x >= bounds.min.x - tolerance && point.x <= bounds.max.x + tolerance &&
-                point.y >= bounds.min.y - tolerance && point.y <= bounds.max.y + tolerance &&
-                point.z >= bounds.min.z - tolerance && point.z <= bounds.max.z + tolerance;
-            Assert.IsTrue(manualWithin, "Raw float predicate unexpectedly rejected edge=" + i +
-                " x=" + point.x.ToString("R") + " min=" + bounds.min.x.ToString("R") +
-                " tol=" + tolerance.ToString("R") + " xMin=" + (point.x >= bounds.min.x - tolerance) +
-                " xMax=" + (point.x <= bounds.max.x + tolerance) +
-                " yMin=" + (point.y >= bounds.min.y - tolerance) +
-                " yMax=" + (point.y <= bounds.max.y + tolerance) +
-                " zMin=" + (point.z >= bounds.min.z - tolerance) +
-                " zMax=" + (point.z <= bounds.max.z + tolerance) +
-                " pBits=" + BitConverter.ToInt32(BitConverter.GetBytes(point.x), 0).ToString("X8") +
-                " minBits=" + BitConverter.ToInt32(BitConverter.GetBytes(bounds.min.x - tolerance), 0).ToString("X8") +
-                " roundedLowerContains=" + roundedLowerContains);
             Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", point, bounds, tolerance),
                 "A point computed by the same min/max +/- tolerance expression must be included; edge=" +
                 i + " point=" + point + " x=" + point.x.ToString("R") + " lower=" +
-                (bounds.min.x - tolerance).ToString("R"));
+                (bounds.min.x - tolerance).ToString("R") + " rawXLower=" +
+                (point.x >= bounds.min.x - tolerance) + " bits=" +
+                BitConverter.ToInt32(BitConverter.GetBytes(point.x), 0).ToString("X8"));
         }
+        float minX = BitConverter.ToSingle(BitConverter.GetBytes(bounds.min.x - tolerance), 0);
+        float maxX = BitConverter.ToSingle(BitConverter.GetBytes(bounds.max.x + tolerance), 0);
+        float minY = BitConverter.ToSingle(BitConverter.GetBytes(bounds.min.y - tolerance), 0);
+        float maxY = BitConverter.ToSingle(BitConverter.GetBytes(bounds.max.y + tolerance), 0);
+        float minZ = BitConverter.ToSingle(BitConverter.GetBytes(bounds.min.z - tolerance), 0);
+        float maxZ = BitConverter.ToSingle(BitConverter.GetBytes(bounds.max.z + tolerance), 0);
+        Vector3[] immediatelyOutside = {
+            new Vector3(AdjacentSingle(minX, false), 0f, 0f),
+            new Vector3(AdjacentSingle(maxX, true), 0f, 0f),
+            new Vector3(0f, AdjacentSingle(minY, false), 0f),
+            new Vector3(0f, AdjacentSingle(maxY, true), 0f),
+            new Vector3(0f, 0f, AdjacentSingle(minZ, false)),
+            new Vector3(0f, 0f, AdjacentSingle(maxZ, true))
+        };
+        foreach (Vector3 point in immediatelyOutside)
+            Assert.IsFalse((bool)Invoke(finalizer, "BoundsContainsPoint", point, bounds, tolerance),
+                "The immediately adjacent single-precision point outside tolerance must be rejected: " + point);
+    }
+
+    private static float AdjacentSingle(float value, bool towardPositiveInfinity)
+    {
+        if (Single.IsNaN(value) || (towardPositiveInfinity && value == Single.PositiveInfinity) ||
+            (!towardPositiveInfinity && value == Single.NegativeInfinity)) return value;
+        if (value == 0f) return towardPositiveInfinity ? Single.Epsilon : -Single.Epsilon;
+        int bits = BitConverter.ToInt32(BitConverter.GetBytes(value), 0);
+        bits += ((value > 0f) == towardPositiveInfinity) ? 1 : -1;
+        return BitConverter.ToSingle(BitConverter.GetBytes(bits), 0);
     }
 
     private static Type FindFinalizer()

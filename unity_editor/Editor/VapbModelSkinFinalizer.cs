@@ -1280,6 +1280,7 @@ public static class VapbModelSkinFinalizer
             if (!FiniteMatrix(rootSkinByBone[bone])) return false;
         }
         if (!FiniteMatrix(rootWorldToLocal)) return false;
+        BoundsToleranceEdges toleranceEdges = ExpandBoundsToFloatEdges(bounds, tolerance);
         Vector3[] vertices = mesh.vertices;
         if (vertices == null || vertices.Length == 0) return false;
         var counts = mesh.GetBonesPerVertex();
@@ -1305,7 +1306,7 @@ public static class VapbModelSkinFinalizer
                     totalWeight += weight.weight;
                 }
                 if (!Finite(rootLocalPoint) || Mathf.Abs(totalWeight - 1f) > 0.01f) return false;
-                if (!BoundsContainsPoint(rootLocalPoint, bounds, tolerance)) return false;
+                if (!PointWithinBounds(rootLocalPoint, toleranceEdges)) return false;
             }
             return weightIndex == weights.Length;
         }
@@ -1315,19 +1316,42 @@ public static class VapbModelSkinFinalizer
     {
         return Finite(point) && Finite(bounds.center) && Finite(bounds.extents) && tolerance >= 0f &&
             bounds.extents.x >= 0f && bounds.extents.y >= 0f && bounds.extents.z >= 0f &&
-            point.x >= bounds.min.x - tolerance && point.x <= bounds.max.x + tolerance &&
-            point.y >= bounds.min.y - tolerance && point.y <= bounds.max.y + tolerance &&
-            point.z >= bounds.min.z - tolerance && point.z <= bounds.max.z + tolerance;
+            PointWithinBounds(point, ExpandBoundsToFloatEdges(bounds, tolerance));
+    }
+    private struct BoundsToleranceEdges
+    {
+        public Vector3 minimum;
+        public Vector3 maximum;
+    }
+    private static BoundsToleranceEdges ExpandBoundsToFloatEdges(Bounds bounds, float tolerance)
+    {
+        Vector3 minimum = bounds.min, maximum = bounds.max;
+        // Force each tolerance edge through a stored IEEE-754 single value before comparing it
+        // with mesh vertex components, which are already stored as single-precision values.
+        minimum.x = RoundToFloat(minimum.x - tolerance);
+        minimum.y = RoundToFloat(minimum.y - tolerance);
+        minimum.z = RoundToFloat(minimum.z - tolerance);
+        maximum.x = RoundToFloat(maximum.x + tolerance);
+        maximum.y = RoundToFloat(maximum.y + tolerance);
+        maximum.z = RoundToFloat(maximum.z + tolerance);
+        return new BoundsToleranceEdges { minimum = minimum, maximum = maximum };
+    }
+    private static float RoundToFloat(float value)
+    { return BitConverter.ToSingle(BitConverter.GetBytes(value), 0); }
+    private static bool PointWithinBounds(Vector3 point, BoundsToleranceEdges edges)
+    {
+        return point.x >= edges.minimum.x && point.x <= edges.maximum.x &&
+            point.y >= edges.minimum.y && point.y <= edges.maximum.y &&
+            point.z >= edges.minimum.z && point.z <= edges.maximum.z;
     }
     private static bool BoundsContainVertices(Bounds bounds, Vector3[] vertices, float tolerance)
     {
         if (vertices == null || vertices.Length == 0 || tolerance < 0 ||
             !Finite(bounds.center) || !Finite(bounds.extents) || bounds.extents.x < 0 ||
             bounds.extents.y < 0 || bounds.extents.z < 0) return false;
+        BoundsToleranceEdges toleranceEdges = ExpandBoundsToFloatEdges(bounds, tolerance);
         foreach (Vector3 vertex in vertices)
-            if (!Finite(vertex) || vertex.x < bounds.min.x - tolerance || vertex.x > bounds.max.x + tolerance ||
-                vertex.y < bounds.min.y - tolerance || vertex.y > bounds.max.y + tolerance ||
-                vertex.z < bounds.min.z - tolerance || vertex.z > bounds.max.z + tolerance) return false;
+            if (!Finite(vertex) || !PointWithinBounds(vertex, toleranceEdges)) return false;
         return true;
     }
 
