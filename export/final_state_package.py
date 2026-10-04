@@ -148,13 +148,21 @@ def _shader_dependency(scene, package_id, data, cache):
             "file_id": str(data.shader_file_id)}, source
 
 
-def _stage_fbx(context, mesh, export_id: str, output: Path) -> None:
+def _export_fbx(options):
+    import bpy  # type: ignore
+
+    return bpy.ops.export_scene.fbx(**options)
+
+
+def _stage_fbx(context, mesh, export_id: str, output: Path,
+               material_ids_by_pointer: dict[int, str]) -> None:
     import bpy  # type: ignore
 
     selected_before = tuple(context.selected_objects)
     active_before = context.view_layer.objects.active
     copied = mesh.copy()
     copied.data = mesh.data.copy()
+    carriers = []
     try:
         copied.parent = None
         copied.matrix_world = mesh.matrix_world.copy()
@@ -163,6 +171,25 @@ def _stage_fbx(context, mesh, export_id: str, output: Path) -> None:
             for key in list(block.keys()):
                 del block[key]
         copied["_vapb_export_object_id"] = export_id
+        carriers_by_pointer = {}
+        for index, slot in enumerate(mesh.material_slots):
+            material = slot.material
+            if material is None:
+                raise ValueError("each current Mesh material slot needs a Unity-derived Material")
+            pointer = material.as_pointer()
+            material_id = material_ids_by_pointer.get(pointer)
+            if not isinstance(material_id, str) or not re.fullmatch(
+                    r"VAPB-MAT-[0-9a-f]{32}", material_id):
+                raise ValueError("final-state FBX Material identity label is missing or invalid")
+            carrier = carriers_by_pointer.get(pointer)
+            if carrier is None:
+                carrier = material.copy()
+                carriers.append(carrier)
+                carrier.name = material_id
+                if carrier.name != material_id:
+                    raise ValueError("final-state FBX material label must remain exact")
+                carriers_by_pointer[pointer] = carrier
+            copied.material_slots[index].material = carrier
         context.scene.collection.objects.link(copied)
         for obj in selected_before:
             obj.select_set(False)
@@ -172,7 +199,7 @@ def _stage_fbx(context, mesh, export_id: str, output: Path) -> None:
                        use_selection=True, use_custom_props=True)
         copied.select_set(True)
         with frozen_export_meshes([copied]):
-            if bpy.ops.export_scene.fbx(**options) != {"FINISHED"} or not output.is_file():
+            if _export_fbx(options) != {"FINISHED"} or not output.is_file():
                 raise ValueError("final-state FBX export failed")
         if b"_vapb_export_object_id" not in output.read_bytes() or export_id.encode() not in output.read_bytes():
             raise ValueError("final-state FBX lost the Export ID")
@@ -181,6 +208,9 @@ def _stage_fbx(context, mesh, export_id: str, output: Path) -> None:
         bpy.data.objects.remove(copied, do_unlink=True)
         if data.users == 0:
             bpy.data.meshes.remove(data)
+        for carrier in carriers:
+            if carrier.users == 0:
+                bpy.data.materials.remove(carrier)
         for obj in selected_before:
             obj.select_set(True)
         context.view_layer.objects.active = active_before
@@ -272,7 +302,7 @@ def export_final_state_package(context, mesh, output: Path):
     prefab_path = model_path[:-4] + ".prefab"
     with tempfile.TemporaryDirectory(prefix="vapb_final_state_") as temporary:
         fbx = Path(temporary) / "Generated.fbx"
-        _stage_fbx(context, mesh, object_id, fbx)
+        _stage_fbx(context, mesh, object_id, fbx, material_ids)
         payload = fbx.read_bytes()
     selected.add(StagedUnityAsset(model_guid, model_path, payload,
         f"fileFormatVersion: 2\nguid: {model_guid}\n".encode("ascii"),
