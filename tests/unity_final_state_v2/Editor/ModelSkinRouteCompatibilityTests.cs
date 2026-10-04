@@ -174,6 +174,8 @@ public sealed class ModelSkinRouteCompatibilityTests
         for (int i = 0; i < exactEdges.Length; i++)
         {
             Vector3 point = exactEdges[i];
+            float roundedLowerX = BitConverter.ToSingle(BitConverter.GetBytes(bounds.min.x - tolerance), 0);
+            bool roundedLowerContains = point.x >= roundedLowerX;
             bool manualWithin = point.x >= bounds.min.x - tolerance && point.x <= bounds.max.x + tolerance &&
                 point.y >= bounds.min.y - tolerance && point.y <= bounds.max.y + tolerance &&
                 point.z >= bounds.min.z - tolerance && point.z <= bounds.max.z + tolerance;
@@ -186,7 +188,8 @@ public sealed class ModelSkinRouteCompatibilityTests
                 " zMin=" + (point.z >= bounds.min.z - tolerance) +
                 " zMax=" + (point.z <= bounds.max.z + tolerance) +
                 " pBits=" + BitConverter.ToInt32(BitConverter.GetBytes(point.x), 0).ToString("X8") +
-                " minBits=" + BitConverter.ToInt32(BitConverter.GetBytes(bounds.min.x - tolerance), 0).ToString("X8"));
+                " minBits=" + BitConverter.ToInt32(BitConverter.GetBytes(bounds.min.x - tolerance), 0).ToString("X8") +
+                " roundedLowerContains=" + roundedLowerContains);
             Assert.IsTrue((bool)Invoke(finalizer, "BoundsContainsPoint", point, bounds, tolerance),
                 "A point computed by the same min/max +/- tolerance expression must be included; edge=" +
                 i + " point=" + point + " x=" + point.x.ToString("R") + " lower=" +
