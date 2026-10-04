@@ -93,7 +93,7 @@ def world_geometry_error(obj, unity_flat, world_override=None):
                max(min((point - other).length for other in left) for point in right))
 
 
-def check_scene(renamed=False, root_context_id=None):
+def check_scene(renamed=False, root_context_id=None, materials_enabled=True):
     from unitypackage_blender_importer.blender.dependency_resolver import load_dependency_registry
     from unitypackage_blender_importer.blender.import_outcome import scene_import_outcome
     from unitypackage_blender_importer.blender.model_witness_bridge import find_witness_consumer
@@ -132,11 +132,17 @@ def check_scene(renamed=False, root_context_id=None):
     scoped = [item for item in dependencies if item.get("consumer_root_context_id") == root["_vapb_root_context_id"]]
     material = [item for item in scoped if item.get("dependency_type") == "PREFAB_RENDERER_MATERIAL"]
     cleared = [item for item in scoped if item.get("dependency_type") == "CLEAR_MATERIAL_SLOT"]
-    assert len(material) == len(cleared) == 1
-    assert material[0]["consumer_occurrence_id"] == source_row["occurrence_id"]
-    assert cleared[0]["consumer_occurrence_id"] == null_row["occurrence_id"]
-    source_obj = find_witness_consumer(material[0], bpy.context.scene.objects)
-    null_obj = find_witness_consumer(cleared[0], bpy.context.scene.objects)
+    assert len(material) == len(cleared) == (1 if materials_enabled else 0)
+    if materials_enabled:
+        assert material[0]["consumer_occurrence_id"] == source_row["occurrence_id"]
+        assert cleared[0]["consumer_occurrence_id"] == null_row["occurrence_id"]
+        source_obj = find_witness_consumer(material[0], bpy.context.scene.objects)
+        null_obj = find_witness_consumer(cleared[0], bpy.context.scene.objects)
+    else:
+        source_obj = next(obj for obj in bpy.context.scene.objects
+                          if obj.get("_vapb_renderer_occurrence_id") == source_row["occurrence_id"])
+        null_obj = next(obj for obj in bpy.context.scene.objects
+                        if obj.get("_vapb_renderer_occurrence_id") == null_row["occurrence_id"])
     assert source_obj is not None and null_obj is not None and source_obj is not null_obj
     assert source_obj.data is null_obj.data
     assert source_obj["_vapb_fbx_realization_id"] != null_obj["_vapb_fbx_realization_id"]
@@ -157,19 +163,37 @@ def check_scene(renamed=False, root_context_id=None):
     assert semantic_parent["unity_prefab_file_id"] == str(pair_root.file_id)
     assert source_obj.parent.get("_vapb_model_parent_status") == "EXACT"
     assert null_obj.parent.get("_vapb_model_parent_status") == "EXACT"
-    assert len(source_obj.material_slots) == len(null_obj.material_slots) == 1
-    assert source_obj.material_slots[0].link == null_obj.material_slots[0].link == "OBJECT"
-    base_material = source_obj.material_slots[0].material
-    assert base_material is not None
-    assert base_material.get("unity_material_guid") == source_row["materials"]["0"]["guid"]
-    assert null_obj.material_slots[0].material is None
+    if materials_enabled:
+        assert len(source_obj.material_slots) == len(null_obj.material_slots) == 1
+    else:
+        assert len(source_obj.material_slots) == len(null_obj.material_slots)
+    if materials_enabled:
+        assert source_obj.material_slots[0].link == null_obj.material_slots[0].link == "OBJECT"
+        base_material = source_obj.material_slots[0].material
+        assert base_material is not None
+        assert base_material.get("unity_material_guid") == source_row["materials"]["0"]["guid"]
+        assert null_obj.material_slots[0].material is None
+    else:
+        base_material = None
+        assert all(slot.material is None for obj in (source_obj, null_obj) for slot in obj.material_slots)
     # The public raw FBX has no Material. The source Prefab's A is an Object
     # binding, so the shared DATA table must stay at its original None value.
-    assert source_obj.data.materials[0] is None
+    assert all(material is None for material in source_obj.data.materials)
     outcome = scene_import_outcome(bpy.context.scene)
-    assert outcome["overall"] == "SUCCESS", outcome
+    assert outcome["overall"] == ("SUCCESS" if materials_enabled else "PARTIAL"), outcome
     assert "NESTED_PREFAB_RENDERER_NOT_REALIZED" not in {
         item["code"] for item in outcome["items"]}, outcome
+    from unitypackage_blender_importer.blender.fbx_receipt import copy_with_receipt, validate_receipt_continuity
+    if validate_receipt_continuity(source_obj):
+        duplicate = copy_with_receipt(source_obj)
+        duplicate.parent = source_obj.parent
+        bpy.context.scene.collection.objects.link(duplicate)
+        ambiguous = scene_import_outcome(bpy.context.scene)
+        assert "NESTED_PREFAB_RENDERER_NOT_REALIZED" in {
+            item["code"] for item in ambiguous["items"]}, ambiguous
+        bpy.data.objects.remove(duplicate, do_unlink=True)
+        assert scene_import_outcome(bpy.context.scene)["overall"] == (
+            "SUCCESS" if materials_enabled else "PARTIAL")
     if TRANSFORM_ORACLE:
         source_obj["_vapb_geometry_frame_status"] = "UNVERIFIED"
         uncertain = scene_import_outcome(bpy.context.scene)
@@ -177,7 +201,8 @@ def check_scene(renamed=False, root_context_id=None):
         assert "DIRECT_MESH_GEOMETRY_FRAME_UNVERIFIED" in {
             item["code"] for item in uncertain["items"]}
         source_obj["_vapb_geometry_frame_status"] = "EXACT"
-        assert scene_import_outcome(bpy.context.scene)["overall"] == "SUCCESS"
+        assert scene_import_outcome(bpy.context.scene)["overall"] == (
+            "SUCCESS" if materials_enabled else "PARTIAL")
     from mathutils import Matrix
     from unitypackage_blender_importer.blender.hierarchy_builder import unity_position
     bpy.context.view_layer.update()
@@ -257,7 +282,7 @@ def check_scene(renamed=False, root_context_id=None):
             assert world_geometry_error(
                 member, values, member.parent.matrix_world @
                 direct_mesh_frame @ Matrix.Scale(100, 4)) > 0.1
-    if renamed:
+    if renamed and materials_enabled:
         assert source_template[0].name == "Renamed Native Source"
         assert source_obj.name == "Renamed Material Occurrence"
         assert null_obj.name == "Renamed Null Occurrence"
@@ -273,7 +298,10 @@ def check_scene(renamed=False, root_context_id=None):
 def main():
     values = sys.argv[sys.argv.index("--") + 1:]
     phase, package_text, blend_text = values[:3]
-    zip_path = Path(values[3]).resolve() if len(values) > 3 else None
+    zip_path = Path(values[3]).resolve() if len(values) > 3 and values[3] != "-" else None
+    materials_enabled = not (len(values) > 4 and values[4] == "off")
+    snapshot_path = Path(values[5]).resolve() if len(values) > 5 else None
+    baseline_snapshot_path = Path(values[6]).resolve() if len(values) > 6 else None
     package, blend = Path(package_text).resolve(), Path(blend_text).resolve()
     assert package.is_file()
     if phase in {"create", "dual-root", "no-witness"}:
@@ -288,7 +316,7 @@ def main():
                 assert bpy.ops.import_scene.unitypackage(
                     filepath=str(package), import_mode="RECONSTRUCT", prefab_choice=choice,
                     model_witness_path="" if phase == "no-witness" else str(sidecar),
-                    keep_extracted=False,
+                    keep_extracted=False, use_materials=materials_enabled,
                     source_storage_directory=str(blend.parent / "nested_oracle_sources")) == {"FINISHED"}
         if phase == "no-witness":
             from unitypackage_blender_importer.blender.import_outcome import scene_import_outcome
@@ -322,22 +350,46 @@ def main():
             else:
                 addon.unregister()
             return
-        template, source_obj, null_obj, material = check_scene()
-        template.name = "Renamed Native Source"
-        source_obj.name = "Renamed Material Occurrence"
-        null_obj.name = "Renamed Null Occurrence"
-        material.name = "Renamed Material A"
+        template, source_obj, null_obj, material = check_scene(materials_enabled=materials_enabled)
+        if materials_enabled:
+            template.name = "Renamed Native Source"
+            source_obj.name = "Renamed Material Occurrence"
+            null_obj.name = "Renamed Null Occurrence"
+            material.name = "Renamed Material A"
         resolve_scene_dependencies(bpy.context.scene)
         resolve_scene_dependencies(bpy.context.scene)
-        check_scene(renamed=True)
+        check_scene(renamed=materials_enabled, materials_enabled=materials_enabled)
+        if snapshot_path:
+            bpy.context.view_layer.update()
+            snapshot = {}
+            for label, obj in (("material_source", source_obj), ("null_source", null_obj)):
+                evaluated = obj.evaluated_get(bpy.context.evaluated_depsgraph_get())
+                mesh = evaluated.to_mesh()
+                try:
+                    points = sorted(tuple(round(float(value), 8) for value in (evaluated.matrix_world @ vertex.co))
+                                    for vertex in mesh.vertices)
+                    snapshot[label] = {"points": points,
+                                       "polygons": [list(poly.vertices) for poly in mesh.polygons]}
+                finally:
+                    evaluated.to_mesh_clear()
+            snapshot_path.write_text(json.dumps(snapshot, sort_keys=True), encoding="utf-8")
+            if baseline_snapshot_path:
+                baseline = json.loads(baseline_snapshot_path.read_text(encoding="utf-8"))
+                assert json.dumps(snapshot, sort_keys=True) == json.dumps(baseline, sort_keys=True), {
+                    "reason": "Material ON/OFF evaluated geometry differs",
+                    "materials_enabled": materials_enabled,
+                    "baseline": baseline,
+                    "actual": snapshot,
+                }
+                print("NESTED_MATERIAL_OPTION_GEOMETRY_PARITY_PASS", flush=True)
         bpy.ops.wm.save_as_mainfile(filepath=str(blend))
         print("NESTED_PACKAGE_CREATE_PASS")
     else:
         assert phase == "reopen"
-        check_scene(renamed=True)
+        check_scene(renamed=materials_enabled, materials_enabled=materials_enabled)
         resolve_scene_dependencies(bpy.context.scene)
         resolve_scene_dependencies(bpy.context.scene)
-        check_scene(renamed=True)
+        check_scene(renamed=materials_enabled, materials_enabled=materials_enabled)
         print("NESTED_PACKAGE_REOPEN_PASS")
     if zip_path:
         assert bpy.ops.preferences.addon_disable(module=PACKAGE_MODULE) == {"FINISHED"}

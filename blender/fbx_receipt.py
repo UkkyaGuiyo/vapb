@@ -249,6 +249,33 @@ def validate_receipt_continuity(obj: Any) -> bool:
     )
 
 
+def validate_persistent_receipt(obj: Any) -> bool:
+    """Validate the saved FBX-to-Object/Mesh receipt without session UIDs."""
+    data = getattr(obj, "data", None)
+    try:
+        if getattr(obj, "type", None) != "MESH" or data is None:
+            return False
+        if obj.get("_vapb_fbx_receipt_version") != RECEIPT_VERSION:
+            return False
+        guid = str(obj.get("_vapb_fbx_source_asset_guid", "")).lower()
+        sha256 = str(obj.get("_vapb_fbx_source_asset_sha256", "")).lower()
+        model_uid = int(obj.get("_vapb_fbx_model_uid", ""))
+        geometry_uid = int(obj.get("_vapb_fbx_geometry_uid", ""))
+        if not guid or not sha256 or not obj.get("_vapb_fbx_realization_id"):
+            return False
+        receipt = make_receipt(model_uid, geometry_uid, guid, sha256)
+        return (
+            obj.get("_vapb_fbx_object_receipt_id") == receipt.blender_object_receipt_id
+            and obj.get("_vapb_fbx_mesh_receipt_id") == receipt.blender_mesh_receipt_id
+            and data.get("_vapb_fbx_receipt_version") == RECEIPT_VERSION
+            and str(data.get("_vapb_fbx_source_asset_sha256", "")).lower() == sha256
+            and str(data.get("_vapb_fbx_geometry_uid", "")) == str(geometry_uid)
+            and data.get("_vapb_fbx_mesh_receipt_id") == receipt.blender_mesh_receipt_id
+        )
+    except (TypeError, ValueError, AttributeError, OverflowError):
+        return False
+
+
 def make_bone_receipt(model_uid: int, source_asset_guid: str, sha256: str) -> FbxBoneReceipt:
     source_asset_guid = source_asset_guid.lower()
     return FbxBoneReceipt(

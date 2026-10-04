@@ -20,7 +20,7 @@ from mathutils import Matrix  # type: ignore
 from bpy_extras.io_utils import ImportHelper  # type: ignore
 from bpy.props import BoolProperty, EnumProperty, StringProperty  # type: ignore
 
-from ..blender.fbx_importer import apply_import_options, import_fbx_files, summarize_fbx_results
+from ..blender.fbx_importer import apply_import_options, import_fbx_files, record_fbx_import_context
 from ..blender.fbx_receipt import copy_with_receipt, source_sha256, validate_receipt_continuity
 from ..blender.direct_mesh_frame import root_direct_mesh_file_id, verified_direct_mesh_frame
 from ..blender.model_witness_bridge import matches_witnessed_source, restore_witnessed_prefab_state, reserve_witness_slots
@@ -1343,6 +1343,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
 
             imported_objects = []
             fbx_file_results = []
+            fbx_summary = None
             if fbx_paths:
                 self._set_phase(context, "Importing FBX", 0.55)
 
@@ -1367,6 +1368,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         for path in fbx_paths
                     },
                     file_results=fbx_file_results,
+                )
+                fbx_summary = record_fbx_import_context(
+                    context.scene, package_key.source_package_id, package_key.sha256, fbx_file_results,
                 )
                 if not imported_objects:
                     raise UnityPackageError("FBX import produced no Blender objects")
@@ -1755,6 +1759,10 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
 
             scene = context.scene
             scene_metadata_started = perf_counter()
+            if fbx_summary is None:
+                fbx_summary = record_fbx_import_context(
+                    scene, package_key.source_package_id, package_key.sha256, fbx_file_results,
+                )
             supported_asset_count = len(fbx_paths) + len(prefab_paths) + len(material_library)
             supported_asset_count += sum(1 for image in bpy.data.images if image.get("unity_source_package_id") == package_key.source_package_id)
             if supported_asset_count == 0:
@@ -1788,11 +1796,6 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             scene["unitypackage_source_package_id"] = package_key.source_package_id
             scene["unitypackage_package_sha256"] = package_key.sha256
             scene["unitypackage_extracted_root"] = str(extraction_dir)
-            scene["unitypackage_fbx_count"] = len(fbx_paths)
-            fbx_summary = summarize_fbx_results(fbx_file_results)
-            scene["unitypackage_fbx_imported_count"] = fbx_summary["imported"]
-            scene["unitypackage_fbx_failed_count"] = fbx_summary["failed"]
-            scene["unitypackage_fbx_import_results"] = json.dumps(fbx_file_results, sort_keys=True)
             scene["unitypackage_prefab"] = str(prefab.path) if prefab else ""
             if not getattr(self, "group_child", False) and self._composition_plan is not None:
                 automatic_composition = (self._selected_prefab_choice or self.prefab_choice) == "AUTO"

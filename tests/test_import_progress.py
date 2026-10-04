@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+import json
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -27,6 +28,103 @@ class _Sink:
 
 
 class ImportProgressModelTests(unittest.TestCase):
+    def test_fbx_import_contexts_accumulate_across_group_and_later_success(self):
+        from unitypackage_blender_importer.blender import fbx_importer
+
+        record = getattr(fbx_importer, "record_fbx_import_context", None)
+        self.assertTrue(callable(record), "per-import FBX receipts must accumulate on the scene")
+        scene = {}
+        primary = [
+            {"asset_name": "Body.fbx", "asset_guid": "", "status": "IMPORTED", "object_count": 1},
+            {"asset_name": "Failing.fbx", "asset_guid": "", "status": "FAILED", "object_count": 0},
+        ]
+        record(scene, "primary-id", "a" * 64, primary)
+        record(scene, "provider-id", "b" * 64, [])
+        record(scene, "later-id", "c" * 64, [
+            {"asset_name": "Extra.fbx", "status": "IMPORTED", "object_count": 1},
+        ])
+
+        contexts = json.loads(scene["unitypackage_fbx_import_contexts"])["contexts"]
+        self.assertEqual(["primary-id", "provider-id", "later-id"],
+                         [item["source_package_id"] for item in contexts])
+        self.assertEqual([2, 0, 1], [item["total"] for item in contexts])
+        self.assertEqual(1, scene["unitypackage_fbx_failed_count"])
+        self.assertEqual(3, scene["unitypackage_fbx_count"])
+        self.assertEqual(2, scene["unitypackage_fbx_imported_count"])
+        self.assertEqual(primary, contexts[0]["files"])
+
+    def test_fbx_context_upgrade_preserves_existing_scalar_failure(self):
+        from unitypackage_blender_importer.blender import fbx_importer
+
+        record = getattr(fbx_importer, "record_fbx_import_context", None)
+        self.assertTrue(callable(record), "legacy scene failure evidence must survive migration")
+        scene = {
+            "unitypackage_source_package_id": "legacy-id",
+            "unitypackage_package_sha256": "d" * 64,
+            "unitypackage_fbx_count": 2,
+            "unitypackage_fbx_imported_count": 1,
+            "unitypackage_fbx_failed_count": 1,
+            "unitypackage_fbx_import_results": json.dumps([
+                {"asset_name": "Broken.fbx", "status": "FAILED", "object_count": 0},
+            ]),
+        }
+        record(scene, "provider-id", "b" * 64, [])
+        contexts = json.loads(scene["unitypackage_fbx_import_contexts"])["contexts"]
+        self.assertEqual(["legacy-id", "provider-id"],
+                         [item["source_package_id"] for item in contexts])
+        self.assertEqual(1, scene["unitypackage_fbx_failed_count"])
+
+    def test_fbx_context_upgrade_conservatively_keeps_count_only_legacy_state(self):
+        from unitypackage_blender_importer.blender import fbx_importer
+
+        scene = {"unitypackage_fbx_count": 2,
+                 "unitypackage_source_package_id": "old-package",
+                 "unitypackage_package_sha256": "f" * 64}
+        fbx_importer.record_fbx_import_context(scene, "new-package", "e" * 64, [])
+        summary, valid = fbx_importer.summarize_fbx_import_contexts(scene)
+        self.assertTrue(valid)
+        self.assertEqual(2, summary["failed"])
+        contexts = json.loads(scene["unitypackage_fbx_import_contexts"])["contexts"]
+        self.assertEqual("old-package", contexts[0]["source_package_id"])
+
+    def test_fbx_context_reader_treats_count_only_legacy_state_as_unverified_failure(self):
+        from unitypackage_blender_importer.blender import fbx_importer
+
+        summary, valid = fbx_importer.summarize_fbx_import_contexts({"unitypackage_fbx_count": 2})
+        self.assertTrue(valid)
+        self.assertEqual({"total": 2, "imported": 0, "failed": 2}, summary)
+
+    def test_fbx_context_rejects_file_status_aggregate_mismatch(self):
+        from unitypackage_blender_importer.blender import fbx_importer
+
+        scene = {}
+        fbx_importer.record_fbx_import_context(scene, "pkg", "a" * 64, [
+            {"asset_name": "broken.fbx", "status": "FAILED", "object_count": 0},
+        ])
+        value = json.loads(scene["unitypackage_fbx_import_contexts"])
+        value["contexts"][0]["failed"] = 0
+        value["contexts"][0]["imported"] = 1
+        scene["unitypackage_fbx_import_contexts"] = json.dumps(value)
+        _summary, valid = fbx_importer.summarize_fbx_import_contexts(scene)
+        self.assertFalse(valid)
+
+    def test_fbx_context_writer_rejects_imported_file_without_objects(self):
+        from unitypackage_blender_importer.blender import fbx_importer
+
+        with self.assertRaisesRegex(ValueError, "FBX_IMPORT_CONTEXTS_INVALID"):
+            fbx_importer.record_fbx_import_context({}, "pkg", "a" * 64, [
+                {"asset_name": "bad.fbx", "status": "IMPORTED", "object_count": 0},
+            ])
+
+    def test_fbx_context_corruption_is_not_cleared_by_next_import(self):
+        from unitypackage_blender_importer.blender import fbx_importer
+
+        scene = {"unitypackage_fbx_import_contexts": "{}"}
+        with self.assertRaisesRegex(ValueError, "FBX_IMPORT_CONTEXTS_INVALID"):
+            fbx_importer.record_fbx_import_context(scene, "pkg", "e" * 64, [])
+        summary, valid = fbx_importer.summarize_fbx_import_contexts(scene)
+        self.assertFalse(valid)
+
     def test_ipm_001_progress_state_initializes_idle(self):
         monitor = ImportProgressMonitor(clock=lambda: 100.0)
         self.assertEqual(ImportProgressStatus.IDLE, monitor.state.status)
@@ -188,9 +286,9 @@ class ImportProgressModelTests(unittest.TestCase):
             )
         self.assertEqual([imported_object], imported)
         self.assertEqual([
-            {"asset_name": "Good.fbx", "status": "IMPORTED", "object_count": 1},
-            {"asset_name": "Broken.fbx", "status": "FAILED", "object_count": 0},
-            {"asset_name": "Empty.fbx", "status": "NO_OBJECTS", "object_count": 0},
+            {"asset_name": "Good.fbx", "asset_guid": "", "status": "IMPORTED", "object_count": 1},
+            {"asset_name": "Broken.fbx", "asset_guid": "", "status": "FAILED", "object_count": 0},
+            {"asset_name": "Empty.fbx", "asset_guid": "", "status": "NO_OBJECTS", "object_count": 0},
         ], results)
         self.assertEqual({"total": 3, "imported": 1, "failed": 2},
                          fbx_importer.summarize_fbx_results(results))

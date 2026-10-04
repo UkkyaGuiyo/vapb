@@ -14,9 +14,11 @@ from unitypackage_blender_importer.tests.blender_cross_package_dependency_test i
 from unitypackage_blender_importer.operators import import_unitypackage as m
 from unitypackage_blender_importer.operators.renderer_binding import _material_plan
 from unitypackage_blender_importer.blender.renderer_binding import BindingError
+from unitypackage_blender_importer.blender import fbx_importer
+from unitypackage_blender_importer.blender.import_outcome import scene_import_outcome
 
 
-def prefab(fbx_guid, material_guid):
+def prefab(fbx_guid, material_guid, failed_fbx_guid):
     return f"""%YAML 1.1
 --- !u!1 &1001
 GameObject:
@@ -25,6 +27,13 @@ GameObject:
   - component: {{fileID: 101}}
   - component: {{fileID: 103}}
   - component: {{fileID: 102}}
+--- !u!1 &1002
+GameObject:
+  m_Name: FailingMesh
+  m_Component:
+  - component: {{fileID: 201}}
+  - component: {{fileID: 203}}
+  - component: {{fileID: 202}}
 --- !u!4 &101
 Transform:
   m_GameObject: {{fileID: 1001}}
@@ -44,6 +53,22 @@ MeshRenderer:
   m_Materials:
   - {{fileID: 2100000, guid: {material_guid},
       type: 2}}
+--- !u!4 &201
+Transform:
+  m_GameObject: {{fileID: 1002}}
+  m_Father: {{fileID: 0}}
+  m_LocalPosition: {{x: 1, y: 0, z: 0}}
+  m_LocalRotation: {{x: 0, y: 0, z: 0, w: 1}}
+  m_LocalScale: {{x: 1, y: 1, z: 1}}
+--- !u!33 &203
+MeshFilter:
+  m_GameObject: {{fileID: 1002}}
+  m_Mesh: {{fileID: 4300000, guid: {failed_fbx_guid}, type: 3}}
+--- !u!23 &202
+MeshRenderer:
+  m_GameObject: {{fileID: 1002}}
+  m_Materials:
+  - {{fileID: 2100000, guid: {material_guid}, type: 2}}
 """.encode()
 
 
@@ -53,9 +78,10 @@ def main():
     temp = tempfile.TemporaryDirectory(prefix='group_lifecycle_')
     root = Path(temp.name)
     geometry, provider = root/'Geometry.unitypackage', root/'Appearance.unitypackage'
-    fbx_guid, material_guid, image_guid = 'a'*32, 'b'*32, 'c'*32
-    package(geometry, [(fbx_guid, 'Assets/Body.fbx', make_fbx())] + [
-        (str(i)*32, f'Assets/Prefab{label}.prefab', prefab(fbx_guid, material_guid))
+    fbx_guid, material_guid, image_guid, failed_fbx_guid = 'a'*32, 'b'*32, 'c'*32, 'd'*32
+    package(geometry, [(fbx_guid, 'Assets/Body.fbx', make_fbx()),
+                       (failed_fbx_guid, 'Assets/Failing.fbx', make_fbx())] + [
+        (str(i)*32, f'Assets/Prefab{label}.prefab', prefab(fbx_guid, material_guid, failed_fbx_guid))
         for i, label in enumerate(('A','B','C'), 1)
     ])
     png = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=')
@@ -66,6 +92,12 @@ def main():
     original_async = m.UNITYPACKAGE_OT_import._start_async_prepare
     original_discover = m.discover_siblings
     original_resolve = m.resolve_after_import
+    original_import_fbx = fbx_importer.import_fbx
+
+    def fail_one_fbx(path, *args, **kwargs):
+        if Path(path).name in {'Failing.fbx', 'AllFail.fbx'}:
+            raise RuntimeError('synthetic primary FBX failure')
+        return original_import_fbx(path, *args, **kwargs)
 
     def mesh_pointers():
         return {o.as_pointer() for o in bpy.data.objects if o.type == 'MESH'}
@@ -114,6 +146,7 @@ def main():
     m.UNITYPACKAGE_OT_import._start_async_prepare = async_prepare
     m.discover_siblings = discover
     m.resolve_after_import = resolve
+    fbx_importer.import_fbx = fail_one_fbx
     m.UNITYPACKAGE_OT_import_prefab.invoke = select
     m.UNITYPACKAGE_OT_import_siblings.invoke = together
     addon.register()
@@ -122,18 +155,34 @@ def main():
         assert evidence['children'] == [['FINISHED']], evidence
         assert not evidence['async_children'] and not evidence['child_discovery'], evidence
         assert evidence['final_resolvers'] and all(evidence['final_resolvers']), evidence
+        contexts = json.loads(bpy.context.scene['unitypackage_fbx_import_contexts'])['contexts']
+        assert len(contexts) == 2, contexts
+        assert sum(item['total'] for item in contexts) == 2, contexts
+        assert sum(item['imported'] for item in contexts) == 1, contexts
+        assert sum(item['failed'] for item in contexts) == 1, contexts
+        assert any(item['total'] == 0 and item['failed'] == 0 for item in contexts), contexts
+        failure = next(item for item in contexts if item['failed'])
+        assert {item['asset_name']: (item['status'], item['object_count'])
+                for item in failure['files']} == {
+                    'Body.fbx': ('IMPORTED', 1), 'Failing.fbx': ('FAILED', 0),
+                }, failure
+        assert bpy.context.scene['unitypackage_fbx_failed_count'] == 1
+        outcome = scene_import_outcome(bpy.context.scene)
+        assert outcome['overall'] == 'PARTIAL', outcome
+        assert any(item['code'] == 'FBX_IMPORT_PARTIAL_FAILURE' for item in outcome['items']), outcome
         roots = [o for o in bpy.data.objects if o.get('_vapb_renderer_occurrences')
                  and o.get('unity_composition_member_id') == '2' * 32]
         assert len(roots) == 1
         selected_root = roots[0]
         records = json.loads(selected_root['_vapb_renderer_occurrences'])['records']
-        assert len(records) == 1 and records[0]['source_key']['renderer_file_id'] == 102
+        assert len(records) == 2, records
+        record = next(row for row in records if row['mesh']['mesh_guid'] == fbx_guid)
+        assert record['source_key']['renderer_file_id'] == 102
         natives = [o for o in bpy.data.objects if o.type == 'MESH'
                    and o.get('_vapb_root_context_id') == selected_root['_vapb_root_context_id']
                    and o.get('_vapb_fbx_source_asset_guid') == fbx_guid]
         assert len(natives) == 1
         obj = natives[0]
-        record = records[0]
         authored_package = record['materials']['0']['source_package_id']
         source_data = obj.data
         source_materials = tuple(source_data.materials)
@@ -192,18 +241,58 @@ def main():
         assert image.get('unity_guid') == image_guid
         assert selected_root.get('unity_asset_path') == 'Assets/PrefabB.prefab'
         assert not m._PREPARED_SESSIONS, m._PREPARED_SESSIONS
+        all_failed_dir = root/'all-failed'
+        all_failed_dir.mkdir()
+        all_failed_package = all_failed_dir/'AllFailed.unitypackage'
+        all_failed_fbx_guid = 'f' * 32
+        package(all_failed_package, [
+            (all_failed_fbx_guid, 'Assets/AllFail.fbx', make_fbx()),
+            ('9' * 32, 'Assets/OnlyFailure.prefab',
+             prefab(all_failed_fbx_guid, material_guid, all_failed_fbx_guid)),
+        ])
+        from unitypackage_blender_importer.unity.sibling_discovery import SiblingDiscoveryResult
+        m.discover_siblings = lambda path, **_kwargs: SiblingDiscoveryResult(
+            str(path), [], set(), set(), [], 'NONE', 'NONE')
+        try:
+            try:
+                cancelled = bpy.ops.import_scene.unitypackage(
+                    filepath=str(all_failed_package), prefab_choice='PREFAB_0', keep_extracted=False,
+                    source_storage_directory=str(all_failed_dir/'sources'),
+                )
+            except RuntimeError as exc:
+                assert 'produced no Blender objects' in str(exc), str(exc)
+                cancelled = {'CANCELLED'}
+        finally:
+            m.discover_siblings = discover
+        assert cancelled == {'CANCELLED'}, cancelled
+        contexts_after_cancel = json.loads(
+            bpy.context.scene['unitypackage_fbx_import_contexts'])['contexts']
+        assert any(item['total'] == 1 and item['imported'] == 0 and item['failed'] == 1
+                   and item['files'][0]['asset_name'] == 'AllFail.fbx'
+                   for item in contexts_after_cancel), contexts_after_cancel
+        assert bpy.context.scene['unitypackage_fbx_failed_count'] == 2
         blend_path = root/'confirmed.blend'
         bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
         bpy.ops.wm.open_mainfile(filepath=str(blend_path))
+        reopened_contexts = json.loads(bpy.context.scene['unitypackage_fbx_import_contexts'])['contexts']
+        assert sum(item['failed'] for item in reopened_contexts) == 2, reopened_contexts
+        reopened_outcome = scene_import_outcome(bpy.context.scene)
+        assert reopened_outcome['overall'] == 'PARTIAL', reopened_outcome
+        assert any(item['code'] == 'FBX_IMPORT_PARTIAL_FAILURE'
+                   for item in reopened_outcome['items']), reopened_outcome
         confirmed = [o for o in bpy.data.objects if o.type == 'MESH' and o.get('_vapb_renderer_binding')]
         assert len(confirmed) == 1
         assert confirmed[0].material_slots[0].material.get('unity_source_package_id') == provider_package
         assert str(confirmed[0].material_slots[0].material.get('unity_material_file_id')) == str(original_file_id)
         print('GROUP_IMPORT_E2E_OK', evidence, flush=True)
+        fbx_importer.import_fbx = original_import_fbx
         addon.unregister()
         temp.cleanup()
 
-    result = bpy.ops.import_scene.unitypackage(filepath=str(geometry), prefab_choice='PREFAB_1', keep_extracted=False)
+    result = bpy.ops.import_scene.unitypackage(
+        filepath=str(geometry), prefab_choice='PREFAB_1', keep_extracted=False,
+        source_storage_directory=str(root/'sources'),
+    )
     if bpy.app.background:
         assert result == {'FINISHED'}, result
         verify()
