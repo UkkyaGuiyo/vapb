@@ -14,7 +14,7 @@ The probe called Finalizer Apply once and repeat Apply once. Unity exited 0 and 
 
 ## BakeMesh control semantics
 
-“PASS” means **both** raw booleans `within_target_bounds` and `points_match_equation` are true. It does not mean an expected rejection succeeded. In particular, control 2 is inside the bounds but does not match the skin equation.
+“PASS” means **both** raw booleans `within_target_bounds` and `points_match_equation` are true. It does not mean an expected rejection succeeded. In particular, the second row (order 1) is inside the bounds but does not match the skin equation.
 
 | Order | BakeMesh / renderer transform | within_target_bounds | points_match_equation | Max root-local vertex error | Equation-bounds delta |
 |---:|---|---:|---:|---:|---:|
@@ -43,13 +43,17 @@ Source FBX SHA-256 `78f0c552b59ca8ce3ff8e283a0f1f8bbc4add38d8bf6757e2b1fd6fad4de
 
 The focused EditMode compatibility suite passed 7/7 with zero C# compile errors after the float-edge patch. It covers exact inclusive tolerance edges on six faces, adjacent outside single-precision values, and existing route/scope controls.
 
-## Planned fault-injection coverage (not run)
+## Public fault-injection tests (implemented, not run)
 
-The 7 compatibility tests exercise helper/scope/bounds behavior; they do not call public Finalizer Apply. Add two public Apply integration cases in the marked synthetic TargetProject, each with a separate copy of the manifest and a fresh, initially absent Variant path:
+Two public Apply integration tests were added at `tests/unity_final_state_v2/Editor/Stage3FinalizerRejectIntegrationTests.cs`. They use only a separately named manifest copy and Variant path inside the marked disposable TargetProject; the canonical manifest and existing V7–V10 outputs are protected.
 
-1. **Pre-witness rejection:** set `source_model_sha256` in the copied task to a different, syntactically valid 64-hex digest while leaving all asset bytes unchanged. Expect `Apply=false` and `SOURCE_HASH_OR_PATH_MISMATCH` from `PrepareWitness`; assert no applied log, no Variant prefab/meta/GUID, and unchanged source/edited FBX, prefab, canonical manifest, fault-manifest bytes, and their metadata across the call.
-2. **Post-witness rejection:** change one non-root `edited_bone_realization_id` in a separate manifest copy to a different unique valid UID. The manifest structure still passes, but edited-marker resolution should reject with `EDITED_BONES_INVALID` after the source witness import/restore. Assert the same no-Variant outcome and byte/hash/GUID invariants, including source FBX/meta restoration and the fault manifest's own bytes/meta.
+1. **Pre-witness rejection:** the copied task receives a different valid 64-hex `source_model_sha256`. The test expects `Apply=false` and `SOURCE_HASH_OR_PATH_MISMATCH` before any source FBX import.
+2. **Post-witness rejection:** a unique unknown receipt replaces a mapping proven to belong to a nonroot renderer bone. A test-only read-only AssetPostprocessor observer records the source-import hash sequence (noop, witness, original restore, original metadata restore) and the one tagged witness import. The test expects `Apply=false` and `EDITED_BONES_INVALID`.
 
-For both cases, assert the expected rejection log and absence on disk **and** through AssetDatabase. Snapshot existing V7–V10 Variant/result files and GUIDs before and after so the fault cases cannot silently replace prior evidence. These tests cover rejection before Variant save, not rollback after a save has begun. They remain planned, not executed, and do not expand the current limited-positive claim.
+Both cases check the exact rejection log, absence of an applied log, no Variant payload/meta/GUID/AssetDatabase entry, unchanged source/edited FBX and metadata, source prefab, canonical and copied manifests, witness payloads, and existing V7–V10 Variant states. They also compare the complete Target Assets inventory and V7–V10 result/evidence JSON hashes before and after. Cleanup is limited to the test-owned manifest copy and unique test Variant path. V7's result JSON exists in the Target root; a V7 Variant prefab is absent there, so it is reported as absent rather than treated as a saved asset.
+
+The new test source SHA-256 is `8f96f7631b6d0156e238f9b2c56f132bd92ac44125a0ac7eb648538979f88061`. It passed a reference-only Roslyn compile using the existing Unity 2022.3.22f1 Editor test assembly response file; this was not a Unity Editor compile or test execution. Both integration cases remain unrun. The source Finalizer and its staged TargetProject copy had matching SHA-256 `a2f5372d1a3b696b055ab2cc7e6eb17a9499c884b59fd60e86d56d8fadf9fb47` at this checkpoint.
+
+These cases cover rejection before Variant save and source witness restoration; they do not test rollback after a save has begun. They do not expand the current limited-positive fixture claim.
 
 Detailed logs, XML, result JSON, and disposable TargetProject outputs remain local; raw logs are not included here. This QA is limited to this synthetic fixture in Unity 2022.3.22f1 and makes no claim for other rigs or negative/nonuniform/sheared transforms.
