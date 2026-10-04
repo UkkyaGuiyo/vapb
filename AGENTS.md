@@ -52,3 +52,11 @@ INDEX → search → relevant lessons only.
 - 未保存・ローカルのみ・読み取りのみの場合は、「私はこのGitHubを使用しています」＋リポジトリ URL＋未保存の変更内容＋branch／基準 SHA を報告する。変更がなければ「未保存の変更なし」、読み取りのみならその旨を明記する。ローカル commit を GitHub 保存済みと扱わない。
 - 確認者がリンク先の GitHub を読んで検証できるようにする。未公開のローカル差分は GitHub では見えないため、保存済みの内容と分けて報告する。
 - この報告契約は、編集・push・公開・merge・実装再開の権限を追加しない。現在のユーザー依頼の範囲と既存の承認条件を守る。
+
+## Model and review budget
+
+- Main implementation work uses GPT-6 LUNA at low reasoning.
+- Design and code-review subagent calls use GPT-6.1 SOL at medium reasoning by default (two levels below xhigh).
+- For a difficult unresolved issue, raise SOL reasoning stepwise only when the current level shows a concrete need; briefly report the reason for escalation.
+- Do not rerun completed reviews. Apply this policy to the next SOL call; do not interrupt a long-running call solely to change its model setting.
+- In each progress or completion report, state the actual model/reasoning settings used and their scope.
