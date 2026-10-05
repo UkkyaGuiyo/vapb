@@ -41,6 +41,18 @@ After those changes, the focused Python suite passed 70 tests. Blender `5.2.1 LT
 
 The separate cross-package synthetic Blender runner first hit `WinError 5` at its default AppData source-storage path under ordinary sandbox execution. The same runner was then submitted via the formal approved execution path, without redirecting that path; it got past access and failed at its own grouped-fixture assertion (`AttributeError: 'NoneType' object has no attribute 'materials'`, `tests/blender_cross_package_dependency_test.py:169`) because its synthetic `Coat` object had no mesh data. This is a runner/fixture failure, not evidence of a Unity license or runtime problem, and does not establish an importer product defect. The runner remains non-passing and requires separate fixture diagnosis.
 
+### Cross-package runner diagnosis (2026-10-05)
+
+Current public source was `d47091c2680b53ac0cb11041f5ece11cd851aa90`; a correctly isolated comparison at `ec81dc2c176f2b782eb96562e7476f1719c46023` fails at the same grouped assertion. This supports the narrow conclusion that the failure was not introduced by changes between those two revisions; it does not establish when it first appeared or make a broader claim about product behavior.
+
+The fixture's `prefab(fbx_guid, material_guid)` does not use `fbx_guid`. Its synthetic GameObject has a Transform and MeshRenderer but no MeshFilter. Renderer occurrence projection therefore has no exact mesh reference (`INVALID_MESH_FILTER`). The Blender object selected by `unity_prefab_file_id == "1001"` is an Empty Prefab wrapper; its `.data` is `None`. The native FBX mesh is a distinct Mesh object and is not identified merely by sharing a display name.
+
+Adding the correct serialized MeshFilter reference makes the occurrence projection exact, but does not itself establish a native Renderer-to-Mesh binding. The existing confirmation operator validates source occurrence, native FBX package/GUID/SHA/receipt and then assigns object-level material slots. It does not capture, retarget, or resolve `PREFAB_RENDERER_MATERIAL` dependency records, and it requires provider Materials to already exist. Consequently it cannot satisfy the geometry-first pending-to-`RESOLVED_CROSS_PACKAGE` assertion before the provider packages arrive. The current dependency resolver also does not infer a confirmed child Mesh from the wrapper's Prefab ID/path.
+
+No test expectation was weakened and no child Mesh was selected by name or by being the only candidate. A safe fixture correction must separately verify the unique exact native realization and explicit confirmation, while a valid end-to-end late dependency test needs a supported exact-occurrence dependency route. Until that route is demonstrated or implemented, the original cross-package runner remains failing and does not provide a valid product regression signal. Material-slot verification after explicit confirmation must inspect `mesh.material_slots[index].material`, because the operator uses object-level slots.
+
+No repository code or tests were changed for this diagnosis. No Unity project or Editor was used. SOL medium reviewed the exact confirmation-operator contract; it found that confirmation alone cannot preserve the runner's late dependency assertions.
+
 ## Boundaries
 
 This checkpoint establishes a usable, approximate Blender preview for one exact built-in Material reference in the tested public synthetic occurrence route. It does not establish every built-in Material, exact Unity shader appearance, arbitrary Renderer mapping without identity evidence, export restoration, fresh Unity package reimport, either product E2E gate, or Unity runtime behavior.
