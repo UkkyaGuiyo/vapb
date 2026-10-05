@@ -2,6 +2,20 @@
 
 This is a continuation handoff, not a product-completion statement. **STOPPED / INCOMPLETE** applies only to the earlier private-corpus compatibility campaign; it does not suspend public synthetic development. For the normal `.unitypackage`-to-Blender workflow, Unity project import and manual FBX export are not user prerequisites. The add-on handles temporary extraction/FBX interchange internally; Unity Editor/projects serve as development verification oracles, while importing the finished output package into Unity is a separate return step.
 
+## ACTIVE USER STOP — 2026-10-05
+
+**Suspend all VAPB work, including public synthetic development, until the user explicitly resumes it.** Do not restart automatically during routine status checks or because a scheduled/check-in instruction has no new user direction. This active stop supersedes the older note above that limited STOPPED / INCOMPLETE to the private-corpus campaign.
+
+- Repository: <https://github.com/UkkyaGuiyo/vapb>
+- Branch and verified remote HEAD: `feature/r2-material-slot-reorder` / `08f523fe2d75d7b4c54bba6b0e46afd417244ccc`
+- The active workspace root for the stopped session was assigned under `task-3`; the canonical remote, branch, and tracked worktree were verified there. This was an execution-root change, not a project/repository switch. Do not access the prior root to reconcile files while stopped.
+- Public checkpoint: [`docs/R2_BUILTIN_MATERIAL_PREVIEW_CHECKPOINT_20261004.md`](docs/R2_BUILTIN_MATERIAL_PREVIEW_CHECKPOINT_20261004.md), including the CPD fixture diagnosis and SOL-reviewed ExternalObjects design gap.
+- No VAPB product code or test was changed for CPD. The CPD runner remains failing at its synthetic `Coat.data.materials` assertion. The same failure was observed at `ec81dc2c176f2b782eb96562e7476f1719c46023` and `d47091c2680b53ac0cb11041f5ece11cd851aa90`; this only shows the failure was not introduced between those revisions.
+- No Unity project or Editor was started for this CPD work. All shell/git operations completed. No VAPB subagent is still running.
+- On explicit resume, first verify the canonical remote, branch, HEAD, and worktree status. Read the checkpoint before code changes. Keep `PREFAB_RENDERER_MATERIAL` and `FBX_EXTERNAL_MATERIAL` tests separate; do not substitute confirmation, names, or a unique-child guess for exact native receipt evidence.
+
+Do not treat this handoff as authorization to resume. Wait for a clear user instruction.
+
 ## Current public synthetic checkpoint (2026-10-04)
 
 - Active development branch: `feature/r2-material-slot-reorder` (verify the current remote before continuing).

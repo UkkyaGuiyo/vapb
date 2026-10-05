@@ -1,5 +1,9 @@
 # R2 Built-in Material Preview Checkpoint
 
+## Active stop — 2026-10-05
+
+VAPB work is suspended until the user explicitly resumes it. Do not auto-resume on routine status checks. The verified branch tip when stopped is `feature/r2-material-slot-reorder` at `08f523fe2d75d7b4c54bba6b0e46afd417244ccc`. The CPD runner remains non-passing; no product code or test was changed for its diagnosis. See the repository `START_HERE.md` for the stop boundary and first steps after explicit resumption.
+
 Date: 2026-10-04  
 Project: VAPB  
 Repository: `https://github.com/UkkyaGuiyo/vapb`  
