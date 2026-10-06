@@ -3,6 +3,7 @@
 from pathlib import Path
 import sys
 import tempfile
+from types import SimpleNamespace
 
 import bpy
 
@@ -17,9 +18,20 @@ from unitypackage_blender_importer.blender.dependency_resolver import (
     load_dependency_registry,
     resolve_scene_dependencies,
 )
-from unitypackage_blender_importer.blender.fbx_receipt import make_receipt, persist_receipt
-from unitypackage_blender_importer.blender.material_builder import apply_materials_by_name
-from unitypackage_blender_importer.blender.model_witness_bridge import plan_witness_material_dependencies
+from unitypackage_blender_importer.blender.fbx_receipt import (
+    copy_with_receipt,
+    make_receipt,
+    persist_receipt,
+    persist_shape_receipts,
+)
+from unitypackage_blender_importer.blender.material_builder import (
+    apply_materials_by_name,
+    capture_composition_member_external_dependencies,
+)
+from unitypackage_blender_importer.blender.model_witness_bridge import (
+    plan_witness_material_dependencies,
+    realize_repeated_shape_occurrences,
+)
 from unitypackage_blender_importer.unity.asset_database import AssetDatabase
 from unitypackage_blender_importer.unity.occurrence_projection import occurrence_identity
 
@@ -32,8 +44,10 @@ MATERIAL_FILE_ID = "2100000"
 
 
 def reset():
-    bpy.ops.object.select_all(action="SELECT")
-    bpy.ops.object.delete(use_global=False)
+    # Hidden template Objects from repeated-shape realization are not selected
+    # by the normal viewport operator, so remove every scene datablock directly.
+    for obj in list(bpy.data.objects):
+        bpy.data.objects.remove(obj, do_unlink=True)
     for data in list(bpy.data.meshes):
         if data.users == 0:
             bpy.data.meshes.remove(data)
@@ -94,10 +108,11 @@ def record_for(obj, *, slot=0, row="row-v1:synthetic", guid=MATERIAL_GUID,
     }
 
 
-def witnessed_claim(obj, *, explicit_null=False):
+def witnessed_claim(obj, *, explicit_null=False, material_guid=MATERIAL_GUID,
+                    material_file_id=MATERIAL_FILE_ID):
     context = "synthetic-root-context"
     package_sha = "d" * 64
-    material_ref = None if explicit_null else {"guid": MATERIAL_GUID, "file_id": MATERIAL_FILE_ID}
+    material_ref = None if explicit_null else {"guid": material_guid, "file_id": material_file_id}
     projection = {
         "root_context_id": context,
         "root_package_id": "synthetic-prefab-package",
@@ -138,6 +153,160 @@ def capture_through_material_builder(scene, obj, slot_name="ExternalSlot"):
     return load_dependency_registry(scene)["dependencies"][-1]
 
 
+def assert_composition_member_external_binding(provider_first):
+    scene = reset()
+    source = consumer("CompositionSource")
+    baseline = bpy.data.materials.new("CompositionBaseline")
+    source.data.materials.append(baseline)
+    with tempfile.TemporaryDirectory(prefix="vapb_composition_external_") as folder:
+        fbx = Path(folder) / "Body.fbx"
+        source["unity_source_fbx"] = str(fbx)
+        (Path(str(fbx) + ".meta")).write_text(
+            "externalObjects:\n"
+            "  - first: {type: 23, assembly: UnityEngine.CoreModule, name: CompositionBaseline}\n"
+            "    second: {fileID: " + MATERIAL_FILE_ID + ", guid: " + MATERIAL_GUID + ", type: 2}\n",
+            encoding="utf-8",
+        )
+        database = AssetDatabase(Path(folder), source_package_id=PACKAGE)
+        if provider_first:
+            target = provider()
+        apply_materials_by_name([source], [], asset_db=database, scene=scene)
+        if not provider_first:
+            assert resolve_scene_dependencies(scene)["material_binding_applied"] == 0
+        member = copy_with_receipt(source)
+        scene.collection.objects.link(member)
+        capture_composition_member_external_dependencies([member], database, scene)
+        assert member.get("_vapb_fbx_realization_id") != source.get("_vapb_fbx_realization_id")
+        rows = [row for row in load_dependency_registry(scene)["dependencies"]
+                if row.get("dependency_type") == "FBX_EXTERNAL_MATERIAL"]
+        assert len(rows) == 2
+        assert {row["consumer_native_realization_id"] for row in rows} == {
+            source["_vapb_fbx_realization_id"], member["_vapb_fbx_realization_id"]}
+        if not provider_first:
+            target = provider()
+        resolve_scene_dependencies(scene)
+        assert source.material_slots[0].material == target
+        assert member.material_slots[0].material == target
+
+
+def assert_composition_claim_and_user_edit(provider_first, explicit_null):
+    scene = reset()
+    source = consumer("CompositionClaimSource")
+    baseline = bpy.data.materials.new("CompositionClaimBaseline")
+    source.data.materials.append(baseline)
+    prefab_guid, prefab_file_id = "d" * 32, "2100001"
+    with tempfile.TemporaryDirectory(prefix="vapb_composition_claim_") as folder:
+        fbx = Path(folder) / "Body.fbx"
+        source["unity_source_fbx"] = str(fbx)
+        (Path(str(fbx) + ".meta")).write_text(
+            "externalObjects:\n"
+            "  - first: {type: 23, assembly: UnityEngine.CoreModule, name: CompositionClaimBaseline}\n"
+            "    second: {fileID: " + MATERIAL_FILE_ID + ", guid: " + MATERIAL_GUID + ", type: 2}\n",
+            encoding="utf-8",
+        )
+        database = AssetDatabase(Path(folder), source_package_id=PACKAGE)
+        if provider_first:
+            external_target = provider()
+            prefab_target = None if explicit_null else provider(guid=prefab_guid, file_id=prefab_file_id)
+        apply_materials_by_name([source], [], asset_db=database, scene=scene)
+        unclaimed, claimed, edited = [copy_with_receipt(source) for _ in range(3)]
+        for member in (unclaimed, claimed, edited):
+            scene.collection.objects.link(member)
+        capture_composition_member_external_dependencies([unclaimed, claimed, edited], database, scene)
+        capture_dependency(scene, witnessed_claim(
+            claimed, explicit_null=explicit_null,
+            material_guid=prefab_guid, material_file_id=prefab_file_id,
+        ))
+        user_choice = bpy.data.materials.new("CompositionUserChoice")
+        edited.material_slots[0].link = "OBJECT"
+        edited.material_slots[0].material = user_choice
+        if not provider_first:
+            resolve_scene_dependencies(scene)
+            external_target = provider()
+            prefab_target = None if explicit_null else provider(guid=prefab_guid, file_id=prefab_file_id)
+        resolve_scene_dependencies(scene)
+        assert unclaimed.material_slots[0].material == external_target
+        assert claimed.material_slots[0].material == (None if explicit_null else prefab_target)
+        assert edited.material_slots[0].material == user_choice
+        dependencies = load_dependency_registry(scene)["dependencies"]
+        external = {row["consumer_native_realization_id"]: row for row in dependencies
+                    if row.get("dependency_type") == "FBX_EXTERNAL_MATERIAL"}
+        assert external[claimed["_vapb_fbx_realization_id"]]["status"] == EXTERNAL_SLOT_CLAIMED
+        assert external[edited["_vapb_fbx_realization_id"]]["status"] == USER_EDIT_PRESERVED
+
+
+def assert_repeated_shape_external_capture(provider_first):
+    scene = reset()
+    source = consumer("RepeatedShapeSource")
+    source.data.from_pydata([(0, 0, 0), (1, 0, 0), (0, 1, 0)], [], [(0, 1, 2)])
+    basis = source.shape_key_add(name="Basis")
+    smile = source.shape_key_add(name="Smile")
+    smile.data[0].co.x += 0.25
+    persist_shape_receipts(source.data, FBX_SHA, 2001, [(77, 88, smile)])
+    baseline = bpy.data.materials.new("RepeatedShapeBaseline")
+    source.data.materials.append(baseline)
+    source["_vapb_fbx_source_realization_id"] = source["_vapb_fbx_realization_id"]
+    source["_vapb_root_context_id"] = "synthetic-repeated-shape-root"
+    source["unity_source_fbx"] = ""
+
+    records = []
+    for renderer_file_id, weight in (("9001", 0), ("9002", 100)):
+        record = {
+            "root_context_id": "synthetic-repeated-shape-root",
+            "root_package_id": "synthetic-prefab-package",
+            "root_member_id": "synthetic-prefab-member",
+            "root_asset_guid": "e" * 32,
+            "instance_edge_path": [],
+            "source_package_id": PACKAGE,
+            "source_key": {"source_kind": "PREFAB_LOCAL", "source_asset_guid": FBX_GUID,
+                           "renderer_file_id": renderer_file_id},
+            "mesh": {"mesh_guid": FBX_GUID, "mesh_file_id": "-31"},
+            "skin": {"status": "EXACT"},
+            "blend_shape_weights": [weight],
+        }
+        record["occurrence_id"] = occurrence_identity(record)
+        records.append(record)
+
+    witness = SimpleNamespace(
+        source_shas={FBX_GUID: FBX_SHA},
+        mesh=lambda _guid, _mesh_id: SimpleNamespace(
+            shape_channels=((0, 77, 88),), model_uid=1001, geometry_uid=2001, asset_guid=FBX_GUID,
+        ),
+    )
+    template = copy_with_receipt(source)
+    template["_vapb_root_context_id"] = "synthetic-repeated-shape-root"
+    scene.collection.objects.link(template)
+    if provider_first:
+        target = provider()
+    with tempfile.TemporaryDirectory(prefix="vapb_repeated_shape_external_") as folder:
+        fbx = Path(folder) / "Body.fbx"
+        for obj in (source, template):
+            obj["unity_source_fbx"] = str(fbx)
+        (Path(str(fbx) + ".meta")).write_text(
+            "externalObjects:\n"
+            "  - first: {type: 23, assembly: UnityEngine.CoreModule, name: RepeatedShapeBaseline}\n"
+            "    second: {fileID: " + MATERIAL_FILE_ID + ", guid: " + MATERIAL_GUID + ", type: 2}\n",
+            encoding="utf-8",
+        )
+        database = AssetDatabase(Path(folder), source_package_id=PACKAGE)
+        final_members = realize_repeated_shape_occurrences(
+            records, [template], witness, scene.collection,
+        )
+        generated = final_members[1:]
+        assert len(generated) == 2
+        assert len({obj["_vapb_fbx_realization_id"] for obj in final_members}) == 3
+        capture_composition_member_external_dependencies(final_members, database, scene)
+        rows = [row for row in load_dependency_registry(scene)["dependencies"]
+                if row.get("dependency_type") == "FBX_EXTERNAL_MATERIAL"]
+        assert {row["consumer_native_realization_id"] for row in rows} == {
+            obj["_vapb_fbx_realization_id"] for obj in final_members}
+        if not provider_first:
+            assert resolve_scene_dependencies(scene)["material_binding_applied"] == 0
+            target = provider()
+        resolve_scene_dependencies(scene)
+        assert all(obj.material_slots[0].material == target for obj in final_members)
+
+
 def run():
     scene = reset()
 
@@ -162,6 +331,78 @@ def run():
     other.material_slots[0].material = baseline
     assert consumer_obj.material_slots[0].material == target
     assert other.material_slots[0].material == baseline
+
+    # Owned unbinding after provider ambiguity must preserve a cleared-state
+    # receipt so the original provider can be selected and rebound later.
+    reset()
+    scene = bpy.context.scene
+    baseline = bpy.data.materials.new("BaselineRebind")
+    rebind_consumer = consumer("RebindAfterAmbiguity")
+    rebind_consumer.data.materials.append(baseline)
+    original_provider = provider(package="synthetic-provider-a")
+    capture_dependency(scene, record_for(rebind_consumer))
+    assert resolve_scene_dependencies(scene)["material_binding_applied"] == 1
+    ambiguous_provider = provider(package="synthetic-provider-b")
+    assert resolve_scene_dependencies(scene)["ambiguous"] == 1
+    assert rebind_consumer.material_slots[0].material is None
+    bpy.data.materials.remove(ambiguous_provider)
+    result = resolve_scene_dependencies(scene)
+    assert result["material_binding_applied"] == 1, result
+    assert rebind_consumer.material_slots[0].material == original_provider
+
+    # A real user edit made after the resolver's clear remains protected when
+    # the provider ambiguity later disappears.
+    reset()
+    scene = bpy.context.scene
+    baseline = bpy.data.materials.new("BaselineRebindEdited")
+    edited_after_clear = consumer("EditAfterAmbiguity")
+    edited_after_clear.data.materials.append(baseline)
+    provider(package="synthetic-provider-a")
+    capture_dependency(scene, record_for(edited_after_clear))
+    assert resolve_scene_dependencies(scene)["material_binding_applied"] == 1
+    ambiguous_provider = provider(package="synthetic-provider-b")
+    assert resolve_scene_dependencies(scene)["ambiguous"] == 1
+    user_choice = bpy.data.materials.new("UserChoiceAfterClear")
+    edited_after_clear.material_slots[0].material = user_choice
+    bpy.data.materials.remove(ambiguous_provider)
+    result = resolve_scene_dependencies(scene)
+    assert result["user_edit_preserved"] == 1, result
+    assert edited_after_clear.material_slots[0].material == user_choice
+
+    # A source template and its copied composition member are distinct native
+    # realizations. External remaps must bind both when no exact Prefab claim
+    # claims the member slot, regardless of provider arrival order.
+    assert_composition_member_external_binding(provider_first=True)
+    assert_composition_member_external_binding(provider_first=False)
+    for provider_first in (True, False):
+        for explicit_null in (True, False):
+            assert_composition_claim_and_user_edit(provider_first, explicit_null)
+        assert_repeated_shape_external_capture(provider_first)
+
+    # Material import disabled: final copies remain visible but have no
+    # ExternalObjects receipt and cannot bind an already-present provider.
+    reset()
+    scene = bpy.context.scene
+    source = consumer("MaterialsDisabledSource")
+    baseline = bpy.data.materials.new("MaterialsDisabledBaseline")
+    source.data.materials.append(baseline)
+    provider()
+    with tempfile.TemporaryDirectory(prefix="vapb_composition_disabled_") as folder:
+        fbx = Path(folder) / "Body.fbx"
+        source["unity_source_fbx"] = str(fbx)
+        (Path(str(fbx) + ".meta")).write_text(
+            "externalObjects:\n"
+            "  - first: {type: 23, assembly: UnityEngine.CoreModule, name: MaterialsDisabledBaseline}\n"
+            "    second: {fileID: " + MATERIAL_FILE_ID + ", guid: " + MATERIAL_GUID + ", type: 2}\n",
+            encoding="utf-8",
+        )
+        database = AssetDatabase(Path(folder), source_package_id=PACKAGE)
+        member = copy_with_receipt(source)
+        scene.collection.objects.link(member)
+        capture_composition_member_external_dependencies([member], database, scene, enabled=False)
+        assert not load_dependency_registry(scene)["dependencies"]
+        assert resolve_scene_dependencies(scene)["material_binding_applied"] == 0
+        assert member.material_slots[0].material == baseline
 
     # Provider-first route uses the same receipt-backed resolver.
     reset()
@@ -323,3 +564,4 @@ def run():
 if __name__ == "__main__":
     run()
     print("PASS: synthetic FBX external Material receipt integration")
+

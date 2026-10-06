@@ -27,7 +27,7 @@ from ..blender.model_witness_bridge import matches_witnessed_source, restore_wit
 from ..blender.renderer_binding import semantic_owner_id
 from ..blender.hierarchy_builder import apply_transform, build_prefab_hierarchy
 from ..blender.identity_registry import load_scene_registry, register_datablocks, register_package, save_scene_registry
-from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, apply_prefab_modification_materials, build_material_library
+from ..blender.material_builder import apply_materials_by_name, apply_prefab_materials, apply_prefab_modification_materials, build_material_library, capture_composition_member_external_dependencies
 from ..blender.texture_loader import load_textures_from_database
 from ..blender.dependency_resolver import capture_dependency, capture_material_texture_dependencies, load_dependency_registry, resolve_after_import
 from ..blender.performance import PerformanceTimer, diagnostic_add, reset_diagnostic_stats
@@ -296,8 +296,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         description="Keep the extracted source so external texture paths remain available",
     )
     source_storage_directory: StringProperty(
-        name="原本の保管先", subtype="DIR_PATH", default="",
-        description="UnityPackage原本を保管します。空欄ならBlenderユーザーデータ内のVAPB保管先を使用",
+        name="���{�̕ۊǐ�", subtype="DIR_PATH", default="",
+        description="UnityPackage���{��ۊǂ��܂��B�󗓂Ȃ�Blender���[�U�[�f�[�^����VAPB�ۊǐ���g�p",
     )
     model_witness_path: StringProperty(
         name="Unity Model Witness (optional)", subtype="FILE_PATH", default="",
@@ -1273,7 +1273,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 if self.source_storage_directory else
                 Path(bpy.utils.user_resource('DATAFILES')) / 'vapb' / 'sources'
             )
-            self._set_phase(context, "UnityPackage原本を保管中")
+            self._set_phase(context, "UnityPackage���{��ۊǒ�")
             archived_source = archive_source(package_path, storage_root, package_key.sha256)
 
             planning_prefabs = []
@@ -1441,7 +1441,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             composition_started = perf_counter()
             if prefabs and self.apply_prefab_transforms:
                 package_label = package_key.package_name or "UnityPackage"
-                package_collection = bpy.data.collections.new(f"VAPB Import — {package_label}")
+                package_collection = bpy.data.collections.new(f"VAPB Import ? {package_label}")
                 context.scene.collection.children.link(package_collection)
                 members_collection = bpy.data.collections.new("Members")
                 shared_collection = bpy.data.collections.new("Shared")
@@ -1744,6 +1744,9 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                         projection.issues.extend(witness_issues)
                         pending_witness_dependencies.extend(witness_dependencies)
                         prefab_root['_vapb_renderer_occurrences'] = json.dumps(projection.to_dict(), sort_keys=True)
+                    capture_composition_member_external_dependencies(
+                        member_objects, asset_db, context.scene, enabled=self.use_materials,
+                    )
                 if pending_witness_dependencies:
                     ready, rejected = reserve_witness_slots(pending_witness_dependencies, bpy.data.objects)
                     for dependency in ready:
@@ -1923,8 +1926,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             outcome = scene_import_outcome(scene)
             if outcome["overall"] == "PARTIAL":
                 self.report({"WARNING"},
-                    "Scene内のImport記録に未解決項目があります。"
-                    "3DビューのNキー > VAPB Result > Import結果を確認してください")
+                    "Scene����Import�L�^�ɖ��������ڂ�����܂��B"
+                    "3D�r���[��N�L�[ > VAPB Result > Import���ʂ��m�F���Ă�������")
             collisions = load_scene_registry(scene).detect_collisions()
             if collisions:
                 self.report({"WARNING"}, f"Detected {len(collisions)} cross-package identity collision(s)")
@@ -2202,3 +2205,4 @@ UNITYPACKAGE_CLASSES = (
     UNITYPACKAGE_OT_locate_folder,
     UNITYPACKAGE_OT_import_siblings,
 )
+

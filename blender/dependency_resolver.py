@@ -693,7 +693,11 @@ def _unbind_dependency(record: dict[str, Any]) -> None:
         else:
             consumer.data.materials[slot] = None
         record["binding_source"] = ""
-        record.pop("applied_slot_state", None)
+        # The resolver-owned clear is itself the last managed state. Keep its
+        # receipt so a later provider recovery can rebind from OBJECT+None
+        # without mistaking that state for a user edit. initial_slot_state
+        # remains the original FBX capture for provenance.
+        record["applied_slot_state"] = _slot_signature(consumer, slot)
 
 
 def resolve_after_import(scene: Any) -> dict[str, int]:
@@ -753,3 +757,4 @@ def capture_material_texture_dependencies(scene: Any, materials: Iterable[Any]) 
                 "texture_label": label,
                 "texture_ref": dict(texture),
             })
+

@@ -167,12 +167,31 @@ def parse_external_object_rows(meta_text: str) -> list[ExternalObjectRow]:
         line = lines[i]
         if line.strip() and not line.lstrip().startswith("#"):
             indent = len(line) - len(line.lstrip())
-            if indent <= base_indent:
+            # Unity serializes the externalObjects sequence at the same
+            # indentation as its key (``externalObjects:`` / ``- first:``).
+            # Keep same-indent list items inside the sequence; a following
+            # importer key at that indentation closes the region.
+            if indent < base_indent or (indent == base_indent and not line.lstrip().startswith("-")):
                 end = i
                 break
     region = lines[start + 1:end]
+    sequence_indent = None
+    for line in region:
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        first_item = re.match(r"^(\s*)-\s+", line)
+        if first_item is None:
+            # The first content under externalObjects must establish its
+            # sequence. Do not discover row-like text inside an unsupported
+            # scalar or nested value later in the region.
+            return []
+        sequence_indent = len(first_item.group(1))
+        break
+    if sequence_indent is None:
+        return []
     starts = [i for i, line in enumerate(region)
-              if re.match(r"^\s*-\s*first\s*:", line)]
+              if (len(line) - len(line.lstrip()) == sequence_indent
+                  and re.match(r"^\s*-\s*first\s*:", line))]
     rows: list[ExternalObjectRow] = []
     for index, row_start in enumerate(starts):
         head_indent = len(region[row_start]) - len(region[row_start].lstrip())
@@ -371,3 +390,4 @@ def resolve_material_entry(
             return entry
         return None
     return find_material_entry_by_name(material_name, asset_db)
+

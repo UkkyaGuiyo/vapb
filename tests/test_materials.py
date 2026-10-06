@@ -407,6 +407,70 @@ userData:
 """
         self.assertIsNone(resolve_material_entry(meta, "Body", self.db()))
 
+    def test_unity_same_indent_external_objects_list_is_parsed_before_next_key(self):
+        meta = '''ModelImporter:
+  serializedVersion: 23
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Body
+    second: {fileID: 2100000, guid: 77777777777777777777777777777777, type: 2}
+  materials:
+    importMaterials: 1
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertEqual(1, len(rows))
+        self.assertEqual("Body", rows[0].canonical_name)
+        self.assertEqual("77777777777777777777777777777777", rows[0].canonical_guid)
+        self.assertEqual("valid", rows[0].row_status)
+
+    def test_unity_same_indent_explicit_mapping_does_not_enable_name_fallback(self):
+        self.write_material("Body.mat", "6" * 32, material_text("Body", "{fileID: 46}", ""))
+        meta = '''ModelImporter:
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Body
+    second: {fileID: 2100000, guid: 77777777777777777777777777777777, type: 2}
+  materials:
+    importMaterials: 1
+'''
+        self.assertIsNone(resolve_material_entry(meta, "Body", self.db()))
+
+    def test_external_objects_row_markers_inside_block_scalar_are_not_parsed(self):
+        guid = "7" * 32
+        meta = f'''ModelImporter:
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      name: |
+        - first: {{type: 23, name: Body}}
+          second: {{fileID: 2100000, guid: {guid}, type: 2}}
+    second: {{fileID: 0, guid: 00000000000000000000000000000000, type: 0}}
+  materials:
+    importMaterials: 1
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertEqual(1, len(rows))
+        self.assertFalse(any(row.canonical_name == "Body" and row.canonical_guid == guid for row in rows))
+
+    def test_unsupported_sequence_item_does_not_hide_later_explicit_mapping(self):
+        self.write_material("Body.mat", "6" * 32, material_text("Body", "{fileID: 46}", ""))
+        guid = "7" * 32
+        meta = f'''ModelImporter:
+  externalObjects:
+  - unsupported: {{}}
+  - first: {{type: 23, name: Body}}
+    second: {{fileID: 2100000, guid: {guid}, type: 2}}
+  materials:
+    importMaterials: 1
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertEqual(["Body"], [row.canonical_name for row in rows])
+        self.assertIsNone(resolve_material_entry(meta, "Body", self.db()))
+
     def test_explicit_non_material_guid_does_not_fallback_by_name(self):
         self.write_material("Body.mat", "6" * 32, material_text("Body", "{fileID: 46}", ""))
         texture_path = self.material_dir / "Body.png"
@@ -431,3 +495,4 @@ userData:
         self.write_material("Left.mat", "4" * 32, material_text("Shared", "{fileID: 46}", ""))
         self.write_material("Right.mat", "5" * 32, material_text("Shared", "{fileID: 46}", ""))
         self.assertIsNone(find_material_entry_by_name("Shared", self.db()))
+

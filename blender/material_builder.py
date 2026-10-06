@@ -452,6 +452,19 @@ def apply_materials_by_name(
                 })
 
 
+def capture_composition_member_external_dependencies(objects, asset_db, scene, *, enabled=True):
+    """Capture ExternalObjects rows for final visible composition realizations.
+
+    Call after witness restoration so repeated-shape copies are included. Each
+    object is captured from its own fresh receipt and current slot state; source
+    template binding history is never copied. Disabling Material import skips
+    this capture along with the other material work.
+    """
+    if not enabled:
+        return
+    apply_materials_by_name(objects, (), asset_db=asset_db, scene=scene)
+
+
 def _append_renderer_provenance(obj, member_id, source_prefab_guid, renderer_file_id,
                                  game_object_file_id, renderer_type, mesh_ref,
                                  slots, renderer_source_kind="", mapping_confidence="") -> None:
@@ -635,3 +648,4 @@ def _assign_object_material(obj, index: int, material) -> None:
     slot = obj.material_slots[index]
     slot.link = "OBJECT"
     slot.material = material
+
