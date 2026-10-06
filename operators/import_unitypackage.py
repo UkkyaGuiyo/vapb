@@ -1441,7 +1441,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             composition_started = perf_counter()
             if prefabs and self.apply_prefab_transforms:
                 package_label = package_key.package_name or "UnityPackage"
-                package_collection = bpy.data.collections.new(f"VAPB Import ? {package_label}")
+                package_collection = bpy.data.collections.new(f"VAPB Import — {package_label}")
                 context.scene.collection.children.link(package_collection)
                 members_collection = bpy.data.collections.new("Members")
                 shared_collection = bpy.data.collections.new("Shared")
