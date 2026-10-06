@@ -296,8 +296,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
         description="Keep the extracted source so external texture paths remain available",
     )
     source_storage_directory: StringProperty(
-        name="���{�̕ۊǐ�", subtype="DIR_PATH", default="",
-        description="UnityPackage���{��ۊǂ��܂��B�󗓂Ȃ�Blender���[�U�[�f�[�^����VAPB�ۊǐ���g�p",
+        name="原本の保管先", subtype="DIR_PATH", default="",
+        description="UnityPackage原本を保管します。空欄ならBlenderユーザーデータ内のVAPB保管先を使用",
     )
     model_witness_path: StringProperty(
         name="Unity Model Witness (optional)", subtype="FILE_PATH", default="",
@@ -1273,7 +1273,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 if self.source_storage_directory else
                 Path(bpy.utils.user_resource('DATAFILES')) / 'vapb' / 'sources'
             )
-            self._set_phase(context, "UnityPackage���{��ۊǒ�")
+            self._set_phase(context, "UnityPackage原本を保管中")
             archived_source = archive_source(package_path, storage_root, package_key.sha256)
 
             planning_prefabs = []
@@ -1926,8 +1926,8 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             outcome = scene_import_outcome(scene)
             if outcome["overall"] == "PARTIAL":
                 self.report({"WARNING"},
-                    "Scene����Import�L�^�ɖ��������ڂ�����܂��B"
-                    "3D�r���[��N�L�[ > VAPB Result > Import���ʂ��m�F���Ă�������")
+                    "Scene内のImport記録に未解決項目があります。"
+                    "3DビューのNキー > VAPB Result > Import結果を確認してください")
             collisions = load_scene_registry(scene).detect_collisions()
             if collisions:
                 self.report({"WARNING"}, f"Detected {len(collisions)} cross-package identity collision(s)")
