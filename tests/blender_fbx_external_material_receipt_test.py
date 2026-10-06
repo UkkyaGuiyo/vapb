@@ -550,15 +550,44 @@ def run():
     target = provider()
     capture_dependency(scene, record_for(saved))
     assert resolve_scene_dependencies(scene)["material_binding_applied"] == 1
+    before_save = load_dependency_registry(scene)["dependencies"][0]
+    preserved_fields = (
+        "consumer_native_realization_id", "source_row_identity",
+        "consumer_slot_index", "initial_slot_state", "applied_slot_state",
+        "target_guid", "target_file_id",
+    )
+    expected_persisted = {key: before_save[key] for key in preserved_fields}
     with tempfile.TemporaryDirectory(prefix="vapb_fbx_external_receipt_") as folder:
         path = str(Path(folder) / "receipt.blend")
         bpy.ops.wm.save_as_mainfile(filepath=path)
         bpy.ops.wm.open_mainfile(filepath=path)
         reopened = bpy.data.objects["SaveReopen"]
-        assert reopened.material_slots[0].link == "OBJECT"
-        assert reopened.material_slots[0].material is not None
         from unitypackage_blender_importer.blender.fbx_receipt import validate_persistent_receipt
         assert validate_persistent_receipt(reopened)
+
+        reopened_scene = bpy.context.scene
+        for _ in range(2):
+            result = resolve_scene_dependencies(reopened_scene)
+            assert result["material_binding_applied"] == 1
+            registry = load_dependency_registry(reopened_scene)
+            assert len(registry["dependencies"]) == 1
+            reopened_record = registry["dependencies"][0]
+            assert {key: reopened_record[key] for key in preserved_fields} == expected_persisted
+            assert reopened_record["status"] == "RESOLVED_CROSS_PACKAGE"
+            assert reopened_record["provider_status"] == "RESOLVED_CROSS_PACKAGE"
+            assert reopened_record["binding_status"] == "BOUND"
+
+            exact_providers = [material for material in bpy.data.materials
+                               if material.get("unity_material_guid", "").lower() == MATERIAL_GUID
+                               and material.get("unity_material_file_id") == MATERIAL_FILE_ID
+                               and material.get("unity_source_package_id") == "synthetic-material-package"]
+            assert len(exact_providers) == 1
+            assert reopened.material_slots[0].link == "OBJECT"
+            assert reopened.material_slots[0].material is exact_providers[0]
+            assert reopened_record["resolved_provider_guid"] == MATERIAL_GUID
+            assert reopened_record["resolved_provider_package_id"] == "synthetic-material-package"
+            assert reopened_record["resolved_provider_asset_path"] == "Assets/External.mat"
+            assert validate_persistent_receipt(reopened)
 
 
 if __name__ == "__main__":
