@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from typing import Any, Iterable
 
@@ -23,6 +24,10 @@ USER_EDIT_PRESERVED = "USER_EDIT_PRESERVED"
 UNVERIFIED_SLOT_STATE = "UNVERIFIED_SLOT_STATE"
 UNVERIFIED_TEXTURE_STATE = "UNVERIFIED_TEXTURE_STATE"
 UNSUPPORTED = "UNSUPPORTED"
+INVALID_FBX_CONSUMER = "INVALID_FBX_CONSUMER"
+INVALID_EXTERNAL_ROW = "INVALID_EXTERNAL_ROW"
+EXTERNAL_SLOT_CLAIMED = "EXTERNAL_SLOT_CLAIMED"
+MISSING_MATERIAL_FILE_ID = "MISSING_MATERIAL_FILE_ID"
 RESOLVED_BUILTIN_PREVIEW = "RESOLVED_BUILTIN_PREVIEW"
 BUILTIN_PREVIEW_GUID = "0000000000000000f000000000000000"
 BUILTIN_PREVIEW_FILE_ID = "10303"
@@ -55,6 +60,10 @@ def _record_key(record: dict[str, Any]) -> tuple[Any, ...]:
     if record.get("dependency_type") == "MATERIAL_TEXTURE":
         return key + (record.get("texture_label", ""),
                       (record.get("texture_ref") or {}).get("property_name", ""))
+    if record.get("dependency_type") == "FBX_EXTERNAL_MATERIAL":
+        return key + (record.get("consumer_fbx_object_receipt_id", ""),
+                      record.get("consumer_fbx_mesh_receipt_id", ""),
+                      record.get("source_row_identity", ""))
     return key
 
 
@@ -69,8 +78,8 @@ def capture_dependency(scene: Any, record: dict[str, Any]) -> dict[str, Any]:
         if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL", "CLEAR_MATERIAL_SLOT"}:
             consumer = _find_consumer(record)
             if consumer is not None and getattr(consumer, "data", None) and hasattr(consumer.data, "materials"):
-                slot = int(record.get("consumer_slot_index", 0))
-                if slot >= 0:
+                slot = record.get("consumer_slot_index")
+                if type(slot) is int and slot >= 0:
                     existing["initial_slot_state"] = _slot_signature(consumer, slot)
         existing.setdefault("status", UNRESOLVED)
         existing.setdefault("resolved_provider_package_id", "")
@@ -94,6 +103,46 @@ def _providers(target_guid: str, provider_type: str) -> list[Any]:
 
 
 def _find_consumer(record: dict[str, Any]) -> Any | None:
+    if record.get("dependency_type") == "FBX_EXTERNAL_MATERIAL":
+        from .fbx_receipt import validate_persistent_receipt
+        slot = record.get("consumer_slot_index")
+        if (type(slot) is not int or slot < 0
+                or record.get("consumer_receipt_version") != 1
+                or record.get("consumer_fbx_receipt_version") != "vapb_fbx_realization_receipt_v1"
+                or record.get("consumer_receipt_valid") is not True
+                or not record.get("consumer_native_realization_id")
+                or not record.get("consumer_package_id")):
+            return None
+        try:
+            parsed_realization = uuid.UUID(str(record.get("consumer_native_realization_id", "")))
+        except (ValueError, TypeError, AttributeError):
+            return None
+        if parsed_realization.version != 4 or parsed_realization.int == 0:
+            return None
+        rows = []
+        for candidate in bpy.data.objects:
+            try:
+                candidate_id = uuid.UUID(str(candidate.get("_vapb_fbx_realization_id", "")))
+            except (ValueError, TypeError, AttributeError):
+                continue
+            if candidate_id == parsed_realization:
+                rows.append(candidate)
+        if len(rows) != 1:
+            return None
+        obj = rows[0]
+        if (obj.get("unity_source_package_id") != record.get("consumer_package_id")
+                or str(obj.get("_vapb_fbx_source_asset_guid", "")).lower() != str(record.get("consumer_fbx_guid", "")).lower()
+                or str(obj.get("_vapb_fbx_source_asset_sha256", "")).lower() != str(record.get("consumer_fbx_sha256", "")).lower()
+                or str(obj.get("_vapb_fbx_model_uid", "")) != str(record.get("consumer_fbx_model_uid", ""))
+                or str(obj.get("_vapb_fbx_geometry_uid", "")) != str(record.get("consumer_fbx_geometry_uid", ""))
+                or obj.get("_vapb_fbx_object_receipt_id") != record.get("consumer_fbx_object_receipt_id")
+                or obj.get("_vapb_fbx_mesh_receipt_id") != record.get("consumer_fbx_mesh_receipt_id")
+                or not re.fullmatch(r"[0-9a-f]{32}", str(record.get("consumer_fbx_guid", "")))
+                or not re.fullmatch(r"[0-9a-f]{64}", str(record.get("consumer_fbx_sha256", "")))
+                or not validate_persistent_receipt(obj)
+                or slot >= len(getattr(obj, "material_slots", []))):
+            return None
+        return obj
     if record.get("identity_bridge") == "UNITY_MODEL_WITNESS":
         from .model_witness_bridge import find_witness_consumer
         return find_witness_consumer(record, bpy.data.objects)
@@ -170,9 +219,27 @@ def _bind_material(record: dict[str, Any], material: Any) -> bool:
     if record.get("requires_occurrence_binding"):
         record["status"] = MISSING_CONSUMER
         return False
+    is_fbx_external = record.get("dependency_type") == "FBX_EXTERNAL_MATERIAL"
+    if is_fbx_external:
+        if (record.get("source_row_status") != "valid" or record.get("source_row_ambiguous") is not False
+                or not record.get("source_row_identity") or not record.get("target_guid")
+                or type(record.get("target_file_id")) is not str
+                or not re.fullmatch(r"[0-9a-fA-F]{32}", str(record.get("target_guid", "")))
+                or not re.fullmatch(r"-?(?:0|[1-9][0-9]*)", str(record.get("target_file_id", "")))
+                or not record.get("target_file_id") or record.get("consumer_slot_index") is None):
+            record["status"] = INVALID_EXTERNAL_ROW
+            return False
+        file_id = int(record["target_file_id"])
+        if file_id < -(1 << 63) or file_id > (1 << 63) - 1:
+            record["status"] = INVALID_EXTERNAL_ROW
+            return False
+        if (str(material.get("unity_material_guid", "")).lower() != str(record.get("target_guid", "")).lower()
+                or str(material.get("unity_material_file_id", "")) != str(record.get("target_file_id", ""))):
+            record["status"] = MISSING_MATERIAL_FILE_ID
+            return False
     consumer = _find_consumer(record)
     if consumer is None or not getattr(consumer, "data", None) or not hasattr(consumer.data, "materials"):
-        record["status"] = MISSING_CONSUMER
+        record["status"] = INVALID_FBX_CONSUMER if is_fbx_external else MISSING_CONSUMER
         return False
     if record.get("identity_bridge") == "UNITY_MODEL_WITNESS":
         is_builtin_preview = (
@@ -192,9 +259,9 @@ def _bind_material(record: dict[str, Any], material: Any) -> bool:
         if not identity_matches:
             record["status"] = MISSING_CONSUMER
             return False
-    slot = int(record.get("consumer_slot_index", 0))
-    if slot < 0:
-        record["status"] = MISSING_CONSUMER
+    slot = record.get("consumer_slot_index")
+    if type(slot) is not int or slot < 0:
+        record["status"] = INVALID_FBX_CONSUMER if is_fbx_external else MISSING_CONSUMER
         return False
     current_state = _slot_signature(consumer, slot)
     if current_state is None:
@@ -388,9 +455,72 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
         provider_provenance = json.loads(str(scene.get("unitypackage_provider_provenance", "{}")))
     except (AttributeError, TypeError, ValueError, json.JSONDecodeError):
         provider_provenance = {}
-    counts = {"resolved_local": 0, "resolved_cross_package": 0, "builtin_preview_bound": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "unverified_texture_state": 0, "null_realized": 0, "late_bindings_applied": 0}
+    counts = {"resolved_local": 0, "resolved_cross_package": 0, "builtin_preview_bound": 0, "unresolved": 0, "ambiguous": 0, "missing_consumer": 0, "user_edit_preserved": 0, "unverified_slot_state": 0, "unverified_texture_state": 0, "null_realized": 0, "late_bindings_applied": 0, "external_slot_claimed": 0, "invalid_fbx_consumer": 0, "invalid_external_row": 0, "missing_material_file_id": 0, "provider_candidates_discovered": 0, "provider_discovered": 0, "material_binding_applied": 0}
     changed = False
+    # Preflight exact witnessed Prefab claims before any FBX record can bind.
+    # A pending provider and explicit null both reserve the witnessed slot.
+    claims = {}
+    for claim in registry.get("dependencies", []):
+        if claim.get("dependency_type") not in {"PREFAB_RENDERER_MATERIAL", "CLEAR_MATERIAL_SLOT"}:
+            continue
+        if claim.get("identity_bridge") != "UNITY_MODEL_WITNESS":
+            continue
+        consumer = _find_consumer(claim)
+        slot = claim.get("consumer_slot_index")
+        if consumer is None or type(slot) is not int or slot < 0:
+            continue
+        key = (str(consumer.get("_vapb_fbx_realization_id", "")), slot)
+        claims.setdefault(key, []).append(claim)
     for record in registry.get("dependencies", []):
+        if record.get("dependency_type") == "FBX_EXTERNAL_MATERIAL":
+            slot = record.get("consumer_slot_index")
+            if type(slot) is int:
+                claim_rows = claims.get((str(record.get("consumer_native_realization_id", "")), slot), [])
+                if claim_rows:
+                    record["status"] = EXTERNAL_SLOT_CLAIMED
+                    record["binding_status"] = EXTERNAL_SLOT_CLAIMED
+                    record["provider_status"] = "SUPPRESSED_BY_PREFAB_CLAIM"
+                    record["suppressed_by_claim_ids"] = [
+                        str(row.get("consumer_occurrence_id", row.get("consumer_file_id", "")))
+                        for row in claim_rows
+                    ]
+                    record["resolution_provenance"] = "EXACT_PREFAB_SLOT_CLAIM"
+                    counts["external_slot_claimed"] += 1
+                    changed = True
+                    continue
+            if record.get("consumer_slot_index") is None:
+                record["status"] = "METADATA_ONLY"
+                record["binding_status"] = "METADATA_ONLY"
+                record["provider_status"] = "NOT_QUERIED"
+                counts["unresolved"] += 1
+                changed = True
+                continue
+            target_file_id = record.get("target_file_id")
+            valid_target = (
+                record.get("source_row_status") == "valid"
+                and record.get("source_row_ambiguous") is False
+                and bool(record.get("source_row_identity"))
+                and bool(re.fullmatch(r"[0-9a-fA-F]{32}", str(record.get("target_guid", ""))))
+                and type(target_file_id) is str
+                and bool(re.fullmatch(r"-?(?:0|[1-9][0-9]*)", target_file_id))
+            )
+            if valid_target:
+                file_id_value = int(target_file_id)
+                valid_target = -(1 << 63) <= file_id_value <= (1 << 63) - 1
+            if not valid_target:
+                record["status"] = INVALID_EXTERNAL_ROW
+                record["binding_status"] = INVALID_EXTERNAL_ROW
+                record["provider_status"] = "NOT_QUERIED"
+                counts["invalid_external_row"] += 1
+                changed = True
+                continue
+            if _find_consumer(record) is None:
+                record["status"] = INVALID_FBX_CONSUMER
+                record["binding_status"] = INVALID_FBX_CONSUMER
+                record["provider_status"] = "NOT_QUERIED"
+                counts["invalid_fbx_consumer"] += 1
+                changed = True
+                continue
         if record.get("dependency_type") == "CLEAR_MATERIAL_SLOT":
             record["provider_status"] = "NOT_REQUIRED"
             applied = _clear_material_slot(record)
@@ -448,10 +578,30 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
             continue
         provider_type = "Material" if record.get("dependency_type") in {"PREFAB_RENDERER_MATERIAL", "FBX_EXTERNAL_MATERIAL"} else "Image"
         candidates = _providers(record.get("target_guid", ""), provider_type)
+        wrong_file_id = False
+        if record.get("dependency_type") == "FBX_EXTERNAL_MATERIAL":
+            guid_candidates = [item for item in candidates
+                               if str(item.get("unity_material_guid", "")).lower() == str(record.get("target_guid", "")).lower()]
+            candidates = [item for item in candidates
+                          if str(item.get("unity_material_guid", "")).lower() == str(record.get("target_guid", "")).lower()
+                          and str(item.get("unity_material_file_id", "")) == str(record.get("target_file_id", ""))]
+            wrong_file_id = bool(guid_candidates and not candidates)
+            if wrong_file_id:
+                record["provider_status"] = MISSING_MATERIAL_FILE_ID
+                record["status"] = MISSING_MATERIAL_FILE_ID
+            else:
+                if record.get("status") == MISSING_MATERIAL_FILE_ID:
+                    record["status"] = UNRESOLVED
+                if record.get("binding_status") == MISSING_MATERIAL_FILE_ID:
+                    record["binding_status"] = UNRESOLVED
         status, provider = select_package_provider(
             ((item.get("unity_source_package_id"), item) for item in candidates),
             record.get("consumer_package_id"))
-        record["provider_status"] = status
+        counts["provider_candidates_discovered"] += len(candidates)
+        if not (record.get("dependency_type") == "FBX_EXTERNAL_MATERIAL" and wrong_file_id):
+            record["provider_status"] = status
+        if provider is not None:
+            counts["provider_discovered"] += 1
         if provider is not None:
             if record.get("dependency_type") == "MATERIAL_TEXTURE":
                 applied = _bind_texture(record, provider)
@@ -469,26 +619,28 @@ def resolve_scene_dependencies(scene: Any) -> dict[str, int]:
                 )
                 counts["resolved_local" if status == RESOLVED_LOCAL else "resolved_cross_package"] += 1
                 counts["late_bindings_applied"] += 1
+                if record.get("dependency_type") == "FBX_EXTERNAL_MATERIAL":
+                    counts["material_binding_applied"] += 1
                 changed = True
                 continue
-            blocked_status = record.get("status") if record.get("status") in {USER_EDIT_PRESERVED, UNVERIFIED_SLOT_STATE, UNVERIFIED_TEXTURE_STATE} else MISSING_CONSUMER
+            blocked_status = record.get("status") if record.get("status") in {USER_EDIT_PRESERVED, UNVERIFIED_SLOT_STATE, UNVERIFIED_TEXTURE_STATE, INVALID_FBX_CONSUMER, INVALID_EXTERNAL_ROW, MISSING_MATERIAL_FILE_ID} else MISSING_CONSUMER
             record["status"] = blocked_status
             record["binding_status"] = blocked_status
             record["resolution_provenance"] = provider_provenance.get(
                 provider.get("unity_source_package_id", ""),
                 "AUTO_LOCAL" if status == RESOLVED_LOCAL else "AUTO_BOUNDED_DISCOVERY",
             )
-            blocked_key = {USER_EDIT_PRESERVED: "user_edit_preserved", UNVERIFIED_SLOT_STATE: "unverified_slot_state", UNVERIFIED_TEXTURE_STATE: "unverified_texture_state"}.get(blocked_status, "missing_consumer")
+            blocked_key = {USER_EDIT_PRESERVED: "user_edit_preserved", UNVERIFIED_SLOT_STATE: "unverified_slot_state", UNVERIFIED_TEXTURE_STATE: "unverified_texture_state", INVALID_FBX_CONSUMER: "invalid_fbx_consumer", INVALID_EXTERNAL_ROW: "invalid_external_row", MISSING_MATERIAL_FILE_ID: "missing_material_file_id"}.get(blocked_status, "missing_consumer")
             counts[blocked_key] += 1
             changed = True
             continue
         if status in {AMBIGUOUS_PROVIDER, UNRESOLVED} and record.get("binding_source") == "dependency_resolver":
             _unbind_dependency(record)
-        blocked_status = record.get("status") if record.get("status") in {USER_EDIT_PRESERVED, UNVERIFIED_TEXTURE_STATE} else status
+        blocked_status = record.get("status") if record.get("status") in {USER_EDIT_PRESERVED, UNVERIFIED_TEXTURE_STATE, INVALID_FBX_CONSUMER, INVALID_EXTERNAL_ROW, MISSING_MATERIAL_FILE_ID} else status
         record["status"] = blocked_status
         record["binding_status"] = blocked_status
         record["resolution_provenance"] = "AMBIGUOUS" if status == AMBIGUOUS_PROVIDER else "UNRESOLVED"
-        counts[{USER_EDIT_PRESERVED: "user_edit_preserved", UNVERIFIED_TEXTURE_STATE: "unverified_texture_state"}.get(
+        counts[{USER_EDIT_PRESERVED: "user_edit_preserved", UNVERIFIED_TEXTURE_STATE: "unverified_texture_state", INVALID_FBX_CONSUMER: "invalid_fbx_consumer", INVALID_EXTERNAL_ROW: "invalid_external_row", MISSING_MATERIAL_FILE_ID: "missing_material_file_id"}.get(
             blocked_status, "ambiguous" if status == AMBIGUOUS_PROVIDER else "unresolved")] += 1
         changed = True
     if changed:

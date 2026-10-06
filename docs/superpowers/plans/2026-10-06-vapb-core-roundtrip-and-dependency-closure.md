@@ -19,7 +19,7 @@
 | Integration and regression | Integration owner | Test orchestration, checkpoints/evidence docs | Both routes merged | Serial |
 | Review | GPT-6.1 SOL medium | Read-only review, findings | Concrete diff and evidence | After each contract/code boundary; no rerun of completed reviews |
 
-## Phase 0 - Re-entry and contract gate
+## Phase 0 - Re-entry and contract gate (completed 2026-10-06)
 
 1. **Verify the authorized workspace**
    - From clean `feature/r2-material-slot-reorder`, fetch without force and verify canonical origin `https://github.com/UkkyaGuiyo/vapb`, branch, HEAD, and tracked/untracked state.
@@ -30,9 +30,11 @@
    - Specify exact field names/types for `consumer_receipt_version`, package/FBX identity, Model/Geometry UID, Object/Mesh receipt, realization ID, strict slot index, source row identity/raw+validated target identity, mapping validity/ambiguity, dependency status, and stable key.
    - Decide same-slot Prefab-vs-FBX record precedence/ownership explicitly. No coding split until resolved.
    - Define legacy records as unresolved absent receipt; define duplicate receipt/provider, stale mesh, malformed raw fileID, ambiguous source row, and ownership-changed behavior as fail-closed.
-   - Review contract with SOL medium. Record accepted schema and migration behavior in public docs before parallel implementation.
+   - Review contract with SOL medium. Record accepted schema and migration behavior in public docs before parallel implementation. **Completed:** SOL medium reviewed read-only; the accepted schema/overlap/migration decisions are recorded in the design above. Independent Phase 1A and 1B work may proceed in parallel.
 
 ## Phase 1 - Independent route REDs
+
+**2026-10-06 checkpoint:** P1-A fixture edit has GPT-6.1 SOL medium static approval; the cross-package Blender runner remains runtime-blocked because import attempted to write Blender's existing user-profile `datafiles\vapb\sources` path and received `WinError 5 Access Denied`. No profile/config redirection or access-denial workaround was attempted. P1-B structured parser has GPT-6.1 SOL medium approval after two fix rounds; `tests.test_materials` passes 21/21 and changed Python `py_compile` passes. P2 exact FBX consumer binding has GPT-6.1 SOL medium review; three findings were fixed and re-reviewed. The synthetic P2 Blender integration script passed in Blender 5.2.1 LTS, including late/provider-first/local binding, exact GUID+fileID, wrong ID/provider recovery, duplicate consumer, shared Mesh isolation, Prefab material/null claim ordering, no-slot, user edit, repeat, and save/reopen. No Unity/VRC semantic claim is made. Changes are local and uncommitted pending checkpoint save.
 
 ### 1A. Repair the Prefab Renderer fixture only
 
@@ -91,4 +93,4 @@
 
 ## Current completion state
 
-At the plan's authoring base `960b8aa011bc533b92d4304ae3c9227bef8e1396`, phases 0-4 are **not executed by this documentation task**. The CPD runner is still documented failing; exact externalObjects runtime binding is not implemented or tested. Stage3 QA is bounded prior evidence and does not cover CPD. No tests, Blender, or Unity are invoked here. This plan does not impose a new approval condition; subsequent work follows existing user authorization and repository instructions.
+Phase 0 contract and Phase 1A/1B implementation are complete at the local checkpoint. Phase 2 implementation and the synthetic receipt integration are complete and reviewed; Phase 3 broader regression is still pending. Focused parser tests passed 21/21, changed Python sources/tests passed `py_compile`, `git diff --check` passed, and `tests/blender_fbx_external_material_receipt_test.py` passed in Blender 5.2.1 LTS. Blender process metadata showed no running Blender before launch and none after exit. Blender emitted nonfatal warnings that the existing preferences file was not readable and default TEMP generation failed; the background test nevertheless exited 0 and completed save/reopen using its run-local temporary directory. The separate Prefab cross-package runner stopped with `WinError 5 Access Denied` while writing Blender's existing user-profile `datafiles\vapb\sources` directory; the denial was not bypassed. No Unity tests were rerun because no Finalizer/C# source changed. All implementation/doc changes remain uncommitted at branch `feature/r2-material-slot-reorder`, base HEAD `e75b954c8ff9965e85a06efc2f0406fad068eca4`; no GitHub save is claimed here.

@@ -1,6 +1,6 @@
 # VAPB Core Round-trip and Dependency Closure Design
 
-- Status: design record only; it does not change existing project authorization.
+- Status: accepted design with local implementation checkpoint; it does not change existing project authorization.
 - Project: VAPB
 - Repository: https://github.com/UkkyaGuiyo/vapb
 - Branch at authoring: `feature/r2-material-slot-reorder`
@@ -35,12 +35,11 @@ VAPB's documented product purpose is direct import of `.unitypackage` files into
 
 ### Not yet verified
 
-- Which FBX mapping forms can be tied unambiguously from source row to imported native slot across Blender versions and fixture types.
-- Runtime behavior of exact-receipt `FBX_EXTERNAL_MATERIAL` capture, late bind, save/reopen, or user-edit preservation; implementation/tests do not exist yet.
+- General FBX mapping behavior beyond the bounded synthetic Unity-style `.meta` rows and Blender 5.2.1 fixture.
 
 - General VRC coverage, full product E2E, actual Unity reconstruction for this dependency route, and public distribution readiness.
 
-## Proposed record contract (not implemented)
+## Accepted record contract (implementation present; broader regression pending)
 
 Freeze this contract before code work or parallel ownership splits.
 
@@ -51,7 +50,17 @@ Freeze this contract before code work or parallel ownership splits.
 - Bind only when exactly one imported consumer matches the persistent receipts, the row is valid and unambiguous, target provider GUID/fileID is exact, and existing slot-ownership checks permit mutation. Otherwise leave unresolved/refused without changing the slot.
 - Legacy receipt-free records stay unresolved; do not silently migrate by inspecting current scene state. No-slot metadata cannot authorize slot zero.
 - Names may interpret a serialized source mapping row only. They cannot select a provider, native object, mesh, or unique child.
-- Before implementation, explicitly decide overlap precedence when Prefab and FBX external records refer to the same consumer slot. Keep semantic dependency roles distinct in keys/statuses and prevent double ownership.
+- Exact witnessed Prefab Material/null claims take precedence when they refer to the same native consumer slot. Keep semantic dependency roles distinct in keys/statuses and prevent double ownership.
+
+### Frozen schema and overlap decisions (2026-10-06)
+
+- Structured `externalObjects` rows are ordered and lossless: retain raw first/second scalars and text, plus canonical name/type/GUID/fileID only when strict token validation succeeds. Each row has `row_index`, deterministic versioned `row_identity`, parse/validation status, and ambiguity information. Identical duplicate rows remain separate; duplicate source-name candidates are ambiguous. The legacy name-to-GUID dict API remains for existing consumers and is not used as proof by the new binding path.
+- A bindable FBX consumer record carries `consumer_receipt_version`, `consumer_package_id`, `consumer_fbx_guid`, `consumer_fbx_sha256`, `consumer_fbx_model_uid`, `consumer_fbx_geometry_uid`, `consumer_fbx_object_receipt_id`, `consumer_fbx_mesh_receipt_id`, `consumer_native_realization_id`, strict non-negative `consumer_slot_index`, and `source_row_identity`; raw and validated source target GUID/fileID and row status remain separate. These names align with the existing witness bridge receipt fields. A metadata-only record uses `consumer_slot_index: null` and can never bind slot zero.
+- Legacy receipt-free external records remain unresolved. A new route binds only a unique object with matching validated persistent receipts, one valid and unambiguous source row, exact provider GUID and signed-int64 fileID, and current slot ownership matching the recorded initial/applied state. Duplicate consumers/providers, malformed IDs, stale receipts, out-of-range slots, and ownership changes fail closed without slot mutation. No new statuses may collapse into `MISSING_CONSUMER`; aggregate counts and persistence must preserve the specific outcome.
+- `PREFAB_RENDERER_MATERIAL`, `CLEAR_MATERIAL_SLOT`, and `FBX_EXTERNAL_MATERIAL` remain distinct semantic identities. Before resolving records, derive Prefab claims from exact witness-to-native consumer receipt plus slot. A valid exact Prefab claim owns that slot even if its provider is pending; explicit null is also an authoritative claim. The FBX external record is retained as provenance with a stable suppressed/claimed outcome and never binds or clears that slot. A malformed, ambiguous, or unmatched Prefab record does not authorize fallback when the exact claim cannot be proven; it also does not grant a broad claim by Renderer, FBX GUID, or name. This decision is independent of record iteration order.
+- The Prefab fixture must use a valid serialized MeshFilter reference and the real projection/capture path. The separate FBX externalObjects fixture must not use a Prefab material slot claim to satisfy or mask its assertions. Test evidence from synthetic witness indexes is bounded to that fixture and is not represented as an observed Unity sidecar.
+
+Review gate: GPT-6.1 SOL medium reviewed this contract and P1-A/P1-B/P2 diffs read-only on 2026-10-06. P1-A fixture, P1-B parser, and P2 receipt binding are present in the local checkpoint. P2 findings for UUID initialization, witness slot-key type, and provider-status recovery were fixed and re-reviewed. Verification: `tests.test_materials` 21/21, changed Python `py_compile`, `git diff --check`, and `tests/blender_fbx_external_material_receipt_test.py` under Blender 5.2.1 LTS all pass. The broader Prefab cross-package Blender runner was attempted but stopped at a write Access Denied for Blender's existing user-profile datafiles path; no redirection or workaround was used. This is synthetic evidence and does not claim a Unity sidecar observation or general VRC coverage. Broader Phase 3 regressions remain pending.
 
 ## Alternatives considered
 

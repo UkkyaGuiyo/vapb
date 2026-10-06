@@ -338,26 +338,59 @@ def apply_materials_by_name(
                 meta_text = Path(str(source_fbx) + ".meta").read_text(encoding="utf-8", errors="replace")
             except OSError:
                 meta_text = ""
-        external_objects = {}
         if asset_db and meta_text:
-            from ..unity.material_mapping import parse_external_objects
-            external_objects = parse_external_objects(meta_text)
+            from ..unity.material_mapping import parse_external_object_rows
+            external_rows = parse_external_object_rows(meta_text)
+        else:
+            external_rows = []
+        claimed_slots = set()
         for index, slot in enumerate(obj.data.materials):
             if slot is None:
                 continue
-            externally_mapped, target_guid = external_object_guid_for_name(
-                external_objects, slot.name
-            )
-            if scene and external_objects:
-                if target_guid and asset_db.find_guid(target_guid) is None:
+            exact = [row for row in external_rows if row.canonical_name == slot.name]
+            if not exact:
+                suffix = strip_material_suffix(slot.name)
+                exact = [row for row in external_rows if row.canonical_name and
+                         strip_material_suffix(row.canonical_name) == suffix]
+            externally_mapped = bool(exact)
+            if scene and exact:
+                from .fbx_receipt import validate_persistent_receipt
+                receipt_valid = validate_persistent_receipt(obj)
+                realization = str(obj.get("_vapb_fbx_realization_id", ""))
+                valid_realization = bool(realization) and sum(
+                    str(other.get("_vapb_fbx_realization_id", "")) == realization
+                    for other in bpy.data.objects) == 1
+                for row in exact:
+                    claimed_slots.add(row.row_index)
                     capture_dependency(scene, {
-                        "dependency_type": "FBX_EXTERNAL_MATERIAL",
-                        "consumer_package_id": asset_db.source_package_id,
-                        "consumer_asset_path": obj.get("unity_asset_path", obj.get("unity_source_fbx", "")),
-                        "consumer_object_path": obj.get("unity_asset_path", ""),
-                        "consumer_slot_index": index,
-                        "target_guid": target_guid,
-                        "target_file_id": "",
+                    "dependency_type": "FBX_EXTERNAL_MATERIAL",
+                    "consumer_receipt_version": 1,
+                    "consumer_fbx_receipt_version": str(obj.get("_vapb_fbx_receipt_version", "")),
+                    "consumer_package_id": asset_db.source_package_id,
+                    "consumer_asset_path": str(obj.get("unity_asset_path", obj.get("unity_source_fbx", ""))),
+                    "consumer_fbx_guid": str(obj.get("_vapb_fbx_source_asset_guid", "")).lower(),
+                    "consumer_fbx_sha256": str(obj.get("_vapb_fbx_source_asset_sha256", "")).lower(),
+                    "consumer_fbx_model_uid": str(obj.get("_vapb_fbx_model_uid", "")),
+                    "consumer_fbx_geometry_uid": str(obj.get("_vapb_fbx_geometry_uid", "")),
+                    "consumer_fbx_object_receipt_id": str(obj.get("_vapb_fbx_object_receipt_id", "")),
+                    "consumer_fbx_mesh_receipt_id": str(obj.get("_vapb_fbx_mesh_receipt_id", "")),
+                    "consumer_native_realization_id": realization,
+                    "consumer_receipt_valid": bool(receipt_valid and valid_realization),
+                    "consumer_slot_index": index if receipt_valid and valid_realization else None,
+                    "source_row_identity": row.row_identity,
+                    "source_row_index": row.row_index,
+                    "source_row_status": row.row_status,
+                    "source_row_validation_status": row.validation_status,
+                    "source_row_raw": row.raw_row,
+                    "source_row_ambiguous": bool(row.ambiguous or len(exact) > 1),
+                    "source_slot_name": str(slot.name),
+                    "source_row_name_raw": row.raw_first_name,
+                    "target_guid_raw": row.raw_second_guid,
+                    "target_file_id_raw": row.raw_second_file_id,
+                    "target_type_raw": row.raw_second_type,
+                    "target_guid": row.canonical_guid or "",
+                    "target_file_id": str(row.canonical_file_id) if row.canonical_file_id is not None else "",
+                    "target_type": row.canonical_second_type,
                     })
             replacement = None
             if asset_db and meta_text:
@@ -366,25 +399,57 @@ def apply_materials_by_name(
                     replacement = material_library.get(str(entry.path)) or by_guid.get(entry.guid)
             if replacement is None and not externally_mapped:
                 replacement = by_name.get(slot.name.casefold()) or by_name.get(strip_material_suffix(slot.name).casefold())
+            if externally_mapped:
+                # ExternalObjects is resolved only through the receipt-backed
+                # path, which checks exact Material GUID and fileID.
+                continue
             if replacement is not None:
-                obj.data.materials[index] = replacement
+                _assign_object_material(obj, index, replacement)
         # A model can carry externalObjects metadata before Blender has
         # created material slots (for example, a geometry-only FBX). Keep the
         # dependency as unresolved metadata instead of dropping it. It is
         # intentionally limited to the no-slot case so real slot indices are
         # never guessed.
-        if scene and external_objects and len(obj.data.materials) == 0:
-            for target_guid in external_objects.values():
-                if target_guid and asset_db.find_guid(target_guid) is None:
-                    capture_dependency(scene, {
-                        "dependency_type": "FBX_EXTERNAL_MATERIAL",
-                        "consumer_package_id": asset_db.source_package_id,
-                        "consumer_asset_path": obj.get("unity_asset_path", obj.get("unity_source_fbx", "")),
-                        "consumer_object_path": obj.get("unity_asset_path", ""),
-                        "consumer_slot_index": 0,
-                        "target_guid": target_guid,
-                        "target_file_id": "",
-                    })
+        if scene and external_rows and len(obj.data.materials) == 0:
+            from .fbx_receipt import validate_persistent_receipt
+            receipt_valid = validate_persistent_receipt(obj)
+            realization = str(obj.get("_vapb_fbx_realization_id", ""))
+            valid_realization = bool(realization) and sum(
+                str(other.get("_vapb_fbx_realization_id", "")) == realization
+                for other in bpy.data.objects) == 1
+            for row in external_rows:
+                if row.row_index in claimed_slots:
+                    continue
+                capture_dependency(scene, {
+                    "dependency_type": "FBX_EXTERNAL_MATERIAL",
+                    "consumer_receipt_version": 1,
+                    "consumer_fbx_receipt_version": str(obj.get("_vapb_fbx_receipt_version", "")),
+                    "consumer_package_id": asset_db.source_package_id,
+                    "consumer_asset_path": str(obj.get("unity_asset_path", obj.get("unity_source_fbx", ""))),
+                    "consumer_fbx_guid": str(obj.get("_vapb_fbx_source_asset_guid", "")).lower(),
+                    "consumer_fbx_sha256": str(obj.get("_vapb_fbx_source_asset_sha256", "")).lower(),
+                    "consumer_fbx_model_uid": str(obj.get("_vapb_fbx_model_uid", "")),
+                    "consumer_fbx_geometry_uid": str(obj.get("_vapb_fbx_geometry_uid", "")),
+                    "consumer_fbx_object_receipt_id": str(obj.get("_vapb_fbx_object_receipt_id", "")),
+                    "consumer_fbx_mesh_receipt_id": str(obj.get("_vapb_fbx_mesh_receipt_id", "")),
+                    "consumer_native_realization_id": realization,
+                    "consumer_receipt_valid": bool(receipt_valid and valid_realization),
+                    "consumer_slot_index": None,
+                    "source_row_identity": row.row_identity,
+                    "source_row_index": row.row_index,
+                    "source_row_status": row.row_status,
+                    "source_row_validation_status": row.validation_status,
+                    "source_row_raw": row.raw_row,
+                    "source_row_ambiguous": bool(row.ambiguous),
+                    "source_slot_name": row.canonical_name or "",
+                    "source_row_name_raw": row.raw_first_name,
+                    "target_guid_raw": row.raw_second_guid,
+                    "target_file_id_raw": row.raw_second_file_id,
+                    "target_type_raw": row.raw_second_type,
+                    "target_guid": row.canonical_guid or "",
+                    "target_file_id": str(row.canonical_file_id) if row.canonical_file_id is not None else "",
+                    "target_type": row.canonical_second_type,
+                })
 
 
 def _append_renderer_provenance(obj, member_id, source_prefab_guid, renderer_file_id,

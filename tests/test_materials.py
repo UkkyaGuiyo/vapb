@@ -9,6 +9,7 @@ from unitypackage_blender_importer.unity.material_mapping import (
     external_object_guid_for_name,
     find_material_entry_by_name,
     parse_external_objects,
+    parse_external_object_rows,
     resolve_material_entry,
 )
 from unitypackage_blender_importer.unity.material_parser import parse_material
@@ -224,6 +225,162 @@ class MaterialParserTests(unittest.TestCase):
         db = self.db()
         self.assertEqual(parse_external_objects(meta), {"BodyMaterial": expected_guid})
         self.assertEqual(resolve_material_entry(meta, "BodyMaterial", db).guid, expected_guid)
+
+    def test_external_object_rows_preserve_order_and_parse_block_and_inline_forms(self):
+        meta = '''fileFormatVersion: 2
+guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: "Body, Main"
+    second: {fileID: 2100000, guid: 33333333333333333333333333333333, type: 2}
+  - first: {type: 23, assembly: UnityEngine.CoreModule, name: Face}
+    second:
+      fileID: -9223372036854775808
+      guid: 44444444444444444444444444444444
+      type: 2
+userData:
+  first: {name: Outside, second: {fileID: 12, guid: 55555555555555555555555555555555}}
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertEqual([0, 1], [row.row_index for row in rows])
+        self.assertEqual(["Body, Main", "Face"], [row.canonical_name for row in rows])
+        self.assertEqual("3" * 32, rows[0].canonical_guid)
+        self.assertEqual(-9223372036854775808, rows[1].canonical_file_id)
+        self.assertTrue(all(row.row_status == "valid" for row in rows))
+        self.assertEqual({}, parse_external_objects("guid: " + "6" * 32 + "\n"))
+
+    def test_external_object_rows_keep_duplicates_and_mark_name_ambiguity(self):
+        row = '''  - first:
+      type: 23
+      name: Shared
+    second: {fileID: 2100000, guid: 77777777777777777777777777777777, type: 2}'''
+        meta = "externalObjects:\n" + row + "\n" + row + "\n"
+        first = parse_external_object_rows(meta)
+        second = parse_external_object_rows(meta)
+        self.assertEqual(2, len(first))
+        self.assertEqual([0, 1], [r.row_index for r in first])
+        self.assertNotEqual(first[0].row_identity, first[1].row_identity)
+        self.assertEqual([r.row_identity for r in first], [r.row_identity for r in second])
+        self.assertTrue(all(r.ambiguous for r in first))
+
+    def test_external_object_rows_retain_shared_targets_and_reject_duplicate_keys(self):
+        target = "7" * 32
+        meta = f'''externalObjects:
+  - first: {{type: 23, name: Left}}
+    second: {{fileID: 2100000, guid: {target}, type: 2}}
+  - first: {{type: 23, name: Right}}
+    second: {{fileID: 2100000, guid: {target}, type: 2}}
+  - first: {{type: 23, type: 23, name: RepeatedKey}}
+    second: {{fileID: 2100000, guid: 88888888888888888888888888888888, type: 2}}
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertEqual(3, len(rows))
+        self.assertEqual([target, target], [r.canonical_guid for r in rows[:2]])
+        self.assertEqual("valid", rows[0].row_status)
+        self.assertEqual("valid", rows[1].row_status)
+        self.assertEqual("malformed_mapping", rows[2].validation_status)
+        self.assertIsNone(rows[2].canonical_guid)
+
+    def test_external_object_rows_do_not_parse_identity_from_quoted_or_nested_text(self):
+        guid = "a" * 32
+        meta = f'''externalObjects:
+  - first: {{type: 23, name: QuotedFake}}
+    second: {{note: "x, fileID: 2100000, guid: {guid}, type: 2, x"}}
+  - first:
+      type: 23
+      name: NestedFake
+      details:
+        type: 23
+        name: Forged
+    second:
+      note:
+        fileID: 2100000
+        guid: {guid}
+        type: 2
+  - first: {{type: 23, name: DuplicateSecond}}
+    second: {{fileID: 2100000}}
+    second: {{guid: {guid}, type: 2}}
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertEqual(3, len(rows))
+        self.assertTrue(all(row.row_status == "malformed" for row in rows))
+        self.assertTrue(all(row.canonical_guid is None for row in rows))
+
+    def test_external_object_rows_reject_duplicate_first_mapping_after_header(self):
+        meta = '''externalObjects:
+  - first: {type: 28, name: Original}
+    first: {type: 23, name: Body}
+    second: {fileID: 2100000, guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, type: 2}
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertEqual(1, len(rows))
+        self.assertEqual("malformed", rows[0].row_status)
+        self.assertEqual("malformed_mapping", rows[0].validation_status)
+        self.assertIsNone(rows[0].canonical_guid)
+
+    def test_malformed_explicit_null_identity_is_not_accepted(self):
+        meta = '''externalObjects:
+  - first: {type: 23, name: JunkFileId}
+    second: {fileID: 0junk, guid: 00000000000000000000000000000000, type: 0}
+  - first: {type: 23, name: QuotedType}
+    second: {fileID: 0, guid: 00000000000000000000000000000000, type: "0"}
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertTrue(all(row.row_status == "malformed" for row in rows))
+        self.assertTrue(all(row.canonical_file_id is None for row in rows))
+
+    def test_malformed_explicit_external_mapping_blocks_name_fallback(self):
+        expected = "6" * 32
+        self.write_material("Body.mat", expected, material_text("Body", "{fileID: 46}", ""))
+        malformed = '''externalObjects:
+  - first: {type: 23, name: Body}
+    second: {fileID: 2100000.5, guid: 77777777777777777777777777777777, type: 2}
+'''
+        self.assertEqual({}, parse_external_objects(malformed))
+        self.assertIsNone(resolve_material_entry(malformed, "Body", self.db()))
+
+    def test_external_object_rows_separate_null_wrong_type_and_malformed_ids(self):
+        meta = '''externalObjects:
+  - first: {type: 23, name: NullSlot}
+    second: {fileID: 0, guid: 00000000000000000000000000000000, type: 0}
+  - first: {type: 28, name: WrongKind}
+    second: {fileID: 10, guid: 88888888888888888888888888888888, type: 2}
+  - first: {type: 23, name: Fractional}
+    second: {fileID: 10.5, guid: 99999999999999999999999999999999, type: 2}
+  - first: {type: 23, name: Boolean}
+    second: {fileID: true, guid: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, type: 2}
+  - first: {type: 23, name: Quoted}
+    second: {fileID: "10", guid: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, type: 2}
+  - first: {type: 23, name: Junk}
+    second: {fileID: 10tail, guid: cccccccccccccccccccccccccccccccc, type: 2}
+  - first: {type: 23, name: BadGuid}
+    second: {fileID: 10, guid: deadbeef, type: 2}
+'''
+        rows = parse_external_object_rows(meta)
+        self.assertEqual("explicit_null", rows[0].row_status)
+        self.assertEqual(0, rows[0].canonical_file_id)
+        self.assertEqual("wrong_first_type", rows[1].validation_status)
+        for row in rows[1:]:
+            if row.canonical_name != "NullSlot":
+                self.assertNotEqual("valid", row.row_status, row.canonical_name)
+        self.assertEqual("10.5", rows[2].raw_second_file_id)
+        self.assertIsNone(rows[2].canonical_file_id)
+
+    def test_external_object_rows_enforce_signed_int64_limits(self):
+        values = ["9223372036854775807", "9223372036854775808", "-9223372036854775808", "-9223372036854775809"]
+        items = []
+        for index, value in enumerate(values):
+            items.append(f'''  - first: {{type: 23, name: N{index}}}
+    second: {{fileID: {value}, guid: {index:032x}, type: 2}}''')
+        rows = parse_external_object_rows("externalObjects:\n" + "\n".join(items) + "\n")
+        self.assertEqual(9223372036854775807, rows[0].canonical_file_id)
+        self.assertEqual("valid", rows[0].row_status)
+        self.assertEqual("malformed", rows[1].row_status)
+        self.assertEqual(-9223372036854775808, rows[2].canonical_file_id)
+        self.assertEqual("valid", rows[2].row_status)
+        self.assertEqual("malformed", rows[3].row_status)
 
     def test_external_mapping_presence_is_distinct_from_provider_resolution(self):
         meta = """externalObjects:

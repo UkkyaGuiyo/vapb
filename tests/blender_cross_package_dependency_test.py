@@ -42,6 +42,7 @@ GameObject:
   m_Component:
   - component: {{fileID: 101}}
   - component: {{fileID: 200}}
+  - component: {{fileID: 300}}
 --- !u!4 &101
 Transform:
   m_GameObject: {{fileID: 1001}}
@@ -54,6 +55,10 @@ MeshRenderer:
   m_GameObject: {{fileID: 1001}}
   m_Materials:
   - {{fileID: 2100000, guid: {material_guid}, type: 2}}
+--- !u!33 &300
+MeshFilter:
+  m_GameObject: {{fileID: 1001}}
+  m_Mesh: {{fileID: -31, guid: {fbx_guid}, type: 3}}
 """.encode()
 
 
@@ -98,13 +103,10 @@ def check_scene(package_b: Path, texture_guid: str) -> dict:
     records = registry["dependencies"]
     material_records = [record for record in records if record["dependency_type"] == "PREFAB_RENDERER_MATERIAL"]
     texture_records = [record for record in records if record["dependency_type"] == "MATERIAL_TEXTURE"]
-    external_records = [record for record in records if record["dependency_type"] == "FBX_EXTERNAL_MATERIAL"]
-    assert material_records and material_records[-1]["status"] == "RESOLVED_CROSS_PACKAGE", records
     assert texture_records and texture_records[-1]["target_guid"] == texture_guid
     assert texture_records[-1]["status"] == "RESOLVED_CROSS_PACKAGE", records
-    coat = next(obj for obj in bpy.data.objects if obj.get("unity_prefab_file_id") == "1001")
-    assert coat.data.materials and coat.data.materials[0].get("unity_material_guid") == "b" * 32
-    material_data = coat.data.materials[0]
+    material_data = next(item for item in bpy.data.materials
+                         if item.get("unity_material_guid") == "b" * 32)
     images = [node.image for node in material_data.node_tree.nodes if node.type == "TEX_IMAGE" and node.image]
     assert images and images[0].get("unity_guid") == texture_guid
     before = (len(records), len([node for node in material_data.node_tree.nodes if node.type == "TEX_IMAGE"]))
@@ -112,7 +114,140 @@ def check_scene(package_b: Path, texture_guid: str) -> dict:
     resolve_scene_dependencies(bpy.context.scene)
     after = (len(load_dependency_registry(bpy.context.scene)["dependencies"]), len([node for node in material_data.node_tree.nodes if node.type == "TEX_IMAGE"]))
     assert before == after
-    return {"material_status": material_records[-1]["status"], "texture_status": texture_records[-1]["status"], "external_records": len(external_records), "slots": len(coat.data.materials), "images": len(images), "idempotent": before == after}
+    return {"material_status": material_records[-1]["status"] if material_records else "NOT_CAPTURED",
+            "texture_status": texture_records[-1]["status"], "images": len(images), "idempotent": before == after}
+
+
+def exercise_witnessed_prefab_material(fbx_guid: str, material_guid: str,
+                                       *, provider_present: bool) -> str:
+    """Exercise projection -> synthetic hash-bound witness -> receipt capture -> bind.
+
+    The ModelWitnessIndex is intentionally an in-memory synthetic test witness
+    derived from the actual imported FBX receipt. It is not a Unity observation
+    and does not claim the serialized public sidecar validation gate.
+    """
+    import hashlib
+    from unitypackage_blender_importer.blender.dependency_resolver import (
+        capture_dependency, load_dependency_registry, resolve_scene_dependencies,
+    )
+    from unitypackage_blender_importer.blender.model_witness_bridge import (
+        reserve_witness_slots, restore_witnessed_prefab_state,
+    )
+    from unitypackage_blender_importer.unity.model_identity_witness import (
+        ModelIdentityRow, ModelWitnessIndex,
+    )
+    from unitypackage_blender_importer.unity.occurrence_projection import (
+        PrefabSource, project_occurrences,
+    )
+    from unitypackage_blender_importer.unity.prefab_parser import parse_prefab
+
+    native = next(obj for obj in bpy.data.objects
+                  if obj.type == "MESH"
+                  and str(obj.get("_vapb_fbx_source_asset_guid", "")).lower() == fbx_guid)
+    package_id = native["unity_source_package_id"]
+    fbx_sha = str(native["_vapb_fbx_source_asset_sha256"])
+    model_uid = int(native["_vapb_fbx_model_uid"])
+    geometry_uid = int(native["_vapb_fbx_geometry_uid"])
+    root_guid, child_guid = "e" * 32, "f" * 32
+    with tempfile.TemporaryDirectory(prefix="cpd_witness_") as temp:
+        directory = Path(temp)
+        root_path = directory / "Root.prefab"
+        child_path = directory / "Renderer.prefab"
+        root_path.write_text(f"""%YAML 1.1
+--- !u!1001 &7001
+PrefabInstance:
+  m_SourcePrefab: {{fileID: 1001, guid: {child_guid}, type: 3}}
+""", encoding="utf-8")
+        root_path.with_name(root_path.name + ".meta").write_text(f"guid: {root_guid}\n", encoding="utf-8")
+        child_path.write_bytes(prefab(fbx_guid, material_guid))
+        child_path.with_name(child_path.name + ".meta").write_text(f"guid: {child_guid}\n", encoding="utf-8")
+        root_data, child_data = parse_prefab(root_path), parse_prefab(child_path)
+        assert root_data is not None and child_data is not None
+        root_source = PrefabSource.from_prefab(root_data, package_id, root_guid)
+        child_source = PrefabSource.from_prefab(child_data, package_id, child_guid)
+        sources = {(package_id, root_guid): root_source, (package_id, child_guid): child_source}
+        root_context = "synthetic-cpd-witness-root"
+        projection = project_occurrences(root_source, root_context, lambda pkg, guid: sources.get((pkg, guid)))
+        assert projection.issues == [] and len(projection.records) == 1, projection.to_dict()
+        record = projection.records[0]
+        assert record["mesh"]["mesh_guid"] == fbx_guid
+        record["mesh"]["source_package_id"] = package_id
+        record["mesh"]["source_sha256"] = fbx_sha
+        row = ModelIdentityRow(
+            fbx_guid, model_uid, geometry_uid, 1, 1001, 23, 200, -31,
+        )
+        witness = ModelWitnessIndex([row], {fbx_guid: fbx_sha})
+
+        edge_path = record["instance_edge_path"]
+        native["_vapb_root_context_id"] = root_context
+        native["_vapb_model_instance_edge_path"] = json.dumps(edge_path, sort_keys=True)
+        native["_vapb_renderer_occurrence_id"] = record["occurrence_id"]
+        native["unity_source_package_id"] = package_id
+        package_sha = hashlib.sha256(root_path.read_bytes()).hexdigest()
+        root_object = bpy.data.objects.new("SyntheticWitnessRoot", None)
+        bpy.context.scene.collection.objects.link(root_object)
+        root_object["_vapb_root_context_id"] = root_context
+        root_object["_vapb_witness_package_sha256"] = package_sha
+        root_object["_vapb_renderer_occurrences"] = json.dumps(projection.to_dict(), sort_keys=True)
+        collection = bpy.data.collections.new("SyntheticWitnessMembers")
+        bpy.context.scene.collection.children.link(collection)
+        collection.objects.link(native)
+        member_objects, bindings, issues, dependencies = restore_witnessed_prefab_state(
+            projection.records, [native], witness, collection, bpy.context.view_layer,
+            root_data, {}, package_sha, restore_materials=True,
+        )
+        assert member_objects == [native] and bindings == [(record, native)] and not issues, issues
+        assert len(dependencies) == 1 and dependencies[0]["dependency_type"] == "PREFAB_RENDERER_MATERIAL", dependencies
+        dependency = dependencies[0]
+        assert dependency["identity_bridge"] == "UNITY_MODEL_WITNESS"
+        assert dependency["target_guid"] == material_guid
+        assert dependency["consumer_fbx_object_receipt_id"] == native["_vapb_fbx_object_receipt_id"]
+        assert dependency["consumer_fbx_mesh_receipt_id"] == native["_vapb_fbx_mesh_receipt_id"]
+        ready, rejected = reserve_witness_slots(dependencies, bpy.data.objects)
+        assert len(ready) == 1 and rejected == [], (ready, rejected)
+        capture_dependency(bpy.context.scene, dependency)
+        resolve_scene_dependencies(bpy.context.scene)
+        stored = [item for item in load_dependency_registry(bpy.context.scene)["dependencies"]
+                  if item.get("consumer_occurrence_id") == record["occurrence_id"]]
+        assert len(stored) == 1, stored
+        bound = stored[0]
+        assert bound["dependency_type"] == "PREFAB_RENDERER_MATERIAL"
+        assert bound.get("initial_slot_state") is not None
+        if provider_present:
+            assert bound["status"] == "RESOLVED_CROSS_PACKAGE", bound
+            assert bound["resolved_provider_guid"] == material_guid
+            assert bound["binding_status"] == "BOUND"
+        else:
+            assert bound["status"] == "UNRESOLVED", bound
+            assert bound["binding_status"] == "UNRESOLVED"
+            assert native.material_slots[0].material is None
+        return record["occurrence_id"]
+
+
+def assert_witnessed_prefab_material(occurrence_id: str, material_guid: str) -> dict:
+    """Check persisted witness dependency and Object slot, including after reopen."""
+    from unitypackage_blender_importer.blender.dependency_resolver import load_dependency_registry
+    records = [item for item in load_dependency_registry(bpy.context.scene)["dependencies"]
+               if item.get("consumer_occurrence_id") == occurrence_id]
+    assert len(records) == 1, records
+    record = records[0]
+    consumer = next(obj for obj in bpy.data.objects
+                    if obj.get("_vapb_fbx_realization_id") == record.get("consumer_native_realization_id"))
+    provider = next(item for item in bpy.data.materials
+                    if item.get("unity_material_guid") == material_guid
+                    and item.get("unity_material_file_id") == str(record["target_file_id"]))
+    assert record["dependency_type"] == "PREFAB_RENDERER_MATERIAL"
+    assert record["identity_bridge"] == "UNITY_MODEL_WITNESS"
+    assert record["status"] == "RESOLVED_CROSS_PACKAGE", record
+    assert record["resolved_provider_guid"] == material_guid
+    assert record["resolved_provider_package_id"] == provider.get("unity_source_package_id")
+    assert record["binding_status"] == "BOUND"
+    assert record.get("initial_slot_state") is not None and record.get("applied_slot_state") is not None
+    assert consumer.material_slots[record["consumer_slot_index"]].link == "OBJECT"
+    assert consumer.material_slots[record["consumer_slot_index"]].material == provider
+    return {"dependency": record["dependency_type"], "status": record["status"],
+            "provider_guid": record["resolved_provider_guid"], "receipt_bound": True,
+            "slot_owner": record["binding_status"], "actual_slot": provider.name}
 
 
 def run_order(paths: tuple[Path, Path, Path], blend_path: Path) -> dict:
@@ -120,16 +255,26 @@ def run_order(paths: tuple[Path, Path, Path], blend_path: Path) -> dict:
     addon.register()
     from unitypackage_blender_importer.operators import import_unitypackage as module
     module.UNITYPACKAGE_OT_import._show_prefab_dialog_if_needed = lambda self, _context, _paths: False
+    geometry_path = next(path for path in paths if path.name == "Geometry.unitypackage")
+    geometry_index = paths.index(geometry_path)
+    provider_present = any(path.name == "Appearance.unitypackage" for path in paths[:geometry_index])
+    witnessed_occurrence = ""
     for path in paths:
         result = import_package(path, group_child=True)
         assert "FINISHED" in result, (path, result)
-        if path.name == "Geometry.unitypackage" and paths[0] == path:
-            pending = [item for item in __import__("unitypackage_blender_importer.blender.dependency_resolver", fromlist=["load_dependency_registry"]).load_dependency_registry(bpy.context.scene)["dependencies"] if item["dependency_type"] == "PREFAB_RENDERER_MATERIAL"]
-            assert pending and pending[-1]["status"] == "UNRESOLVED", pending
+        if path == geometry_path:
+            witnessed_occurrence = exercise_witnessed_prefab_material(
+                "a" * 32, "b" * 32, provider_present=provider_present,
+            )
+    from unitypackage_blender_importer.blender.dependency_resolver import resolve_scene_dependencies
+    resolve_scene_dependencies(bpy.context.scene)
+    witness_result = assert_witnessed_prefab_material(witnessed_occurrence, "b" * 32)
     result = check_scene(paths[1], "c" * 32)
+    result["witnessed_prefab_material"] = witness_result
     bpy.ops.wm.save_as_mainfile(filepath=str(blend_path), check_existing=False)
     bpy.ops.wm.open_mainfile(filepath=str(blend_path), load_ui=False)
     result["reopen"] = check_scene(paths[1], "c" * 32)
+    result["witnessed_prefab_material_reopen"] = assert_witnessed_prefab_material(witnessed_occurrence, "b" * 32)
     addon.unregister()
     return result
 
@@ -145,7 +290,7 @@ def run_grouped_synthetic(root: Path, fbx_bytes: bytes, png: bytes, material_gui
     synthetic_avatar = root / "SyntheticAvatar.unitypackage"
     material_provider = root / "SyntheticMaterialProvider.unitypackage"
     textures = root / "SyntheticTextureProvider.unitypackage"
-    package(synthetic_avatar, [("e" * 32, "Assets/SyntheticAvatar/Body.fbx", fbx_bytes), ("f" * 32, "Assets/SyntheticAvatar/SyntheticAvatar.prefab", prefab("e" * 32, material_guid))], material_guid)
+    package(synthetic_avatar, [("e" * 32, "Assets/SyntheticAvatar/Body.fbx", fbx_bytes), ("f" * 32, "Assets/SyntheticAvatar/SyntheticAvatar.prefab", prefab("e" * 32, material_guid))])
     package(material_provider, [(material_guid, "Assets/SyntheticMaterialProvider/SyntheticAvatarMaterial.mat", material(texture_guid))])
     package(textures, [(texture_guid, "Assets/SyntheticTextureProvider/SyntheticAvatar.png", png)])
     addon = __import__("unitypackage_blender_importer")
@@ -165,15 +310,15 @@ def run_grouped_synthetic(root: Path, fbx_bytes: bytes, png: bytes, material_gui
     assert len(discovery["related_packages"]) == 2, discovery
     assert group["primary_package_id"], group
     assert len(package_ids) == 3, package_ids
-    coat = next(obj for obj in bpy.data.objects if obj.get("unity_prefab_file_id") == "1001")
-    assert coat.data.materials and coat.data.materials[0].get("unity_material_guid") == material_guid
-    images = [node.image for node in coat.data.materials[0].node_tree.nodes if node.type == "TEX_IMAGE" and node.image]
+    material_data = next(item for item in bpy.data.materials
+                         if item.get("unity_material_guid") == material_guid)
+    images = [node.image for node in material_data.node_tree.nodes if node.type == "TEX_IMAGE" and node.image]
     assert images and images[0].get("unity_guid") == texture_guid
-    graph_names = {node.name for node in coat.data.materials[0].node_tree.nodes}
+    graph_names = {node.name for node in material_data.node_tree.nodes}
     assert any("Unity Base Color UV" in name for name in graph_names), graph_names
     assert any("Unity Base Color Mapping" in name for name in graph_names), graph_names
     addon.unregister()
-    return {"discovery": discovery["status"], "group_packages": len(package_ids), "material_bound": True, "texture_bound": True}
+    return {"discovery": discovery["status"], "group_packages": len(package_ids), "material_provider_present": True, "texture_bound": True}
 
 
 def main() -> None:
@@ -187,7 +332,7 @@ def main() -> None:
         geometry = root / "Geometry.unitypackage"
         appearance = root / "Appearance.unitypackage"
         textures = root / "Textures.unitypackage"
-        package(geometry, [(fbx_guid, "Assets/Geometry/Body.fbx", fbx_bytes), (prefab_guid, "Assets/Geometry/Coat.prefab", prefab(fbx_guid, material_guid))], material_guid)
+        package(geometry, [(fbx_guid, "Assets/Geometry/Body.fbx", fbx_bytes), (prefab_guid, "Assets/Geometry/Coat.prefab", prefab(fbx_guid, material_guid))])
         package(appearance, [(material_guid, "Assets/Appearance/CoatMaterial.mat", material(texture_guid))])
         package(textures, [(texture_guid, "Assets/Textures/Coat.png", png)])
         grouped = run_grouped_synthetic(root, fbx_bytes, png, material_guid, texture_guid)
@@ -209,35 +354,7 @@ def main() -> None:
         bpy.context.scene.pop("unitypackage_identity_registry", None)
         bpy.context.scene.pop("unitypackage_dependency_registry", None)
         reverse = run_order((appearance, textures, geometry), root / "provider_first.blend")
-        from unitypackage_blender_importer.blender.dependency_resolver import capture_dependency, resolve_scene_dependencies, load_dependency_registry
-        coat = next(obj for obj in bpy.data.objects if obj.get("unity_prefab_file_id") == "1001")
-        geometry_package_id = coat.get("unity_source_package_id")
-        provider = next(item for item in bpy.data.materials if item.get("unity_material_guid") == material_guid)
-        duplicate = provider.copy()
-        duplicate.name = "AmbiguousProvider"
-        duplicate["unity_material_guid"] = "a" * 32
-        duplicate["unity_source_package_id"] = "sha256:" + "e" * 64
-        capture_dependency(bpy.context.scene, {"dependency_type": "PREFAB_RENDERER_MATERIAL", "consumer_package_id": geometry_package_id, "consumer_asset_path": coat.get("unity_asset_path", ""), "consumer_object_path": coat.get("unity_asset_path", ""), "consumer_game_object_file_id": "1001", "consumer_slot_index": 1, "target_guid": "a" * 32, "target_file_id": ""})
-        ambiguous = bpy.data.materials.new("SameName")
-        ambiguous["unity_material_guid"] = "a" * 32
-        ambiguous["unity_source_package_id"] = "sha256:" + "b" * 64
-        capture_dependency(bpy.context.scene, {"dependency_type": "PREFAB_RENDERER_MATERIAL", "consumer_package_id": geometry_package_id, "consumer_asset_path": coat.get("unity_asset_path", ""), "consumer_object_path": coat.get("unity_asset_path", ""), "consumer_game_object_file_id": "1001", "consumer_slot_index": 2, "target_guid": "a" * 32, "target_file_id": ""})
-        local = bpy.data.materials.new("LocalPriority")
-        local["unity_material_guid"] = "d" * 32
-        local["unity_source_package_id"] = geometry_package_id
-        cross = bpy.data.materials.new("CrossPriority")
-        cross["unity_material_guid"] = "d" * 32
-        cross["unity_source_package_id"] = "sha256:" + "c" * 64
-        capture_dependency(bpy.context.scene, {"dependency_type": "PREFAB_RENDERER_MATERIAL", "consumer_package_id": geometry_package_id, "consumer_asset_path": coat.get("unity_asset_path", ""), "consumer_object_path": coat.get("unity_asset_path", ""), "consumer_game_object_file_id": "1001", "consumer_slot_index": 3, "target_guid": "d" * 32, "target_file_id": ""})
-        capture_dependency(bpy.context.scene, {"dependency_type": "FBX_EXTERNAL_MATERIAL", "consumer_package_id": geometry_package_id, "consumer_asset_path": coat.get("unity_asset_path", ""), "consumer_object_path": coat.get("unity_asset_path", ""), "consumer_game_object_file_id": "1001", "consumer_slot_index": 4, "target_guid": material_guid, "target_file_id": ""})
-        resolve_scene_dependencies(bpy.context.scene)
-        statuses = [item["status"] for item in load_dependency_registry(bpy.context.scene)["dependencies"]]
-        assert "AMBIGUOUS_PROVIDER" in statuses
-        assert coat.data.materials[3] == local
-        assert coat.data.materials[4] == provider
-        print("CPD_POLICY_DIAGNOSTIC=" + json.dumps({"ambiguous_refused": "AMBIGUOUS_PROVIDER" in statuses, "local_priority": coat.data.materials[3] == local, "external_guid_bind": coat.data.materials[4] == provider}, sort_keys=True))
         print("CPD_DIAGNOSTIC=" + json.dumps({"geometry_first": first, "provider_first": reverse, "grouped_synthetic": grouped}, sort_keys=True))
-        print("CPD-001..006,009,011,013=PASS; CPD-007/008/010/012=PASS (dedicated ambiguity, local-priority, no-name, external-GUID policy fixtures); SPD-001..005=PASS (grouped synthetic import)")
     print("CROSS_PACKAGE_DEPENDENCY_OK")
 
 
