@@ -1,7 +1,6 @@
 """Diagnostic integration probe for the existing explicit Renderer confirmation route."""
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 import sys
@@ -10,6 +9,9 @@ import bpy
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from blender_three_slot_fixture_oracle import (
+    EXPECTED_PACKAGE_SHA256, package_sha256, raw_prefab_material_refs)
 
 
 def triangle_counts(mesh) -> list[int]:
@@ -45,7 +47,10 @@ def main() -> None:
         raise FileExistsError(result_path)
     report = {"stage": "T0-A-EXPLICIT-RENDERER-CONFIRMATION", "status": "FAIL"}
     try:
-        package_sha = hashlib.sha256(package_path.read_bytes()).hexdigest()
+        package_sha = package_sha256(package_path)
+        if package_sha != EXPECTED_PACKAGE_SHA256:
+            raise AssertionError("fixed source package SHA-256 mismatch")
+        raw_expected = raw_prefab_material_refs(package_path)
         import unitypackage_blender_importer as addon
         addon.register()
         imported = bpy.ops.import_scene.unitypackage(
@@ -80,10 +85,12 @@ def main() -> None:
             raise AssertionError("expected one receipt-valid exact native mesh, got " + str(len(candidates)))
         mesh = candidates[0]
 
-        expected = [{"guid": str((value or {}).get("guid", "")).lower(),
-                     "file_id": str((value or {}).get("file_id", ""))}
-                    for _, value in sorted(record.get("materials", {}).items(),
-                                           key=lambda item: int(item[0]))]
+        projected = [{"guid": str((value or {}).get("guid", "")).lower(),
+                      "file_id": str((value or {}).get("file_id", ""))}
+                     for _, value in sorted(record.get("materials", {}).items(),
+                                            key=lambda item: int(item[0]))]
+        if projected != raw_expected:
+            raise AssertionError("Renderer projection refs differ from independently parsed raw Prefab")
         package_id = "sha256:" + package_sha
         before_slots = material_refs(mesh)
         before_faces = triangle_counts(mesh)
@@ -116,7 +123,8 @@ def main() -> None:
             "owner": record.get("owner", {}),
             "owner_name_diagnostic_only": record.get("owner_name", ""),
             "material_status": record.get("material_status", ""),
-            "expected_material_refs": expected,
+            "raw_prefab_material_refs": raw_expected,
+            "projected_material_refs": projected,
             "selected_mesh": {
                 "fbx_guid": str(mesh.get("_vapb_fbx_source_asset_guid", "")).lower(),
                 "fbx_sha256": str(mesh.get("_vapb_fbx_source_asset_sha256", "")).lower(),
@@ -133,8 +141,9 @@ def main() -> None:
         })
         if operator_result != {"FINISHED"}:
             raise AssertionError("confirm_renderer_binding did not finish: " + repr(operator_result))
-        if actual != expected or not all(
-                row["present"] and row["package_id"] == package_id for row in after_slots):
+        if actual != raw_expected or not all(
+                row["present"] and row["link"] == "OBJECT" and row["package_id"] == package_id
+                for row in after_slots):
             raise AssertionError("confirmed slot identity/package does not match the exact projection")
         if before_faces != after_faces:
             raise AssertionError("confirmation changed the source face-to-slot counts")
