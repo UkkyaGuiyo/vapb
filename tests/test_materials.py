@@ -428,7 +428,7 @@ userData:
     def test_unity_same_indent_explicit_mapping_does_not_enable_name_fallback(self):
         self.write_material("Body.mat", "6" * 32, material_text("Body", "{fileID: 46}", ""))
         meta = '''ModelImporter:
-  externalObjects:
+  externalObjects: # Explicit mapping; do not allow name fallback.
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
@@ -455,6 +455,47 @@ userData:
         rows = parse_external_object_rows(meta)
         self.assertEqual(1, len(rows))
         self.assertFalse(any(row.canonical_name == "Body" and row.canonical_guid == guid for row in rows))
+
+    def test_external_objects_header_inside_user_data_scalar_is_not_selected(self):
+        guid = "7" * 32
+        meta = f'''ModelImporter:
+  serializedVersion: 23
+  userData: |
+    externalObjects:
+    - first:
+        type: UnityEngine:Material
+        assembly: UnityEngine.CoreModule
+        name: Body
+      second: {{fileID: 2100000, guid: {guid}, type: 2}}
+  externalObjects: {{}}
+  materials:
+    importMaterials: 1
+'''
+        self.assertEqual([], parse_external_object_rows(meta))
+
+    def test_external_objects_block_scalar_is_not_parsed_as_rows(self):
+        guid = "7" * 32
+        meta = f'''ModelImporter:
+  externalObjects: |
+    - first: {{type: 23, name: Body}}
+      second: {{fileID: 2100000, guid: {guid}, type: 2}}
+  materials:
+    importMaterials: 1
+'''
+        self.assertEqual([], parse_external_object_rows(meta))
+
+    def test_explicit_indent_block_scalar_content_is_not_scanned_as_header(self):
+        guid = "7" * 32
+        for indicator in ("|2", "|2-", "|-2", ">2+", ">+2", "|-", "|+", ">-", ">+"):
+            with self.subTest(indicator=indicator):
+                meta = f'''ModelImporter:
+  userData: {indicator}
+    externalObjects:
+    - first: {{type: 23, name: Body}}
+      second: {{fileID: 2100000, guid: {guid}, type: 2}}
+  externalObjects: {{}}
+'''
+                self.assertEqual([], parse_external_object_rows(meta))
 
     def test_unsupported_sequence_item_does_not_hide_later_explicit_mapping(self):
         self.write_material("Body.mat", "6" * 32, material_text("Body", "{fileID: 46}", ""))
