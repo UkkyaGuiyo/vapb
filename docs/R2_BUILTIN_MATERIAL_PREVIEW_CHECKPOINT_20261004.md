@@ -1,8 +1,8 @@
 # R2 Built-in Material Preview Checkpoint
 
-## Active stop — 2026-10-05
+## Active stop — planning only; implementation paused (2026-10-06)
 
-VAPB work is suspended until the user explicitly resumes it. Do not auto-resume on routine status checks. The verified branch tip when stopped is `feature/r2-material-slot-reorder` at `08f523fe2d75d7b4c54bba6b0e46afd417244ccc`. The CPD runner remains non-passing; no product code or test was changed for its diagnosis. See the repository `START_HERE.md` for the stop boundary and first steps after explicit resumption.
+Planning and documentation for Avatar delivery/dependency closure are authorized. Product code, tests, Blender/Unity execution, integration, and release remain paused pending a separate explicit execution instruction. Planning-start branch was `feature/r2-material-slot-reorder` at `cf45a3ec95af853c009fa446eaf76f8c5ea9af3b`; reverify after docs commit. CPD remains unresolved. See `START_HERE.md` and the linked design/plan; these documents do not authorize implementation.
 
 Date: 2026-10-04  
 Project: VAPB  
