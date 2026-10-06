@@ -81,9 +81,11 @@ Material:
 
 
 def import_package(path: Path, *, group_child: bool = False):
+    source_storage = path.parent / "source_archive"
     return bpy.ops.import_scene.unitypackage(
         filepath=str(path), import_mode="RECONSTRUCT", prefab_choice="AUTO",
         keep_extracted=False, group_child=group_child,
+        source_storage_directory=str(source_storage),
     )
 
 
@@ -299,7 +301,7 @@ def run_grouped_synthetic(root: Path, fbx_bytes: bytes, png: bytes, material_gui
     module.UNITYPACKAGE_OT_import._show_prefab_dialog_if_needed = lambda self, _context, _paths: False
     result = bpy.ops.import_scene.unitypackage(
         filepath=str(synthetic_avatar), import_mode="RECONSTRUCT", prefab_choice="AUTO",
-        keep_extracted=False,
+        keep_extracted=False, source_storage_directory=str(root / "source_archive"),
     )
     assert "FINISHED" in result, result
     discovery = bpy.context.scene.get("unitypackage_sibling_discovery", {})
@@ -321,6 +323,21 @@ def run_grouped_synthetic(root: Path, fbx_bytes: bytes, png: bytes, material_gui
     return {"discovery": discovery["status"], "group_packages": len(package_ids), "material_provider_present": True, "texture_bound": True}
 
 
+def clear_imported_scene_data() -> None:
+    """Remove hidden/template datablocks left by the prior saved test scene."""
+    for obj in list(bpy.data.objects):
+        bpy.data.objects.remove(obj, do_unlink=True)
+    for mesh_data in list(bpy.data.meshes):
+        if mesh_data.users == 0:
+            bpy.data.meshes.remove(mesh_data)
+    for material_data in list(bpy.data.materials):
+        bpy.data.materials.remove(material_data)
+    for image in list(bpy.data.images):
+        bpy.data.images.remove(image)
+    bpy.context.scene.pop("unitypackage_identity_registry", None)
+    bpy.context.scene.pop("unitypackage_dependency_registry", None)
+
+
 def main() -> None:
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
@@ -336,23 +353,9 @@ def main() -> None:
         package(appearance, [(material_guid, "Assets/Appearance/CoatMaterial.mat", material(texture_guid))])
         package(textures, [(texture_guid, "Assets/Textures/Coat.png", png)])
         grouped = run_grouped_synthetic(root, fbx_bytes, png, material_guid, texture_guid)
-        bpy.ops.object.select_all(action="SELECT")
-        bpy.ops.object.delete(use_global=False)
-        for material_data in list(bpy.data.materials):
-            bpy.data.materials.remove(material_data)
-        for image in list(bpy.data.images):
-            bpy.data.images.remove(image)
-        bpy.context.scene.pop("unitypackage_identity_registry", None)
-        bpy.context.scene.pop("unitypackage_dependency_registry", None)
+        clear_imported_scene_data()
         first = run_order((geometry, appearance, textures), root / "geometry_first.blend")
-        bpy.ops.object.select_all(action="SELECT")
-        bpy.ops.object.delete(use_global=False)
-        for material_data in list(bpy.data.materials):
-            bpy.data.materials.remove(material_data)
-        for image in list(bpy.data.images):
-            bpy.data.images.remove(image)
-        bpy.context.scene.pop("unitypackage_identity_registry", None)
-        bpy.context.scene.pop("unitypackage_dependency_registry", None)
+        clear_imported_scene_data()
         reverse = run_order((appearance, textures, geometry), root / "provider_first.blend")
         print("CPD_DIAGNOSTIC=" + json.dumps({"geometry_first": first, "provider_first": reverse, "grouped_synthetic": grouped}, sort_keys=True))
     print("CROSS_PACKAGE_DEPENDENCY_OK")
