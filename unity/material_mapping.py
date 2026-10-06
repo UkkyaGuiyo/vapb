@@ -157,9 +157,53 @@ def parse_external_object_rows(meta_text: str) -> list[ExternalObjectRow]:
     without treating arbitrary YAML elsewhere in the .meta file as a mapping.
     """
     lines = meta_text.splitlines()
-    start = next((i for i, line in enumerate(lines)
-                  if re.match(r"^\s*externalObjects\s*:\s*(?:#.*)?$", line)), None)
+def _external_objects_header(lines: list[str]) -> Optional[int]:
+    """Find an importer-owned key, ignoring YAML block scalar contents.
+
+    Unity importer metadata normally nests this key directly under
+    ModelImporter. A top-level key is also accepted for older synthetic
+    fixtures. This deliberately small scanner is fail-closed.
+    """
+    stack: list[tuple[int, str]] = []
+    scalar_parent_indent: Optional[int] = None
+    scalar_content_min_indent: Optional[int] = None
+    for index, line in enumerate(lines):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if scalar_parent_indent is not None:
+            if indent >= (scalar_content_min_indent if scalar_content_min_indent is not None else scalar_parent_indent + 1):
+                continue
+            scalar_parent_indent = scalar_content_min_indent = None
+        content = line.lstrip()
+        if content.startswith("-"):
+            continue
+        match = re.match(r"([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.*?)\s*(?:#.*)?$", content)
+        if match is None:
+            continue
+        key, value = match.groups()
+        while stack and stack[-1][0] >= indent:
+            stack.pop()
+        parent_keys = [entry[1] for entry in stack]
+        if key == "externalObjects" and (indent == 0 or parent_keys == ["ModelImporter"]):
+            return index
+        if re.fullmatch(r"[|>](?:[1-9][+-]?|[+-][1-9]|[+-])?", value):
+            scalar_parent_indent = indent
+            digit = re.search(r"[1-9]", value)
+            scalar_content_min_indent = indent + int(digit.group()) if digit else None
+        elif not value:
+            stack.append((indent, key))
+    return None
+
+
+    start = _external_objects_header(lines)
     if start is None:
+        return []
+    header = re.match(r"^\s*externalObjects\s*:\s*(.*?)\s*(?:#.*)?$", lines[start])
+    header_value = header.group(1).strip() if header is not None else "unsupported"
+    if header_value and header_value != "{}":
+        # Inline non-empty mappings and scalars are outside this parser's
+        # supported contract; never interpret following text as their rows.
         return []
     base_indent = len(lines[start]) - len(lines[start].lstrip())
     end = len(lines)
