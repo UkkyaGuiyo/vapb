@@ -150,13 +150,6 @@ def _strict_int64(raw: Optional[str]) -> Optional[int]:
     return number if _INT64_MIN <= number <= _INT64_MAX else None
 
 
-def parse_external_object_rows(meta_text: str) -> list[ExternalObjectRow]:
-    """Parse ordered externalObjects rows while retaining raw serialized identity.
-
-    This intentionally handles Unity's common block and inline mapping forms
-    without treating arbitrary YAML elsewhere in the .meta file as a mapping.
-    """
-    lines = meta_text.splitlines()
 def _external_objects_header(lines: list[str]) -> Optional[int]:
     """Find an importer-owned key, ignoring YAML block scalar contents.
 
@@ -196,6 +189,13 @@ def _external_objects_header(lines: list[str]) -> Optional[int]:
     return None
 
 
+def parse_external_object_rows(meta_text: str) -> list[ExternalObjectRow]:
+    """Parse ordered externalObjects rows while retaining raw serialized identity.
+
+    This intentionally handles Unity's common block and inline mapping forms
+    without treating arbitrary YAML elsewhere in the .meta file as a mapping.
+    """
+    lines = meta_text.splitlines()
     start = _external_objects_header(lines)
     if start is None:
         return []
