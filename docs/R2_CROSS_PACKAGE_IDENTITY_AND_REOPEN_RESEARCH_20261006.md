@@ -34,10 +34,10 @@ At the tested source content, one generated geometry package and separate appear
 
 - grouped sibling discovery completed across three synthetic packages;
 - the cross-package Material and texture were resolved and the witnessed Prefab renderer slot reported `BOUND`;
-- repeating dependency resolution preserved the tested result;
+- after initial assertions, two resolver calls left dependency-record count and texture-node count unchanged; these count checks do not verify the actual Image link or texture status after re-resolution;
 - the geometry-first and provider-first `.blend` results passed their reopen checks using `bpy.ops.wm.open_mainfile` in the same Blender process.
 
-The test uses a synthetic in-memory `ModelWitnessIndex`; this is not a Unity-generated witness or validation of public sidecar transport. This supports order independence for these fixtures and code paths. It does not establish order independence for duplicate providers, malformed mappings, multiple consumers, multiple renderer slots, or arbitrary package sets.
+The test uses a synthetic in-memory `ModelWitnessIndex`; this is not a Unity-generated witness or validation of public sidecar transport. A separate exact Prefab consumer assertion checks its slot before save and after reopen. The texture's exact Image GUID is checked before repeated resolution and again when each reopened file is first inspected, but the current post-re-resolution assertion only compares record and node counts. Thus the run does not prove that repeated resolution retained the exact texture-to-Image link. This supports order independence for the other asserted fixture outcomes, not duplicate providers, malformed mappings, multiple consumers, multiple renderer slots, or arbitrary package sets.
 
 ## Texture boundary and unresolved questions
 
