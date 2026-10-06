@@ -1,7 +1,12 @@
 """Public synthetic occurrence-to-native joins; names never identify objects."""
 
 import copy
+import hashlib
 import json
+from io import BytesIO
+from pathlib import Path
+import re
+import tarfile
 import unittest
 from unittest import mock
 from dataclasses import replace
@@ -106,6 +111,65 @@ def root(current):
                   _vapb_witness_package_sha256=PACKAGE_SHA,
                   _vapb_renderer_occurrences=json.dumps({"records": [current], "issues": []}),
                   obj_type="EMPTY")
+
+
+def raw_three_slot_mesh_reference():
+    """Read the Mesh subasset identity from the fixed public input package."""
+    package_path = (Path(__file__).resolve().parent
+                    / "unity_model_material_probe" / "fixtures"
+                    / "ThreeSlotSource.unitypackage")
+    package_bytes = package_path.read_bytes()
+    package_sha = hashlib.sha256(package_bytes).hexdigest()
+    if package_sha != "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c":
+        raise AssertionError("fixed public fixture package SHA-256 changed")
+
+    with tarfile.open(fileobj=BytesIO(package_bytes), mode="r:*") as archive:
+        prefabs = []
+        for member in archive.getmembers():
+            if not member.isfile() or not member.name.endswith("/pathname"):
+                continue
+            pathname = archive.extractfile(member)
+            if pathname is None or not pathname.read().decode("utf-8").endswith(".prefab"):
+                continue
+            payload = archive.extractfile(member.name.removesuffix("/pathname") + "/asset")
+            if payload is None:
+                raise AssertionError("fixed Prefab asset payload is missing")
+            prefabs.append(payload.read())
+        fbx_member = "abcdefabcdefabcdefabcdefabcdefab/asset"
+        fbx_stream = archive.extractfile(fbx_member)
+        if fbx_stream is None:
+            raise AssertionError("fixed source FBX payload is missing")
+        fbx_sha = hashlib.sha256(fbx_stream.read()).hexdigest()
+        meta_stream = archive.extractfile("abcdefabcdefabcdefabcdefabcdefab/asset.meta")
+        if meta_stream is None:
+            raise AssertionError("fixed source FBX importer metadata is missing")
+        fbx_meta = meta_stream.read()
+
+    if len(prefabs) != 1:
+        raise AssertionError("fixed fixture must contain exactly one Prefab")
+    docs = re.findall(rb"(?ms)^--- !u!137 &(\d+)\r?\n(.*?)(?=^--- !u!|\Z)", prefabs[0])
+    mesh_refs = []
+    for renderer_file_id, body in docs:
+        match = re.search(
+            rb"(?m)^\s*m_Mesh:\s*\{fileID:\s*(-?\d+),\s*guid:\s*([0-9a-fA-F]{32}),\s*type:\s*\d+\s*\}",
+            body)
+        if match:
+            owner = re.search(rb"(?m)^\s*m_GameObject:\s*\{fileID:\s*(-?\d+)\s*\}", body)
+            if owner is None:
+                raise AssertionError("fixed Renderer owner reference is missing")
+            mesh_refs.append({
+                "renderer_file_id": renderer_file_id.decode("ascii"),
+                "owner_game_object_id": owner.group(1).decode("ascii"),
+                "mesh_file_id": match.group(1).decode("ascii"),
+                "mesh_guid": match.group(2).decode("ascii").lower(),
+            })
+    if len(mesh_refs) != 1:
+        raise AssertionError("fixed fixture must contain exactly one Renderer Mesh reference")
+    if fbx_sha != "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5":
+        raise AssertionError("fixed source FBX SHA-256 changed")
+    if b"internalIDToNameTable: []" not in fbx_meta or b"externalObjects: {}" not in fbx_meta:
+        raise AssertionError("fixed source FBX metadata now has an importer identity mapping")
+    return package_sha, fbx_sha, mesh_refs[0]
 
 
 class ModelWitnessBridgeTests(unittest.TestCase):
@@ -325,6 +389,85 @@ class ModelWitnessBridgeTests(unittest.TestCase):
         bindings, issues = plan_witness_realizations([current], [native(), native(realization="other")], witness())
         self.assertEqual([], bindings)
         self.assertEqual("NATIVE_AMBIGUOUS", issues[0]["code"])
+
+    def test_guid_sha_singleton_cannot_prove_mesh_file_id_without_witness(self):
+        package_sha, fbx_sha, raw_ref = raw_three_slot_mesh_reference()
+        self.assertEqual("fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+                         fbx_sha)
+        self.assertEqual({
+            "renderer_file_id": "3728717051629469441",
+            "owner_game_object_id": "6665729011320497926",
+            "mesh_file_id": "3538053534738119282",
+            "mesh_guid": "abcdefabcdefabcdefabcdefabcdefab",
+        }, raw_ref)
+
+        package_id = "sha256:" + package_sha
+        root_context = "fixed-three-slot-root-context"
+        source_record = record()
+        source_record.update({
+            "root_context_id": root_context,
+            "root_package_id": package_id,
+            "root_member_id": "7cbdcbe81fde386408bcfb379e62b6bb",
+            "root_asset_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+            "source_package_id": package_id,
+            "source_key": {
+                "source_kind": "PREFAB_LOCAL",
+                "source_asset_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+                "renderer_file_id": int(raw_ref["renderer_file_id"]),
+            },
+            "owner": {
+                "source_kind": "PREFAB_LOCAL",
+                "source_asset_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+                "owner_game_object_id": int(raw_ref["owner_game_object_id"]),
+            },
+            "mesh": {
+                "mesh_guid": raw_ref["mesh_guid"],
+                "mesh_file_id": int(raw_ref["mesh_file_id"]),
+                "source_package_id": package_id,
+                "source_sha256": fbx_sha,
+            },
+        })
+        source_record["occurrence_id"] = occurrence_identity(source_record)
+
+        changed_file_id_record = copy.deepcopy(source_record)
+        changed_file_id_record["mesh"]["mesh_file_id"] += 1
+        self.assertEqual(source_record["occurrence_id"],
+                         changed_file_id_record["occurrence_id"])
+        restored_file_id_record = copy.deepcopy(changed_file_id_record)
+        restored_file_id_record["mesh"]["mesh_file_id"] = int(raw_ref["mesh_file_id"])
+        self.assertEqual(source_record, restored_file_id_record)
+
+        # This test double represents the one scoped GUID/SHA candidate; the
+        # prior T0 run separately established its real persistent receipt.
+        native_candidate = Object(
+            _vapb_root_context_id=root_context,
+            unity_source_package_id=package_id,
+            _vapb_fbx_source_asset_guid=raw_ref["mesh_guid"],
+            _vapb_fbx_source_asset_sha256=fbx_sha,
+        )
+        records = [source_record, changed_file_id_record]
+
+        def guid_sha_candidates(value):
+            mesh_ref = value["mesh"]
+            return [obj for obj in [native_candidate]
+                    if obj.type == "MESH"
+                    and obj.get("_vapb_root_context_id") == value["root_context_id"]
+                    and obj.get("unity_source_package_id") == mesh_ref["source_package_id"]
+                    and obj.get("_vapb_fbx_source_asset_guid", "").lower() == mesh_ref["mesh_guid"]
+                    and obj.get("_vapb_fbx_source_asset_sha256", "").lower() == mesh_ref["source_sha256"]]
+
+        # A fallback that sees only package, GUID, and FBX revision selects the
+        # same sole native object for both the raw fileID and a different fileID.
+        candidate_sets = [guid_sha_candidates(value) for value in records]
+        self.assertEqual([[native_candidate], [native_candidate]], candidate_sets)
+
+        # The production bridge requires the missing subasset-to-FBX identity
+        # mapping and therefore must not turn either candidate set into a bind.
+        for value in records:
+            bindings, issues = plan_witness_realizations([value], [native_candidate], None)
+            self.assertEqual([], bindings)
+            self.assertEqual([{"occurrence_id": value["occurrence_id"],
+                               "code": "WITNESS_MISSING"}], issues)
 
     def test_two_renderer_occurrences_cannot_claim_same_native_object(self):
         first = record()
