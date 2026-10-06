@@ -7,7 +7,7 @@ This is a continuation handoff, not a product-completion statement. **STOPPED / 
 **Planning and documentation are authorized for the Avatar delivery/dependency-closure plan only. Product code edits, test execution, Blender/Unity runs, broader integration, and release work remain paused until a separate explicit execution instruction.** Do not auto-resume implementation during routine status checks. This is a bounded planning authorization, not a general restart.
 
 - Repository: <https://github.com/UkkyaGuiyo/vapb>
-- Branch and verified remote HEAD: `feature/r2-material-slot-reorder` / `cf45a3ec95af853c009fa446eaf76f8c5ea9af3b` (planning start; reverify after docs commit)
+- Branch and verified remote HEAD: `feature/r2-material-slot-reorder` / `9895b8a99ae4f56f4e8592227a847b9d87919f03` (documentation commit; post-push remote readback)
 - Planning work root: `C:\\Users\\gkgkb\\Documents\\Codex\\2026-10-04\\task-3\\unitypackage_blender_importer`. The canonical remote, branch, and clean worktree were verified on TitanG14 before documentation changes.
 - Public checkpoint: [`docs/R2_BUILTIN_MATERIAL_PREVIEW_CHECKPOINT_20261004.md`](docs/R2_BUILTIN_MATERIAL_PREVIEW_CHECKPOINT_20261004.md), including the CPD fixture diagnosis and SOL-reviewed ExternalObjects design gap.
 - CPD remains unresolved: the runner is documented failing at its synthetic `Coat.data.materials` assertion. The same failure was observed at `ec81dc2c176f2b782eb96562e7476f1719c46023` and `d47091c2680b53ac0cb11041f5ece11cd851aa90`; this only shows the failure was not introduced between those revisions.
