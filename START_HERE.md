@@ -2,19 +2,17 @@
 
 This is a continuation handoff, not a product-completion statement. **STOPPED / INCOMPLETE** applies only to the earlier private-corpus compatibility campaign; it does not suspend public synthetic development. For the normal `.unitypackage`-to-Blender workflow, Unity project import and manual FBX export are not user prerequisites. The add-on handles temporary extraction/FBX interchange internally; Unity Editor/projects serve as development verification oracles, while importing the finished output package into Unity is a separate return step.
 
-## ACTIVE USER STOP — implementation and execution paused (2026-10-06)
+## Planning task record — 2026-10-06
 
-**Planning and documentation are authorized for the Avatar delivery/dependency-closure plan only. Product code edits, test execution, Blender/Unity runs, broader integration, and release work remain paused until a separate explicit execution instruction.** Do not auto-resume implementation during routine status checks. This is a bounded planning authorization, not a general restart.
+The linked design and implementation plan were saved as documentation only; no product code, test, Blender, or Unity run occurred in that task. This record does not grant, revoke, or narrow existing user authorization and creates no new per-step approval condition.
 
 - Repository: <https://github.com/UkkyaGuiyo/vapb>
-- Branch and verified remote HEAD: `feature/r2-material-slot-reorder` / `9895b8a99ae4f56f4e8592227a847b9d87919f03` (documentation commit; post-push remote readback)
-- Planning work root: `C:\\Users\\gkgkb\\Documents\\Codex\\2026-10-04\\task-3\\unitypackage_blender_importer`. The canonical remote, branch, and clean worktree were verified on TitanG14 before documentation changes.
-- Public checkpoint: [`docs/R2_BUILTIN_MATERIAL_PREVIEW_CHECKPOINT_20261004.md`](docs/R2_BUILTIN_MATERIAL_PREVIEW_CHECKPOINT_20261004.md), including the CPD fixture diagnosis and SOL-reviewed ExternalObjects design gap.
-- CPD remains unresolved: the runner is documented failing at its synthetic `Coat.data.materials` assertion. The same failure was observed at `ec81dc2c176f2b782eb96562e7476f1719c46023` and `d47091c2680b53ac0cb11041f5ece11cd851aa90`; this only shows the failure was not introduced between those revisions.
-- No product code/test or Unity project was changed or run for this planning task. The plan is Avatar-first; World is independently gated. External VHS/OnlyYou contracts remain unverified.
-- When separately authorized to execute, first verify the canonical remote, branch, HEAD, and worktree status. Read the checkpoint and plan before code changes. Keep `PREFAB_RENDERER_MATERIAL` and `FBX_EXTERNAL_MATERIAL` tests separate; do not substitute confirmation, names, or a unique-child guess for exact native receipt evidence.
-
-Do not treat these planning documents as authorization to implement. Wait for a separate explicit execution instruction.
+- Branch and correction base: `feature/r2-material-slot-reorder` / `960b8aa011bc533b92d4304ae3c9227bef8e1396` (verify the current remote before later work)
+- Planning work root: `C:\Users\gkgkb\Documents\Codex\2026-10-04\task-3\unitypackage_blender_importer` on TitanG14.
+- Design: [`docs/superpowers/specs/2026-10-06-vapb-core-roundtrip-and-dependency-closure-design.md`](docs/superpowers/specs/2026-10-06-vapb-core-roundtrip-and-dependency-closure-design.md)
+- Plan: [`docs/superpowers/plans/2026-10-06-vapb-core-roundtrip-and-dependency-closure.md`](docs/superpowers/plans/2026-10-06-vapb-core-roundtrip-and-dependency-closure.md)
+- CPD remains unresolved at the documented synthetic `Coat.data.materials` assertion. The same failure at `ec81dc2c176f2b782eb96562e7476f1719c46023` and `d47091c2680b53ac0cb11041f5ece11cd851aa90` only establishes it was not introduced between those revisions.
+- Keep `PREFAB_RENDERER_MATERIAL` and `FBX_EXTERNAL_MATERIAL` evidence separate. Preserve VAPB's unchanged and geometry-replacement E2E, Hierarchy Parity, and campaign requirements.
 
 ## Current public synthetic checkpoint (2026-10-04)
 

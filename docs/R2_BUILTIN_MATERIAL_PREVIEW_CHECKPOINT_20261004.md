@@ -1,8 +1,8 @@
 # R2 Built-in Material Preview Checkpoint
 
-## Active stop — planning only; implementation paused (2026-10-06)
+## Planning task record — 2026-10-06
 
-Planning and documentation for Avatar delivery/dependency closure are authorized. Product code, tests, Blender/Unity execution, integration, and release remain paused pending a separate explicit execution instruction. Planning-start branch was `feature/r2-material-slot-reorder` at `cf45a3ec95af853c009fa446eaf76f8c5ea9af3b`; reverify after docs commit. CPD remains unresolved. See `START_HERE.md` and the linked design/plan; these documents do not authorize implementation.
+A later documentation-only plan correction changes no product code or test status. This checkpoint records prior bounded evidence; it does not pause or alter existing user authorization. The CPD runner remains unresolved. See `START_HERE.md` and the current Core Round-trip/dependency-closure design and plan.
 
 Date: 2026-10-04  
 Project: VAPB  
