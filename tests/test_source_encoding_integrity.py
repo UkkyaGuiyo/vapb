@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 USER_FACING_SOURCES = (ROOT / "operators" / "import_unitypackage.py",)
 _REQUIRED_UI_TEXT = (
     "\u539f\u672c\u306e\u4fdd\u7ba1\u5148",
+    "VAPB Import \u2014 {package_label}",
     "UnityPackage\u539f\u672c\u3092\u4fdd\u7ba1\u3057\u307e\u3059\u3002\u7a7a\u6b04\u306a\u3089Blender\u30e6\u30fc\u30b6\u30fc\u30c7\u30fc\u30bf\u5185\u306eVAPB\u4fdd\u7ba1\u5148\u3092\u4f7f\u7528",
     "UnityPackage\u539f\u672c\u3092\u4fdd\u7ba1\u4e2d",
     "Scene\u5185\u306eImport\u8a18\u9332\u306b\u672a\u89e3\u6c7a\u9805\u76ee\u304c\u3042\u308a\u307e\u3059\u3002",
