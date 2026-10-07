@@ -1,0 +1,25 @@
+{
+  "schema": "vapb-offline-frame-analysis-execution-v1",
+  "input_commit": "7f4cee291a11f58d15f36becad4beda91b07f24b",
+  "status": "EXPLORATORY_ONLY_NO_HOLDOUT",
+  "unity_processes_launched": 0,
+  "tests_passed": 18,
+  "tests_failed": 0,
+  "new_tests": 5,
+  "test_interpreter": "Blender 5.2.1 bundled Python",
+  "report_sha256": "5efe96bc62561324111779516fcf75c9e1e2cf5af2bda927d24bdfc1f8010453",
+  "reviewed_script_sha256_after_generation": "eea22d5509b9346129d6a114e2a73b6527f14061343e6b8d8ce6849f6691910c",
+  "test_source_sha256": "2ecbe64fb793a0c3439dff01a87307bf8649bd3f39df1540be227b70cea88c75",
+  "models": {
+    "review": "GPT-6.1 SOL medium",
+    "implementation": "GPT-6 LUNA low",
+    "design": "GPT-6 Astra medium"
+  },
+  "original_inputs_intact": true,
+  "provisional_artifact_gap": "Initial raw-unit-ratio report generated then deleted during correction; original bytes/hash not retained. No reconstruction treated as original evidence. Corrected exclusive-create report retained.",
+  "developer_reported_failures": [
+    "Synthetic frame-sign test expectation corrected",
+    "Local variable shadowing and manifest lookup errors before successful corrected output; original failure logs not retained"
+  ],
+  "new_foundation_or_product_change": false
+}
