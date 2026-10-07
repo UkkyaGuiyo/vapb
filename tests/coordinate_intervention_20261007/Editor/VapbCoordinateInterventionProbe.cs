@@ -126,6 +126,11 @@ public static class VapbCoordinateInterventionProbe
     private static bool started;
     private static int importWaitTicks;
 
+    private sealed class CaptureContext
+    {
+        public string result_path;
+    }
+
     static VapbCoordinateInterventionProbe()
     {
         if (HasArgument("-vapbCoordinateManifest") && !started)
@@ -137,60 +142,68 @@ public static class VapbCoordinateInterventionProbe
 
     private static void Capture()
     {
-        string resultPath = Argument("-vapbCoordinateResult");
-        int exitCode = 1;
-        try
-        {
-            string manifestPath = Argument("-vapbCoordinateManifest");
-            string manifestBytes = File.ReadAllText(manifestPath, Encoding.UTF8);
-            Manifest manifest = JsonUtility.FromJson<Manifest>(manifestBytes);
-            if (manifest == null || manifest.cases == null || manifest.cases.Length != 7 || manifest.spec == null)
-                throw new InvalidOperationException("MANIFEST_SHAPE_INVALID");
-            if (!AllModelsImported(manifest))
+        var context = new CaptureContext();
+        ProbeCaptureExitGuard.Run(
+            () => CaptureBody(context),
+            exception =>
             {
-                if (++importWaitTicks <= 120)
+                var failure = new Result
                 {
-                    EditorApplication.delayCall += Capture;
-                    return;
-                }
-                throw new InvalidOperationException("MODEL_IMPORTS_NOT_READY_AFTER_120_EDITOR_TICKS");
-            }
-            if (!string.Equals(Application.unityVersion, "2022.3.22f1", StringComparison.Ordinal))
-                throw new InvalidOperationException("UNITY_VERSION_MISMATCH:" + Application.unityVersion);
+                    unity_version = Application.unityVersion,
+                    errors = new[] { exception.GetType().Name + ":" + exception.Message },
+                };
+                ProbeCaptureExitGuard.TryRecordFailure(context.result_path,
+                    JsonUtility.ToJson(failure, true), WriteNew,
+                    writeException => Debug.LogError("VAPB coordinate failure record could not be written: "
+                        + writeException));
+                Debug.LogException(exception);
+            },
+            recordException => Debug.LogError("VAPB coordinate failure reporting failed: " + recordException),
+            EditorApplication.Exit);
+    }
 
-            var result = new Result
-            {
-                unity_version = Application.unityVersion,
-                manifest_sha256 = Sha256(manifestPath),
-                errors = Array.Empty<string>(),
-            };
-            var captured = new List<CapturedCase>();
-            var errors = new List<string>();
-            foreach (FixtureCase fixtureCase in manifest.cases)
-                captured.Add(CaptureCase(fixtureCase, manifest.spec.geometry, errors));
-            if (!SameImporterSettings(captured))
-                errors.Add("MODEL_IMPORTER_SETTINGS_DIFFER_BETWEEN_CASES");
-            result.cases = captured.ToArray();
-            result.errors = errors.ToArray();
-            bool allMapped = captured.Count == 7 && captured.All(c => c.face_membership_matches_source_identity
-                && c.unmatched_face_count == 0);
-            result.status = allMapped && errors.Count == 0
-                ? "UNITY_FACE_IDENTITY_CAPTURED"
-                : "UNITY_FACE_IDENTITY_UNPROVEN";
-            WriteNew(resultPath, JsonUtility.ToJson(result, true));
-            exitCode = allMapped && errors.Count == 0 ? 0 : 1;
-        }
-        catch (Exception exception)
+    private static int? CaptureBody(CaptureContext context)
+    {
+        context.result_path = Argument("-vapbCoordinateResult");
+        string resultPath = context.result_path;
+        string manifestPath = Argument("-vapbCoordinateManifest");
+        string manifestBytes = File.ReadAllText(manifestPath, Encoding.UTF8);
+        Manifest manifest = JsonUtility.FromJson<Manifest>(manifestBytes);
+        if (manifest == null || manifest.cases == null || manifest.cases.Length != 7 || manifest.spec == null)
+            throw new InvalidOperationException("MANIFEST_SHAPE_INVALID");
+        if (!AllModelsImported(manifest))
         {
-            var failure = new Result
+            if (++importWaitTicks <= 120)
             {
-                unity_version = Application.unityVersion,
-                errors = new[] { exception.GetType().Name + ":" + exception.Message },
-            };
-            if (!string.IsNullOrWhiteSpace(resultPath) && !File.Exists(resultPath))
-                WriteNew(resultPath, JsonUtility.ToJson(failure, true));
+                EditorApplication.delayCall += Capture;
+                return null;
+            }
+            throw new InvalidOperationException("MODEL_IMPORTS_NOT_READY_AFTER_120_EDITOR_TICKS");
         }
-        EditorApplication.Exit(exitCode);
+        if (!string.Equals(Application.unityVersion, "2022.3.22f1", StringComparison.Ordinal))
+            throw new InvalidOperationException("UNITY_VERSION_MISMATCH:" + Application.unityVersion);
+
+        var result = new Result
+        {
+            unity_version = Application.unityVersion,
+            manifest_sha256 = Sha256(manifestPath),
+            errors = Array.Empty<string>(),
+        };
+        var captured = new List<CapturedCase>();
+        var errors = new List<string>();
+        foreach (FixtureCase fixtureCase in manifest.cases)
+            captured.Add(CaptureCase(fixtureCase, manifest.spec.geometry, errors));
+        if (!SameImporterSettings(captured))
+            errors.Add("MODEL_IMPORTER_SETTINGS_DIFFER_BETWEEN_CASES");
+        result.cases = captured.ToArray();
+        result.errors = errors.ToArray();
+        bool allMapped = captured.Count == 7 && captured.All(c => c.face_membership_matches_source_identity
+            && c.unmatched_face_count == 0);
+        result.status = allMapped && errors.Count == 0
+            ? "UNITY_FACE_IDENTITY_CAPTURED"
+            : "UNITY_FACE_IDENTITY_UNPROVEN";
+        WriteNew(resultPath, JsonUtility.ToJson(result, true));
+        return allMapped && errors.Count == 0 ? 0 : 1;
     }
 
     private static bool AllModelsImported(Manifest manifest)
@@ -441,9 +454,6 @@ public static class VapbCoordinateInterventionProbe
     private static bool HasArgument(string name) => Environment.GetCommandLineArgs().Any(arg => arg == name);
     private static string Argument(string name)
     {
-        string[] args = Environment.GetCommandLineArgs();
-        int index = Array.IndexOf(args, name);
-        if (index < 0 || index + 1 >= args.Length) throw new InvalidOperationException("ARGUMENT_MISSING:" + name);
-        return args[index + 1];
+        return ProbeCaptureExitGuard.RequiredArgument(Environment.GetCommandLineArgs(), name);
     }
 }

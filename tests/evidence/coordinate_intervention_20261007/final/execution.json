@@ -24,7 +24,7 @@
     "unity_editor_started": false,
     "assembly_sha256": "286202b2615c78e853619958c53356bdb18fd002dc98224e3abb1c24c2555fbd"
   },
-  "SOL_review": "GPT-6.1 SOL medium: approved for bounded preparation; identified comparator false-pass risks, addressed and regression-tested.",
+  "SOL_review": "GPT-6.1 SOL medium: revised read-only review approved; helper is in Editor assembly, serialization failure coverage added, no P0-P2 findings.",
   "material_identity_scope": "Fixture-authored unique material names join imported Materials to raw FBX Material object UIDs; this is not an independent/general mapping proof.",
   "raw_model_trs_scope": "Captured from raw FBX; full decomposition not independently asserted.",
   "product_code_changed": false,
@@ -160,10 +160,6 @@
       "sha256": "c925da231e9ac04e19620d352b958e9b39486a86c686f701db6dfd37f8d0596e"
     },
     {
-      "path": "tests/coordinate_intervention_20261007/README.md",
-      "sha256": "71c865a5e0334318a4682dd40869078ca2518dc507a808fdbf6cf5dec8eb9d43"
-    },
-    {
       "path": "tests/coordinate_intervention_20261007/test_compare_captures.py",
       "sha256": "e43cedfaacebae75ac8e8e721aeca8cf73ecc6400018dc65a6d40e6210ae0896"
     },
@@ -173,7 +169,45 @@
     },
     {
       "path": "tests/coordinate_intervention_20261007/Editor/VapbCoordinateInterventionProbe.cs",
-      "sha256": "629814ae7ec5da502d720330850f17090fd9a10cfad5c0db78f681be9ae1be3d"
+      "sha256": "add272b42295e3ba5d716473e158545503c97c6f2be79f253bbe90ce5c8b2eaa"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/Editor/ProbeCaptureExitGuard.cs",
+      "sha256": "9e0c3926d5f4d22af38448bad08173bc7a035b5cd23d07b7afa42e3e0496dc52"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/TestProbeCaptureExitGuard.cs",
+      "sha256": "3313a2d9d83919914bc697d0d5da085f4a0de6677c7dec2a242d9c6424228035"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/README.md",
+      "sha256": "7256e4c7348db29a12f6c48bdf88d3dc36ce77168395cf1b6fad502f9d663d3d"
     }
-  ]
+  ],
+  "guard_regression_tests": {
+    "status": "PASS",
+    "scenarios": 5,
+    "failures": 0,
+    "test_source_sha256": "3313a2d9d83919914bc697d0d5da085f4a0de6677c7dec2a242d9c6424228035",
+    "assembly_sha256": "ea449da17e8a437ae70ef23ca36698a1fbebbc77956daa0a9df66bd7e52ee7e5",
+    "runner": "Unity 2022.3.22f1 bundled .NET 6 runtime",
+    "unity_editor_started": false
+  },
+  "current_head_before_save": "431ebe32b646cde2c9079978475a80ebb4cc0770",
+  "editor_source_compile": {
+    "status": "PASS",
+    "sources": [
+      "tests/coordinate_intervention_20261007/Editor/VapbCoordinateInterventionProbe.cs",
+      "tests/coordinate_intervention_20261007/Editor/ProbeCaptureExitGuard.cs"
+    ],
+    "source_sha256": {
+      "probe": "add272b42295e3ba5d716473e158545503c97c6f2be79f253bbe90ce5c8b2eaa",
+      "exit_guard": "9e0c3926d5f4d22af38448bad08173bc7a035b5cd23d07b7afa42e3e0496dc52"
+    },
+    "compiler": "Unity 2022.3.22f1 bundled Roslyn csc 4.3.1",
+    "errors": 0,
+    "assembly_sha256": "d893aeecdc3437c6003c41ee3c77b47e25a96ee40c81f01a6895c5f00ac5bada",
+    "unity_editor_started": false,
+    "project_compile": "NOT_RUN"
+  }
 }
