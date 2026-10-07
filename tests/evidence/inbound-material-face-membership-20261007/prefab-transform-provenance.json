@@ -1,0 +1,233 @@
+{
+  "C_independently_justified": false,
+  "comparison": {
+    "absolute_tolerance": 0.0001,
+    "all_16_values_within_tolerance": true,
+    "max_abs_residual": 0.0,
+    "reconstructed_M_f32": [
+      [
+        100.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -3.5762786865234375e-05,
+        100.0,
+        0.0
+      ],
+      [
+        0.0,
+        -100.0,
+        -3.5762786865234375e-05,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "recorded_M": [
+      [
+        100.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -3.5762786865234375e-05,
+        100.0,
+        0.0
+      ],
+      [
+        0.0,
+        -100.0,
+        -3.5762786865234375e-05,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "residual_reconstructed_minus_recorded": [
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    ]
+  },
+  "interpretation": "This experiment only checks whether recorded M follows the authored Prefab transform chain. It does not independently justify C, prove the Unity model importer factorization, or establish face mapping.",
+  "mapping": null,
+  "prefab_chain_reproduces_recorded_M_within_tolerance": true,
+  "question": "Whether the recorded Unity mesh-to-Prefab-root M is reproduced by the authored Prefab Transform chain.",
+  "serialized_reference_trace": {
+    "chain_root_to_renderer": [
+      {
+        "child_file_ids": [
+          5170272041940572530,
+          5437707505175877810
+        ],
+        "game_object_file_id": 7699884727111375572,
+        "local_matrix_f32": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "parent_file_id": 0,
+        "position_f32": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_xyzw_f32": [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "scale_f32": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "transform_file_id": 2848558806605614400
+      },
+      {
+        "child_file_ids": [],
+        "game_object_file_id": 6665729011320497926,
+        "local_matrix_f32": [
+          [
+            100.0,
+            -0.0,
+            0.0,
+            -0.0
+          ],
+          [
+            0.0,
+            -3.5762786865234375e-05,
+            100.0,
+            0.0
+          ],
+          [
+            -0.0,
+            -100.0,
+            -3.5762786865234375e-05,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "parent_file_id": 2848558806605614400,
+        "position_f32": [
+          -0.0,
+          0.0,
+          0.0
+        ],
+        "rotation_xyzw_f32": [
+          -0.70710688829422,
+          0.0,
+          0.0,
+          0.7071067094802856
+        ],
+        "scale_f32": [
+          100.0,
+          100.0,
+          100.0
+        ],
+        "transform_file_id": 5170272041940572530
+      }
+    ],
+    "composed_matrix_f32": [
+      [
+        100.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -3.5762786865234375e-05,
+        100.0,
+        0.0
+      ],
+      [
+        0.0,
+        -100.0,
+        -3.5762786865234375e-05,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "renderer_file_id": 3728717051629469441,
+    "renderer_game_object_file_id": 6665729011320497926,
+    "renderer_transform_file_id": 5170272041940572530,
+    "root_game_object_file_id": 7699884727111375572,
+    "root_transform_file_id": 2848558806605614400
+  },
+  "source": {
+    "ownership_frame_result_sha256": "52c15704c9adb65691489712cb1360f89877505ac3cc124e26fd1bf8b97623c9",
+    "package_path_in_repo": "tests/unity_model_material_probe/fixtures/ThreeSlotSource.unitypackage",
+    "package_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+    "prefab_asset_path": "Assets/PublicMaterialSource/Direct.prefab",
+    "prefab_asset_sha256": "0d33eb041145f0c73cb69e61de720b580a33aa56e8d432ba04ce110618e50843",
+    "unity_diagnostic_sha256": "f93f3e51f5c9435b291909cc105ef1f8b88de91ab5c8f9a988d06cebf2471079"
+  },
+  "status": "UNPROVEN_FRAME_CANDIDATE_ONLY"
+}
