@@ -39,6 +39,16 @@ The public roundtrip probe calls `VapbModelSkinFinalizer.Apply(ManifestPath)` be
 
 The next validation runs the diagnostic-only entry against the existing attempt-11 Variant, then uses the captured native carrier order and triangle counts to decide whether a distinct semantic oracle is justified. Attempt 10 and all attempt-11 import/Apply/inspection logs remain unchanged. Do not change Material ordering until face/submesh semantics are observed.
 
+## Diagnostic preparation and resource hold
+
+The diagnostic was extended from source commit `42dfd5abed72a32fdb2df40a8a6ff6128cb3132b` to capture source and Variant mesh vertices, per-submesh triangle indices, and each renderer's mesh-to-Prefab-root matrix. It captures the source Prefab renderer's mesh/material identities and Material property overrides scoped to the corresponding source renderer, with separate identities for the modification target and Material reference. The fixed fixture requires exactly one identifiable source renderer; missing or ambiguous source evidence fails the diagnostic. These are rest mesh observations; they do not prove skin deformation, evaluated pose, or general Avatar fidelity.
+
+GPT-6 LUNA at low reasoning prepared the additions. GPT-6.1 SOL at medium reasoning reviewed the additions and execution plan, then verified the source uniqueness and override-scope corrections. The reviewed and staged diagnostic source SHA-256 is `f93d0e4b3f7b3cc3c07eb22416585918e8924140e04d5325684a0b7ad410b47c`. The existing target probe was preserved separately before staging; its SHA-256 is `7fb47aa508a455e2ce0f853b1fd961e4ca7bc48a86076f5d12da21273e6c2ae2`.
+
+No diagnostic Unity process was launched. A fresh resource check at `2026-10-07T12:28:19Z` observed `1455 MB` free RAM and `2336 MB` free virtual memory, with zero Editors on this target. The run-specific gate was `1500 MB` RAM and `2000 MB` virtual memory, based on a `500 MB` process budget plus `1000 MB` RAM reserve. Earlier five-second samples of owned processes had observed up to `419 MB` private memory; this is not a guaranteed peak or a general Unity minimum. The launcher stopped before `Start-Process`; other Editors remained untouched.
+
+The diagnostic additions remain Unity-compile and execution unverified. The original acceptance entry point is unchanged, and the slot-0 FAIL remains the acceptance result. Its JSON SHA-256 is `6e5643901511d8705653b0f469976d0536bcbb3ba05a42fddf02bbf06f3da9d7`; the successful Apply JSON SHA-256 is `b31e501c78408b36480ef902cc20818aed574f2fc0d47a5860e2a80e44566de7`. Slot order, identity-based triangle counts, and actual triangle corner membership must be compared separately after resources permit the single diagnostic run.
+
 ## Resource and process check
 
 Before attempt 10, free memory was about `1950 MB` and free virtual memory about `2818 MB`. Five-second samples observed up to `410 MB` private memory for import and `355 MB` for inspection. These samples are not whole-tree or child-process peak measurements and do not establish a general minimum. The two other Unity Editors and the Unity MCP server were left running; the same-target process check was clear before each serial call.

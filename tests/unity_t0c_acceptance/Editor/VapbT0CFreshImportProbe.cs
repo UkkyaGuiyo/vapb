@@ -29,6 +29,7 @@ public static class VapbT0CFreshImportProbe
         public string variant_path;
         public string model_guid;
         public string model_sha256;
+        public string prefab_guid;
         public MaterialBinding[] material_bindings;
     }
 
@@ -52,6 +53,24 @@ public static class VapbT0CFreshImportProbe
     }
 
     [Serializable]
+    private sealed class SubmeshResult
+    {
+        public int triangle_count;
+        public int[] indices;
+    }
+
+    [Serializable]
+    private sealed class OverrideResult
+    {
+        public string property_path;
+        public string target_renderer_guid;
+        public long target_renderer_local_id;
+        public string object_reference_guid;
+        public long object_reference_local_id;
+        public string value;
+    }
+
+    [Serializable]
     private sealed class ProbeResult
     {
         public string status;
@@ -71,6 +90,18 @@ public static class VapbT0CFreshImportProbe
         public int native_carrier_renderer_count;
         public int native_carrier_matching_mesh_renderer_count;
         public int[] triangles_by_submesh;
+        public SubmeshResult[] submeshes;
+        public Vector3[] mesh_vertices;
+        public string source_prefab_path;
+        public string source_renderer_mesh_guid;
+        public long source_renderer_mesh_local_file_id;
+        public MaterialResult[] source_renderer_materials;
+        public SubmeshResult[] source_submeshes;
+        public Vector3[] source_mesh_vertices;
+        public Matrix4x4 mesh_to_prefab_root;
+        public Matrix4x4 source_mesh_to_prefab_root;
+        public int source_renderer_count;
+        public OverrideResult[] variant_material_overrides;
         public int asset_database_path_count;
     }
 
@@ -219,6 +250,7 @@ public static class VapbT0CFreshImportProbe
             var task = manifest.reference_rebind_tasks[0];
             result.variant_path = task.variant_path;
             result.expected_material_bindings = task.material_bindings;
+            result.source_prefab_path = AssetDatabase.GUIDToAssetPath(task.prefab_guid);
             string variantGuid = AssetDatabase.AssetPathToGUID(task.variant_path);
             if (String.IsNullOrEmpty(variantGuid))
                 throw new InvalidOperationException("Variant path is not present in the AssetDatabase");
@@ -231,6 +263,23 @@ public static class VapbT0CFreshImportProbe
             if (renderers.Length != 1)
                 throw new InvalidOperationException("Expected exactly one SkinnedMeshRenderer in the imported Variant");
             var renderer = renderers[0];
+            var sourceRendererObject = PrefabUtility.GetCorrespondingObjectFromSource(renderer);
+            if (sourceRendererObject == null) throw new InvalidOperationException("Variant renderer has no corresponding source renderer");
+            var mods = PrefabUtility.GetPropertyModifications(contents);
+            var overrides = new List<OverrideResult>();
+            if (mods != null) foreach (var mod in mods)
+            {
+                if (mod == null || mod.target != sourceRendererObject || mod.propertyPath == null || !mod.propertyPath.StartsWith("m_Materials.Array.data[", StringComparison.Ordinal)) continue;
+                var entry = new OverrideResult { property_path = mod.propertyPath, value = mod.value ?? "" };
+                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(mod.target, out entry.target_renderer_guid, out entry.target_renderer_local_id);
+                if (mod.objectReference != null)
+                {
+                    AssetDatabase.TryGetGUIDAndLocalFileIdentifier(mod.objectReference, out entry.object_reference_guid, out entry.object_reference_local_id);
+                }
+                overrides.Add(entry);
+            }
+            result.variant_material_overrides = overrides.ToArray();
+            result.mesh_to_prefab_root = contents.transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
             var mesh = renderer.sharedMesh;
             if (mesh == null) throw new InvalidOperationException("Variant renderer has no Mesh");
             string meshGuid;
@@ -297,9 +346,53 @@ public static class VapbT0CFreshImportProbe
             }
             if (mesh.subMeshCount > 0)
             {
+                result.mesh_vertices = mesh.vertices;
                 result.triangles_by_submesh = new int[mesh.subMeshCount];
+                result.submeshes = new SubmeshResult[mesh.subMeshCount];
                 for (var index = 0; index < mesh.subMeshCount; index++)
-                    result.triangles_by_submesh[index] = (int)mesh.GetIndexCount(index) / 3;
+                {
+                    var indices = mesh.GetTriangles(index);
+                    result.triangles_by_submesh[index] = indices.Length / 3;
+                    result.submeshes[index] = new SubmeshResult { triangle_count = indices.Length / 3, indices = indices };
+                }
+            }
+            var sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(result.source_prefab_path);
+            if (sourcePrefab == null) throw new InvalidOperationException("Source Prefab could not be loaded");
+            {
+                var sourceRenderers = sourcePrefab.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                result.source_renderer_count = sourceRenderers.Length;
+                if (sourceRenderers.Length != 1) throw new InvalidOperationException("Expected exactly one source SkinnedMeshRenderer");
+                foreach (var sourceRenderer in sourceRenderers)
+                {
+                    if (sourceRenderer.sharedMesh == null) throw new InvalidOperationException("Source renderer has no Mesh");
+                    if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(sourceRenderer.sharedMesh, out string sourceMeshGuid, out long sourceMeshLocalId)) throw new InvalidOperationException("Could not identify source Mesh");
+                    result.source_renderer_mesh_guid = sourceMeshGuid;
+                    result.source_renderer_mesh_local_file_id = sourceMeshLocalId;
+                    result.source_mesh_to_prefab_root = sourcePrefab.transform.worldToLocalMatrix * sourceRenderer.transform.localToWorldMatrix;
+                    var sourceSlots = sourceRenderer.sharedMaterials;
+                    result.source_renderer_materials = new MaterialResult[sourceSlots == null ? 0 : sourceSlots.Length];
+                    for (var i = 0; i < result.source_renderer_materials.Length; i++)
+                    {
+                        var material = sourceSlots[i];
+                        var item = new MaterialResult { is_null = material == null };
+                        if (material != null)
+                        {
+                            item.name = material.name; item.path = AssetDatabase.GetAssetPath(material);
+                            item.guid_lookup_succeeded = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material, out string guid, out long id);
+                            item.guid = item.guid_lookup_succeeded ? guid : ""; item.local_file_id = item.guid_lookup_succeeded ? id : 0;
+                        }
+                        result.source_renderer_materials[i] = item;
+                    }
+                    var sourceMesh = sourceRenderer.sharedMesh;
+                    result.source_mesh_vertices = sourceMesh.vertices;
+                    result.source_submeshes = new SubmeshResult[sourceMesh.subMeshCount];
+                    for (var i = 0; i < sourceMesh.subMeshCount; i++)
+                    {
+                        var indices = sourceMesh.GetTriangles(i);
+                        result.source_submeshes[i] = new SubmeshResult { triangle_count = indices.Length / 3, indices = indices };
+                    }
+                    break;
+                }
             }
             result.asset_database_path_count = AssetDatabase.GetAllAssetPaths().Length;
             result.error = "DIAGNOSTIC_CAPTURED_NO_ACCEPTANCE_ASSERTIONS";
