@@ -44,7 +44,7 @@ After adding the path and module-cache guards, the exact saved scene was reopene
 
 ## Probe source-byte audit
 
-The recorded probe hash `0102e94eef3ce2c185900cfed10f0c851f502f737a8c5ac57b4efa8332608d8b` is the raw hash of the tracked worktree script invoked directly by Blender. That file had mixed line endings (188 CRLF and 23 LF); its LF-normalized bytes exactly equal the tested source commit's Git blob. The committed blob SHA-1 is `51f6cbcdd48f45c87015d655d64fd9ce075a6ef4`; SHA-256 of blob/LF-normalized bytes is `01717ddfbf81389ff23eb894f642fe8f6219eff940c9863a195436843a9e9412`. This resolves the discrepancy as line-ending encoding only, with no probe content difference. See `confirm-raw-prefab-reopen-source-byte-audit.json`; its SHA-256 is `fbef38ee0618f07e718119faf0fa8f54f604eebb9fd4d23b98c0d3ca8b6e9d27`.
+The recorded probe hash `0102e94eef3ce2c185900cfed10f0c851f502f737a8c5ac57b4efa8332608d8b` is the raw hash of the tracked worktree script invoked directly by Blender. That file had mixed line endings (188 CRLF and 23 LF); its LF-normalized bytes exactly equal the tested source commit's Git blob. The committed blob SHA-1 is `51f6cbcdd48f45c87015d655d64fd9ce075a6ef4`; SHA-256 of blob/LF-normalized bytes is `01717ddfbf81389ff23eb894f642fe8f6219eff940c9863a195436843a9e9412`. This resolves the discrepancy as line-ending encoding only, with no probe content difference. See `confirm-raw-prefab-reopen-source-byte-audit.json`; raw local CRLF file SHA-256 is `fbef38ee0618f07e718119faf0fa8f54f604eebbf9d4d23b98c0d3ca8b6e9d27`; remote LF Git-blob SHA-256 is `84a5ff315d3dc9ac97c7cd0c4e72bcad7cdcd9b7f5c02a01b3a05d6e98297d17`.
 
 ## Exact Unity identity witness: prepared, Editor run pending
 
