@@ -99,6 +99,16 @@ but the managed reference does not provide the native implementation, the FBX
 Mesh call inputs, or a documented relation to `fileIdsGeneration`. Treating
 those method names as a reproducible ID formula would be speculation.
 
+### Bounded source-code lead (2026-10-07)
+
+Inspection of UnityCsReference 2022.3 `ImportSettingsInternalID.cs` lines
+109–118 found a fallback call to `MakeLocalFileIDWithHash(type, name, 0)` when
+an ID/name is absent from the internal-ID table. This is a concrete lead for a
+future comparison, but it still does not establish that `ModelImporter` uses
+that path for Mesh sub-assets, what exact `type` and `name` it supplies, or how
+that result relates to FBX UIDs or `fileIdsGeneration`. No hash or salt brute
+force was performed. The automatic-join conclusion remains pending.
+
 Unity also documents that
 [`OnPostprocessModel`](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/AssetPostprocessor.OnPostprocessModel.html)
 can modify imported GameObjects and Meshes before the final Prefab is created,
@@ -124,6 +134,11 @@ The existing T0 evidence remains bounded: strict no-edit automatic import is
 failed gate. The explicitly confirmed route is a separate result and must not
 be relabeled as a strict no-edit pass. No Unity witness has been made a
 mandatory product prerequisite.
+
+The confirmed route was subsequently exported and checked in a separate
+Blender process. See [the bounded confirmed-route export observation](R2_CONFIRMED_ROUTE_EXPORT_CLOSURE_20261007.md)
+for its hashes, geometry comparison, and limitations. That result does not
+unblock T0-B or change the automatic-binding status.
 
 ## Narrow next branch
 
