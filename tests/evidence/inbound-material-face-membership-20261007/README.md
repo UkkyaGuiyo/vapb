@@ -60,3 +60,20 @@ Six-decimal equality is precision-bounded, not bitwise equality. Winding/front-f
 The concrete assignment seam is `operators/renderer_binding.py`: a serialized Renderer material array is assigned directly to same-numbered Blender material slots. Existing witness/dependency code also carries that ordinal without a geometric partition contract. The current Confirm UI establishes Renderer↔Mesh identity, not explicit face mapping.
 
 See [the saved comparison plan](../../../docs/R2_MATERIAL_PARTITION_DIAGNOSTIC_PLAN_20261007.md) for manual mapping, optional geometry witness, and scoped unresolved behavior. No product option, schema extension or compatibility policy was selected here. Normal import must not require Unity Editor/project (PRODUCT_SPEC.md:17,457–458); development observations and an optional exact-revision witness are allowed. The existing witness does not prove material face partitions. A product fix needs a trustworthy correspondence contract and ambiguity behavior; this diagnostic supplies a bounded RED case for that work.
+
+## Offline frame derivation (2026-10-07)
+
+The raw FBX frame was derived from its GlobalSettings and Geometry-to-Model/parent chain using the installed Blender 5.2 importer/parser source. The derived G·L predicts the captured native-import point transform with maximum matrix residual 3.9745984281580604e-14; all 12 raw triangle corner triples match that transform. The source Model geometric transform is identity and no ancestor geometric transform is inherited.
+
+For this exact fixture, the predeclared candidate C = 0.01·reflectX maps the raw FBX vertex position set to the captured Unity source mesh vertex set, allowing Unity vertex splits. The full triangle multiset matches only under one uniform corner reversal; direct corner order does not match. The 12 unoriented raw triangle signatures are unique at six-decimal quantization, so this fixture’s geometric triangle correspondence is unique. The independently recorded B·M·C vs G·L maximum matrix residual is 7.549789948769024e-8.
+
+This is a fixture-specific measured relationship, not a general Unity importer rule. The pinned Unity metadata has bakeAxisConversion=0 and file units/scale enabled, but does not independently establish the candidate mesh-local factorization or index-reversal provenance. Accordingly the comparator remains UNPROVEN_ORIENTATION_OR_FRAME; mapping=null is preserved, and no product fallback or slot permutation is selected.
+
+The pure perturbation controls rejected changed axis, unit, Model transform, and candidate reflection; index reversal was detected separately. The existing comparator’s label-swap, equal-count, duplicate, ambiguous and multiplicity counterexamples remain unchanged. This offline diagnostic did not start Unity or edit inputs. It used Blender 5.2’s bundled Python to parse the pinned FBX and installed importer source; a separate Blender CLI version sanity check exited normally, with no project import/save.
+
+| Artifact | SHA-256 |
+| --- | --- |
+| [Frame verifier](verify_inbound_frame.py) | 67cb45077ecc676ea25f52e5f468d05b6c66f3c88643cb20b17ebc3ccea3341d |
+| [Frame result](frame-diagnostic-v3.json) | 9e740f2654e3c1a885ae8b291583ae6b2f67cee7004c4c2bc59366d34ff84e42 |
+
+LUNA low authored and ran the offline verifier; SOL medium reviewed the final script/result. The first reviewer pass found missing signature-uniqueness assertion, misleading vertex-count semantics, and an unisolated reflection control; these were corrected before the final run/review. The unique-position comparison explicitly allows Unity vertex splits.

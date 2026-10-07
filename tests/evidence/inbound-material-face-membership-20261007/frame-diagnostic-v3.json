@@ -1,0 +1,309 @@
+{
+  "blender_importer_source": {
+    "axis_rule": "reverse RIGHT_HAND_AXES then axis_conversion(from_forward=-Z, from_up=Y)",
+    "fbx_utils_sha256": "66a15d79d5eaf490176b439f22fb01963efcd46e06702eff224a84135e636fb3",
+    "import_fbx_sha256": "262127c8e6af3e748d696d81070366f39e449aa73e6bc1d9463092b5cbf86741",
+    "parse_fbx_sha256": "96fe3f11b5c9b2950d9c434857e3b0db1a1b558510e2ad360b767643a69c2047",
+    "transform_rule": "Parent @ T @ Roff @ Rp @ Rpre @ R @ inverse(Rpost) @ inverse(Rp) @ Soff @ Sp @ S @ inverse(Sp); geometric T @ R @ S",
+    "unit_rule": "UnitScaleFactor / units_blender_to_fbx_factor(scene); NONE factor=100",
+    "version_claim": "Blender 5.2 pinned installed source; no Blender process launched"
+  },
+  "controls": {
+    "axis_change_rejected": true,
+    "index_reversal_is_separate": true,
+    "model_change_rejected": true,
+    "reflection_candidate_closes": true,
+    "reflection_change_rejected": true,
+    "unit_change_rejected": true
+  },
+  "fbx": {
+    "G": [
+      [
+        0.01,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        6.123233995736766e-19,
+        -0.01,
+        0.0
+      ],
+      [
+        0.0,
+        0.01,
+        6.123233995736766e-19,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "L_and_parent_chain": [
+      [
+        100.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -2.821299691034212e-05,
+        99.99999999999602,
+        0.0
+      ],
+      [
+        0.0,
+        -99.99999999999602,
+        -2.821299691034212e-05,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "det_G": 1.0000000000000002e-06,
+    "det_L": 1000000.0000000002,
+    "global_axis_unit_properties": {
+      "AmbientColor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "CoordAxis": [
+        0
+      ],
+      "CoordAxisSign": [
+        1
+      ],
+      "CustomFrameRate": [
+        24.0
+      ],
+      "DefaultCamera": [
+        "Producer Perspective"
+      ],
+      "FrontAxis": [
+        2
+      ],
+      "FrontAxisSign": [
+        1
+      ],
+      "OriginalUnitScaleFactor": [
+        1.0
+      ],
+      "OriginalUpAxis": [
+        -1
+      ],
+      "OriginalUpAxisSign": [
+        1
+      ],
+      "TimeMode": [
+        11
+      ],
+      "TimeSpanStart": [
+        0
+      ],
+      "TimeSpanStop": [
+        46186158000
+      ],
+      "UnitScaleFactor": [
+        1.0
+      ],
+      "UpAxis": [
+        1
+      ],
+      "UpAxisSign": [
+        1
+      ]
+    },
+    "model_geometry_uid": [
+      208084244,
+      329684292
+    ],
+    "parent_chain": [
+      {
+        "geometric": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "geometric_inherited": false,
+        "has_nondefault_geometric": false,
+        "kind": "Model",
+        "local_base": [
+          [
+            100.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            -2.821299691034212e-05,
+            99.99999999999602,
+            0.0
+          ],
+          [
+            0.0,
+            -99.99999999999602,
+            -2.821299691034212e-05,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "uid": 208084244
+      }
+    ],
+    "triangle_count": 12,
+    "version": 7400
+  },
+  "input_sha256": {
+    "capture": "c0949a10fa0b4ab789d21d62ee4381742240d116f7de5067048fbd7a19f686a7",
+    "comparison": "7d23b9ab0d06ff8a8ff307e9489d2d422ca4b37bfeb938aac7170e61429d7918",
+    "package": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+    "source_fbx": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+    "source_fbx_meta": "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d",
+    "unity_json": "af56ccfa654dcf8c09dcd91c5eb62dc58f773682a9dc339a7372056068a690d2"
+  },
+  "interpretation": "Even a numeric candidate match is not a proven Unity importer factorization or winding rule; keep mapping null until C and orientation parity have independent source authority.",
+  "mapping": null,
+  "matrix_checks": {
+    "BMC_vs_GL_max_abs_candidate_only": 7.549789948769024e-08,
+    "GL_vs_captured_native_point_transform_max_abs": 3.9745984281580604e-14,
+    "all_captured_raw_triangles_match_GL": true,
+    "candidate_C_algebraic_frame_closure_not_Unity_mesh_local_measurement": true,
+    "candidate_C_matches_Unity_mesh_local_triangle_counter_direct": false,
+    "candidate_C_matches_Unity_mesh_local_triangle_counter_reverse": true,
+    "candidate_C_matches_Unity_mesh_local_vertex_position_set_allowing_splits": true,
+    "full_corner_multiset_matches_under_observed_uniform_reverse": true,
+    "raw_unoriented_triangle_signature_count": 12,
+    "raw_unoriented_triangle_signatures_unique": true,
+    "triangle_count_cardinality_matches": true,
+    "unity_vs_GL_direct_full_triangle_counter": false,
+    "unity_vs_GL_uniform_reverse_full_triangle_counter": true
+  },
+  "status": "UNPROVEN_FRAME_CANDIDATE_ONLY",
+  "unity": {
+    "B": [
+      [
+        -1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        -1.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "M": [
+      [
+        100.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        -3.5762786865234375e-05,
+        100.0,
+        0.0
+      ],
+      [
+        0.0,
+        -100.0,
+        -3.5762786865234375e-05,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "candidate_C": [
+      [
+        -0.01,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.01,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.01,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "det_B": -1.0,
+    "det_C": -1.0000000000000002e-06,
+    "det_M": 1000000.0000001278
+  },
+  "unity_meta": {
+    "C_independently_justified": false,
+    "bakeAxisConversion": 0,
+    "reason": "metadata does not independently establish candidate mesh-local factor C=.01*reflectX",
+    "useFileScale": 1,
+    "useFileUnits": 1
+  }
+}
