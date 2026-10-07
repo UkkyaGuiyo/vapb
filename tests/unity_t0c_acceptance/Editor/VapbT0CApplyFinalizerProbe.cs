@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using UnityEditor;
@@ -99,7 +100,7 @@ public static class VapbT0CApplyFinalizerProbe
             result.source_meta_sha256_before = HashFile(Disk(sourcePath) + ".meta");
             result.edited_model_sha256_before = HashFile(Disk(editedPath));
             result.edited_meta_sha256_before = HashFile(Disk(editedPath) + ".meta");
-            result.apply_returned_true = VapbModelSkinFinalizer.Apply(ManifestPath);
+            result.apply_returned_true = InvokeFinalizer(ManifestPath);
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             result.source_model_sha256_after = HashFile(Disk(sourcePath));
             result.source_meta_sha256_after = HashFile(Disk(sourcePath) + ".meta");
@@ -142,5 +143,25 @@ public static class VapbT0CApplyFinalizerProbe
         using (var sha = SHA256.Create())
         using (var stream = File.OpenRead(path))
             return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+    }
+
+    private static bool InvokeFinalizer(string manifestPath)
+    {
+        Type finalizer = null;
+        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            Type candidate = assembly.GetType("VapbModelSkinFinalizer", false);
+            if (candidate == null) continue;
+            if (finalizer != null)
+                throw new InvalidOperationException("Multiple VapbModelSkinFinalizer types are loaded");
+            finalizer = candidate;
+        }
+        if (finalizer == null)
+            throw new InvalidOperationException("Imported VapbModelSkinFinalizer type was not loaded");
+        MethodInfo apply = finalizer.GetMethod("Apply", BindingFlags.Public | BindingFlags.Static,
+            null, new[] { typeof(string) }, null);
+        if (apply == null || apply.ReturnType != typeof(bool) || apply.ContainsGenericParameters)
+            throw new InvalidOperationException("Imported VapbModelSkinFinalizer.Apply(string) bool method was not found");
+        return (bool)apply.Invoke(null, new object[] { manifestPath });
     }
 }

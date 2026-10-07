@@ -17,11 +17,17 @@ Sanitized process evidence:
 - result JSON SHA-256 `4ebfaa8751be0037d3be7844b27b290ceeb1c2f4aea1306cd00bf324d3f666b`
 - both owned processes exited; no Editor remained on the disposable target
 
+## Attempt 11 bootstrap failure
+
+The first import call for the corrected workflow exited `1` during C# compilation. The apply probe directly referenced `VapbModelSkinFinalizer`, but that type is supplied by the package being imported and was unavailable in the initial compile. Unity did not import the package manifest or its assets in this attempt. The probe now resolves the exact public static `Apply(string)` method by reflection after import; the same owned Target will be retried with distinct logs, preserving this failure record.
+
+The failed import log SHA-256 was `13196ba2c36f3ba08c6fcb4a2f9a67df481a32ff9492f0dca53573e378c022fc`. The C# diagnostic was `CS0103` for the unavailable `VapbModelSkinFinalizer` symbol.
+
 ## Correct workflow
 
 The public roundtrip probe calls `VapbModelSkinFinalizer.Apply(ManifestPath)` before loading and inspecting the Variant. The standalone `VapbT0CApplyFinalizerProbe` follows that explicit stage and records the pinned package hash, source FBX/meta hashes before and after Apply, edited FBX/meta hashes, whether the Variant destination was empty, the Apply return value, and Variant creation. It refuses an occupied Variant destination and writes its result with `CreateNew`.
 
-The next validation uses a separate disposable project. It imports the same package, runs the Apply probe, then runs `VapbT0CFreshImportProbe` in another Editor process. Attempt 10 remains unchanged. Unity execution of this corrected sequence is still pending scheduling.
+The next validation imports the same package into the owned disposable target, runs the Apply probe, then runs `VapbT0CFreshImportProbe` in another Editor process. Attempt 10 and the failed attempt-11 import log remain unchanged. Completion of the corrected sequence is still pending.
 
 ## Resource and process check
 
