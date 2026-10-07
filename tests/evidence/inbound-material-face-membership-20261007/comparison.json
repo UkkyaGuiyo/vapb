@@ -1,0 +1,506 @@
+{
+  "comparisons": {
+    "before_after_geometry_equal_by_slot": true,
+    "unity_source_to_confirmed_saved_scene": {
+      "aggregate_triangle_multiplicity_equal": true,
+      "oriented_corner_multiset_equal": false,
+      "uniform_reverse_corner_multiset_equal": true
+    },
+    "unity_source_to_package_mesh_after_confirm": {
+      "aggregate_triangle_multiplicity_equal": true,
+      "oriented_corner_multiset_equal": false,
+      "uniform_reverse_corner_multiset_equal": true
+    },
+    "unity_source_to_package_mesh_before_confirm": {
+      "aggregate_triangle_multiplicity_equal": true,
+      "oriented_corner_multiset_equal": false,
+      "uniform_reverse_corner_multiset_equal": true
+    },
+    "unity_source_to_raw_input_fbx": {
+      "aggregate_triangle_multiplicity_equal": true,
+      "oriented_corner_multiset_equal": false,
+      "uniform_reverse_corner_multiset_equal": true
+    }
+  },
+  "geometry_controls": {
+    "changed_geometry_rejected": true,
+    "cyclic_orientation_passed": true,
+    "duplicate_geometry_rejected": true,
+    "empty_partition_rejected": true,
+    "equal_count_disjoint_geometry_passed": true,
+    "equal_count_distinct_face_label_swap_rejected": true,
+    "repeated_exact_material_identity_with_distinct_geometry_mapped": true,
+    "reversed_orientation_detected": true,
+    "six_slot_permutations_passed": 720,
+    "stale_source_meta_rejected": true,
+    "triangle_multiplicity_preserved": true,
+    "unused_partition_rejected": true,
+    "wrong_material_identity_rejected": true,
+    "wrong_package_context_rejected": true
+  },
+  "input_sha256": {
+    "capture": "c0949a10fa0b4ab789d21d62ee4381742240d116f7de5067048fbd7a19f686a7",
+    "package": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+    "source_fbx": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+    "unity_diagnostic": "af56ccfa654dcf8c09dcd91c5eb62dc58f773682a9dc339a7372056068a690d2"
+  },
+  "mapping": null,
+  "mapping_candidates_by_orientation": {
+    "direct": {
+      "after_confirm": {
+        "error": "PARTITION_MATCH_NOT_UNIQUE",
+        "status": "UNPROVEN"
+      },
+      "before_confirm": {
+        "error": "PARTITION_MATCH_NOT_UNIQUE",
+        "status": "UNPROVEN"
+      },
+      "confirmed_saved_scene": {
+        "error": "PARTITION_MATCH_NOT_UNIQUE",
+        "status": "UNPROVEN"
+      },
+      "raw_input_fbx": {
+        "error": "PARTITION_MATCH_NOT_UNIQUE",
+        "status": "UNPROVEN"
+      }
+    },
+    "uniform_reverse_observed": {
+      "after_confirm": {
+        "identity_failures": [
+          {
+            "actual_file_id": "2100000",
+            "actual_guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+            "actual_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "blender_slot": 2,
+            "expected_file_id": "2100000",
+            "expected_guid": "eb805efb35118044db5e74adc652673a",
+            "expected_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "source_submesh": 0
+          },
+          {
+            "actual_file_id": "2100000",
+            "actual_guid": "eb805efb35118044db5e74adc652673a",
+            "actual_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "blender_slot": 0,
+            "expected_file_id": "2100000",
+            "expected_guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+            "expected_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "source_submesh": 2
+          }
+        ],
+        "source_submesh_to_blender_slot": {
+          "0": 2,
+          "1": 1,
+          "2": 0
+        },
+        "status": "EXACT_MULTIMAP"
+      },
+      "before_confirm": {
+        "identity_failures": [
+          {
+            "actual_file_id": "",
+            "actual_guid": "",
+            "actual_package_id": "",
+            "blender_slot": 2,
+            "expected_file_id": "2100000",
+            "expected_guid": "eb805efb35118044db5e74adc652673a",
+            "expected_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "source_submesh": 0
+          },
+          {
+            "actual_file_id": "",
+            "actual_guid": "",
+            "actual_package_id": "",
+            "blender_slot": 1,
+            "expected_file_id": "2100000",
+            "expected_guid": "0318f358e4c29034aa90cc8c50b58a93",
+            "expected_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "source_submesh": 1
+          },
+          {
+            "actual_file_id": "",
+            "actual_guid": "",
+            "actual_package_id": "",
+            "blender_slot": 0,
+            "expected_file_id": "2100000",
+            "expected_guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+            "expected_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "source_submesh": 2
+          }
+        ],
+        "source_submesh_to_blender_slot": {
+          "0": 2,
+          "1": 1,
+          "2": 0
+        },
+        "status": "EXACT_MULTIMAP"
+      },
+      "confirmed_saved_scene": {
+        "identity_failures": [
+          {
+            "actual_file_id": "2100000",
+            "actual_guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+            "actual_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "blender_slot": 2,
+            "expected_file_id": "2100000",
+            "expected_guid": "eb805efb35118044db5e74adc652673a",
+            "expected_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "source_submesh": 0
+          },
+          {
+            "actual_file_id": "2100000",
+            "actual_guid": "eb805efb35118044db5e74adc652673a",
+            "actual_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "blender_slot": 0,
+            "expected_file_id": "2100000",
+            "expected_guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+            "expected_package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+            "source_submesh": 2
+          }
+        ],
+        "source_submesh_to_blender_slot": {
+          "0": 2,
+          "1": 1,
+          "2": 0
+        },
+        "status": "EXACT_MULTIMAP"
+      },
+      "raw_input_fbx": {
+        "identity_failures": [],
+        "source_submesh_to_blender_slot": {
+          "0": 2,
+          "1": 1,
+          "2": 0
+        },
+        "status": "EXACT_MULTIMAP"
+      }
+    }
+  },
+  "package_contexts_are_distinct": true,
+  "raw_input_fbx_semantic_table": {
+    "coordinate_frame_note": "Raw FBX native-import points are captured with Blender matrix_world. Unity source points are separately transformed by source_mesh_to_prefab_root and the explicit repository Unity-to-Blender basis; equality is asserted only if those independently declared frames match without fitting.",
+    "fbx_version": 7400,
+    "geometry_layer_element_material": [
+      {
+        "MappingInformationType": [
+          "ByPolygon"
+        ],
+        "Materials": [
+          [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            1,
+            1,
+            1,
+            1,
+            0,
+            0
+          ]
+        ],
+        "Name": [
+          ""
+        ],
+        "ReferenceInformationType": [
+          "IndexToDirect"
+        ],
+        "Version": [
+          101
+        ]
+      }
+    ],
+    "geometry_object_kind": "Mesh",
+    "geometry_uid": 329684292,
+    "geometry_vertices_and_polygon_indices": {
+      "PolygonVertexIndex": [
+        [
+          0,
+          1,
+          -4,
+          0,
+          3,
+          -3,
+          2,
+          3,
+          -8,
+          2,
+          7,
+          -7,
+          6,
+          7,
+          -6,
+          6,
+          5,
+          -5,
+          4,
+          5,
+          -2,
+          4,
+          1,
+          -1,
+          2,
+          6,
+          -5,
+          2,
+          4,
+          -1,
+          7,
+          3,
+          -2,
+          7,
+          1,
+          -6
+        ]
+      ],
+      "Vertices": [
+        [
+          -0.9980000257492065,
+          -1.0,
+          -1.0,
+          -1.0,
+          -1.0,
+          1.0,
+          -1.0,
+          1.0,
+          -1.0,
+          -1.0,
+          1.0,
+          1.0,
+          1.0,
+          -1.0,
+          -1.0,
+          1.0,
+          -1.0,
+          1.0,
+          1.0,
+          1.0,
+          -1.0,
+          1.0,
+          1.0,
+          1.0
+        ]
+      ]
+    },
+    "global_settings_properties70": {
+      "AmbientColor": [
+        "ColorRGB",
+        "Color",
+        "",
+        0.0,
+        0.0,
+        0.0
+      ],
+      "CoordAxis": [
+        "int",
+        "Integer",
+        "",
+        0
+      ],
+      "CoordAxisSign": [
+        "int",
+        "Integer",
+        "",
+        1
+      ],
+      "CustomFrameRate": [
+        "double",
+        "Number",
+        "",
+        24.0
+      ],
+      "DefaultCamera": [
+        "KString",
+        "",
+        "",
+        "Producer Perspective"
+      ],
+      "FrontAxis": [
+        "int",
+        "Integer",
+        "",
+        2
+      ],
+      "FrontAxisSign": [
+        "int",
+        "Integer",
+        "",
+        1
+      ],
+      "OriginalUnitScaleFactor": [
+        "double",
+        "Number",
+        "",
+        1.0
+      ],
+      "OriginalUpAxis": [
+        "int",
+        "Integer",
+        "",
+        -1
+      ],
+      "OriginalUpAxisSign": [
+        "int",
+        "Integer",
+        "",
+        1
+      ],
+      "TimeMode": [
+        "enum",
+        "",
+        "",
+        11
+      ],
+      "TimeSpanStart": [
+        "KTime",
+        "Time",
+        "",
+        0
+      ],
+      "TimeSpanStop": [
+        "KTime",
+        "Time",
+        "",
+        46186158000
+      ],
+      "UnitScaleFactor": [
+        "double",
+        "Number",
+        "",
+        1.0
+      ],
+      "UpAxis": [
+        "int",
+        "Integer",
+        "",
+        1
+      ],
+      "UpAxisSign": [
+        "int",
+        "Integer",
+        "",
+        1
+      ]
+    },
+    "model_geometry_connections": [
+      {
+        "destination_uid": 208084244,
+        "source_uid": 329684292
+      }
+    ],
+    "model_material_connections_in_file_order": [
+      {
+        "destination_model_uid": 208084244,
+        "material_uid": 943593828
+      },
+      {
+        "destination_model_uid": 208084244,
+        "material_uid": 504963197
+      },
+      {
+        "destination_model_uid": 208084244,
+        "material_uid": 123443898
+      }
+    ],
+    "model_object_properties70": {
+      "DefaultAttributeIndex": [
+        "int",
+        "Integer",
+        "",
+        0
+      ],
+      "InheritType": [
+        "enum",
+        "",
+        "",
+        1
+      ],
+      "Lcl Rotation": [
+        "Lcl Rotation",
+        "",
+        "A",
+        -90.0000161648565,
+        -0.0,
+        0.0
+      ],
+      "Lcl Scaling": [
+        "Lcl Scaling",
+        "",
+        "A",
+        100.0,
+        100.0,
+        100.0
+      ],
+      "_vapb_fbx_realization_id": [
+        "KString",
+        "",
+        "A+U",
+        "2b20537e-c208-46d3-a5dc-f308d31aa7ef"
+      ]
+    },
+    "model_uid": 208084244
+  },
+  "raw_prefab_material_refs_match_unity_diagnostic": true,
+  "read_only_diagnostic": true,
+  "reason": "NO_SINGLE_PINNED_ROOT_FRAME_ORIENTATION_MATCH",
+  "source_content_revision_join": {
+    "contexts_are_distinct": true,
+    "fixture_package_context_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+    "raw_prefab_material_refs": [
+      {
+        "file_id": "2100000",
+        "guid": "eb805efb35118044db5e74adc652673a"
+      },
+      {
+        "file_id": "2100000",
+        "guid": "0318f358e4c29034aa90cc8c50b58a93"
+      },
+      {
+        "file_id": "2100000",
+        "guid": "64f92a1bd9b35a040bf9e2c6d200b34c"
+      }
+    ],
+    "source_fbx_meta_guid": "abcdefabcdefabcdefabcdefabcdefab",
+    "source_fbx_meta_sha256": "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d",
+    "source_fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+    "source_mesh_file_id": "3538053534738119282",
+    "source_mesh_guid": "abcdefabcdefabcdefabcdefabcdefab",
+    "source_prefab_asset_sha256": "0d33eb041145f0c73cb69e61de720b580a33aa56e8d432ba04ce110618e50843",
+    "source_prefab_meta_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+    "source_prefab_meta_sha256": "1720036f85a858bbe7a98f7b0fd40ecbe75f48c9aca817512fc6d40300666df8",
+    "source_prefab_path": "Assets/PublicMaterialSource/Direct.prefab",
+    "source_renderer_file_id_from_raw_prefab": "3728717051629469441",
+    "source_renderer_file_id_from_unity_override": "3728717051629469441",
+    "status": "PASS",
+    "unity_diagnostic_output_package_sha256": "20b4b3551b245d9709dac842ba854abfbe7acdb202504f334c7fc5e70e3f89cd"
+  },
+  "source_fixture_package_context": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "source_material_refs_by_unity_submesh": [
+    {
+      "file_id": "2100000",
+      "guid": "eb805efb35118044db5e74adc652673a",
+      "package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+      "submesh": 0
+    },
+    {
+      "file_id": "2100000",
+      "guid": "0318f358e4c29034aa90cc8c50b58a93",
+      "package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+      "submesh": 1
+    },
+    {
+      "file_id": "2100000",
+      "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+      "package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+      "submesh": 2
+    }
+  ],
+  "source_mesh_identity": {
+    "file_id": "3538053534738119282",
+    "guid": "abcdefabcdefabcdefabcdefabcdefab"
+  },
+  "status": "UNPROVEN_ORIENTATION_OR_FRAME",
+  "unity_diagnostic_output_package_identity": "sha256:20b4b3551b245d9709dac842ba854abfbe7acdb202504f334c7fc5e70e3f89cd"
+}
