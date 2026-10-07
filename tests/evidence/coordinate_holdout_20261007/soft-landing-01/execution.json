@@ -1,0 +1,192 @@
+{
+  "schema": "vapb-coordinate-holdout-soft-landing-v1",
+  "utc": "2026-10-07T19:24:05.1873905Z",
+  "base_sha": "1a750b8148dba605947a9baa52cf8d4a743fd7ee",
+  "status": "STOPPED_PREPARATION_CODE_ONLY_NOT_PREREGISTERED",
+  "new_fixture_generation": "NOT_RUN",
+  "blender_capture": "NOT_RUN",
+  "unity_adapter": "NOT_IMPLEMENTED",
+  "unity_runtime": "NOT_RUN",
+  "candidate_acceptance": "UNKNOWN",
+  "blender_authored_runtime": "UNKNOWN",
+  "unity_authored_runtime": "UNKNOWN",
+  "unity_launches": 0,
+  "blender_application_launches": 0,
+  "source_sha256": {
+    "capture_blender.py": "03f33cac6f755aa9b7b53b9daa78e2bfa3a8b9afa75760867eb77d6a7bc5e4aa",
+    "contract.py": "1786d55a1634ebba9b98b5e65ef814ecced3dc60149ef6bfc6650c6585880c7e",
+    "generate_fixtures.py": "ba56c56e2b514c587035c1b4c6d93a9261c6d2531037cdebf0eb7701687fdd22",
+    "oracle.py": "a9fcfe06b02b2b0f4dcbab45b171ed0bdc29bb1249f48614a38d30dcf619395d",
+    "prepare_contract.py": "4f0f2a597679152b39f58844e72b08daaf20ab92384be4f645d7b3940550f275",
+    "test_oracle.py": "b0a741a698e1d6c1760095f7fcaa3364501dd60d970eebe8b64c2959f465c984",
+    "test_preregistration.py": "47b4a44e4e9d7f90845fa1128bf25e501b1abedae54f32896af32db00ad3764e"
+  },
+  "prior_evidence_count": 25,
+  "prior_evidence_hash_mismatch_count": 0,
+  "prior_evidence_files": [
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/blender-capture.json",
+      "sha256": "bcf790494eaeb6bccd6eece631e3d9fcb08643f3d668352a17cbcab76d36c982",
+      "bytes": 96821
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/execution.json",
+      "sha256": "9974a86d3397bdc31d764e96b3d84ce8d6120535aff7a3a11f846f3b6b39c552",
+      "bytes": 6149
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/axis_only.fbx",
+      "sha256": "67d02a27bae1b73f4e946a0da6583a940070f661f018bade18e5315f6581fa4c",
+      "bytes": 17884
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/baseline.fbx",
+      "sha256": "cb31e465b43280ed616947451f909ae7e124434eb8476595bb1296114ad4df32",
+      "bytes": 17964
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/blender-capture.json",
+      "sha256": "00eaadf3a43e1bd9151a5df957e58d18bb62c91cbad4adfd55f2e20ed174b821",
+      "bytes": 96814
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/execution.json",
+      "sha256": "94026cffe0b2c5cd33dc0801a27d1a1ab9d77864172687704cbd7ef181a4b969",
+      "bytes": 7852
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/manifest.json",
+      "sha256": "b281b0f36c8652271514ed754291dfa3d0fa96d39db3dbc160aa14102df83043",
+      "bytes": 50235
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/negative_scale_only.fbx",
+      "sha256": "a01562ea5177f4a37773d326ece569de62730573d29a3f0ed15c559cbfac54e4",
+      "bytes": 18060
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/positive_nonuniform_scale_only.fbx",
+      "sha256": "4b9c3ff32e97944e6b8c08620c23fdf43c87a016bbb3fe7824143398772ec20c",
+      "bytes": 18076
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/rotation_only.fbx",
+      "sha256": "089f320104d7fc50a24707969930f500ade7721b80aa7f016ed0f69b321cc646",
+      "bytes": 18060
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/translation_only.fbx",
+      "sha256": "dcf65c9fbe0a65654fab5ace31833eb44c23056141777de8f3196d55029a692b",
+      "bytes": 18076
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/final/unit_only.fbx",
+      "sha256": "d7d8c449959015cc1185ccf37b532642e30880564be5240789da4284e6f543a7",
+      "bytes": 17964
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/fixtures/axis_only.fbx",
+      "sha256": "8e570e336677ae58ca1dc24bccd92186e48c92b4452ddff8e08b8daead839cc0",
+      "bytes": 17884
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/fixtures/baseline.fbx",
+      "sha256": "88d04440e4879ce16a9149e418013208bbf2f0e01e9577c5e3c7a4126d6509e4",
+      "bytes": 17964
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/fixtures/manifest.json",
+      "sha256": "30ef834f86110ff47d02d3912c60087fb76f771a9d9459820b5124567aed9985",
+      "bytes": 50242
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/fixtures/negative_scale_only.fbx",
+      "sha256": "65f8c995da180812646ca039658e5bab54f4f977fbebdb027ae0d881f65f111d",
+      "bytes": 18060
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/fixtures/positive_nonuniform_scale_only.fbx",
+      "sha256": "79e3f7f0954f6b88185be0ce844737f2d52f2375938e08a2e8ec1737348d732f",
+      "bytes": 18076
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/fixtures/rotation_only.fbx",
+      "sha256": "c0585b6f28e0f4913c19dde4101852fd103f77e5163035e527d14b13e63062b4",
+      "bytes": 18060
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/fixtures/translation_only.fbx",
+      "sha256": "4bc1a8a197ecc1c0788d0c86bcf80395801ad25f42c29a2a6a4f4acc62d09cae",
+      "bytes": 18076
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/fixtures/unit_only.fbx",
+      "sha256": "fbd473c657cea9b2c070cf5bf132185b57a52af1bd6d20f1108da0b923a09d8f",
+      "bytes": 17964
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/offline-analysis-01/execution.json",
+      "sha256": "a922220265b8cdfaff5476d2ca898301fe802d07d6f806929bfa338f75c4630d",
+      "bytes": 1292
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/offline-analysis-01/report-authored-unit.json",
+      "sha256": "5efe96bc62561324111779516fcf75c9e1e2cf5af2bda927d24bdfc1f8010453",
+      "bytes": 62771
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/unity-run-01/comparison.json",
+      "sha256": "98ae07472e88e036aac483ffbd8d094e400a27f41f7ff94bcc5a1bfee4c212e0",
+      "bytes": 16388
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/unity-run-01/execution.json",
+      "sha256": "b0438fb4d2db6d551b9a71eca19be4908dd103ffc42082faa8d3b36a23cd9550",
+      "bytes": 1549
+    },
+    {
+      "path": "tests/evidence/coordinate_intervention_20261007/unity-run-01/unity-capture.json",
+      "sha256": "35a88f5f3cc3181ae87da35d89e7acd7749a245e5c2ea53eb73b0c8889ab29aa",
+      "bytes": 161208
+    }
+  ],
+  "tests": {
+    "final_focused": {
+      "model": "GPT-6 LUNA",
+      "reasoning": "low",
+      "count": 13,
+      "outcome": "PASS",
+      "evidence": "implementer completed tool run; no independent root rerun after soft landing"
+    },
+    "existing_root": {
+      "count": 18,
+      "outcome": "PASS"
+    },
+    "earlier_root_focused": {
+      "count": 12,
+      "outcome": "FAIL",
+      "failures": 1,
+      "cause": "NaN rejected with VECTOR_INVALID while assertion expected NONFINITE; corrected before observations",
+      "original_failure_summary": "local preserved"
+    }
+  },
+  "review": {
+    "design_model": "GPT-6 Astra",
+    "design_reasoning": "medium",
+    "review_model": "GPT-6.1 SOL",
+    "review_reasoning": "medium",
+    "p1": "unpreregistered fourth acceptance gate removed; chain residual diagnostic only",
+    "closure": "completed targeted review, no unresolved P0/P1"
+  },
+  "postflight": {
+    "checked_utc": "2026-10-07T19:23:03.2196734Z",
+    "previous_owned_pid": 29712,
+    "previous_owned_pid_present": false,
+    "same_owned_target_remaining": 0,
+    "other_unity_hub_serve_pid": 6024,
+    "editor_or_scene_manipulation": false
+  },
+  "provenance_gap": "Earlier offline provisional report deleted before original bytes/hash retained; remains disclosed, not reconstructed",
+  "product_changes": false,
+  "atlas_writes": false
+}

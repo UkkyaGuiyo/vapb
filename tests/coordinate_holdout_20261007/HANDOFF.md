@@ -1,0 +1,25 @@
+# Soft landing: holdout preparation stopped
+
+Stopped on the user's 2026-10-07 soft-landing instruction. Do not resume product work, experiments, knowledge collection, or Unity launches without explicit user restart. No new generation/capture was started after that instruction.
+
+Project: VAPB, canonical repository https://github.com/UkkyaGuiyo/vapb, branch `feature/r2-material-slot-reorder`. Preparation base/local remote tip before checkpoint: `1a750b8148dba605947a9baa52cf8d4a743fd7ee`. This checkpoint contains only new test preparation code, its plan and public validation notes; no product source or existing evidence was changed. Root's current code-only subtree was untracked before the checkpoint; no unrelated dirty files were staged.
+
+## Completed and unresolved
+
+- Astra medium designed four new single-root synthetic holdouts; SOL medium approved the bounded design.
+- LUNA low implemented the independent scalar authored oracle, preregistration/exclusive-output helpers, four-case generator, Blender capture and focused pure tests. No previous capture supplies these new expectations.
+- LUNA reports the final 13 focused pure tests PASS, plus Python compile and whitespace checks. Root independently ran the existing 18 tests PASS. Root's earlier 12-test run had one failed error-label assertion: the NaN payload was correctly rejected with `VECTOR_INVALID`, while the test expected `NONFINITE`. The assertion was corrected before any fixture observation; the original root failure summary remains locally preserved, with this public explanation.
+- SOL's completed code review found an unregistered fourth acceptance residual. It is now diagnostic-only; the frozen acceptance uses exactly local vertex, world matrix and world point residuals. A focused test covers a large diagnostic residual with the accepted three passing. Targeted closure confirmed this fix, the error-label fix and script import path fix; no remaining P0/P1 from that review.
+- Preregistration script execution: **NOT_RUN**. No `contract.json`, authored-oracle output or preregistration receipt has been generated. Constants and proposed rules are saved in source and PLAN; generation-time byte receipts still need to be created after restart.
+- FBX generation: **NOT_RUN**. Blender import/capture of holdouts: **NOT_RUN**. Four-case Unity adapter: **NOT_IMPLEMENTED**. Unity compile/runtime holdout: **NOT_RUN**. Candidate acceptance and authored Blender/Unity runtime hypotheses: **UNKNOWN**.
+- Parent-child import, winding/normal transport and the external package Material GUID/fileID to native submesh/face partition seam remain **UNPROVEN**. PLAN separates the material gate and required evidence; no product fallback, fixed swap, mandatory user Unity Project or new witness infrastructure was added.
+
+The original seven-case comparison remains UNPROVEN with 126 coordinate errors. Its later low-residual candidate remains an inference from all seven observed cases, not independent validation. The missing deleted provisional analysis report remains disclosed in the previous OFFLINE_ANALYSIS and this PLAN; it was not reconstructed. Root checked all 25 pre-existing evidence files against the start-of-task SHA inventory: zero mismatches. No experiment output was deleted or overwritten in this preparation.
+
+## Process and preservation status
+
+This task launched zero Blender applications and zero Unity Editors. Pure tests used the already installed Blender 5.2.1 bundled Python executable; this is not a Blender application capture. Read-only elevated process check at `2026-10-07T19:23:03.2196734Z` confirmed previous owned Unity PID `29712` absent and zero Editors for the previous dedicated coordinate Project. Only Unity Hub's `unity.exe serve` PID `6024` appeared; it was untouched. No Scene/Asset save, discard, Editor stop, license setting or security change was performed.
+
+The original worktree remains at SHA `6d8cfc50dc75097d81caec2a046c43a92fcbb705`, with no tracked changes and exactly its two pre-existing untracked probes preserved separately: `tests/blender_final_state_material_label_roundtrip.py` SHA256 `a99fdf1db0a562b58cdda1f54729d135a11157be9cc3238e1759114a81ec5be7`, and `tests/blender_final_state_material_order_red.py` SHA256 `f7586ddd3f6d27ec790e4da2f5ee142c0bfc088efe1ac177dbf01a8b1b4589b8`. Its origin was checked canonical again. The saved preparation clone is the source checkpoint location; local raw process details, baseline inventory and failed-test summary remain outside the public repository. Public source/evidence hashes and model/review scopes are recorded in `../evidence/coordinate_holdout_20261007/soft-landing-01/execution.json`.
+
+On explicit restart, first verify canonical branch and saved SHA, then reread this handoff. Execute preregistration before export, preserve every output/failure, generate the self-authored holdouts and validate the Blender side. Keep Unity deferred until VHS/FA/Two coordination and the separately reviewed four-case adapter. A failure never permits silent equation/tolerance tuning or reuse of seen observations as new holdouts.
