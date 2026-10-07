@@ -10,14 +10,14 @@ Recorded comparison: Material GUID groups contain 2, 4, and 6 triangles respecti
 
 ## Raw Prefab versus fresh-process saved-scene check
 
-This additional check reopened the previously saved, explicitly user-confirmed scene in a fresh Blender process. Its standalone script independently reads the exact source `.unitypackage` Prefab YAML and fixes the package and source-FBX SHA-256 values before comparing the raw Renderer/Mesh/Material references against both the stored projection and reopened Blender slots.
+This additional check reopened the exact previously saved, explicitly user-confirmed scene in a fresh Blender process. It is a fixed-evidence reproduction, not a general scene inspector: the script asserts the source `.unitypackage` SHA-256 and saved `.blend` SHA-256, independently reads raw Prefab YAML, and compares Renderer/Mesh/Material references against the stored projection and reopened Blender slots.
 
 - Blender 5.2.1; process exit 0; result `PASS`.
 - The three raw Prefab GUID/fileID pairs matched the projection and reopened slots in order. All three slots were `OBJECT` linked and package-scoped; the existing user-confirmed binding and persistent Mesh receipt revalidated; triangle counts remained `[2, 4, 6]`.
 - Saved scene SHA-256: `58a3863a44198555bf07fdb56eb86e411b0804523ac2db694283a0ed9d8d122c`. Source package SHA-256: `d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c`; source FBX SHA-256: `fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5`; source FBX meta SHA-256: `ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d`.
 - The probe did not save the scene or modify a Unity Project. It checks persistence after explicit confirmation only; strict T0-A remains **FAIL**, T0-B remains **BLOCKED**, and no Unity-observed identity witness was produced.
 
-To rerun, provide the authorized saved scene and exact fixture package as inputs; the standalone checker takes `--package`, `--output`, and `--repo-parent` after `--`:
+To rerun, provide the exact saved scene and fixture package; the checker takes `--package`, `--output`, and `--repo-root` after `--`. `--repo-root` may be a normal VAPB clone root or an add-on source directory named `unitypackage_blender_importer`.
 
 ```powershell
 $blender = '<Blender 5.2.1 executable>'
@@ -25,10 +25,12 @@ $repo = '<VAPB repository root>'
 $scene = '<authorized-local-confirmed-scene.blend>'
 $package = Join-Path $repo 'tests/unity_model_material_probe/fixtures/ThreeSlotSource.unitypackage'
 $result = '<new-output-result.json>'
-& $blender --background $scene --python-exit-code 1 --python tests/evidence/confirmed_route_winding_20261007/confirm-raw-prefab-reopen.py -- --package $package --output $result --repo-parent (Split-Path $repo)
+& $blender --background $scene --python-exit-code 1 --python tests/evidence/confirmed_route_winding_20261007/confirm-raw-prefab-reopen.py -- --package $package --output $result --repo-root $repo
 ```
 
-Included: `confirm-raw-prefab-reopen.py` and sanitized `confirm-raw-prefab-reopen-evidence.json`. Raw logs and the `.blend` remain local.
+The checker rejects outputs resolving to the package or currently opened `.blend`; it creates output files exclusively and refuses to replace an existing file. Use a new output filename for each run.
+
+Included: `confirm-raw-prefab-reopen.py`, its standalone `confirmed_route_output_safety.py` path/write guard, sanitized `confirm-raw-prefab-reopen-evidence.json`, and `tests/test_confirmed_route_output_safety.py` for alias refusal, no-overwrite, and repository-root resolution. Raw logs and the `.blend` remain local.
 
 ## Exact Unity identity witness: prepared, Editor run pending
 

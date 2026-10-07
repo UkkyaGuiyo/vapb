@@ -1,10 +1,18 @@
 import bpy
 import hashlib
+import importlib.util
 import json
 import re
 import sys
 import tarfile
 from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+from confirmed_route_output_safety import (
+    resolve_product_package_root, validate_output_path, write_text_exclusive,
+)
 
 
 def need(condition, message):
@@ -80,14 +88,23 @@ def main():
     values = dict(zip(args[::2], args[1::2]))
     package_path = Path(values['--package'])
     output_path = Path(values['--output'])
+    output_path = validate_output_path(output_path, (package_path, bpy.data.filepath))
     expected_package_sha = 'd6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c'
+    expected_blend_sha = '58a3863a44198555bf07fdb56eb86e411b0804523ac2db694283a0ed9d8d122c'
     expected_context = '6d785054-f71b-4861-9ab9-d7a6901fd1f9'
     expected_occurrence = '9c913bea517b84409aa7b7e28a7fccccdbf11b9104b154b50ba29615e4214694'
     raw = parse_raw_prefab(package_path, expected_package_sha)
+    need(sha256(bpy.data.filepath) == expected_blend_sha, 'FIXTURE_BLEND_SHA_MISMATCH')
 
-    parent = str(Path(values['--repo-parent']))
-    need(Path(parent, 'unitypackage_blender_importer', '__init__.py').is_file(), 'PRODUCT_REPO_PARENT_INVALID')
-    sys.path.insert(0, parent)
+    package_root = resolve_product_package_root(values['--repo-root'])
+    package_spec = importlib.util.spec_from_file_location(
+        'unitypackage_blender_importer', package_root / '__init__.py',
+        submodule_search_locations=[str(package_root)])
+    need(package_spec is not None and package_spec.loader is not None,
+         'PRODUCT_PACKAGE_IMPORT_SPEC_INVALID')
+    package_module = importlib.util.module_from_spec(package_spec)
+    sys.modules['unitypackage_blender_importer'] = package_module
+    package_spec.loader.exec_module(package_module)
     from unitypackage_blender_importer.blender.fbx_receipt import validate_persistent_receipt
     from unitypackage_blender_importer.blender.renderer_binding import validate_existing_binding
 
@@ -196,7 +213,7 @@ def main():
         'source_project_modified': False,
         'blend_saved_by_probe': False,
     }
-    output_path.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    write_text_exclusive(output_path, json.dumps(result, indent=2, sort_keys=True) + '\n')
     print('CONFIRM_BINDING_FRESH_PROCESS_RAW_PREFAB_COMPARISON_PASS ' + json.dumps(result, sort_keys=True))
 
 
