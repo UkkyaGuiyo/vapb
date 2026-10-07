@@ -1,0 +1,2447 @@
+{
+  "blender_version": "5.2.1 LTS",
+  "cases": [
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "corner_uv_ids": [
+        [
+          [
+            0.0,
+            0.125
+          ],
+          [
+            1.0,
+            0.25
+          ],
+          [
+            2.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            10.0,
+            0.125
+          ],
+          [
+            11.0,
+            0.25
+          ],
+          [
+            12.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            20.0,
+            0.125
+          ],
+          [
+            21.0,
+            0.25
+          ],
+          [
+            22.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            30.0,
+            0.125
+          ],
+          [
+            31.0,
+            0.25
+          ],
+          [
+            32.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            40.0,
+            0.125
+          ],
+          [
+            41.0,
+            0.25
+          ],
+          [
+            42.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            50.0,
+            0.125
+          ],
+          [
+            51.0,
+            0.25
+          ],
+          [
+            52.0,
+            0.375
+          ]
+        ]
+      ],
+      "face_material_ids": [
+        "fixture-material-A",
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-B",
+        "fixture-material-C",
+        "fixture-material-C"
+      ],
+      "factor": "baseline",
+      "filename": "baseline.fbx",
+      "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+      "id": "baseline",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "raw_fbx": {
+        "fbx_version": 7400,
+        "global_settings": {
+          "AmbientColor": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "CoordAxis": 0,
+          "CoordAxisSign": 1,
+          "CustomFrameRate": 24.0,
+          "DefaultCamera": "Producer Perspective",
+          "FrontAxis": 2,
+          "FrontAxisSign": 1,
+          "OriginalUnitScaleFactor": 100.0,
+          "OriginalUpAxis": -1,
+          "OriginalUpAxisSign": 1,
+          "TimeMode": 11,
+          "TimeSpanStart": 0,
+          "TimeSpanStop": 46186158000,
+          "UnitScaleFactor": 100.0,
+          "UpAxis": 1,
+          "UpAxisSign": 1
+        },
+        "materials_by_fixture_identity": [
+          {
+            "fbx_object_uid": 223452200,
+            "fixture_material_id": "fixture-material-A",
+            "name": "VAPB_CI_MATERIAL_A"
+          },
+          {
+            "fbx_object_uid": 389652399,
+            "fixture_material_id": "fixture-material-B",
+            "name": "VAPB_CI_MATERIAL_B"
+          },
+          {
+            "fbx_object_uid": 971759123,
+            "fixture_material_id": "fixture-material-C",
+            "name": "VAPB_CI_MATERIAL_C"
+          }
+        ],
+        "model": {
+          "name": "VAPB_CI_MESH",
+          "properties": {
+            "DefaultAttributeIndex": 0,
+            "InheritType": 1,
+            "Lcl Rotation": [
+              -90.00000933466734,
+              0.0,
+              0.0
+            ],
+            "vapb_coordinate_case_id": "baseline"
+          },
+          "uid": 67531328
+        }
+      },
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "cb31e465b43280ed616947451f909ae7e124434eb8476595bb1296114ad4df32",
+      "size_bytes": 17964,
+      "source_material_fbx_uids": [
+        223452200,
+        389652399,
+        971759123
+      ],
+      "source_material_id_by_name": {
+        "VAPB_CI_MATERIAL_A": "fixture-material-A",
+        "VAPB_CI_MATERIAL_B": "fixture-material-B",
+        "VAPB_CI_MATERIAL_C": "fixture-material-C"
+      },
+      "source_material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_CI_MATERIAL_A",
+        "VAPB_CI_MATERIAL_B",
+        "VAPB_CI_MATERIAL_C"
+      ],
+      "source_triangle_count": 6,
+      "source_vertex_count": 18,
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "Y",
+      "axis_up": "Z",
+      "corner_uv_ids": [
+        [
+          [
+            0.0,
+            0.125
+          ],
+          [
+            1.0,
+            0.25
+          ],
+          [
+            2.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            10.0,
+            0.125
+          ],
+          [
+            11.0,
+            0.25
+          ],
+          [
+            12.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            20.0,
+            0.125
+          ],
+          [
+            21.0,
+            0.25
+          ],
+          [
+            22.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            30.0,
+            0.125
+          ],
+          [
+            31.0,
+            0.25
+          ],
+          [
+            32.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            40.0,
+            0.125
+          ],
+          [
+            41.0,
+            0.25
+          ],
+          [
+            42.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            50.0,
+            0.125
+          ],
+          [
+            51.0,
+            0.25
+          ],
+          [
+            52.0,
+            0.375
+          ]
+        ]
+      ],
+      "face_material_ids": [
+        "fixture-material-A",
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-B",
+        "fixture-material-C",
+        "fixture-material-C"
+      ],
+      "factor": "axis",
+      "filename": "axis_only.fbx",
+      "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+      "id": "axis_only",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "raw_fbx": {
+        "fbx_version": 7400,
+        "global_settings": {
+          "AmbientColor": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "CoordAxis": 0,
+          "CoordAxisSign": 1,
+          "CustomFrameRate": 24.0,
+          "DefaultCamera": "Producer Perspective",
+          "FrontAxis": 1,
+          "FrontAxisSign": -1,
+          "OriginalUnitScaleFactor": 100.0,
+          "OriginalUpAxis": -1,
+          "OriginalUpAxisSign": 1,
+          "TimeMode": 11,
+          "TimeSpanStart": 0,
+          "TimeSpanStop": 46186158000,
+          "UnitScaleFactor": 100.0,
+          "UpAxis": 2,
+          "UpAxisSign": 1
+        },
+        "materials_by_fixture_identity": [
+          {
+            "fbx_object_uid": 223452200,
+            "fixture_material_id": "fixture-material-A",
+            "name": "VAPB_CI_MATERIAL_A"
+          },
+          {
+            "fbx_object_uid": 389652399,
+            "fixture_material_id": "fixture-material-B",
+            "name": "VAPB_CI_MATERIAL_B"
+          },
+          {
+            "fbx_object_uid": 971759123,
+            "fixture_material_id": "fixture-material-C",
+            "name": "VAPB_CI_MATERIAL_C"
+          }
+        ],
+        "model": {
+          "name": "VAPB_CI_MESH",
+          "properties": {
+            "DefaultAttributeIndex": 0,
+            "InheritType": 1,
+            "vapb_coordinate_case_id": "axis_only"
+          },
+          "uid": 67531328
+        }
+      },
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "67d02a27bae1b73f4e946a0da6583a940070f661f018bade18e5315f6581fa4c",
+      "size_bytes": 17884,
+      "source_material_fbx_uids": [
+        223452200,
+        389652399,
+        971759123
+      ],
+      "source_material_id_by_name": {
+        "VAPB_CI_MATERIAL_A": "fixture-material-A",
+        "VAPB_CI_MATERIAL_B": "fixture-material-B",
+        "VAPB_CI_MATERIAL_C": "fixture-material-C"
+      },
+      "source_material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_CI_MATERIAL_A",
+        "VAPB_CI_MATERIAL_B",
+        "VAPB_CI_MATERIAL_C"
+      ],
+      "source_triangle_count": 6,
+      "source_vertex_count": 18,
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "corner_uv_ids": [
+        [
+          [
+            0.0,
+            0.125
+          ],
+          [
+            1.0,
+            0.25
+          ],
+          [
+            2.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            10.0,
+            0.125
+          ],
+          [
+            11.0,
+            0.25
+          ],
+          [
+            12.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            20.0,
+            0.125
+          ],
+          [
+            21.0,
+            0.25
+          ],
+          [
+            22.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            30.0,
+            0.125
+          ],
+          [
+            31.0,
+            0.25
+          ],
+          [
+            32.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            40.0,
+            0.125
+          ],
+          [
+            41.0,
+            0.25
+          ],
+          [
+            42.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            50.0,
+            0.125
+          ],
+          [
+            51.0,
+            0.25
+          ],
+          [
+            52.0,
+            0.375
+          ]
+        ]
+      ],
+      "face_material_ids": [
+        "fixture-material-A",
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-B",
+        "fixture-material-C",
+        "fixture-material-C"
+      ],
+      "factor": "unit",
+      "filename": "unit_only.fbx",
+      "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+      "id": "unit_only",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "raw_fbx": {
+        "fbx_version": 7400,
+        "global_settings": {
+          "AmbientColor": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "CoordAxis": 0,
+          "CoordAxisSign": 1,
+          "CustomFrameRate": 24.0,
+          "DefaultCamera": "Producer Perspective",
+          "FrontAxis": 2,
+          "FrontAxisSign": 1,
+          "OriginalUnitScaleFactor": 0.9999999776482582,
+          "OriginalUpAxis": -1,
+          "OriginalUpAxisSign": 1,
+          "TimeMode": 11,
+          "TimeSpanStart": 0,
+          "TimeSpanStop": 46186158000,
+          "UnitScaleFactor": 0.9999999776482582,
+          "UpAxis": 1,
+          "UpAxisSign": 1
+        },
+        "materials_by_fixture_identity": [
+          {
+            "fbx_object_uid": 223452200,
+            "fixture_material_id": "fixture-material-A",
+            "name": "VAPB_CI_MATERIAL_A"
+          },
+          {
+            "fbx_object_uid": 389652399,
+            "fixture_material_id": "fixture-material-B",
+            "name": "VAPB_CI_MATERIAL_B"
+          },
+          {
+            "fbx_object_uid": 971759123,
+            "fixture_material_id": "fixture-material-C",
+            "name": "VAPB_CI_MATERIAL_C"
+          }
+        ],
+        "model": {
+          "name": "VAPB_CI_MESH",
+          "properties": {
+            "DefaultAttributeIndex": 0,
+            "InheritType": 1,
+            "Lcl Rotation": [
+              -90.00000933466734,
+              0.0,
+              0.0
+            ],
+            "vapb_coordinate_case_id": "unit_only"
+          },
+          "uid": 67531328
+        }
+      },
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "d7d8c449959015cc1185ccf37b532642e30880564be5240789da4284e6f543a7",
+      "size_bytes": 17964,
+      "source_material_fbx_uids": [
+        223452200,
+        389652399,
+        971759123
+      ],
+      "source_material_id_by_name": {
+        "VAPB_CI_MATERIAL_A": "fixture-material-A",
+        "VAPB_CI_MATERIAL_B": "fixture-material-B",
+        "VAPB_CI_MATERIAL_C": "fixture-material-C"
+      },
+      "source_material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_CI_MATERIAL_A",
+        "VAPB_CI_MATERIAL_B",
+        "VAPB_CI_MATERIAL_C"
+      ],
+      "source_triangle_count": 6,
+      "source_vertex_count": 18,
+      "unit_scale_length": 0.01,
+      "unit_system": "METRIC"
+    },
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "corner_uv_ids": [
+        [
+          [
+            0.0,
+            0.125
+          ],
+          [
+            1.0,
+            0.25
+          ],
+          [
+            2.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            10.0,
+            0.125
+          ],
+          [
+            11.0,
+            0.25
+          ],
+          [
+            12.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            20.0,
+            0.125
+          ],
+          [
+            21.0,
+            0.25
+          ],
+          [
+            22.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            30.0,
+            0.125
+          ],
+          [
+            31.0,
+            0.25
+          ],
+          [
+            32.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            40.0,
+            0.125
+          ],
+          [
+            41.0,
+            0.25
+          ],
+          [
+            42.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            50.0,
+            0.125
+          ],
+          [
+            51.0,
+            0.25
+          ],
+          [
+            52.0,
+            0.375
+          ]
+        ]
+      ],
+      "face_material_ids": [
+        "fixture-material-A",
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-B",
+        "fixture-material-C",
+        "fixture-material-C"
+      ],
+      "factor": "translation",
+      "filename": "translation_only.fbx",
+      "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+      "id": "translation_only",
+      "location": [
+        2.25,
+        -0.75,
+        1.125
+      ],
+      "material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "raw_fbx": {
+        "fbx_version": 7400,
+        "global_settings": {
+          "AmbientColor": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "CoordAxis": 0,
+          "CoordAxisSign": 1,
+          "CustomFrameRate": 24.0,
+          "DefaultCamera": "Producer Perspective",
+          "FrontAxis": 2,
+          "FrontAxisSign": 1,
+          "OriginalUnitScaleFactor": 100.0,
+          "OriginalUpAxis": -1,
+          "OriginalUpAxisSign": 1,
+          "TimeMode": 11,
+          "TimeSpanStart": 0,
+          "TimeSpanStop": 46186158000,
+          "UnitScaleFactor": 100.0,
+          "UpAxis": 1,
+          "UpAxisSign": 1
+        },
+        "materials_by_fixture_identity": [
+          {
+            "fbx_object_uid": 223452200,
+            "fixture_material_id": "fixture-material-A",
+            "name": "VAPB_CI_MATERIAL_A"
+          },
+          {
+            "fbx_object_uid": 389652399,
+            "fixture_material_id": "fixture-material-B",
+            "name": "VAPB_CI_MATERIAL_B"
+          },
+          {
+            "fbx_object_uid": 971759123,
+            "fixture_material_id": "fixture-material-C",
+            "name": "VAPB_CI_MATERIAL_C"
+          }
+        ],
+        "model": {
+          "name": "VAPB_CI_MESH",
+          "properties": {
+            "DefaultAttributeIndex": 0,
+            "InheritType": 1,
+            "Lcl Rotation": [
+              -90.00000933466734,
+              0.0,
+              0.0
+            ],
+            "Lcl Translation": [
+              2.25,
+              1.125,
+              0.75
+            ],
+            "vapb_coordinate_case_id": "translation_only"
+          },
+          "uid": 67531328
+        }
+      },
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "dcf65c9fbe0a65654fab5ace31833eb44c23056141777de8f3196d55029a692b",
+      "size_bytes": 18076,
+      "source_material_fbx_uids": [
+        223452200,
+        389652399,
+        971759123
+      ],
+      "source_material_id_by_name": {
+        "VAPB_CI_MATERIAL_A": "fixture-material-A",
+        "VAPB_CI_MATERIAL_B": "fixture-material-B",
+        "VAPB_CI_MATERIAL_C": "fixture-material-C"
+      },
+      "source_material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_CI_MATERIAL_A",
+        "VAPB_CI_MATERIAL_B",
+        "VAPB_CI_MATERIAL_C"
+      ],
+      "source_triangle_count": 6,
+      "source_vertex_count": 18,
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "corner_uv_ids": [
+        [
+          [
+            0.0,
+            0.125
+          ],
+          [
+            1.0,
+            0.25
+          ],
+          [
+            2.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            10.0,
+            0.125
+          ],
+          [
+            11.0,
+            0.25
+          ],
+          [
+            12.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            20.0,
+            0.125
+          ],
+          [
+            21.0,
+            0.25
+          ],
+          [
+            22.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            30.0,
+            0.125
+          ],
+          [
+            31.0,
+            0.25
+          ],
+          [
+            32.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            40.0,
+            0.125
+          ],
+          [
+            41.0,
+            0.25
+          ],
+          [
+            42.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            50.0,
+            0.125
+          ],
+          [
+            51.0,
+            0.25
+          ],
+          [
+            52.0,
+            0.375
+          ]
+        ]
+      ],
+      "face_material_ids": [
+        "fixture-material-A",
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-B",
+        "fixture-material-C",
+        "fixture-material-C"
+      ],
+      "factor": "rotation",
+      "filename": "rotation_only.fbx",
+      "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+      "id": "rotation_only",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "raw_fbx": {
+        "fbx_version": 7400,
+        "global_settings": {
+          "AmbientColor": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "CoordAxis": 0,
+          "CoordAxisSign": 1,
+          "CustomFrameRate": 24.0,
+          "DefaultCamera": "Producer Perspective",
+          "FrontAxis": 2,
+          "FrontAxisSign": 1,
+          "OriginalUnitScaleFactor": 100.0,
+          "OriginalUpAxis": -1,
+          "OriginalUpAxisSign": 1,
+          "TimeMode": 11,
+          "TimeSpanStart": 0,
+          "TimeSpanStop": 46186158000,
+          "UnitScaleFactor": 100.0,
+          "UpAxis": 1,
+          "UpAxisSign": 1
+        },
+        "materials_by_fixture_identity": [
+          {
+            "fbx_object_uid": 223452200,
+            "fixture_material_id": "fixture-material-A",
+            "name": "VAPB_CI_MATERIAL_A"
+          },
+          {
+            "fbx_object_uid": 389652399,
+            "fixture_material_id": "fixture-material-B",
+            "name": "VAPB_CI_MATERIAL_B"
+          },
+          {
+            "fbx_object_uid": 971759123,
+            "fixture_material_id": "fixture-material-C",
+            "name": "VAPB_CI_MATERIAL_C"
+          }
+        ],
+        "model": {
+          "name": "VAPB_CI_MESH",
+          "properties": {
+            "DefaultAttributeIndex": 0,
+            "InheritType": 1,
+            "Lcl Rotation": [
+              -19.646998166406657,
+              44.30697610810374,
+              57.244232075416235
+            ],
+            "Lcl Scaling": [
+              0.9999999403953552,
+              1.0,
+              1.0
+            ],
+            "vapb_coordinate_case_id": "rotation_only"
+          },
+          "uid": 67531328
+        }
+      },
+      "rotation_degrees": [
+        23.0,
+        -37.0,
+        61.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "089f320104d7fc50a24707969930f500ade7721b80aa7f016ed0f69b321cc646",
+      "size_bytes": 18060,
+      "source_material_fbx_uids": [
+        223452200,
+        389652399,
+        971759123
+      ],
+      "source_material_id_by_name": {
+        "VAPB_CI_MATERIAL_A": "fixture-material-A",
+        "VAPB_CI_MATERIAL_B": "fixture-material-B",
+        "VAPB_CI_MATERIAL_C": "fixture-material-C"
+      },
+      "source_material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_CI_MATERIAL_A",
+        "VAPB_CI_MATERIAL_B",
+        "VAPB_CI_MATERIAL_C"
+      ],
+      "source_triangle_count": 6,
+      "source_vertex_count": 18,
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "corner_uv_ids": [
+        [
+          [
+            0.0,
+            0.125
+          ],
+          [
+            1.0,
+            0.25
+          ],
+          [
+            2.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            10.0,
+            0.125
+          ],
+          [
+            11.0,
+            0.25
+          ],
+          [
+            12.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            20.0,
+            0.125
+          ],
+          [
+            21.0,
+            0.25
+          ],
+          [
+            22.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            30.0,
+            0.125
+          ],
+          [
+            31.0,
+            0.25
+          ],
+          [
+            32.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            40.0,
+            0.125
+          ],
+          [
+            41.0,
+            0.25
+          ],
+          [
+            42.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            50.0,
+            0.125
+          ],
+          [
+            51.0,
+            0.25
+          ],
+          [
+            52.0,
+            0.375
+          ]
+        ]
+      ],
+      "face_material_ids": [
+        "fixture-material-A",
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-B",
+        "fixture-material-C",
+        "fixture-material-C"
+      ],
+      "factor": "positive_nonuniform_scale",
+      "filename": "positive_nonuniform_scale_only.fbx",
+      "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+      "id": "positive_nonuniform_scale_only",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "raw_fbx": {
+        "fbx_version": 7400,
+        "global_settings": {
+          "AmbientColor": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "CoordAxis": 0,
+          "CoordAxisSign": 1,
+          "CustomFrameRate": 24.0,
+          "DefaultCamera": "Producer Perspective",
+          "FrontAxis": 2,
+          "FrontAxisSign": 1,
+          "OriginalUnitScaleFactor": 100.0,
+          "OriginalUpAxis": -1,
+          "OriginalUpAxisSign": 1,
+          "TimeMode": 11,
+          "TimeSpanStart": 0,
+          "TimeSpanStop": 46186158000,
+          "UnitScaleFactor": 100.0,
+          "UpAxis": 1,
+          "UpAxisSign": 1
+        },
+        "materials_by_fixture_identity": [
+          {
+            "fbx_object_uid": 223452200,
+            "fixture_material_id": "fixture-material-A",
+            "name": "VAPB_CI_MATERIAL_A"
+          },
+          {
+            "fbx_object_uid": 389652399,
+            "fixture_material_id": "fixture-material-B",
+            "name": "VAPB_CI_MATERIAL_B"
+          },
+          {
+            "fbx_object_uid": 971759123,
+            "fixture_material_id": "fixture-material-C",
+            "name": "VAPB_CI_MATERIAL_C"
+          }
+        ],
+        "model": {
+          "name": "VAPB_CI_MESH",
+          "properties": {
+            "DefaultAttributeIndex": 0,
+            "InheritType": 1,
+            "Lcl Rotation": [
+              -90.00000933466734,
+              0.0,
+              0.0
+            ],
+            "Lcl Scaling": [
+              2.0,
+              0.5,
+              1.5
+            ],
+            "vapb_coordinate_case_id": "positive_nonuniform_scale_only"
+          },
+          "uid": 67531328
+        }
+      },
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        2.0,
+        0.5,
+        1.5
+      ],
+      "sha256": "4b9c3ff32e97944e6b8c08620c23fdf43c87a016bbb3fe7824143398772ec20c",
+      "size_bytes": 18076,
+      "source_material_fbx_uids": [
+        223452200,
+        389652399,
+        971759123
+      ],
+      "source_material_id_by_name": {
+        "VAPB_CI_MATERIAL_A": "fixture-material-A",
+        "VAPB_CI_MATERIAL_B": "fixture-material-B",
+        "VAPB_CI_MATERIAL_C": "fixture-material-C"
+      },
+      "source_material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_CI_MATERIAL_A",
+        "VAPB_CI_MATERIAL_B",
+        "VAPB_CI_MATERIAL_C"
+      ],
+      "source_triangle_count": 6,
+      "source_vertex_count": 18,
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "corner_uv_ids": [
+        [
+          [
+            0.0,
+            0.125
+          ],
+          [
+            1.0,
+            0.25
+          ],
+          [
+            2.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            10.0,
+            0.125
+          ],
+          [
+            11.0,
+            0.25
+          ],
+          [
+            12.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            20.0,
+            0.125
+          ],
+          [
+            21.0,
+            0.25
+          ],
+          [
+            22.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            30.0,
+            0.125
+          ],
+          [
+            31.0,
+            0.25
+          ],
+          [
+            32.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            40.0,
+            0.125
+          ],
+          [
+            41.0,
+            0.25
+          ],
+          [
+            42.0,
+            0.375
+          ]
+        ],
+        [
+          [
+            50.0,
+            0.125
+          ],
+          [
+            51.0,
+            0.25
+          ],
+          [
+            52.0,
+            0.375
+          ]
+        ]
+      ],
+      "face_material_ids": [
+        "fixture-material-A",
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-B",
+        "fixture-material-C",
+        "fixture-material-C"
+      ],
+      "factor": "negative_scale",
+      "filename": "negative_scale_only.fbx",
+      "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+      "id": "negative_scale_only",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "raw_fbx": {
+        "fbx_version": 7400,
+        "global_settings": {
+          "AmbientColor": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "CoordAxis": 0,
+          "CoordAxisSign": 1,
+          "CustomFrameRate": 24.0,
+          "DefaultCamera": "Producer Perspective",
+          "FrontAxis": 2,
+          "FrontAxisSign": 1,
+          "OriginalUnitScaleFactor": 100.0,
+          "OriginalUpAxis": -1,
+          "OriginalUpAxisSign": 1,
+          "TimeMode": 11,
+          "TimeSpanStart": 0,
+          "TimeSpanStop": 46186158000,
+          "UnitScaleFactor": 100.0,
+          "UpAxis": 1,
+          "UpAxisSign": 1
+        },
+        "materials_by_fixture_identity": [
+          {
+            "fbx_object_uid": 223452200,
+            "fixture_material_id": "fixture-material-A",
+            "name": "VAPB_CI_MATERIAL_A"
+          },
+          {
+            "fbx_object_uid": 389652399,
+            "fixture_material_id": "fixture-material-B",
+            "name": "VAPB_CI_MATERIAL_B"
+          },
+          {
+            "fbx_object_uid": 971759123,
+            "fixture_material_id": "fixture-material-C",
+            "name": "VAPB_CI_MATERIAL_C"
+          }
+        ],
+        "model": {
+          "name": "VAPB_CI_MESH",
+          "properties": {
+            "DefaultAttributeIndex": 0,
+            "InheritType": 1,
+            "Lcl Rotation": [
+              90.00000933466734,
+              -0.0,
+              0.0
+            ],
+            "Lcl Scaling": [
+              -1.0,
+              -1.0,
+              -1.0
+            ],
+            "vapb_coordinate_case_id": "negative_scale_only"
+          },
+          "uid": 67531328
+        }
+      },
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        -1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "a01562ea5177f4a37773d326ece569de62730573d29a3f0ed15c559cbfac54e4",
+      "size_bytes": 18060,
+      "source_material_fbx_uids": [
+        223452200,
+        389652399,
+        971759123
+      ],
+      "source_material_id_by_name": {
+        "VAPB_CI_MATERIAL_A": "fixture-material-A",
+        "VAPB_CI_MATERIAL_B": "fixture-material-B",
+        "VAPB_CI_MATERIAL_C": "fixture-material-C"
+      },
+      "source_material_ids": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_CI_MATERIAL_A",
+        "VAPB_CI_MATERIAL_B",
+        "VAPB_CI_MATERIAL_C"
+      ],
+      "source_triangle_count": 6,
+      "source_vertex_count": 18,
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    }
+  ],
+  "exporter": "Blender io_scene_fbx",
+  "schema": "vapb-coordinate-intervention-manifest-v1",
+  "spec": {
+    "cases": [
+      {
+        "axis_forward": "-Z",
+        "axis_up": "Y",
+        "corner_uv_ids": [
+          [
+            [
+              0.0,
+              0.125
+            ],
+            [
+              1.0,
+              0.25
+            ],
+            [
+              2.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              10.0,
+              0.125
+            ],
+            [
+              11.0,
+              0.25
+            ],
+            [
+              12.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              20.0,
+              0.125
+            ],
+            [
+              21.0,
+              0.25
+            ],
+            [
+              22.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              30.0,
+              0.125
+            ],
+            [
+              31.0,
+              0.25
+            ],
+            [
+              32.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              40.0,
+              0.125
+            ],
+            [
+              41.0,
+              0.25
+            ],
+            [
+              42.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              50.0,
+              0.125
+            ],
+            [
+              51.0,
+              0.25
+            ],
+            [
+              52.0,
+              0.375
+            ]
+          ]
+        ],
+        "face_material_ids": [
+          "fixture-material-A",
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-B",
+          "fixture-material-C",
+          "fixture-material-C"
+        ],
+        "factor": "baseline",
+        "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+        "id": "baseline",
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "material_ids": [
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-C"
+        ],
+        "rotation_degrees": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "unit_scale_length": 1.0,
+        "unit_system": "NONE"
+      },
+      {
+        "axis_forward": "Y",
+        "axis_up": "Z",
+        "corner_uv_ids": [
+          [
+            [
+              0.0,
+              0.125
+            ],
+            [
+              1.0,
+              0.25
+            ],
+            [
+              2.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              10.0,
+              0.125
+            ],
+            [
+              11.0,
+              0.25
+            ],
+            [
+              12.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              20.0,
+              0.125
+            ],
+            [
+              21.0,
+              0.25
+            ],
+            [
+              22.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              30.0,
+              0.125
+            ],
+            [
+              31.0,
+              0.25
+            ],
+            [
+              32.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              40.0,
+              0.125
+            ],
+            [
+              41.0,
+              0.25
+            ],
+            [
+              42.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              50.0,
+              0.125
+            ],
+            [
+              51.0,
+              0.25
+            ],
+            [
+              52.0,
+              0.375
+            ]
+          ]
+        ],
+        "face_material_ids": [
+          "fixture-material-A",
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-B",
+          "fixture-material-C",
+          "fixture-material-C"
+        ],
+        "factor": "axis",
+        "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+        "id": "axis_only",
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "material_ids": [
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-C"
+        ],
+        "rotation_degrees": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "unit_scale_length": 1.0,
+        "unit_system": "NONE"
+      },
+      {
+        "axis_forward": "-Z",
+        "axis_up": "Y",
+        "corner_uv_ids": [
+          [
+            [
+              0.0,
+              0.125
+            ],
+            [
+              1.0,
+              0.25
+            ],
+            [
+              2.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              10.0,
+              0.125
+            ],
+            [
+              11.0,
+              0.25
+            ],
+            [
+              12.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              20.0,
+              0.125
+            ],
+            [
+              21.0,
+              0.25
+            ],
+            [
+              22.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              30.0,
+              0.125
+            ],
+            [
+              31.0,
+              0.25
+            ],
+            [
+              32.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              40.0,
+              0.125
+            ],
+            [
+              41.0,
+              0.25
+            ],
+            [
+              42.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              50.0,
+              0.125
+            ],
+            [
+              51.0,
+              0.25
+            ],
+            [
+              52.0,
+              0.375
+            ]
+          ]
+        ],
+        "face_material_ids": [
+          "fixture-material-A",
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-B",
+          "fixture-material-C",
+          "fixture-material-C"
+        ],
+        "factor": "unit",
+        "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+        "id": "unit_only",
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "material_ids": [
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-C"
+        ],
+        "rotation_degrees": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "unit_scale_length": 0.01,
+        "unit_system": "METRIC"
+      },
+      {
+        "axis_forward": "-Z",
+        "axis_up": "Y",
+        "corner_uv_ids": [
+          [
+            [
+              0.0,
+              0.125
+            ],
+            [
+              1.0,
+              0.25
+            ],
+            [
+              2.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              10.0,
+              0.125
+            ],
+            [
+              11.0,
+              0.25
+            ],
+            [
+              12.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              20.0,
+              0.125
+            ],
+            [
+              21.0,
+              0.25
+            ],
+            [
+              22.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              30.0,
+              0.125
+            ],
+            [
+              31.0,
+              0.25
+            ],
+            [
+              32.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              40.0,
+              0.125
+            ],
+            [
+              41.0,
+              0.25
+            ],
+            [
+              42.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              50.0,
+              0.125
+            ],
+            [
+              51.0,
+              0.25
+            ],
+            [
+              52.0,
+              0.375
+            ]
+          ]
+        ],
+        "face_material_ids": [
+          "fixture-material-A",
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-B",
+          "fixture-material-C",
+          "fixture-material-C"
+        ],
+        "factor": "translation",
+        "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+        "id": "translation_only",
+        "location": [
+          2.25,
+          -0.75,
+          1.125
+        ],
+        "material_ids": [
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-C"
+        ],
+        "rotation_degrees": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "unit_scale_length": 1.0,
+        "unit_system": "NONE"
+      },
+      {
+        "axis_forward": "-Z",
+        "axis_up": "Y",
+        "corner_uv_ids": [
+          [
+            [
+              0.0,
+              0.125
+            ],
+            [
+              1.0,
+              0.25
+            ],
+            [
+              2.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              10.0,
+              0.125
+            ],
+            [
+              11.0,
+              0.25
+            ],
+            [
+              12.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              20.0,
+              0.125
+            ],
+            [
+              21.0,
+              0.25
+            ],
+            [
+              22.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              30.0,
+              0.125
+            ],
+            [
+              31.0,
+              0.25
+            ],
+            [
+              32.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              40.0,
+              0.125
+            ],
+            [
+              41.0,
+              0.25
+            ],
+            [
+              42.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              50.0,
+              0.125
+            ],
+            [
+              51.0,
+              0.25
+            ],
+            [
+              52.0,
+              0.375
+            ]
+          ]
+        ],
+        "face_material_ids": [
+          "fixture-material-A",
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-B",
+          "fixture-material-C",
+          "fixture-material-C"
+        ],
+        "factor": "rotation",
+        "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+        "id": "rotation_only",
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "material_ids": [
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-C"
+        ],
+        "rotation_degrees": [
+          23.0,
+          -37.0,
+          61.0
+        ],
+        "scale": [
+          1.0,
+          1.0,
+          1.0
+        ],
+        "unit_scale_length": 1.0,
+        "unit_system": "NONE"
+      },
+      {
+        "axis_forward": "-Z",
+        "axis_up": "Y",
+        "corner_uv_ids": [
+          [
+            [
+              0.0,
+              0.125
+            ],
+            [
+              1.0,
+              0.25
+            ],
+            [
+              2.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              10.0,
+              0.125
+            ],
+            [
+              11.0,
+              0.25
+            ],
+            [
+              12.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              20.0,
+              0.125
+            ],
+            [
+              21.0,
+              0.25
+            ],
+            [
+              22.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              30.0,
+              0.125
+            ],
+            [
+              31.0,
+              0.25
+            ],
+            [
+              32.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              40.0,
+              0.125
+            ],
+            [
+              41.0,
+              0.25
+            ],
+            [
+              42.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              50.0,
+              0.125
+            ],
+            [
+              51.0,
+              0.25
+            ],
+            [
+              52.0,
+              0.375
+            ]
+          ]
+        ],
+        "face_material_ids": [
+          "fixture-material-A",
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-B",
+          "fixture-material-C",
+          "fixture-material-C"
+        ],
+        "factor": "positive_nonuniform_scale",
+        "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+        "id": "positive_nonuniform_scale_only",
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "material_ids": [
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-C"
+        ],
+        "rotation_degrees": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          2.0,
+          0.5,
+          1.5
+        ],
+        "unit_scale_length": 1.0,
+        "unit_system": "NONE"
+      },
+      {
+        "axis_forward": "-Z",
+        "axis_up": "Y",
+        "corner_uv_ids": [
+          [
+            [
+              0.0,
+              0.125
+            ],
+            [
+              1.0,
+              0.25
+            ],
+            [
+              2.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              10.0,
+              0.125
+            ],
+            [
+              11.0,
+              0.25
+            ],
+            [
+              12.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              20.0,
+              0.125
+            ],
+            [
+              21.0,
+              0.25
+            ],
+            [
+              22.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              30.0,
+              0.125
+            ],
+            [
+              31.0,
+              0.25
+            ],
+            [
+              32.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              40.0,
+              0.125
+            ],
+            [
+              41.0,
+              0.25
+            ],
+            [
+              42.0,
+              0.375
+            ]
+          ],
+          [
+            [
+              50.0,
+              0.125
+            ],
+            [
+              51.0,
+              0.25
+            ],
+            [
+              52.0,
+              0.375
+            ]
+          ]
+        ],
+        "face_material_ids": [
+          "fixture-material-A",
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-B",
+          "fixture-material-C",
+          "fixture-material-C"
+        ],
+        "factor": "negative_scale",
+        "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+        "id": "negative_scale_only",
+        "location": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "material_ids": [
+          "fixture-material-A",
+          "fixture-material-B",
+          "fixture-material-C"
+        ],
+        "rotation_degrees": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "scale": [
+          -1.0,
+          1.0,
+          1.0
+        ],
+        "unit_scale_length": 1.0,
+        "unit_system": "NONE"
+      }
+    ],
+    "export_controls": {
+      "add_leaf_bones": false,
+      "apply_scale_options": "FBX_SCALE_UNITS",
+      "apply_unit_scale": true,
+      "bake_anim": false,
+      "bake_space_transform": false,
+      "global_scale": 1.0,
+      "object_types": [
+        "MESH"
+      ],
+      "use_custom_props": true,
+      "use_mesh_modifiers": false
+    },
+    "geometry": {
+      "faces": [
+        {
+          "face_id": "face-00",
+          "material": "fixture-material-A",
+          "uvs": [
+            {
+              "x": 0.0,
+              "y": 0.125
+            },
+            {
+              "x": 1.0,
+              "y": 0.25
+            },
+            {
+              "x": 2.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-01",
+          "material": "fixture-material-A",
+          "uvs": [
+            {
+              "x": 10.0,
+              "y": 0.125
+            },
+            {
+              "x": 11.0,
+              "y": 0.25
+            },
+            {
+              "x": 12.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-02",
+          "material": "fixture-material-B",
+          "uvs": [
+            {
+              "x": 20.0,
+              "y": 0.125
+            },
+            {
+              "x": 21.0,
+              "y": 0.25
+            },
+            {
+              "x": 22.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-03",
+          "material": "fixture-material-B",
+          "uvs": [
+            {
+              "x": 30.0,
+              "y": 0.125
+            },
+            {
+              "x": 31.0,
+              "y": 0.25
+            },
+            {
+              "x": 32.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-04",
+          "material": "fixture-material-C",
+          "uvs": [
+            {
+              "x": 40.0,
+              "y": 0.125
+            },
+            {
+              "x": 41.0,
+              "y": 0.25
+            },
+            {
+              "x": 42.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-05",
+          "material": "fixture-material-C",
+          "uvs": [
+            {
+              "x": 50.0,
+              "y": 0.125
+            },
+            {
+              "x": 51.0,
+              "y": 0.25
+            },
+            {
+              "x": 52.0,
+              "y": 0.375
+            }
+          ]
+        }
+      ],
+      "geometry_id": "vapb-coordinate-intervention-20261007-v1",
+      "materials": [
+        "fixture-material-A",
+        "fixture-material-B",
+        "fixture-material-C"
+      ]
+    },
+    "schema": "vapb-coordinate-intervention-v1"
+  }
+}

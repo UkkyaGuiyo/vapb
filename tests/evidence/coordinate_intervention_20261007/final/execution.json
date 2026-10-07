@@ -1,0 +1,179 @@
+{
+  "schema": "vapb-coordinate-intervention-execution-v2",
+  "project": "vapb",
+  "canonical_repository": "https://github.com/UkkyaGuiyo/vapb",
+  "branch": "feature/r2-material-slot-reorder",
+  "base_head": "18dc330739d770c47a96f4bc0a1c0c930a08574e",
+  "unity_editor_started": false,
+  "unity_runtime_capture": "NOT_RUN_ON_HOLD_FOR_VHS_PROP_PRIORITY",
+  "unity_project_compile": "NOT_RUN",
+  "manifest_sha256": "b281b0f36c8652271514ed754291dfa3d0fa96d39db3dbc160aa14102df83043",
+  "blender_capture_sha256": "00eaadf3a43e1bd9151a5df957e58d18bb62c91cbad4adfd55f2e20ed174b821",
+  "blender_capture_status": "BLENDER_FACE_IDENTITY_PASS",
+  "specification_and_comparator_tests": {
+    "passed": 13,
+    "failed": 0,
+    "interpreter": "Blender 5.2.1 bundled Python 3.13.13",
+    "bytecode_writes_disabled": true
+  },
+  "unity_csharp_standalone_compile": {
+    "status": "PASS",
+    "source_sha256": "629814ae7ec5da502d720330850f17090fd9a10cfad5c0db78f681be9ae1be3d",
+    "compiler": "Unity 2022.3.22f1 bundled Roslyn csc 4.3.1",
+    "errors": 0,
+    "unity_editor_started": false,
+    "assembly_sha256": "286202b2615c78e853619958c53356bdb18fd002dc98224e3abb1c24c2555fbd"
+  },
+  "SOL_review": "GPT-6.1 SOL medium: approved for bounded preparation; identified comparator false-pass risks, addressed and regression-tested.",
+  "material_identity_scope": "Fixture-authored unique material names join imported Materials to raw FBX Material object UIDs; this is not an independent/general mapping proof.",
+  "raw_model_trs_scope": "Captured from raw FBX; full decomposition not independently asserted.",
+  "product_code_changed": false,
+  "generated_fixtures": [
+    {
+      "id": "baseline",
+      "factor": "baseline",
+      "fbx_sha256": "cb31e465b43280ed616947451f909ae7e124434eb8476595bb1296114ad4df32",
+      "file_size_bytes": 17964,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up": 1,
+        "up_sign": 1,
+        "front": 2,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "axis_only",
+      "factor": "axis",
+      "fbx_sha256": "67d02a27bae1b73f4e946a0da6583a940070f661f018bade18e5315f6581fa4c",
+      "file_size_bytes": 17884,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up": 2,
+        "up_sign": 1,
+        "front": 1,
+        "front_sign": -1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "unit_only",
+      "factor": "unit",
+      "fbx_sha256": "d7d8c449959015cc1185ccf37b532642e30880564be5240789da4284e6f543a7",
+      "file_size_bytes": 17964,
+      "raw_unit_scale_factor": 0.9999999776482582,
+      "raw_axes": {
+        "up": 1,
+        "up_sign": 1,
+        "front": 2,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "translation_only",
+      "factor": "translation",
+      "fbx_sha256": "dcf65c9fbe0a65654fab5ace31833eb44c23056141777de8f3196d55029a692b",
+      "file_size_bytes": 18076,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up": 1,
+        "up_sign": 1,
+        "front": 2,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "rotation_only",
+      "factor": "rotation",
+      "fbx_sha256": "089f320104d7fc50a24707969930f500ade7721b80aa7f016ed0f69b321cc646",
+      "file_size_bytes": 18060,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up": 1,
+        "up_sign": 1,
+        "front": 2,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "positive_nonuniform_scale_only",
+      "factor": "positive_nonuniform_scale",
+      "fbx_sha256": "4b9c3ff32e97944e6b8c08620c23fdf43c87a016bbb3fe7824143398772ec20c",
+      "file_size_bytes": 18076,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up": 1,
+        "up_sign": 1,
+        "front": 2,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "negative_scale_only",
+      "factor": "negative_scale",
+      "fbx_sha256": "a01562ea5177f4a37773d326ece569de62730573d29a3f0ed15c559cbfac54e4",
+      "file_size_bytes": 18060,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up": 1,
+        "up_sign": 1,
+        "front": 2,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    }
+  ],
+  "source_files": [
+    {
+      "path": "tests/coordinate_intervention_20261007/capture_blender.py",
+      "sha256": "c396fe71d0d2d39e76403f618780059432a1f4379b06576dca6089ca182bba99"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/compare_captures.py",
+      "sha256": "d50177abe00273fbebd58f9e1a36082f7a139c6557b8a26260dc845eafa8deeb"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/experiment_spec.py",
+      "sha256": "e778e3938b22d0308fc004c3c896c65f4619b6662149f6eecbd4c144feabe95e"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/generate_fixtures.py",
+      "sha256": "c925da231e9ac04e19620d352b958e9b39486a86c686f701db6dfd37f8d0596e"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/README.md",
+      "sha256": "71c865a5e0334318a4682dd40869078ca2518dc507a808fdbf6cf5dec8eb9d43"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/test_compare_captures.py",
+      "sha256": "e43cedfaacebae75ac8e8e721aeca8cf73ecc6400018dc65a6d40e6210ae0896"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/test_intervention_spec.py",
+      "sha256": "9ec897c1311f7cc792e358fca0a80e715e0af5d9e7e73b0bd2a0a790b1a1fa0b"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/Editor/VapbCoordinateInterventionProbe.cs",
+      "sha256": "629814ae7ec5da502d720330850f17090fd9a10cfad5c0db78f681be9ae1be3d"
+    }
+  ]
+}

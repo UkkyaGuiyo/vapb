@@ -1,0 +1,176 @@
+{
+  "schema": "vapb-coordinate-intervention-execution-v1",
+  "project": "vapb",
+  "branch": "feature/r2-material-slot-reorder",
+  "base_head": "18dc330739d770c47a96f4bc0a1c0c930a08574e",
+  "generator_blender_version": "5.2.1 LTS",
+  "manifest_sha256": "30ef834f86110ff47d02d3912c60087fb76f771a9d9459820b5124567aed9985",
+  "blender_capture_sha256": "bcf790494eaeb6bccd6eece631e3d9fcb08643f3d668352a17cbcab76d36c982",
+  "blender_capture_status": "BLENDER_FACE_IDENTITY_PASS",
+  "specification_tests": {
+    "passed": 10,
+    "failed": 0,
+    "interpreter": "Blender 5.2.1 bundled Python 3.13.13",
+    "bytecode_writes_disabled": true
+  },
+  "unity_editor_runner_compile": {
+    "status": "PASS",
+    "source_sha256": "e0dfc36148783e36f58a483e75327a3d412c0c0311f506795cc837258a3b899d",
+    "unity_editor_started": false,
+    "errors": 0,
+    "output_assembly_sha256": "c67b96fbf386fb70b743b4d95844423061badbf8b4c1f2a4c7524601900560ca",
+    "compiler": "Unity 2022.3.22f1 bundled Roslyn 3.7.0"
+  },
+  "unity_project_compile": "NOT_RUN",
+  "unity_runtime_capture": "NOT_RUN",
+  "product_code_changed": false,
+  "generated_fixtures": [
+    {
+      "id": "baseline",
+      "factor": "baseline",
+      "fbx_sha256": "88d04440e4879ce16a9149e418013208bbf2f0e01e9577c5e3c7a4126d6509e4",
+      "fbx_size_bytes": 17964,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up_sign": 1,
+        "front": 2,
+        "up": 1,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "axis_only",
+      "factor": "axis",
+      "fbx_sha256": "8e570e336677ae58ca1dc24bccd92186e48c92b4452ddff8e08b8daead839cc0",
+      "fbx_size_bytes": 17884,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up_sign": 1,
+        "front": 1,
+        "up": 2,
+        "front_sign": -1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "unit_only",
+      "factor": "unit",
+      "fbx_sha256": "fbd473c657cea9b2c070cf5bf132185b57a52af1bd6d20f1108da0b923a09d8f",
+      "fbx_size_bytes": 17964,
+      "raw_unit_scale_factor": 0.9999999776482582,
+      "raw_axes": {
+        "up_sign": 1,
+        "front": 2,
+        "up": 1,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "translation_only",
+      "factor": "translation",
+      "fbx_sha256": "4bc1a8a197ecc1c0788d0c86bcf80395801ad25f42c29a2a6a4f4acc62d09cae",
+      "fbx_size_bytes": 18076,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up_sign": 1,
+        "front": 2,
+        "up": 1,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "rotation_only",
+      "factor": "rotation",
+      "fbx_sha256": "c0585b6f28e0f4913c19dde4101852fd103f77e5163035e527d14b13e63062b4",
+      "fbx_size_bytes": 18060,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up_sign": 1,
+        "front": 2,
+        "up": 1,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "positive_nonuniform_scale_only",
+      "factor": "positive_nonuniform_scale",
+      "fbx_sha256": "79e3f7f0954f6b88185be0ce844737f2d52f2375938e08a2e8ec1737348d732f",
+      "fbx_size_bytes": 18076,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up_sign": 1,
+        "front": 2,
+        "up": 1,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    },
+    {
+      "id": "negative_scale_only",
+      "factor": "negative_scale",
+      "fbx_sha256": "65f8c995da180812646ca039658e5bab54f4f977fbebdb027ae0d881f65f111d",
+      "fbx_size_bytes": 18060,
+      "raw_unit_scale_factor": 100.0,
+      "raw_axes": {
+        "up_sign": 1,
+        "front": 2,
+        "up": 1,
+        "front_sign": 1
+      },
+      "blender_faces": 6,
+      "face_membership_pass": true,
+      "unmatched_faces": 0
+    }
+  ],
+  "source_files": [
+    {
+      "path": "tests/coordinate_intervention_20261007/experiment_spec.py",
+      "sha256": "e778e3938b22d0308fc004c3c896c65f4619b6662149f6eecbd4c144feabe95e"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/generate_fixtures.py",
+      "sha256": "c1cd19ea92fe45fa7046b73f57d01b8fc811c6d3647d368ddc91bd14a3e6cf93"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/capture_blender.py",
+      "sha256": "c396fe71d0d2d39e76403f618780059432a1f4379b06576dca6089ca182bba99"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/compare_captures.py",
+      "sha256": "7806a040bc694a8bd0e94ff5a7d6fdf4ff7f013ae5efbef412f0ba10425a4b48"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/Editor/VapbCoordinateInterventionProbe.cs",
+      "sha256": "e0dfc36148783e36f58a483e75327a3d412c0c0311f506795cc837258a3b899d"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/test_intervention_spec.py",
+      "sha256": "9ec897c1311f7cc792e358fca0a80e715e0af5d9e7e73b0bd2a0a790b1a1fa0b"
+    },
+    {
+      "path": "tests/coordinate_intervention_20261007/test_compare_captures.py",
+      "sha256": "8f1b04b943c5e388e8048f9313b10a66bc5e57b581bc032cb9ae61cf68147ec2"
+    }
+  ],
+  "retained_nonpassing_harness_attempts": [
+    "Initial Blender import capture returned UNPROVEN because orphan imported material datablocks caused .001 name suffixes; clearing run-owned orphan meshes/materials fixed the capture.",
+    "An early raw manifest write failed on FBX property byte strings; strict UTF-8 decoding fixed serialization.",
+    "An early unit variant did not change raw UnitScaleFactor; raw property validation caught it and the export scale controls were corrected before accepted fixtures were generated."
+  ]
+}
