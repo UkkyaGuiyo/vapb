@@ -7,7 +7,8 @@ from pathlib import Path
 SAFETY_DIR = (Path(__file__).parent / 'evidence' / 'confirmed_route_winding_20261007').resolve()
 sys.path.insert(0, str(SAFETY_DIR))
 from confirmed_route_output_safety import (
-    resolve_product_package_root, validate_output_path, write_text_exclusive,
+    load_product_package_from_clean_namespace, resolve_product_package_root,
+    validate_output_path, write_text_exclusive,
 )
 
 
@@ -53,6 +54,27 @@ class ConfirmedRouteOutputSafetyTests(unittest.TestCase):
             package_root = root / 'unitypackage_blender_importer'
             self._write_package_layout(package_root)
             self.assertEqual(resolve_product_package_root(root), package_root.resolve())
+
+    def test_rejects_cached_module_without_replacing_loaded_addon(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'vapb'
+            self._write_package_layout(root)
+            loaded_addon = type(sys)('unitypackage_blender_importer.blender.fbx_receipt')
+            loaded_addon.__file__ = str(Path(directory) / 'another-addon' / 'fbx_receipt.py')
+            module_cache = {'unitypackage_blender_importer.blender.fbx_receipt': loaded_addon}
+            with self.assertRaisesRegex(RuntimeError, 'PRODUCT_MODULE_CACHE_PRESENT'):
+                load_product_package_from_clean_namespace(root, module_cache)
+            self.assertIs(module_cache['unitypackage_blender_importer.blender.fbx_receipt'], loaded_addon)
+            self.assertNotIn('unitypackage_blender_importer', module_cache)
+
+    def test_loads_repo_root_when_module_namespace_is_clean(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / 'vapb'
+            self._write_package_layout(root)
+            module_cache = {}
+            loaded = load_product_package_from_clean_namespace(root, module_cache)
+            self.assertIs(loaded, module_cache['unitypackage_blender_importer'])
+            self.assertEqual(Path(loaded.__file__).resolve(), (root / '__init__.py').resolve())
 
     @staticmethod
     def _write_package_layout(root):

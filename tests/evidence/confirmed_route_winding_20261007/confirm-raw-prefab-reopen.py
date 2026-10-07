@@ -1,6 +1,5 @@
 import bpy
 import hashlib
-import importlib.util
 import json
 import re
 import sys
@@ -11,7 +10,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 from confirmed_route_output_safety import (
-    resolve_product_package_root, validate_output_path, write_text_exclusive,
+    load_product_package_from_clean_namespace, validate_output_path, write_text_exclusive,
 )
 
 
@@ -96,15 +95,7 @@ def main():
     raw = parse_raw_prefab(package_path, expected_package_sha)
     need(sha256(bpy.data.filepath) == expected_blend_sha, 'FIXTURE_BLEND_SHA_MISMATCH')
 
-    package_root = resolve_product_package_root(values['--repo-root'])
-    package_spec = importlib.util.spec_from_file_location(
-        'unitypackage_blender_importer', package_root / '__init__.py',
-        submodule_search_locations=[str(package_root)])
-    need(package_spec is not None and package_spec.loader is not None,
-         'PRODUCT_PACKAGE_IMPORT_SPEC_INVALID')
-    package_module = importlib.util.module_from_spec(package_spec)
-    sys.modules['unitypackage_blender_importer'] = package_module
-    package_spec.loader.exec_module(package_module)
+    load_product_package_from_clean_namespace(values['--repo-root'], sys.modules)
     from unitypackage_blender_importer.blender.fbx_receipt import validate_persistent_receipt
     from unitypackage_blender_importer.blender.renderer_binding import validate_existing_binding
 

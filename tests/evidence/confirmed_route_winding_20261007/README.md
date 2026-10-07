@@ -28,9 +28,9 @@ $result = '<new-output-result.json>'
 & $blender --background $scene --python-exit-code 1 --python tests/evidence/confirmed_route_winding_20261007/confirm-raw-prefab-reopen.py -- --package $package --output $result --repo-root $repo
 ```
 
-The checker rejects outputs resolving to the package or currently opened `.blend`; it creates output files exclusively and refuses to replace an existing file. Use a new output filename for each run.
+The checker rejects outputs resolving to the package or currently opened `.blend`; it creates output files exclusively and refuses to replace an existing file. It also refuses to run if `unitypackage_blender_importer` or any submodule is already loaded in the Blender Python process, so it never replaces or reuses an Addon module from another checkout. Use a clean Blender process and a new output filename for each run.
 
-Included: `confirm-raw-prefab-reopen.py`, its standalone `confirmed_route_output_safety.py` path/write guard, sanitized `confirm-raw-prefab-reopen-evidence.json`, and `tests/test_confirmed_route_output_safety.py` for alias refusal, no-overwrite, and repository-root resolution. Raw logs and the `.blend` remain local.
+Included: `confirm-raw-prefab-reopen.py`, its standalone `confirmed_route_output_safety.py` input/output and module-cache guards, sanitized `confirm-raw-prefab-reopen-evidence.json`, and `tests/test_confirmed_route_output_safety.py` for path alias refusal, no-overwrite, repository-root resolution, and cached-module rejection. Raw logs and the `.blend` remain local.
 
 ## Exact Unity identity witness: prepared, Editor run pending
 

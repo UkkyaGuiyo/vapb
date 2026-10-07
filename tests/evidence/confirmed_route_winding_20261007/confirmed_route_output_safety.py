@@ -1,4 +1,5 @@
 import os
+import importlib.util
 from pathlib import Path
 
 
@@ -27,6 +28,32 @@ def resolve_product_package_root(repo_root):
     if not all(path.is_file() for path in required):
         raise ValueError('PRODUCT_REPOSITORY_LAYOUT_INVALID')
     return candidate
+
+
+def load_product_package_from_clean_namespace(repo_root, module_cache):
+    """Load this checkout only when no addon module with the same name is already cached."""
+    package_root = resolve_product_package_root(repo_root)
+    namespace = 'unitypackage_blender_importer'
+    cached = sorted(name for name in module_cache
+                    if name == namespace or name.startswith(namespace + '.'))
+    if cached:
+        raise RuntimeError('PRODUCT_MODULE_CACHE_PRESENT: ' + ', '.join(cached))
+
+    spec = importlib.util.spec_from_file_location(
+        namespace, package_root / '__init__.py',
+        submodule_search_locations=[str(package_root)])
+    if spec is None or spec.loader is None:
+        raise RuntimeError('PRODUCT_PACKAGE_IMPORT_SPEC_INVALID')
+    module = importlib.util.module_from_spec(spec)
+    module_cache[namespace] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        for name in tuple(module_cache):
+            if name == namespace or name.startswith(namespace + '.'):
+                module_cache.pop(name, None)
+        raise
+    return module
 
 
 def write_text_exclusive(output_path, content):
