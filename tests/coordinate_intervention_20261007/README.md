@@ -1,7 +1,7 @@
 # Coordinate and material partition intervention
 
 Project: `vapb`
-Branch/base: `feature/r2-material-slot-reorder` / `18dc330739d770c47a96f4bc0a1c0c930a08574e` (local parent, still unpushed)
+Branch/fixture preparation base: `feature/r2-material-slot-reorder` / `18dc330739d770c47a96f4bc0a1c0c930a08574e`
 Purpose: isolate importer response to authored axis, unit, transform, and reflection changes without changing VAPB product behavior.
 
 ## Fixed contract
@@ -48,7 +48,25 @@ This measures only the selected Blender/Unity versions and these seven synthetic
 - Final generator rerun: 7 FBXs generated. The raw FBX metadata validator confirmed distinct axis and unit values and identical material UIDs. Final fixture and output hashes are in `../evidence/coordinate_intervention_20261007/final/execution.json`.
 - Blender 5.2.1 import capture: 7/7 cases have unique corner UV identities and the expected per-face material partition.
 - Unity 2022.3.22f1 Editor runner: compiled offline with the installed Unity Roslyn compiler and Unity managed reference assemblies, zero C# errors. This is a standalone compile check, not an Editor project compile or runtime capture.
-- Unity runtime capture and cross-tool coordinate comparison: not run. The new Editor remains on hold for the VHS/Prop run slot.
+- Unity runtime capture completed using source commit `067c8b30bb5817caa8671b6009bf1e60991c6f18`. One fresh isolated Unity 2022.3.22f1 Project processed all seven inputs in one Editor process, which exited 0. The Editor assembly compiled and executed; registered packages/dependencies were zero. All staged inputs and manifest hashes remained unchanged, and no same-project Editor remained.
+
+## Runtime comparison boundary
+
+Unity reports `UNITY_FACE_IDENTITY_CAPTURED`: all seven cases have zero capture errors, zero unmatched faces, and the expected fixture-specific material membership. The fixed comparator reports `COORDINATE_AND_FACE_IDENTITY_UNPROVEN`: every case has eighteen world-corner component deltas above the predeclared `1e-4` tolerance (126 total). Importer settings are constant and both tools have zero material-face comparison errors.
+
+| Case | Maximum absolute world-corner component delta |
+|---|---:|
+| baseline | 3.680000066757202 |
+| axis_only | 3.680000066757202 |
+| unit_only | 0.03680000033080577 |
+| translation_only | 8.180000066757202 |
+| rotation_only | 3.3561477279940197 |
+| positive_nonuniform_scale_only | 7.360000133514404 |
+| negative_scale_only | 3.680000066757202 |
+
+The direct world-point equality prediction is rejected by these observations. The comparison retains `mapping: null`; no fitted transform, new basis, or product fallback is selected. The material result remains limited to authored UV identities and the fixture-name join described above. Stop at this coordinate boundary before any further intervention. GPT-6.1 SOL medium reviewed the capture, receipts, and fixed comparator and confirmed this bounded interpretation.
+
+Public capture, comparison, and sanitized execution receipt are in `../evidence/coordinate_intervention_20261007/unity-run-01/`. The earlier `final/execution.json` remains the historical preparation receipt, including its then-unrun Unity status. Raw Editor logs and local Project paths stay in the local run area. The log records an initial LicensingClient validation warning followed by successful connection; licensing settings were unchanged.
 
 The runner's terminal path is covered separately without starting Unity: missing `-vapbCoordinateResult`, failure-record serialization error, failure-record write denial plus throwing error reporters, a pre-existing output file, and a deferred import retry. The latter remains byte-for-byte unchanged because both failure recording and normal output use `FileMode.CreateNew`. The exit guard keeps the delayed import retry open when it returns no exit code and invokes exit code 1 on failure paths. Five pure C# guard scenarios pass; these are not a Unity Editor runtime test.
 
