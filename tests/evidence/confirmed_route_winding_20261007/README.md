@@ -32,6 +32,16 @@ The checker rejects outputs resolving to the package or currently opened `.blend
 
 Included: `confirm-raw-prefab-reopen.py`, its standalone `confirmed_route_output_safety.py` input/output and module-cache guards, sanitized `confirm-raw-prefab-reopen-evidence.json`, and `tests/test_confirmed_route_output_safety.py` for path alias refusal, no-overwrite, repository-root resolution, and cached-module rejection. Raw logs and the `.blend` remain local.
 
+## Post-guard fresh-process reproduction
+
+After adding the path and module-cache guards, the exact saved scene was reopened again in a fresh Blender 5.2.1 `--factory-startup` process using a new run-owned output path. Exit code was 0 and the raw Prefab/projection/slot check returned `PASS`; all three slots were `OBJECT` linked, the binding and receipt revalidated, triangle counts remained `[2, 4, 6]`, and the probe did not save the scene. The source package and scene SHA-256 values were unchanged before/after. The clean-process import path passed; separate focused tests reject a preloaded addon submodule without replacing it.
+
+- Source commit tested: `346b93689913de32abbc939d192ec00fa9f17405`.
+- Output JSON SHA-256: `d9ef613fb667d42a3b5c5cbcea344c4ab8af5da2e1b04c987aaaa05422317ead`.
+- Probe SHA-256: `0102e94eef3ce2c185900cfed10f0c851f502f737a8c5ac57b4efa8332608d8b`; helper SHA-256: `897627841d312878ae12c2c11032c42cd47ef697b6451283cbde7df0b0d27ad3`.
+- Eight focused output/module-cache tests passed before the run; test script SHA-256: `dc2e30a528b246222c9d66ae38648666dd3411e9e7a9168eb163788b97e0fafb`.
+- Sanitized result: `confirm-raw-prefab-reopen-guarded-evidence.json`; process and input-integrity summary: `confirm-raw-prefab-reopen-guarded-run.json` (SHA-256 `70358fd1b2621faca54f00b42778bf0925b824ad92c02bad578d7966b3dbcc70`). Raw log and local scene remain outside the repository.
+
 ## Exact Unity identity witness: prepared, Editor run pending
 
 The manual confirmation route preserves slot identities after save/reopen, but it does not supply the missing automatic identity bridge. A separate isolated Unity source project was prepared from the same exact public package/FBX/meta revision using the existing `tests/unity_hierarchy_probe/prepare_exact_witness.py` workflow. Blender 5.2.1 generated semantic no-op and test-marker FBX copies (`models=4`, `original_unchanged=1`, exit 0). The Unity project targets 2022.3.22f1 and its manifest has no dependencies. See `unity-source-witness-preparation.json`.

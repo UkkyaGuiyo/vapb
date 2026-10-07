@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "blender_version": "5.2.1 LTS",
+  "invocation": "--background --factory-startup <exact-saved-scene> --python-exit-code 1 --python confirm-raw-prefab-reopen.py -- --package <exact-fixture> --output <new-run-output> --repo-root <VAPB-clone-root>",
+  "process_exit_code": 0,
+  "fresh_process": true,
+  "cache_guard": "clean namespace imported; cached namespace rejection covered by focused test",
+  "temp_environment": "run-local TEMP/TMP for this process only",
+  "source_package_sha256_before": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "source_package_sha256_after": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "source_scene_sha256_before": "58a3863a44198555bf07fdb56eb86e411b0804523ac2db694283a0ed9d8d122c",
+  "source_scene_sha256_after": "58a3863a44198555bf07fdb56eb86e411b0804523ac2db694283a0ed9d8d122c",
+  "result_json_sha256": "d9ef613fb667d42a3b5c5cbcea344c4ab8af5da2e1b04c987aaaa05422317ead",
+  "probe_script_sha256": "0102e94eef3ce2c185900cfed10f0c851f502f737a8c5ac57b4efa8332608d8b",
+  "helper_sha256": "897627841d312878ae12c2c11032c42cd47ef697b6451283cbde7df0b0d27ad3",
+  "code_commit": "346b93689913de32abbc939d192ec00fa9f17405",
+  "input_modified": false,
+  "blend_saved_by_probe": false,
+  "unity_editor_run": false,
+  "focused_safety_tests": 8,
+  "test_script_sha256": "dc2e30a528b246222c9d66ae38648666dd3411e9e7a9168eb163788b97e0fafb"
+}
