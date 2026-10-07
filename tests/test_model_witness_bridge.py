@@ -12,14 +12,17 @@ from unittest import mock
 from dataclasses import replace
 from types import SimpleNamespace
 
-from unitypackage_blender_importer.blender.fbx_receipt import FbxModelLink, RawFbxSemanticIndex
+from unitypackage_blender_importer.blender.fbx_receipt import (
+    FbxModelLink, RawFbxSemanticIndex, make_receipt, persist_receipt,
+    validate_persistent_receipt,
+)
 from unitypackage_blender_importer.blender.model_witness_bridge import (
     plan_witness_realizations, plan_witness_material_dependencies,
     find_witness_consumer,
     plan_witness_skin_carriers,
 )
 from unitypackage_blender_importer.unity.model_identity_witness import (
-    ModelAssetRevision, validate_model_witness,
+    ModelAssetRevision, ModelIdentityRow, ModelWitnessIndex, validate_model_witness,
 )
 from unitypackage_blender_importer.unity.import_outcome import summarize_import_outcome
 from unitypackage_blender_importer.unity.occurrence_projection import occurrence_identity
@@ -468,6 +471,88 @@ class ModelWitnessBridgeTests(unittest.TestCase):
             self.assertEqual([], bindings)
             self.assertEqual([{"occurrence_id": value["occurrence_id"],
                                "code": "WITNESS_MISSING"}], issues)
+
+    def test_three_slot_fixture_joins_only_with_explicit_test_identity_row(self):
+        """Test-only row isolates the missing Prefab-Mesh to native-FBX edge."""
+        package_sha, fbx_sha, raw_ref = raw_three_slot_mesh_reference()
+        package_id = "sha256:" + package_sha
+        guid = raw_ref["mesh_guid"]
+        mesh_id = int(raw_ref["mesh_file_id"])
+        renderer_id = int(raw_ref["renderer_file_id"])
+        owner_id = int(raw_ref["owner_game_object_id"])
+        model_uid, geometry_uid = 208084244, 329684292
+
+        current = record()
+        current.update({
+            "root_context_id": "fixed-three-slot-root-context",
+            "root_package_id": package_id,
+            "root_member_id": "7cbdcbe81fde386408bcfb379e62b6bb",
+            "root_asset_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+            "source_package_id": package_id,
+            "source_key": {"source_kind": "PREFAB_LOCAL",
+                           "source_asset_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+                           "renderer_file_id": renderer_id},
+            "renderer_class_id": 137,
+            "owner": {"source_kind": "PREFAB_LOCAL",
+                      "source_asset_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+                      "owner_game_object_id": owner_id},
+            "mesh": {"mesh_guid": guid, "mesh_file_id": mesh_id,
+                     "source_package_id": package_id, "source_sha256": fbx_sha},
+        })
+        current["occurrence_id"] = occurrence_identity(current)
+
+        candidate = Object(
+            _vapb_root_context_id=current["root_context_id"],
+            unity_source_package_id=package_id)
+        persist_receipt(candidate, make_receipt(model_uid, geometry_uid, guid, fbx_sha))
+        self.assertTrue(validate_persistent_receipt(candidate))
+
+        sentinel_material, sentinel_slot = object(), object()
+        candidate.data.materials = [sentinel_material]
+        candidate.material_slots = [sentinel_slot]
+        row_fields = dict(
+            asset_guid=guid, model_uid=model_uid, geometry_uid=geometry_uid,
+            transform_local_id=-1, game_object_local_id=owner_id,
+            class_id=137, renderer_local_id=renderer_id, mesh_local_id=mesh_id)
+        exact_test_only_row = ModelWitnessIndex(
+            [ModelIdentityRow(**row_fields)], {guid: fbx_sha})
+        wrong_mesh_id_row = ModelWitnessIndex(
+            [ModelIdentityRow(**{**row_fields, "mesh_local_id": mesh_id + 1})],
+            {guid: fbx_sha})
+        before_record = copy.deepcopy(current)
+        before_candidate_props = copy.deepcopy(dict(candidate))
+        before_data_props = copy.deepcopy(dict(candidate.data))
+        before_data = candidate.data
+
+        def assert_no_mutation():
+            self.assertEqual(before_record, current)
+            self.assertEqual(before_candidate_props, dict(candidate))
+            self.assertEqual(before_data_props, dict(candidate.data))
+            self.assertIs(before_data, candidate.data)
+            self.assertEqual(1, len(candidate.data.materials))
+            self.assertIs(sentinel_material, candidate.data.materials[0])
+            self.assertEqual(1, len(candidate.material_slots))
+            self.assertIs(sentinel_slot, candidate.material_slots[0])
+
+        bindings, issues = plan_witness_realizations([current], [candidate], None)
+        self.assertEqual([], bindings)
+        self.assertEqual([{"occurrence_id": current["occurrence_id"],
+                           "code": "WITNESS_MISSING"}], issues)
+        assert_no_mutation()
+
+        bindings, issues = plan_witness_realizations(
+            [current], [candidate], exact_test_only_row)
+        self.assertEqual([], issues)
+        self.assertEqual(1, len(bindings))
+        self.assertIs(candidate, bindings[0][1])
+        assert_no_mutation()
+
+        bindings, issues = plan_witness_realizations(
+            [current], [candidate], wrong_mesh_id_row)
+        self.assertEqual([], bindings)
+        self.assertEqual([{"occurrence_id": current["occurrence_id"],
+                           "code": "WITNESS_MISSING"}], issues)
+        assert_no_mutation()
 
     def test_two_renderer_occurrences_cannot_claim_same_native_object(self):
         first = record()
