@@ -29,6 +29,10 @@ The imported scene was saved before export. The existing `vapb_unitypackage` Ski
 
 The emitted Unity package SHA-256 is `b8f3901ef5dd386ecf1a51d266ff3f6b866c6ae7c3409f66e87be335f292c16d`. T0-B result SHA-256: `daf168a1878662478ce6e05fd32db4deb6fa37bd39b40f50dab21f0481e5591d`.
 
+## Source checkout isolation
+
+The T0-C and T1 runners now fail closed if `unitypackage_blender_importer` or any child module is already present in the embedded interpreter's `sys.modules`. On a clean namespace, the selected checkout is loaded and every module origin is checked to remain under that checkout. Focused tests cover a cached child from another checkout, a cached child from the selected checkout, a cached root, and a clean load.
+
 ## T0-C output closure
 
 The exact T0-B package was read with the production `RawAssetRepository` and independently with a strict `tarfile` member pass. Both inventories agreed. Duplicate GUID/kind members, case-variant GUID directories, non-regular members, unsafe paths, and NFC/casefold destination collisions are rejected. The source Prefab's raw ordered Material references were `eb805efb35118044db5e74adc652673a:2100000`, `0318f358e4c29034aa90cc8c50b58a93:2100000`, and `64f92a1bd9b35a040bf9e2c6d200b34c:2100000`.
@@ -39,7 +43,7 @@ A disposable package copy with Material GUID `eb805efb35118044db5e74adc652673a` 
 
 ## T1 saved-scene reopen
 
-A fresh Blender process opened the exact saved `.blend` from T0-B. Its complete Mesh-candidate set matched the T0-A recorded semantic fields (receipt identities/validity, slot GUID/fileID/link/provenance, vertex counts, and armature presence), including a second duplicate-like Mesh candidate that was already present in T0-A. The export target was selected by the exact source/root receipt. The reopened target matched the three ordered Material references and `[2, 4, 6]` face counts; its observed Mesh fields remained unchanged across export. The source package and saved `.blend` hashes also remained unchanged. This comparison does not include vertex coordinates, UVs, image/node state, or the full source archive store.
+A fresh Blender process opened the exact saved `.blend` from T0-B. Its complete Mesh-candidate set matched the T0-A recorded semantic fields (receipt identities/validity, slot GUID/fileID, vertex counts, and armature presence), including a second duplicate-like Mesh candidate that was already present in T0-A. The export target was selected by the exact source/root receipt. For that selected target Mesh, the reopened ordered Material references, `OBJECT` links, package provenance, and `[2, 4, 6]` face counts matched; its observed fields remained unchanged across export. Link/provenance claims apply only to this selected receipt-matched Mesh, not every candidate. The source package and saved `.blend` hashes also remained unchanged. This comparison does not include vertex coordinates, UVs, image/node state, or the full source archive store.
 
 The fresh-process export SHA-256 is `20b4b3551b245d9709dac842ba854abfbe7acdb202504f334c7fc5e70e3f89cd`. Its T0-C closure, required-Material negative control, and native FBX carrier/face-count import all passed. The generated FBX SHA-256 was `a27cc6100cd2cbce5f0e9b3a4b24867e042e861ac33ff233a4f37276de491c1e`. T1 result SHA-256: `7efbd0e6bf9427ac9b36e65bdee0948b08a78e3a0f54f2daa0954ba979eef061`; closure result SHA-256: `b314d5a00b834b1634f33edd1537a782624639efdabb1229f8f225c5af603a3c`; native import result SHA-256: `e365f6e7190230b5880fcd8aecc78457fe0511539560d0b9bca37386994d8400`.
 

@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import importlib.util
 import json
 from pathlib import Path
 import sys
@@ -15,15 +14,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 FIXED_BLEND_SHA256 = "1e4f75e36ff5d0ed76523fdd54eaf936a8275426e3186082eca9e2421de6aa05"
 FIXED_SOURCE_SHA256 = "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c"
 sys.path.insert(0, str(ROOT.parent))
-spec = importlib.util.spec_from_file_location(
-    "unitypackage_blender_importer", ROOT / "__init__.py",
-    submodule_search_locations=[str(ROOT)],
-)
-if spec is None or spec.loader is None:
-    raise RuntimeError("cannot load checked-out VAPB add-on")
-addon = importlib.util.module_from_spec(spec)
-sys.modules[spec.name] = addon
-spec.loader.exec_module(addon)
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+if any(name == "strict_source_import" or name.startswith("strict_source_import.")
+       for name in sys.modules):
+    raise ImportError("refusing cached strict_source_import helper")
+import strict_source_import as _strict_source_import
+_expected_helper = Path(__file__).resolve().parent / "strict_source_import.py"
+if Path(_strict_source_import.__file__).resolve() != _expected_helper.resolve():
+    raise ImportError("strict_source_import helper did not come from selected tests directory")
+addon = _strict_source_import.load_source_package(ROOT)
 from unitypackage_blender_importer.blender.fbx_receipt import validate_persistent_receipt
 
 
