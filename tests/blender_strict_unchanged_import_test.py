@@ -100,6 +100,69 @@ def triangles_by_slot(mesh) -> list[int]:
     return counts
 
 
+def scene_semantic_snapshot() -> dict:
+    rows = []
+    for obj in sorted(bpy.context.scene.objects, key=lambda value: (value.type, value.name)):
+        props = {key: str(obj.get(key, "")) for key in obj.keys()
+                 if key.startswith("_vapb") or key.startswith("unity_")}
+        slots = []
+        for slot in obj.material_slots:
+            material = slot.material
+            image_nodes = []
+            if material and material.use_nodes and material.node_tree:
+                image_nodes = [{"node_type": node.type,
+                                "image_identity": node.image.as_pointer() if node.type == "TEX_IMAGE" and node.image else None,
+                                "image_guid": str(node.image.get("unity_guid", "")) if node.type == "TEX_IMAGE" and node.image else "",
+                                "image_source_package_id": str(node.image.get("unity_source_package_id", ""))
+                                    if node.type == "TEX_IMAGE" and node.image else ""}
+                               for node in material.node_tree.nodes if node.type == "TEX_IMAGE"]
+            slots.append({"link": slot.link,
+                          "material_identity": material.as_pointer() if material else None,
+                          "guid": str(material.get("unity_material_guid", "")).lower() if material else "",
+                          "file_id": str(material.get("unity_material_file_id", "")) if material else "",
+                          "package_id": str(material.get("unity_source_package_id", "")) if material else "",
+                          "material_props": {key: str(material.get(key, "")) for key in material.keys()}
+                              if material else {},
+                          "image_nodes": image_nodes})
+        geometry = None
+        if obj.type == "MESH":
+            mesh = obj.data
+            geometry = {
+                "vertices": [tuple(vertex.co) for vertex in mesh.vertices],
+                "edges": [tuple(edge.vertices) for edge in mesh.edges],
+                "polygons": [(tuple(poly.vertices), poly.material_index) for poly in mesh.polygons],
+                "uv_layers": [(layer.name, [tuple(loop.uv) for loop in layer.data])
+                              for layer in mesh.uv_layers],
+                "shape_keys": ([key.name for key in mesh.shape_keys.key_blocks]
+                               if mesh.shape_keys else []),
+            }
+        rows.append({"type": obj.type, "name": obj.name,
+                     "object_identity": obj.as_pointer(),
+                     "parent": obj.parent.name if obj.parent else "",
+                     "matrix_local": [tuple(row) for row in obj.matrix_local],
+                     "data": obj.data.name if obj.data else "",
+                     "data_identity": obj.data.as_pointer() if obj.data else None,
+                     "data_props": ({key: str(obj.data.get(key, "")) for key in obj.data.keys()}
+                                    if obj.data else {}),
+                     "vertices": len(obj.data.vertices) if obj.type == "MESH" else None,
+                     "polygons": len(obj.data.polygons) if obj.type == "MESH" else None,
+                     "geometry": geometry,
+                     "modifiers": [(modifier.type, modifier.object.name if modifier.type == "ARMATURE" and modifier.object else "")
+                                   for modifier in obj.modifiers],
+                     "slots": slots, "props": props})
+    images = [{"identity": image.as_pointer(), "name": image.name, "filepath": image.filepath,
+               "source": image.source, "size": tuple(image.size), "packed": bool(image.packed_file),
+               "props": {key: str(image.get(key, "")) for key in image.keys()}}
+              for image in sorted(bpy.data.images, key=lambda value: value.name)]
+    return {"objects": rows, "images": images}
+
+
+def file_inventory(directory: Path) -> dict[str, str]:
+    return {str(path.relative_to(directory)).replace("\\", "/"):
+            hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(directory.rglob("*")) if path.is_file()}
+
+
 def diagnostic_snapshot(source_fbx_guid: str, source_fbx_sha256: str,
                         package_id: str, expected_ids: list[dict[str, str]],
                         source_fbx_meta: str, expected_owner_game_object_ids: list[str]) -> dict:
@@ -236,11 +299,13 @@ def diagnostic_snapshot(source_fbx_guid: str, source_fbx_sha256: str,
 
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1:]
-    if len(args) != 4:
-        raise SystemExit("usage: -- <source.unitypackage> <run-dir> <fbx-oracle.json> <result.json>")
-    package_path, run_dir, oracle_path, result_path = map(Path, args)
+    if len(args) != 7:
+        raise SystemExit("usage: -- <source.unitypackage> <run-dir> <fbx-oracle.json> <model-witness-v2.json> <t0a-result.json> <saved.blend> <t0b-result.json>")
+    package_path, run_dir, oracle_path, witness_path, result_path, blend_path, t0b_path = map(Path, args)
     package_path, run_dir = package_path.resolve(), run_dir.resolve()
-    oracle_path, result_path = oracle_path.resolve(), result_path.resolve()
+    oracle_path, witness_path, result_path, blend_path, t0b_path = (oracle_path.resolve(), witness_path.resolve(),
+                                                                     result_path.resolve(), blend_path.resolve(),
+                                                                     t0b_path.resolve())
     if result_path.exists():
         raise FileExistsError(result_path)
     report = {"stage": "T0-A-STRICT-IMPORT", "status": "FAIL"}
@@ -251,6 +316,8 @@ def main() -> None:
         oracle = json.loads(oracle_path.read_text(encoding="utf-8"))
         if oracle.get("status") != "PASS" or oracle.get("source_package_sha256") != package_sha:
             raise AssertionError("native FBX oracle is absent, failed, or for another package")
+        if not witness_path.is_file():
+            raise FileNotFoundError("exact Unity-observed model witness is required")
         assets = read_package(package_path)
         source_fbx_guid, references = expected_materials(assets)
 
@@ -259,6 +326,7 @@ def main() -> None:
         result = bpy.ops.import_scene.unitypackage(
             filepath=str(package_path), import_mode="RECONSTRUCT", prefab_choice="AUTO",
             use_materials=True, use_textures=True, keep_extracted=False,
+            model_witness_path=str(witness_path),
             source_storage_directory=str(run_dir / "source_archive"),
         )
         if "FINISHED" not in result:
@@ -365,6 +433,44 @@ def main() -> None:
     print("T0_A_STRICT_IMPORT_" + report["status"] + " " + json.dumps(report, sort_keys=True))
     if report["status"] != "PASS":
         raise RuntimeError(report.get("error", "strict import failed"))
+
+    if blend_path.exists() or t0b_path.exists():
+        raise FileExistsError("T0-B output already exists")
+    t0b = {"stage": "T0-B-IMMEDIATE-NO-EDIT-EXPORT", "status": "FAIL",
+           "source_package_sha256": hashlib.sha256(package_path.read_bytes()).hexdigest()}
+    try:
+        bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
+        saved_blend_sha = hashlib.sha256(blend_path.read_bytes()).hexdigest()
+        scene_before = scene_semantic_snapshot()
+        archive_dir = run_dir / "source_archive"
+        source_inventory_before = file_inventory(archive_dir)
+        source_package_sha_before = hashlib.sha256(package_path.read_bytes()).hexdigest()
+        mesh = meshes[0]
+        bpy.context.view_layer.objects.active = mesh
+        export_path = t0b_path.with_suffix(".unitypackage")
+        if export_path.exists():
+            raise FileExistsError(export_path)
+        export_result = bpy.ops.export_scene.vapb_unitypackage(filepath=str(export_path), export_scope="ACTIVE")
+        t0b.update({"export_result": sorted(export_result),
+                    "export_sha256": hashlib.sha256(export_path.read_bytes()).hexdigest() if export_path.is_file() else "",
+                    "source_package_sha256_after_export": hashlib.sha256(package_path.read_bytes()).hexdigest(),
+                    "saved_blend_sha256_before_export": saved_blend_sha,
+                    "saved_blend_sha256_after_export": hashlib.sha256(blend_path.read_bytes()).hexdigest()
+                        if blend_path.is_file() else "",
+                    "source_archive_inventory_unchanged": file_inventory(archive_dir) == source_inventory_before,
+                    "scene_semantics_unchanged": scene_semantic_snapshot() == scene_before})
+        t0b["status"] = "PASS" if ("FINISHED" in export_result and export_path.is_file()
+            and t0b["saved_blend_sha256_after_export"] == saved_blend_sha
+            and t0b["source_archive_inventory_unchanged"] and t0b["scene_semantics_unchanged"]
+            and t0b["source_package_sha256"] == EXPECTED_PACKAGE_SHA256
+            and t0b["source_package_sha256_after_export"] == source_package_sha_before) else "FAIL"
+    except Exception as error:
+        t0b["error"] = type(error).__name__ + ": " + str(error)
+    t0b_path.parent.mkdir(parents=True, exist_ok=True)
+    t0b_path.write_text(json.dumps(t0b, indent=2, sort_keys=True), encoding="utf-8")
+    print("T0_B_NO_EDIT_EXPORT_" + t0b["status"] + " " + json.dumps(t0b, sort_keys=True))
+    if t0b["status"] != "PASS":
+        raise RuntimeError(t0b.get("error", "T0-B no-edit export invariant failed"))
 
 
 if __name__ == "__main__":
