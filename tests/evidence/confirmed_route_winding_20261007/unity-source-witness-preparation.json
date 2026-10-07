@@ -1,0 +1,22 @@
+{
+  "status": "PREPARED_AWAITING_UNITY_OBSERVATION",
+  "unity_version": "2022.3.22f1",
+  "package_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "model_guid": "abcdefabcdefabcdefabcdefabcdefab",
+  "source_fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+  "source_meta_sha256": "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d",
+  "unity_probe_original_sha256": "21a37e001fc7753482aa5e31d8a75aecc5783291fcd1d29f607ed3f475853156",
+  "unity_probe_instrumented_sha256": "f43faeabf52e3f4acd2fe363dd91a82e260d3cee724f1e2a86239350c47dece6",
+  "source_fbx_model_count": 4,
+  "blender_version": "5.2.1",
+  "blender_source_witness_exit": 0,
+  "blender_source_witness_result": "FBX_SOURCE_WITNESS_PASS",
+  "source_revision_unchanged": true,
+  "manifest_dependencies": {},
+  "unity_editor_launched": false,
+  "unity_compile_run": false,
+  "mapping_json_produced": false,
+  "signed_local_id_observed": false,
+  "model_geometry_join_promoted": false,
+  "blender_nonfatal_temp_warning": "Blender could not create its temporary session directory and fell back to the configured temporary directory."
+}

@@ -8,6 +8,44 @@ The winding check compares material-grouped, world-space triangulated mesh coord
 
 Recorded comparison: Material GUID groups contain 2, 4, and 6 triangles respectively; oriented multiset differences are zero and reverse-only matches are zero. The checker also validates source package identity, scene SHA, raw Prefab material references (GUID/fileID/order), `OBJECT` links, and occurrence package provenance.
 
+## Raw Prefab versus fresh-process saved-scene check
+
+This additional check reopened the previously saved, explicitly user-confirmed scene in a fresh Blender process. Its standalone script independently reads the exact source `.unitypackage` Prefab YAML and fixes the package and source-FBX SHA-256 values before comparing the raw Renderer/Mesh/Material references against both the stored projection and reopened Blender slots.
+
+- Blender 5.2.1; process exit 0; result `PASS`.
+- The three raw Prefab GUID/fileID pairs matched the projection and reopened slots in order. All three slots were `OBJECT` linked and package-scoped; the existing user-confirmed binding and persistent Mesh receipt revalidated; triangle counts remained `[2, 4, 6]`.
+- Saved scene SHA-256: `58a3863a44198555bf07fdb56eb86e411b0804523ac2db694283a0ed9d8d122c`. Source package SHA-256: `d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c`; source FBX SHA-256: `fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5`; source FBX meta SHA-256: `ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d`.
+- The probe did not save the scene or modify a Unity Project. It checks persistence after explicit confirmation only; strict T0-A remains **FAIL**, T0-B remains **BLOCKED**, and no Unity-observed identity witness was produced.
+
+To rerun, provide the authorized saved scene and exact fixture package as inputs; the standalone checker takes `--package`, `--output`, and `--repo-parent` after `--`:
+
+```powershell
+$blender = '<Blender 5.2.1 executable>'
+$repo = '<VAPB repository root>'
+$scene = '<authorized-local-confirmed-scene.blend>'
+$package = Join-Path $repo 'tests/unity_model_material_probe/fixtures/ThreeSlotSource.unitypackage'
+$result = '<new-output-result.json>'
+& $blender --background $scene --python-exit-code 1 --python tests/evidence/confirmed_route_winding_20261007/confirm-raw-prefab-reopen.py -- --package $package --output $result --repo-parent (Split-Path $repo)
+```
+
+Included: `confirm-raw-prefab-reopen.py` and sanitized `confirm-raw-prefab-reopen-evidence.json`. Raw logs and the `.blend` remain local.
+
+## Exact Unity identity witness: prepared, Editor run pending
+
+The manual confirmation route preserves slot identities after save/reopen, but it does not supply the missing automatic identity bridge. A separate isolated Unity source project was prepared from the same exact public package/FBX/meta revision using the existing `tests/unity_hierarchy_probe/prepare_exact_witness.py` workflow. Blender 5.2.1 generated semantic no-op and test-marker FBX copies (`models=4`, `original_unchanged=1`, exit 0). The Unity project targets 2022.3.22f1 and its manifest has no dependencies. See `unity-source-witness-preparation.json`.
+
+Unity Editor has **not** been launched for this project; compile, mapping capture and witness promotion remain pending. The minimum needed observation is the existing `VapbBoneWitnessProbe.Run` output on this exact revision: Unity must associate the marked source-FBX Model UID to the generated GameObject, Renderer and Mesh and report its GUID/signed local ID; the probe must pass original/no-op/marked/restored equivalence and exact source/meta restoration. `promote_exact_witness.py` then validates the mapping against the source FBX Model/Geometry graph and package/FBX/meta SHA before it can produce a trusted witness. No name or single-candidate fallback is used.
+
+When an isolated Editor slot is available, run in the prepared source project:
+
+```powershell
+$unity = '<Unity 2022.3.22f1 executable>'
+$sourceProject = '<prepared external source project>'
+& $unity -batchmode -nographics -projectPath $sourceProject -executeMethod VapbBoneWitnessProbe.Run -logFile (Join-Path $sourceProject 'unity.log')
+```
+
+Require process exit 0, `VAPB_BONE_WITNESS_PASS`, and the restoration/revision flags in `VapbBoneWitnessResult.json`; then run `tests/unity_hierarchy_probe/promote_exact_witness.py` against that project and verify the generated witness package, FBX and meta SHA values before retrying strict untouched import. The new source project and raw process logs remain local; the summary JSON is sanitized.
+
 ## Reproduction command
 
 The private scene, source package, generated FBX, and raw logs are not included. Supply authorized local inputs: repository root, confirmed scene, path-redacted generated FBX, export result JSON, closure result JSON, original source package, and output JSON path. The standalone checker accepts seven arguments after `--`:
