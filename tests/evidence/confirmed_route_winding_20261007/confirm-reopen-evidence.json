@@ -1,0 +1,64 @@
+{
+  "binding_check_equals_saved": true,
+  "binding_evidence": "USER_CONFIRMED",
+  "blend_sha256": "58a3863a44198555bf07fdb56eb86e411b0804523ac2db694283a0ed9d8d122c",
+  "expected_material_refs": [
+    {
+      "file_id": "2100000",
+      "guid": "eb805efb35118044db5e74adc652673a"
+    },
+    {
+      "file_id": "2100000",
+      "guid": "0318f358e4c29034aa90cc8c50b58a93"
+    },
+    {
+      "file_id": "2100000",
+      "guid": "64f92a1bd9b35a040bf9e2c6d200b34c"
+    }
+  ],
+  "fbx_geometry_uid": "329684292",
+  "fbx_guid": "abcdefabcdefabcdefabcdefabcdefab",
+  "fbx_model_uid": "208084244",
+  "fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+  "mesh_datablock_receipt": {
+    "fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+    "geometry_uid": "329684292",
+    "mesh_receipt_id": "vapb-fbx-mesh:9ddc982bb85f8d34bd0fd3a4ad718899e2c8937296f52679448f42ab269146ea"
+  },
+  "mesh_receipt_id": "vapb-fbx-mesh:9ddc982bb85f8d34bd0fd3a4ad718899e2c8937296f52679448f42ab269146ea",
+  "native_realization_id": "4eaf18af-c371-4fea-a222-aede1cf1a87d",
+  "object_receipt_valid": true,
+  "occurrence_id": "9c913bea517b84409aa7b7e28a7fccccdbf11b9104b154b50ba29615e4214694",
+  "root_context_id": "6d785054-f71b-4861-9ab9-d7a6901fd1f9",
+  "slots_after_reopen": [
+    {
+      "file_id": "2100000",
+      "guid": "eb805efb35118044db5e74adc652673a",
+      "link": "OBJECT",
+      "package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+      "present": true
+    },
+    {
+      "file_id": "2100000",
+      "guid": "0318f358e4c29034aa90cc8c50b58a93",
+      "link": "OBJECT",
+      "package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+      "present": true
+    },
+    {
+      "file_id": "2100000",
+      "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+      "link": "OBJECT",
+      "package_id": "sha256:d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+      "present": true
+    }
+  ],
+  "source_package_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "stage": "CONFIRM-BINDING-FRESH-PROCESS-REOPEN",
+  "status": "PASS",
+  "triangle_counts_after_reopen": [
+    2,
+    4,
+    6
+  ]
+}

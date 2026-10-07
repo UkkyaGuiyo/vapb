@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "status": "PASS",
+  "source_package_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "output_package_sha256": "344fc235f0c4f0447b358ecfe0125df93b232a9fcac2ab792fbafd4a02e3cac0",
+  "generated_fbx": {
+    "sha256": "65d8a785ffcd830660d556e70734f937d7f8a2fb3afd163ca592f92d8dfbd7ba",
+    "original_exported_sha256": "9038814b12cfca02065b9083db9d9275f3785a93ff414fc121682cb68d266194",
+    "artifact_kind": "same-length path-redacted copy; original exporter bytes are not included"
+  },
+  "material_triangle_counts": [2, 4, 6],
+  "face_group_signatures_match_confirmed_scene": true
+}

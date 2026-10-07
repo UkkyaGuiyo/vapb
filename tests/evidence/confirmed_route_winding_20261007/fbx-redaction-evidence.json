@@ -1,0 +1,15 @@
+{
+  "absolute_path_strings_redacted": 4,
+  "artifact_kind": "same-length FBX path-redacted copy; not the original exporter bytes",
+  "file_length_unchanged": true,
+  "only_matched_fbx_string_property_payload_bytes_changed": true,
+  "original_sha256": "9038814b12cfca02065b9083db9d9275f3785a93ff414fc121682cb68d266194",
+  "redacted_string_lengths_bytes": [
+    178,
+    196,
+    196,
+    196
+  ],
+  "sanitized_copy_sha256": "65d8a785ffcd830660d556e70734f937d7f8a2fb3afd163ca592f92d8dfbd7ba",
+  "status": "PASS"
+}

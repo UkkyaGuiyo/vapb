@@ -1,0 +1,49 @@
+{
+  "blender_version": "5.2.1 LTS",
+  "comparison": "multiset of world-space triangulated Mesh coordinates, rounded to 6 decimals; cyclic start-point permutations are equivalent and reversal is distinct",
+  "generated_fbx_sha256": "65d8a785ffcd830660d556e70734f937d7f8a2fb3afd163ca592f92d8dfbd7ba",
+  "generated_mesh": "Edited Native Skin.004",
+  "input_source_blend_sha256": "58a3863a44198555bf07fdb56eb86e411b0804523ac2db694283a0ed9d8d122c",
+  "input_source_package_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "orientation_self_control": "PASS: reversed nondegenerate triangle compares differently",
+  "source_material_slot_identity_validation": "PASS: GUID/fileID/order match raw Prefab; OBJECT links and shared nonempty occurrence package ID",
+  "source_mesh": "Edited Native Skin.002",
+  "source_package_id_consistent_across_slots": true,
+  "source_package_id_matches_input_sha256": true,
+  "stage": "CONFIRMED-ROUTE-FBX-WINDING-PRESERVATION",
+  "status": "PASS",
+  "strict_t0a": "FAIL",
+  "t0b": "BLOCKED",
+  "triangle_group_oriented_results": {
+    "0318f358e4c29034aa90cc8c50b58a93": {
+      "generated_minus_source_oriented": 0,
+      "generated_triangle_count": 4,
+      "oriented_triangle_multiset_equal": true,
+      "reverse_only_matches": 0,
+      "same_winding_matches": 4,
+      "source_minus_generated_oriented": 0,
+      "source_triangle_count": 4,
+      "transport_id": "VAPB-MAT-96fad34243e000fbaee3673da9844695"
+    },
+    "64f92a1bd9b35a040bf9e2c6d200b34c": {
+      "generated_minus_source_oriented": 0,
+      "generated_triangle_count": 6,
+      "oriented_triangle_multiset_equal": true,
+      "reverse_only_matches": 0,
+      "same_winding_matches": 6,
+      "source_minus_generated_oriented": 0,
+      "source_triangle_count": 6,
+      "transport_id": "VAPB-MAT-d3b1a1e87b1764cdcdc358aec0da5b0a"
+    },
+    "eb805efb35118044db5e74adc652673a": {
+      "generated_minus_source_oriented": 0,
+      "generated_triangle_count": 2,
+      "oriented_triangle_multiset_equal": true,
+      "reverse_only_matches": 0,
+      "same_winding_matches": 2,
+      "source_minus_generated_oriented": 0,
+      "source_triangle_count": 2,
+      "transport_id": "VAPB-MAT-24c6fff92d6ed5fb377f570a2032ac39"
+    }
+  }
+}
