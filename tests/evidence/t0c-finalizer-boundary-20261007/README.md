@@ -23,11 +23,21 @@ The first import call for the corrected workflow exited `1` during C# compilatio
 
 The failed import log SHA-256 was `13196ba2c36f3ba08c6fcb4a2f9a67df481a32ff9492f0dca53573e378c022fc`. The C# diagnostic was `CS0103` for the unavailable `VapbModelSkinFinalizer` symbol.
 
+The probe was changed to resolve the exact public static `Apply(string)` method after import through reflection, rejecting duplicate same-named types and an unexpected return type. The import retry exited `0`, recorded zero C# compile errors, and imported the pinned manifest and finalizer.
+
+## Attempt 11 Finalizer and inspection
+
+The explicit Apply process exited `0` and returned `PASS`. The Variant destination was vacant before Apply and the Variant was created. Source FBX bytes stayed at SHA-256 `fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5`; its `.meta` stayed at `ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d`. Edited FBX bytes stayed unchanged. Its importer `.meta` changed during finalization and is recorded in the run evidence.
+
+The separate Variant inspection exited `1` on the ordered Material GUID/local-ID assertion at slot 0. The manifest binding order is `[eb805efb35118044db5e74adc652673a, 0318f358e4c29034aa90cc8c50b58a93, 64f92a1bd9b35a040bf9e2c6d200b34c]`. Raw Variant YAML overrides slot 0 to `64f92a1bd9b35a040bf9e2c6d200b34c` and slot 2 to `eb805efb35118044db5e74adc652673a`; slot 1 is inherited from the source Prefab as `0318f358e4c29034aa90cc8c50b58a93`. This is a GUID permutation relative to manifest array order. The probe left its actual GUID fields empty because it threw before saving the failed slot observation. Submesh triangle counts and face-to-Material semantics were not captured, so this mismatch remains unresolved and is not a product PASS or a confirmed product defect.
+
+A diagnostic-only entry was added to capture all Variant slot identities, expected manifest bindings, Material identities from the native carrier renderer that uses the same generated Mesh GUID/local ID, and submesh triangle counts without changing the ordered acceptance assertion. Static review found and fixed a missing project-path helper before running it. Its Unity execution is pending; the attempt-11 failure output remains preserved.
+
 ## Correct workflow
 
 The public roundtrip probe calls `VapbModelSkinFinalizer.Apply(ManifestPath)` before loading and inspecting the Variant. The standalone `VapbT0CApplyFinalizerProbe` follows that explicit stage and records the pinned package hash, source FBX/meta hashes before and after Apply, edited FBX/meta hashes, whether the Variant destination was empty, the Apply return value, and Variant creation. It refuses an occupied Variant destination and writes its result with `CreateNew`.
 
-The next validation imports the same package into the owned disposable target, runs the Apply probe, then runs `VapbT0CFreshImportProbe` in another Editor process. Attempt 10 and the failed attempt-11 import log remain unchanged. Completion of the corrected sequence is still pending.
+The next validation runs the diagnostic-only entry against the existing attempt-11 Variant, then uses the captured native carrier order and triangle counts to decide whether a distinct semantic oracle is justified. Attempt 10 and all attempt-11 import/Apply/inspection logs remain unchanged. Do not change Material ordering until face/submesh semantics are observed.
 
 ## Resource and process check
 

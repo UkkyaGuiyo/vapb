@@ -14,6 +14,7 @@ public static class VapbT0CFreshImportProbe
     private const string ExpectedModelSha256 = "a27cc6100cd2cbce5f0e9b3a4b24867e042e861ac33ff233a4f37276de491c1e";
     private const string ManifestPath = "Assets/VAPBExport/manifest.json";
     private const string ResultFileName = "VAPB_T0C_UnityImport_Result.json";
+    private const string DiagnosticResultFileName = "VAPB_T0C_MaterialDiagnostic_Result.json";
 
     [Serializable]
     private sealed class Manifest
@@ -42,9 +43,12 @@ public static class VapbT0CFreshImportProbe
     [Serializable]
     private sealed class MaterialResult
     {
+        public bool is_null;
+        public bool guid_lookup_succeeded;
         public string guid;
         public long local_file_id;
         public string path;
+        public string name;
     }
 
     [Serializable]
@@ -62,6 +66,10 @@ public static class VapbT0CFreshImportProbe
         public string variant_asset_guid;
         public int renderer_count;
         public MaterialResult[] materials;
+        public MaterialBinding[] expected_material_bindings;
+        public MaterialResult[] native_carrier_materials;
+        public int native_carrier_renderer_count;
+        public int native_carrier_matching_mesh_renderer_count;
         public int[] triangles_by_submesh;
         public int asset_database_path_count;
     }
@@ -186,6 +194,140 @@ public static class VapbT0CFreshImportProbe
         Debug.Log("VAPB_T0C_UNITY_IMPORT_" + result.status + " " + json);
         if (result.status != "PASS")
             throw new InvalidOperationException(result.error ?? "Unity fresh import probe failed");
+    }
+
+    /// <summary>Diagnostic only: capture material slot identities and submesh sizes without acceptance assertions.</summary>
+    public static void DiagnoseMaterialSlots()
+    {
+        var result = new ProbeResult { status = "DIAGNOSTIC_ONLY", editor_version = Application.unityVersion };
+        var resultPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName,
+            DiagnosticResultFileName);
+        GameObject contents = null;
+        try
+        {
+            var packagePath = Environment.GetEnvironmentVariable("VAPB_T0C_PACKAGE");
+            if (String.IsNullOrWhiteSpace(packagePath) || !File.Exists(packagePath))
+                throw new InvalidOperationException("VAPB_T0C_PACKAGE is missing or not a file");
+            result.package_sha256 = Sha256(File.ReadAllBytes(packagePath));
+            if (result.package_sha256 != ExpectedPackageSha256)
+                throw new InvalidOperationException("package SHA differs from the pinned T1 export");
+
+            var manifest = JsonUtility.FromJson<Manifest>(File.ReadAllText(Disk(ManifestPath)));
+            if (manifest == null || manifest.reference_rebind_tasks == null ||
+                manifest.reference_rebind_tasks.Length != 1)
+                throw new InvalidOperationException("Expected exactly one manifest rebind task");
+            var task = manifest.reference_rebind_tasks[0];
+            result.variant_path = task.variant_path;
+            result.expected_material_bindings = task.material_bindings;
+            string variantGuid = AssetDatabase.AssetPathToGUID(task.variant_path);
+            if (String.IsNullOrEmpty(variantGuid))
+                throw new InvalidOperationException("Variant path is not present in the AssetDatabase");
+            result.variant_asset_guid = variantGuid;
+
+            contents = PrefabUtility.LoadPrefabContents(task.variant_path);
+            if (contents == null) throw new InvalidOperationException("Unity could not load Variant contents");
+            var renderers = contents.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            result.renderer_count = renderers.Length;
+            if (renderers.Length != 1)
+                throw new InvalidOperationException("Expected exactly one SkinnedMeshRenderer in the imported Variant");
+            var renderer = renderers[0];
+            var mesh = renderer.sharedMesh;
+            if (mesh == null) throw new InvalidOperationException("Variant renderer has no Mesh");
+            string meshGuid;
+            long meshLocalId;
+            result.generated_model_mesh_guid = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(
+                mesh, out meshGuid, out meshLocalId) ? meshGuid : "";
+            result.generated_model_mesh_local_file_id = meshLocalId;
+
+            var slots = renderer.sharedMaterials;
+            result.materials = new MaterialResult[slots == null ? 0 : slots.Length];
+            for (var index = 0; index < result.materials.Length; index++)
+            {
+                var material = slots[index];
+                var item = new MaterialResult { is_null = material == null };
+                if (material != null)
+                {
+                    item.name = material.name;
+                    item.path = AssetDatabase.GetAssetPath(material);
+                    item.guid_lookup_succeeded = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(
+                        material, out string guid, out long localId);
+                    item.guid = item.guid_lookup_succeeded ? guid : "";
+                    item.local_file_id = item.guid_lookup_succeeded ? localId : 0;
+                }
+                result.materials[index] = item;
+            }
+            string modelPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
+            var importedModel = String.IsNullOrEmpty(modelPath)
+                ? null : AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+            if (importedModel != null)
+            {
+                var nativeRenderers = importedModel.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                result.native_carrier_renderer_count = nativeRenderers.Length;
+                SkinnedMeshRenderer matchingNativeRenderer = null;
+                foreach (var nativeRenderer in nativeRenderers)
+                {
+                    if (nativeRenderer.sharedMesh == null ||
+                        !AssetDatabase.TryGetGUIDAndLocalFileIdentifier(nativeRenderer.sharedMesh,
+                            out string nativeMeshGuid, out long nativeMeshLocalId)) continue;
+                    if (nativeMeshGuid != result.generated_model_mesh_guid ||
+                        nativeMeshLocalId != result.generated_model_mesh_local_file_id) continue;
+                    result.native_carrier_matching_mesh_renderer_count++;
+                    matchingNativeRenderer = nativeRenderer;
+                }
+                if (result.native_carrier_matching_mesh_renderer_count == 1)
+                {
+                    var nativeSlots = matchingNativeRenderer.sharedMaterials;
+                    result.native_carrier_materials = new MaterialResult[nativeSlots == null ? 0 : nativeSlots.Length];
+                    for (var index = 0; index < result.native_carrier_materials.Length; index++)
+                    {
+                        var material = nativeSlots[index];
+                        var item = new MaterialResult { is_null = material == null };
+                        if (material != null)
+                        {
+                            item.name = material.name;
+                            item.path = AssetDatabase.GetAssetPath(material);
+                            item.guid_lookup_succeeded = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(
+                                material, out string guid, out long localId);
+                            item.guid = item.guid_lookup_succeeded ? guid : "";
+                            item.local_file_id = item.guid_lookup_succeeded ? localId : 0;
+                        }
+                        result.native_carrier_materials[index] = item;
+                    }
+                }
+            }
+            if (mesh.subMeshCount > 0)
+            {
+                result.triangles_by_submesh = new int[mesh.subMeshCount];
+                for (var index = 0; index < mesh.subMeshCount; index++)
+                    result.triangles_by_submesh[index] = (int)mesh.GetIndexCount(index) / 3;
+            }
+            result.asset_database_path_count = AssetDatabase.GetAllAssetPaths().Length;
+            result.error = "DIAGNOSTIC_CAPTURED_NO_ACCEPTANCE_ASSERTIONS";
+        }
+        catch (Exception exception)
+        {
+            result.status = "DIAGNOSTIC_FAILED";
+            result.error = exception.GetType().Name + ": " + exception.Message;
+        }
+        finally
+        {
+            if (contents != null) PrefabUtility.UnloadPrefabContents(contents);
+        }
+
+        using (var stream = new FileStream(resultPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+        using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+            writer.Write(JsonUtility.ToJson(result, true));
+        Debug.Log("VAPB_T0C_MATERIAL_DIAGNOSTIC_" + result.status + " " + JsonUtility.ToJson(result));
+        if (result.status != "DIAGNOSTIC_ONLY")
+            throw new InvalidOperationException(result.error ?? "T0-C material diagnostic failed");
+    }
+
+    private static string Disk(string assetPath)
+    {
+        if (String.IsNullOrEmpty(assetPath) || !assetPath.StartsWith("Assets/", StringComparison.Ordinal))
+            throw new InvalidOperationException("Expected an Assets path");
+        return Path.Combine(Directory.GetParent(Application.dataPath).FullName,
+            assetPath.Replace('/', Path.DirectorySeparatorChar));
     }
 
     private static string Sha256(byte[] bytes)
