@@ -199,6 +199,35 @@ class ModelIdentityWitnessTests(unittest.TestCase):
                 with self.assertRaises(ModelWitnessError):
                     load_model_witness(sidecar, PACKAGE_SHA, Database())
 
+    def test_import_loader_rejects_duplicate_json_identity_keys(self):
+        document, revisions = fixture()
+        with tempfile.TemporaryDirectory() as temp:
+            fbx = Path(temp) / "Model.fbx"
+            meta = Path(str(fbx) + ".meta")
+            sidecar = Path(temp) / "witness.json"
+            fbx.write_bytes(b"public synthetic FBX revision")
+            meta.write_bytes(b"public synthetic importer revision")
+            from unitypackage_blender_importer.blender.fbx_receipt import source_sha256
+            document["assets"][0]["source_fbx_sha256"] = source_sha256(fbx)
+            document["assets"][0]["source_meta_sha256"] = source_sha256(meta)
+            import json
+            serialized = json.dumps(document)
+
+            class Database:
+                def find_guid(self, guid):
+                    from types import SimpleNamespace
+                    return SimpleNamespace(path=fbx) if guid == GUID else None
+
+            with patch("unitypackage_blender_importer.unity.model_identity_witness.RawFbxSemanticIndex.from_file",
+                       return_value=revisions[GUID].fbx_index):
+                for duplicate_value in ("999", "101"):
+                    sidecar.write_text(serialized.replace(
+                        '"model_uid": "101"',
+                        f'"model_uid": "{duplicate_value}", "model_uid": "101"', 1),
+                        encoding="utf-8")
+                    with self.subTest(duplicate_value=duplicate_value), self.assertRaises(ModelWitnessError):
+                        load_model_witness(sidecar, PACKAGE_SHA, Database())
+
 
 if __name__ == "__main__":
     unittest.main()

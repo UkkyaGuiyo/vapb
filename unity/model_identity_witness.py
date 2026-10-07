@@ -223,8 +223,17 @@ def validate_model_witness(document: object, package_sha256: str,
 
 def load_model_witness(path: Path, package_sha256: str, asset_db) -> ModelWitnessIndex:
     """Load only model revisions actually present in the extracted package."""
+    def reject_duplicate_keys(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("Duplicate JSON key")
+            result[key] = value
+        return result
+
     try:
-        document = json.loads(Path(path).read_text(encoding="utf-8"))
+        document = json.loads(Path(path).read_text(encoding="utf-8"),
+                              object_pairs_hook=reject_duplicate_keys)
         assets = document["assets"]
         if not isinstance(assets, list):
             raise ModelWitnessError("Invalid witness asset list")
