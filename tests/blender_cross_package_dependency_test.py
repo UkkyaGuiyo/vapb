@@ -100,24 +100,45 @@ def make_fbx() -> bytes:
 
 
 def check_scene(package_b: Path, texture_guid: str) -> dict:
+    import hashlib
     from unitypackage_blender_importer.blender.dependency_resolver import load_dependency_registry, resolve_scene_dependencies
+    from unitypackage_blender_importer.unity.identity import package_id_from_sha256
+
+    expected_texture_package_id = package_id_from_sha256(hashlib.sha256(package_b.read_bytes()).hexdigest())
     registry = load_dependency_registry(bpy.context.scene)
     records = registry["dependencies"]
     material_records = [record for record in records if record["dependency_type"] == "PREFAB_RENDERER_MATERIAL"]
-    texture_records = [record for record in records if record["dependency_type"] == "MATERIAL_TEXTURE"]
-    assert texture_records and texture_records[-1]["target_guid"] == texture_guid
-    assert texture_records[-1]["status"] == "RESOLVED_CROSS_PACKAGE", records
     material_data = next(item for item in bpy.data.materials
                          if item.get("unity_material_guid") == "b" * 32)
-    images = [node.image for node in material_data.node_tree.nodes if node.type == "TEX_IMAGE" and node.image]
-    assert images and images[0].get("unity_guid") == texture_guid
     before = (len(records), len([node for node in material_data.node_tree.nodes if node.type == "TEX_IMAGE"]))
     resolve_scene_dependencies(bpy.context.scene)
     resolve_scene_dependencies(bpy.context.scene)
-    after = (len(load_dependency_registry(bpy.context.scene)["dependencies"]), len([node for node in material_data.node_tree.nodes if node.type == "TEX_IMAGE"]))
+    resolved_records = load_dependency_registry(bpy.context.scene)["dependencies"]
+    after = (len(resolved_records), len([node for node in material_data.node_tree.nodes if node.type == "TEX_IMAGE"]))
     assert before == after
+    texture_records = [record for record in resolved_records
+                       if record.get("dependency_type") == "MATERIAL_TEXTURE"
+                       and record.get("consumer_asset_guid") == "b" * 32]
+    assert len(texture_records) == 1, texture_records
+    texture_record = texture_records[0]
+    assert texture_record.get("target_guid") == texture_guid, texture_record
+    assert texture_record.get("status") == "RESOLVED_CROSS_PACKAGE", texture_record
+    assert texture_record.get("resolved_provider_guid") == texture_guid, texture_record
+    assert texture_record.get("resolved_provider_package_id") == expected_texture_package_id, texture_record
+
+    base_color_node = material_data.node_tree.nodes.get(f"Unity Base Color {material_data.name}")
+    assert base_color_node is not None and base_color_node.type == "TEX_IMAGE", base_color_node
+    images = [image for image in bpy.data.images
+              if image.get("unity_guid") == texture_guid
+              and image.get("unity_source_package_id") == expected_texture_package_id]
+    assert len(images) == 1, [(image.name, image.get("unity_guid"), image.get("unity_source_package_id"))
+                              for image in bpy.data.images]
+    assert base_color_node.image == images[0], base_color_node.image
+    assert base_color_node.image.get("unity_guid") == texture_guid
+    assert base_color_node.image.get("unity_source_package_id") == expected_texture_package_id
     return {"material_status": material_records[-1]["status"] if material_records else "NOT_CAPTURED",
-            "texture_status": texture_records[-1]["status"], "images": len(images), "idempotent": before == after}
+            "texture_status": texture_record["status"], "texture_provider_package_id": expected_texture_package_id,
+            "images": len(images), "idempotent": before == after}
 
 
 def exercise_witnessed_prefab_material(fbx_guid: str, material_guid: str,
@@ -271,11 +292,12 @@ def run_order(paths: tuple[Path, Path, Path], blend_path: Path) -> dict:
     from unitypackage_blender_importer.blender.dependency_resolver import resolve_scene_dependencies
     resolve_scene_dependencies(bpy.context.scene)
     witness_result = assert_witnessed_prefab_material(witnessed_occurrence, "b" * 32)
-    result = check_scene(paths[1], "c" * 32)
+    texture_package = next(path for path in paths if path.name == "Textures.unitypackage")
+    result = check_scene(texture_package, "c" * 32)
     result["witnessed_prefab_material"] = witness_result
     bpy.ops.wm.save_as_mainfile(filepath=str(blend_path), check_existing=False)
     bpy.ops.wm.open_mainfile(filepath=str(blend_path), load_ui=False)
-    result["reopen"] = check_scene(paths[1], "c" * 32)
+    result["reopen"] = check_scene(texture_package, "c" * 32)
     result["witnessed_prefab_material_reopen"] = assert_witnessed_prefab_material(witnessed_occurrence, "b" * 32)
     addon.unregister()
     return result
