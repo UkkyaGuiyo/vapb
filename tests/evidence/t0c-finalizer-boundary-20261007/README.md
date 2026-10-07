@@ -49,7 +49,17 @@ GitHub API readback of commit `415112b828b8519a1230e9956ea82c8a0f3289e2` returne
 
 No diagnostic Unity process was launched. A fresh resource check at `2026-10-07T12:28:19Z` observed `1455 MB` free RAM and `2336 MB` free virtual memory, with zero Editors on this target. The run-specific gate was `1500 MB` RAM and `2000 MB` virtual memory, based on a `500 MB` process budget plus `1000 MB` RAM reserve. Earlier five-second samples of owned processes had observed up to `419 MB` private memory; this is not a guaranteed peak or a general Unity minimum. The launcher stopped before `Start-Process`; other Editors remained untouched.
 
-The diagnostic additions remain Unity-compile and execution unverified. The original acceptance entry point is unchanged, and the slot-0 FAIL remains the acceptance result. Its JSON SHA-256 is `6e5643901511d8705653b0f469976d0536bcbb3ba05a42fddf02bbf06f3da9d7`; the successful Apply JSON SHA-256 is `b31e501c78408b36480ef902cc20818aed574f2fc0d47a5860e2a80e44566de7`. Slot order, identity-based triangle counts, and actual triangle corner membership must be compared separately after resources permit the single diagnostic run.
+The initial prelaunch resource check held the diagnostic at 1455 MB free RAM. After resources recovered, the diagnostic was run once as recorded below. The original acceptance entry point is unchanged and its slot-0 FAIL remains the acceptance result. Its JSON SHA-256 is `6e5643901511d8705653b0f469976d0536bcbb3ba05a42fddf02bbf06f3da9d7`; the successful Apply JSON SHA-256 is `b31e501c78408b36480ef902cc20818aed574f2fc0d47a5860e2a80e44566de7`.
+
+## Attempt 11 material diagnostic result
+
+The reviewed diagnostic ran once in Unity `2022.3.22f1` and exited `0` at `2026-10-07T13:09:08Z`. It recorded `DIAGNOSTIC_ONLY`; this does not change the acceptance result. The log contained zero C# compiler errors. Diagnostic result JSON SHA-256: `af56ccfa654dcf8c09dcd91c5eb62dc58f773682a9dc339a7372056068a690d2`. Unity log SHA-256: `15b141f98d5f914b0a89153559cb4ae5977ad8d385face7a95d02226a093a829`.
+
+The source renderer order is Material2, Material1, Material0, with triangle counts `[6,4,2]`. The Variant Renderer references Material0, Material1, Material2, also with counts `[6,4,2]`. Source and Variant each had 24 vertices and identical mesh-to-Prefab-root matrices. The Variant overrides slot 0 to Material0 and slot 2 to Material2; slot 1 inherits Material1.
+
+An independent comparison transformed both meshes' triangle corners into their respective Prefab root frames, grouped triangles by persistent Material GUID, ignored corner winding and vertex indices, and compared exact corner multisets. Material1 matched exactly (4 source and 4 Variant triangles). Material0 did not match (2 source versus 6 Variant triangles). Material2 did not match (6 source versus 2 Variant triangles). For this fixed synthetic fixture, the two outer face partitions are assigned to the opposite persistent Material identities after finalization. This is a bounded product defect signal, rather than only a slot-order assertion mismatch; confirm the diagnosis in source review before implementing a correction. It does not establish behavior for other imports or Avatar hierarchies.
+
+The diagnostic process used PID `9140`, exited normally, observed zero same-Target Editors afterward, and preserved all prior Assets, manifest, Apply output, and acceptance output. The existing Apply remains PASS and the original ordered-slot acceptance remains FAIL. No material was reassigned by the diagnostic. A non-fatal Licensing Client signature-validation warning appeared; Unity connected to its client and the diagnostic completed without changing licensing configuration.
 
 ## Resource and process check
 
