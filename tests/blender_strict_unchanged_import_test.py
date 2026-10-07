@@ -13,6 +13,8 @@ import bpy
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from strict_run_paths import validate_strict_runner_paths, write_json_exclusive
 EXPECTED_PACKAGE_SHA256 = "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c"
 MATERIAL_ROW = re.compile(
     rb"(?m)^\s*-\s*\{\s*fileID:\s*(-?\d+)\s*,\s*guid:\s*([0-9a-fA-F]{32})\s*,\s*type:\s*(\d+)\s*\}"
@@ -306,8 +308,8 @@ def main() -> None:
     oracle_path, witness_path, result_path, blend_path, t0b_path = (oracle_path.resolve(), witness_path.resolve(),
                                                                      result_path.resolve(), blend_path.resolve(),
                                                                      t0b_path.resolve())
-    if result_path.exists():
-        raise FileExistsError(result_path)
+    validate_strict_runner_paths(package_path, oracle_path, witness_path,
+                                  result_path, blend_path, t0b_path)
     report = {"stage": "T0-A-STRICT-IMPORT", "status": "FAIL"}
     try:
         package_sha = hashlib.sha256(package_path.read_bytes()).hexdigest()
@@ -429,13 +431,11 @@ def main() -> None:
     except Exception as error:
         report["error"] = type(error).__name__ + ": " + str(error)
     result_path.parent.mkdir(parents=True, exist_ok=True)
-    result_path.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
+    write_json_exclusive(result_path, json.dumps(report, indent=2, sort_keys=True))
     print("T0_A_STRICT_IMPORT_" + report["status"] + " " + json.dumps(report, sort_keys=True))
     if report["status"] != "PASS":
         raise RuntimeError(report.get("error", "strict import failed"))
 
-    if blend_path.exists() or t0b_path.exists():
-        raise FileExistsError("T0-B output already exists")
     t0b = {"stage": "T0-B-IMMEDIATE-NO-EDIT-EXPORT", "status": "FAIL",
            "source_package_sha256": hashlib.sha256(package_path.read_bytes()).hexdigest()}
     try:
@@ -448,8 +448,6 @@ def main() -> None:
         mesh = meshes[0]
         bpy.context.view_layer.objects.active = mesh
         export_path = t0b_path.with_suffix(".unitypackage")
-        if export_path.exists():
-            raise FileExistsError(export_path)
         export_result = bpy.ops.export_scene.vapb_unitypackage(filepath=str(export_path), export_scope="ACTIVE")
         t0b.update({"export_result": sorted(export_result),
                     "export_sha256": hashlib.sha256(export_path.read_bytes()).hexdigest() if export_path.is_file() else "",
@@ -467,7 +465,7 @@ def main() -> None:
     except Exception as error:
         t0b["error"] = type(error).__name__ + ": " + str(error)
     t0b_path.parent.mkdir(parents=True, exist_ok=True)
-    t0b_path.write_text(json.dumps(t0b, indent=2, sort_keys=True), encoding="utf-8")
+    write_json_exclusive(t0b_path, json.dumps(t0b, indent=2, sort_keys=True))
     print("T0_B_NO_EDIT_EXPORT_" + t0b["status"] + " " + json.dumps(t0b, sort_keys=True))
     if t0b["status"] != "PASS":
         raise RuntimeError(t0b.get("error", "T0-B no-edit export invariant failed"))

@@ -1,6 +1,6 @@
-# Strict witnessed import and immediate export
+# Strict witnessed import, archive closure, and saved-scene reopen
 
-This report covers one first-party synthetic three-slot Unity package. It records T0-A and T0-B only. It does not establish output-package closure, saved-scene reopen behavior, a Unity target import, rendering/GPU behavior, or VRChat acceptance.
+This report covers one first-party synthetic three-slot Unity package. It records T0-A through T1, including a fresh native FBX import and a fresh-process saved-scene reopen/export. Unity target import remains a separate pending gate. It does not establish rendering/GPU behavior, skin deformation fidelity in Unity, or VRChat acceptance.
 
 ## Fixed source identity
 
@@ -29,8 +29,22 @@ The imported scene was saved before export. The existing `vapb_unitypackage` Ski
 
 The emitted Unity package SHA-256 is `b8f3901ef5dd386ecf1a51d266ff3f6b866c6ae7c3409f66e87be335f292c16d`. T0-B result SHA-256: `daf168a1878662478ce6e05fd32db4deb6fa37bd39b40f50dab21f0481e5591d`.
 
+## T0-C output closure
+
+The exact T0-B package was read with the production `RawAssetRepository` and independently with a strict `tarfile` member pass. Both inventories agreed. Duplicate GUID/kind members, case-variant GUID directories, non-regular members, unsafe paths, and NFC/casefold destination collisions are rejected. The source Prefab's raw ordered Material references were `eb805efb35118044db5e74adc652673a:2100000`, `0318f358e4c29034aa90cc8c50b58a93:2100000`, and `64f92a1bd9b35a040bf9e2c6d200b34c:2100000`.
+
+All three source `.mat` payloads, `.meta` bytes/GUIDs, fileIDs, and destination paths matched byte-for-byte. The export manifest has an empty `material_mappings` array for this unchanged route; its `RESTORE_DIRECT_SKIN_VARIANT_V1.material_bindings` records the same ordered GUID/fileID references and transport IDs. Its model GUID/SHA matched the generated FBX asset GUID and payload SHA. The generated FBX was `de246c64f2740ebfb1a93dbad053e07b`, SHA-256 `492344707d583fec2b43b5aa4cda27c47f0466dd8ad497c366292082e3403942`.
+
+A disposable package copy with Material GUID `eb805efb35118044db5e74adc652673a` removed failed specifically with “missing expected Material GUID”; the original package remained unchanged. A separate fresh Blender 5.2.1 process imported the generated FBX without the VAPB add-on. The one armature-backed three-slot Mesh carried the manifest transport IDs as its ordered Material-name labels and had triangle counts `[2, 4, 6]`, matching the independent source FBX oracle. T0-C result SHA-256: `0e058d3449624fec123aefd8828e46de244f9f1a3defc124c46ac38d54786f5d`.
+
+## T1 saved-scene reopen
+
+A fresh Blender process opened the exact saved `.blend` from T0-B. Its complete Mesh-candidate set matched the T0-A recorded semantic fields (receipt identities/validity, slot GUID/fileID/link/provenance, vertex counts, and armature presence), including a second duplicate-like Mesh candidate that was already present in T0-A. The export target was selected by the exact source/root receipt. The reopened target matched the three ordered Material references and `[2, 4, 6]` face counts; its observed Mesh fields remained unchanged across export. The source package and saved `.blend` hashes also remained unchanged. This comparison does not include vertex coordinates, UVs, image/node state, or the full source archive store.
+
+The fresh-process export SHA-256 is `20b4b3551b245d9709dac842ba854abfbe7acdb202504f334c7fc5e70e3f89cd`. Its T0-C closure, required-Material negative control, and native FBX carrier/face-count import all passed. The generated FBX SHA-256 was `a27cc6100cd2cbce5f0e9b3a4b24867e042e861ac33ff233a4f37276de491c1e`. T1 result SHA-256: `7efbd0e6bf9427ac9b36e65bdee0948b08a78e3a0f54f2daa0954ba979eef061`; closure result SHA-256: `b314d5a00b834b1634f33edd1537a782624639efdabb1229f8f225c5af603a3c`; native import result SHA-256: `e365f6e7190230b5880fcd8aecc78457fe0511539560d0b9bca37386994d8400`.
+
 ## Limits and next gate
 
-This pass applies to the pinned synthetic package and its exact Unity witness. It does not show that the emitted package contains all expected assets or that a fresh Unity project imports it correctly. T0-C must independently inspect the output package's Material GUID/fileID/meta/payload closure, manifest mappings, generated FBX material carriers, and face-group association. Only after that should a fresh Unity target import be considered.
+These results apply to the pinned synthetic package and exact Unity witness. They do not prove Unity can import the output. A fresh Unity 2022.3.22f1 target is prepared separately with an empty package dependency manifest and a read-only Editor probe; the Editor has not been launched yet. No package download, test-framework install, platform build, rendering/GPU check, or final VRChat validation is claimed. Keep overall roundtrip acceptance pending until the fixed T1 output completes a real CLI Unity package import and its post-import GUID/local-ID, Renderer slot, Mesh, and submesh checks pass.
 
 Raw logs, local project paths, process manifests, Blender scene files, and package artifacts remain in the local task evidence directory and are not included in the repository.

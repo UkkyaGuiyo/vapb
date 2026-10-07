@@ -1,0 +1,196 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Security.Cryptography;
+using System.Text;
+using UnityEditor;
+using UnityEngine;
+
+/// <summary>Fixture-bounded Unity 2022.3 fresh-project import oracle for T0-C.</summary>
+public static class VapbT0CFreshImportProbe
+{
+    private const string ExpectedPackageSha256 = "20b4b3551b245d9709dac842ba854abfbe7acdb202504f334c7fc5e70e3f89cd";
+    private const string ExpectedModelGuid = "de246c64f2740ebfb1a93dbad053e07b";
+    private const string ExpectedModelSha256 = "a27cc6100cd2cbce5f0e9b3a4b24867e042e861ac33ff233a4f37276de491c1e";
+    private const string ManifestPath = "Assets/VAPBExport/manifest.json";
+    private const string ResultFileName = "VAPB_T0C_UnityImport_Result.json";
+
+    [Serializable]
+    private sealed class Manifest
+    {
+        public RebindTask[] reference_rebind_tasks;
+    }
+
+    [Serializable]
+    private sealed class RebindTask
+    {
+        public string kind;
+        public string variant_path;
+        public string model_guid;
+        public string model_sha256;
+        public MaterialBinding[] material_bindings;
+    }
+
+    [Serializable]
+    private sealed class MaterialBinding
+    {
+        public string guid;
+        public string file_id;
+        public string transport_id;
+    }
+
+    [Serializable]
+    private sealed class MaterialResult
+    {
+        public string guid;
+        public long local_file_id;
+        public string path;
+    }
+
+    [Serializable]
+    private sealed class ProbeResult
+    {
+        public string status;
+        public string error;
+        public string editor_version;
+        public string package_sha256;
+        public string generated_model_guid;
+        public string generated_model_sha256;
+        public string generated_model_mesh_guid;
+        public long generated_model_mesh_local_file_id;
+        public string variant_path;
+        public string variant_asset_guid;
+        public int renderer_count;
+        public MaterialResult[] materials;
+        public int[] triangles_by_submesh;
+        public int asset_database_path_count;
+    }
+
+    public static void InspectFreshPackageImport()
+    {
+        var result = new ProbeResult { status = "FAIL", editor_version = Application.unityVersion };
+        var resultPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, ResultFileName);
+        try
+        {
+            var packagePath = Environment.GetEnvironmentVariable("VAPB_T0C_PACKAGE");
+            if (String.IsNullOrWhiteSpace(packagePath) || !File.Exists(packagePath))
+                throw new InvalidOperationException("VAPB_T0C_PACKAGE is missing or not a file");
+            result.package_sha256 = Sha256(File.ReadAllBytes(packagePath));
+            if (result.package_sha256 != ExpectedPackageSha256)
+                throw new InvalidOperationException("package SHA differs from the pinned T1 export");
+
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var manifestAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(ManifestPath);
+            if (manifestAsset == null)
+                throw new InvalidOperationException("export manifest was not imported");
+            var manifest = JsonUtility.FromJson<Manifest>(manifestAsset.text);
+            var tasks = manifest == null || manifest.reference_rebind_tasks == null
+                ? new RebindTask[0]
+                : Array.FindAll(manifest.reference_rebind_tasks, row => row != null && row.kind == "RESTORE_DIRECT_SKIN_VARIANT_V1");
+            if (tasks.Length != 1)
+                throw new InvalidOperationException("expected one direct-skin rebind task");
+            var task = tasks[0];
+            result.generated_model_guid = task.model_guid;
+            result.generated_model_sha256 = task.model_sha256;
+            result.variant_path = task.variant_path;
+            if (!String.Equals(task.model_guid, ExpectedModelGuid, StringComparison.OrdinalIgnoreCase)
+                || !String.Equals(task.model_sha256, ExpectedModelSha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("manifest generated Model GUID/SHA differs from pinned T1 export");
+            if (task.material_bindings == null || task.material_bindings.Length != 3)
+                throw new InvalidOperationException("manifest must contain three ordered material bindings");
+
+            var modelPath = AssetDatabase.GUIDToAssetPath(ExpectedModelGuid);
+            if (String.IsNullOrEmpty(modelPath) || !modelPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("generated Model GUID did not resolve to an imported FBX");
+            var modelPayloadPath = Path.Combine(Directory.GetParent(Application.dataPath).FullName, modelPath);
+            var modelPayloadSha = Sha256(File.ReadAllBytes(modelPayloadPath));
+            if (modelPayloadSha != ExpectedModelSha256)
+                throw new InvalidOperationException("imported generated FBX payload bytes changed");
+
+            var variantGuid = AssetDatabase.AssetPathToGUID(task.variant_path);
+            if (String.IsNullOrEmpty(variantGuid))
+                throw new InvalidOperationException("manifest Variant path did not resolve in AssetDatabase");
+            result.variant_asset_guid = variantGuid;
+            var contents = PrefabUtility.LoadPrefabContents(task.variant_path);
+            try
+            {
+                var renderers = contents.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                result.renderer_count = renderers.Length;
+                if (renderers.Length != 1)
+                    throw new InvalidOperationException("expected exactly one SkinnedMeshRenderer in the imported Variant");
+                var renderer = renderers[0];
+                var mesh = renderer.sharedMesh;
+                if (mesh == null)
+                    throw new InvalidOperationException("imported SkinnedMeshRenderer has no Mesh");
+                string meshGuid;
+                long meshLocalId;
+                if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(mesh, out meshGuid, out meshLocalId))
+                    throw new InvalidOperationException("Unity could not identify the imported Mesh subasset");
+                result.generated_model_mesh_guid = meshGuid;
+                result.generated_model_mesh_local_file_id = meshLocalId;
+                if (!String.Equals(meshGuid, ExpectedModelGuid, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Variant Mesh does not resolve to the generated Model GUID");
+
+                var slots = renderer.sharedMaterials;
+                if (slots == null || slots.Length != task.material_bindings.Length)
+                    throw new InvalidOperationException("Unity Renderer material slot count differs from manifest bindings");
+                result.materials = new MaterialResult[slots.Length];
+                for (var index = 0; index < slots.Length; index++)
+                {
+                    var expected = task.material_bindings[index];
+                    var material = slots[index];
+                    if (material == null)
+                        throw new InvalidOperationException("Unity Renderer contains a null Material at slot " + index);
+                    string materialGuid;
+                    long localId;
+                    if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material, out materialGuid, out localId))
+                        throw new InvalidOperationException("Unity could not identify Material subasset at slot " + index);
+                    var path = AssetDatabase.GetAssetPath(material);
+                    if (!String.Equals(materialGuid, expected.guid, StringComparison.OrdinalIgnoreCase)
+                        || localId.ToString() != expected.file_id)
+                        throw new InvalidOperationException("Unity Material GUID/local ID differs from ordered manifest binding at slot " + index);
+                    result.materials[index] = new MaterialResult {
+                        guid = materialGuid, local_file_id = localId, path = path
+                    };
+                }
+
+                if (mesh.subMeshCount != 3)
+                    throw new InvalidOperationException("Unity generated Mesh does not contain exactly three submeshes");
+                result.triangles_by_submesh = new int[mesh.subMeshCount];
+                for (var index = 0; index < mesh.subMeshCount; index++)
+                {
+                    result.triangles_by_submesh[index] = (int)mesh.GetIndexCount(index) / 3;
+                    if (result.triangles_by_submesh[index] != new[] { 2, 4, 6 }[index])
+                        throw new InvalidOperationException("Unity submesh triangle count differs from [2,4,6] at slot " + index);
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            var paths = AssetDatabase.GetAllAssetPaths();
+            result.asset_database_path_count = paths.Length;
+            result.status = "PASS";
+        }
+        catch (Exception exception)
+        {
+            result.error = exception.GetType().Name + ": " + exception.Message;
+            result.status = "FAIL";
+        }
+
+        var json = JsonUtility.ToJson(result, true);
+        using (var stream = new FileStream(resultPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+        using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
+            writer.Write(json);
+        Debug.Log("VAPB_T0C_UNITY_IMPORT_" + result.status + " " + json);
+        if (result.status != "PASS")
+            throw new InvalidOperationException(result.error ?? "Unity fresh import probe failed");
+    }
+
+    private static string Sha256(byte[] bytes)
+    {
+        using (var sha = SHA256.Create())
+            return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant();
+    }
+}
