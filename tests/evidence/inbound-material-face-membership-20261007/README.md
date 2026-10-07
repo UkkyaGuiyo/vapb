@@ -77,3 +77,20 @@ The pure perturbation controls rejected changed axis, unit, Model transform, and
 | [Frame result](frame-diagnostic-v3.json) | 9e740f2654e3c1a885ae8b291583ae6b2f67cee7004c4c2bc59366d34ff84e42 |
 
 LUNA low authored and ran the offline verifier; SOL medium reviewed the final script/result. The first reviewer pass found missing signature-uniqueness assertion, misleading vertex-count semantics, and an unisolated reflection control; these were corrected before the final run/review. The unique-position comparison explicitly allows Unity vertex splits.
+
+## Diagnostic file ownership and parser source pin (2026-10-08)
+
+A review found that the verifier derived a fixed temp FBX path from its final output, used an existence check followed by a write, and unconditionally unlinked that path. Concurrent runs could collide, and a dangling symlink could pass the existence check. The verifier now creates an unpredictable temp file with exclusive creation, records its device/inode identity, and only removes it when the current path still names that regular file. The final JSON retains exclusive x creation.
+
+The parser loader also now checks the expected SHA-256 of Blender 5.2’s import_fbx.py, fbx_utils.py, and parse_fbx.py before importing the parser module. A wrong-hash synthetic control rejects the input before import. The script sets sys.dont_write_bytecode=True before the target parser import. The installed source tree had no .pyc files after the run. This is a fresh CLI process; an embedded interpreter with an already-cached parser module is outside this check.
+
+Synthetic controls passed for preserving an existing fixed-path file, two overlapping calls using distinct temp files, cleanup after a parse-like exception, preserving a replacement inode, and rejecting a wrong parser revision before import. The dangling-symlink control was skipped because the operating system denied symlink creation; no security setting was changed. The immediate device/inode check followed by unlink has a small residual check-to-unlink race.
+
+The offline fixture diagnostic exited 0 and retained status UNPROVEN_FRAME_CANDIDATE_ONLY with mapping=null; all prior geometry controls remained unchanged.
+
+| Artifact | SHA-256 |
+| --- | --- |
+| [Updated verifier](verify_inbound_frame.py) | 866387a63b12254469257fce730b31aebccc9fa678aeac91e26d0adec9569744 |
+| [Ownership and source pin result](frame-diagnostic-ownership.json) | 52c15704c9adb65691489712cb1360f89877505ac3cc124e26fd1bf8b97623c9 |
+
+LUNA low implemented and ran the change. SOL medium reviewed the final code/result and accepted the bounded ownership check, with the residual race above.

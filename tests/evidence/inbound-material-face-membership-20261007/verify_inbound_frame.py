@@ -13,11 +13,16 @@ import hashlib
 import importlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import sys
+sys.dont_write_bytecode = True
 import tarfile
+import errno
+import tempfile
 import types
+from contextlib import contextmanager
 
 PIN_CAPTURE = "c0949a10fa0b4ab789d21d62ee4381742240d116f7de5067048fbd7a19f686a7"
 PIN_COMPARISON = "7d23b9ab0d06ff8a8ff307e9489d2d422ca4b37bfeb938aac7170e61429d7918"
@@ -25,6 +30,11 @@ PIN_UNITY = "af56ccfa654dcf8c09dcd91c5eb62dc58f773682a9dc339a7372056068a690d2"
 PIN_PACKAGE = "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c"
 PIN_FBX = "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5"
 PIN_META = "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d"
+PIN_BLENDER_SOURCE = {
+    "import_fbx.py": "262127c8e6af3e748d696d81070366f39e449aa73e6bc1d9463092b5cbf86741",
+    "fbx_utils.py": "66a15d79d5eaf490176b439f22fb01963efcd46e06702eff224a84135e636fb3",
+    "parse_fbx.py": "96fe3f11b5c9b2950d9c434857e3b0db1a1b558510e2ad360b767643a69c2047",
+}
 TOL = 2.0e-5
 
 
@@ -34,6 +44,115 @@ def sha256(path: Path) -> str:
         for block in iter(lambda: f.read(1024 * 1024), b""):
             h.update(block)
     return h.hexdigest()
+
+
+@contextmanager
+def owned_temp_bytes(directory: Path, payload: bytes):
+    """Create a unique temp file exclusively; clean up only while its inode is ours."""
+    fd, raw_path = tempfile.mkstemp(prefix="vapb-frame-", suffix=".input.fbx", dir=directory)
+    path = Path(raw_path)
+    identity = None
+    try:
+        identity = os.fstat(fd)
+        with os.fdopen(fd, "wb") as stream:
+            fd = -1
+            stream.write(payload)
+            stream.flush()
+        yield path
+    finally:
+        if fd >= 0:
+            os.close(fd)
+        if identity is not None:
+            try:
+                current = path.lstat()
+            except FileNotFoundError:
+                pass
+            else:
+                if (current.st_dev, current.st_ino) == (identity.st_dev, identity.st_ino):
+                    path.unlink()
+
+
+def temp_file_controls():
+    """Exercise collision, concurrent use, and exception cleanup without touching inputs."""
+    import concurrent.futures
+    import threading
+    import tempfile as tempfile_module
+
+    with tempfile_module.TemporaryDirectory(prefix="vapb-temp-controls-") as raw_dir:
+        directory = Path(raw_dir)
+        preexisting = directory / "result.json.input.fbx"
+        preexisting.write_bytes(b"keep")
+        try:
+            with owned_temp_bytes(directory, b"new") as created:
+                if created == preexisting or created.read_bytes() != b"new":
+                    raise AssertionError("TEMP_PREEXISTING_COLLISION_CONTROL_FAILED")
+        finally:
+            if preexisting.read_bytes() != b"keep":
+                raise AssertionError("TEMP_PREEXISTING_CONTENT_CHANGED")
+
+        dangling_link = directory / "result.json.dangling.input.fbx"
+        try:
+            os.symlink("missing-target.fbx", dangling_link)
+        except OSError as exc:
+            if exc.errno not in (errno.EPERM, errno.EACCES) and getattr(exc, "winerror", None) != 1314:
+                raise
+            dangling_symlink_preserved = "SKIPPED_PERMISSION_DENIED"
+        else:
+            with owned_temp_bytes(directory, b"new") as created:
+                if created == dangling_link or created.read_bytes() != b"new":
+                    raise AssertionError("TEMP_DANGLING_SYMLINK_COLLISION_CONTROL_FAILED")
+            if not dangling_link.is_symlink() or dangling_link.readlink() != Path("missing-target.fbx"):
+                raise AssertionError("TEMP_DANGLING_SYMLINK_CHANGED")
+            dangling_symlink_preserved = True
+
+        def one(payload):
+            with owned_temp_bytes(directory, payload) as path:
+                rendezvous.wait(timeout=5)
+                return path.name, path.read_bytes()
+
+        rendezvous = threading.Barrier(2)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+            concurrent = list(pool.map(one, (b"left", b"right")))
+        if len({name for name, _ in concurrent}) != 2 or {body for _, body in concurrent} != {b"left", b"right"}:
+            raise AssertionError("TEMP_CONCURRENT_UNIQUENESS_CONTROL_FAILED")
+
+        failed_path = None
+        try:
+            with owned_temp_bytes(directory, b"cleanup") as path:
+                failed_path = path
+                raise RuntimeError("synthetic parse failure")
+        except RuntimeError as exc:
+            if str(exc) != "synthetic parse failure":
+                raise
+        if failed_path is None or failed_path.exists():
+            raise AssertionError("TEMP_FAILURE_CLEANUP_CONTROL_FAILED")
+
+        replacement_path = None
+        with owned_temp_bytes(directory, b"owned") as owned_path:
+            moved_path = owned_path.with_name(owned_path.name + ".moved")
+            owned_path.rename(moved_path)
+            replacement_path = owned_path
+            replacement_path.write_bytes(b"replacement")
+        if replacement_path.read_bytes() != b"replacement":
+            raise AssertionError("TEMP_FOREIGN_REPLACEMENT_REMOVED")
+
+        source_dir = directory / "synthetic-source"
+        source_dir.mkdir()
+        (source_dir / "parse_fbx.py").write_bytes(b"synthetic revision")
+        try:
+            validate_blender_sources(source_dir, {"parse_fbx.py": "0" * 64})
+        except ValueError as exc:
+            wrong_revision_rejected = str(exc) == "BLENDER_SOURCE_HASH_MISMATCH:parse_fbx.py"
+        else:
+            wrong_revision_rejected = False
+        if not wrong_revision_rejected:
+            raise AssertionError("BLENDER_WRONG_REVISION_CONTROL_FAILED")
+    return {"preexisting_path_preserved": True,
+            "dangling_symlink_preserved": dangling_symlink_preserved,
+            "concurrent_same_output_calls_use_distinct_temp_paths": True,
+            "failure_cleanup_removes_owned_temp": True,
+            "replaced_path_is_not_removed_during_cleanup": True,
+            "wrong_blender_revision_rejected_before_import": wrong_revision_rejected}
 
 
 def jsonable(value):
@@ -188,13 +307,23 @@ def fbx_node_matrix(node):
 
 def load_parser(addon_dir):
     addon_dir = addon_dir.resolve()
-    if not (addon_dir / "parse_fbx.py").is_file():
-        raise ValueError("BLENDER_5_2_PARSE_FBX_SOURCE_MISSING")
+    validate_blender_sources(addon_dir)
     package_name = "_vapb_offline_io_scene_fbx"
     pkg = types.ModuleType(package_name)
     pkg.__path__ = [str(addon_dir)]
     sys.modules[package_name] = pkg
     return importlib.import_module(package_name + ".parse_fbx")
+
+
+def validate_blender_sources(addon_dir, expected=PIN_BLENDER_SOURCE):
+    """Verify all importer/parser source files before executing parser code."""
+    for name, pinned in expected.items():
+        path = addon_dir / name
+        if not path.is_file():
+            raise ValueError("BLENDER_PINNED_SOURCE_MISSING:" + name)
+        if sha256(path) != pinned:
+            raise ValueError("BLENDER_SOURCE_HASH_MISMATCH:" + name)
+    return True
 
 
 def unitypackage_asset(package, unity_path):
@@ -397,16 +526,10 @@ def main():
         raise ValueError("PINNED_META_BAKE_AXIS_SETTING_UNEXPECTED")
     if not re.search(r"(?m)^\s*useFileUnits:\s*1\s*$", meta) or not re.search(r"(?m)^\s*useFileScale:\s*1\s*$", meta):
         raise ValueError("PINNED_META_UNIT_SETTINGS_UNEXPECTED")
-    # Parse from a temporary byte stream via the standard parser's public file API.
-    temp_fbx = args.output.with_name(args.output.name + ".input.fbx")
-    if temp_fbx.exists():
-        raise FileExistsError("TEMP_FBX_ALREADY_EXISTS")
-    temp_fbx.write_bytes(fbx_bytes)
-    try:
+    # Parse via the standard file API using a unique, exclusively-owned temp file.
+    with owned_temp_bytes(args.output.parent, fbx_bytes) as temp_fbx:
         parser = load_parser(args.blender_fbx_source)
         fbx = frame_from_fbx(parser, temp_fbx)
-    finally:
-        temp_fbx.unlink(missing_ok=True)
 
     capture = json.loads(args.capture.read_text(encoding="utf-8"))
     comparison = json.loads(args.comparison.read_text(encoding="utf-8"))
@@ -464,6 +587,11 @@ def main():
             "axis_rule": "reverse RIGHT_HAND_AXES then axis_conversion(from_forward=-Z, from_up=Y)",
             "transform_rule": "Parent @ T @ Roff @ Rp @ Rpre @ R @ inverse(Rpost) @ inverse(Rp) @ Soff @ Sp @ S @ inverse(Sp); geometric T @ R @ S",
         },
+        "parser_load_safety": {
+            "pinned_source_hashes_validated_before_import": True,
+            "pinned_source_hashes": PIN_BLENDER_SOURCE,
+            "sys_dont_write_bytecode": sys.dont_write_bytecode,
+        },
         "unity_meta": {"bakeAxisConversion": 0, "useFileUnits": 1, "useFileScale": 1,
                        "C_independently_justified": False,
                        "reason": "metadata does not independently establish candidate mesh-local factor C=.01*reflectX"},
@@ -486,7 +614,7 @@ def main():
                           "raw_unoriented_triangle_signatures_unique": unique_signature_count == len(raw_corners),
                           "triangle_count_cardinality_matches": len(raw_corners) == len(unity_tris),
                           "full_corner_multiset_matches_under_observed_uniform_reverse": reverse},
-        "controls": ctl,
+        "controls": {**ctl, "temp_file_ownership": temp_file_controls()},
         "interpretation": "Even a numeric candidate match is not a proven Unity importer factorization or winding rule; keep mapping null until C and orientation parity have independent source authority.",
     }
     if not captured_match or max_residual(gl, native) > TOL or len(raw_corners) != len(unity_tris):
