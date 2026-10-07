@@ -42,6 +42,10 @@ After adding the path and module-cache guards, the exact saved scene was reopene
 - Eight focused output/module-cache tests passed before the run; test script SHA-256: `dc2e30a528b246222c9d66ae38648666dd3411e9e7a9168eb163788b97e0fafb`.
 - Sanitized result: `confirm-raw-prefab-reopen-guarded-evidence.json`; process and input-integrity summary: `confirm-raw-prefab-reopen-guarded-run.json` (SHA-256 `70358fd1b2621faca54f00b42778bf0925b824ad92c02bad578d7966b3dbcc70`). Raw log and local scene remain outside the repository.
 
+## Probe source-byte audit
+
+The recorded probe hash `0102e94eef3ce2c185900cfed10f0c851f502f737a8c5ac57b4efa8332608d8b` is the raw hash of the tracked worktree script invoked directly by Blender. That file had mixed line endings (188 CRLF and 23 LF); its LF-normalized bytes exactly equal the tested source commit's Git blob. The committed blob SHA-1 is `51f6cbcdd48f45c87015d655d64fd9ce075a6ef4`; SHA-256 of blob/LF-normalized bytes is `01717ddfbf81389ff23eb894f642fe8f6219eff940c9863a195436843a9e9412`. This resolves the discrepancy as line-ending encoding only, with no probe content difference. See `confirm-raw-prefab-reopen-source-byte-audit.json`; its SHA-256 is `fbef38ee0618f07e718119faf0fa8f54f604eebb9fd4d23b98c0d3ca8b6e9d27`.
+
 ## Exact Unity identity witness: prepared, Editor run pending
 
 The manual confirmation route preserves slot identities after save/reopen, but it does not supply the missing automatic identity bridge. A separate isolated Unity source project was prepared from the same exact public package/FBX/meta revision using the existing `tests/unity_hierarchy_probe/prepare_exact_witness.py` workflow. Blender 5.2.1 generated semantic no-op and test-marker FBX copies (`models=4`, `original_unchanged=1`, exit 0). The Unity project targets 2022.3.22f1 and its manifest has no dependencies. See `unity-source-witness-preparation.json`.

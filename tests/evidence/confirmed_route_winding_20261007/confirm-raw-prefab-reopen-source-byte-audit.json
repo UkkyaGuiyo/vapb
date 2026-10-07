@@ -1,0 +1,20 @@
+{
+  "schema_version": "vapb-evidence-source-byte-audit-1",
+  "classification": "WORKTREE_MIXED_NEWLINES_ONLY",
+  "run_summary_sha256": "70358fd1b2621faca54f00b42778bf0925b824ad92c02bad578d7966b3dbcc70",
+  "run_recorded_probe_sha256": "0102e94eef3ce2c185900cfed10f0c851f502f737a8c5ac57b4efa8332608d8b",
+  "probe_was_invoked_from": "tracked working-tree script path directly; no separate execution copy",
+  "postrun_worktree_probe_sha256": "0102e94eef3ce2c185900cfed10f0c851f502f737a8c5ac57b4efa8332608d8b",
+  "source_commit": "346b93689913de32abbc939d192ec00fa9f17405",
+  "source_git_blob_sha1": "51f6cbcdd48f45c87015d655d64fd9ce075a6ef4",
+  "committed_blob_sha256": "01717ddfbf81389ff23eb894f642fe8f6219eff940c9863a195436843a9e9412",
+  "lf_normalized_worktree_sha256": "01717ddfbf81389ff23eb894f642fe8f6219eff940c9863a195436843a9e9412",
+  "crlf_normalized_worktree_sha256": "7826aa1060899a66f7419c4d2264b6358a7b28880828d6f51c321a649d7b95f0",
+  "working_tree_bytes": 10986,
+  "working_tree_crlf_lines": 188,
+  "working_tree_lf_lines": 23,
+  "normalized_lf_bytes": 10798,
+  "normalized_crlf_bytes": 11009,
+  "normalized_lf_equals_committed_blob": true,
+  "conclusion": "Source text matches the tested commit; the SHA difference is solely mixed line-ending encoding. Existing fresh-process PASS remains attributable to commit source after normalization."
+}
