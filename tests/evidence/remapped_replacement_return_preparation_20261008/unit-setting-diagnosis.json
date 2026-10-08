@@ -1,0 +1,55 @@
+{
+  "requested_model": "GPT-6.1 SOL",
+  "next_control": "same existing owned TargetProject, exact FBX and references, false->true useFileScale only; native model bounds before/after in Unity units; retain full meta before and restore; generated-prefab observation remains separately gated",
+  "fbx_model_local_scaling": [
+    100.0,
+    100.0,
+    100.0
+  ],
+  "finalizer_setting_change": "materialName=BasedOnMaterialName only, then SaveAndReimport; no unit setting assignment",
+  "mechanism_candidate": "FBX node scale 100 survives when destination file scaling is disabled; exact causal isolation still requires same-FBX useFileScale-only reimport control",
+  "status": "NON_UNITY_DIAGNOSIS_CONTROL_NOT_RUN",
+  "product_code_changed": false,
+  "package_model_meta_fields": [
+    "fileFormatVersion: 2",
+    "guid: a6c6d423d2284d6a982e74da20428d31"
+  ],
+  "package_model_importer_block_present": false,
+  "production_export_preset": {
+    "apply_scale_options": "FBX_SCALE_NONE",
+    "global_scale": 1.0,
+    "apply_unit_scale": true
+  },
+  "actual_model_effort": "UNOBSERVABLE",
+  "fbx_model_local_rotation": [
+    -90.00000933466734,
+    0.0,
+    0.0
+  ],
+  "fbx_sha256": "e236f2b12d0117b30d46c6345a468c8d904ed989f5e5ef70a883732fb8748f40",
+  "requested_effort": "medium",
+  "meta_origin": "export_final_state_package writes GUID-only new model meta; no ModelImporter settings",
+  "fbx_original_unit_scale_factor": 1.0,
+  "unity_generated_importer": {
+    "useFileUnits": 1,
+    "globalScale": 1,
+    "useFileScale": 0
+  },
+  "causal_certainty": "probable; no Unity one-variable control yet",
+  "fbx_unit_scale_factor": 1.0,
+  "unity_world_dimensions_from_original_run": [
+    250,
+    250,
+    250
+  ],
+  "blender_exporter_behavior": "FBX_SCALE_NONE multiplies global_matrix by unit_scale*global_scale then emits UnitScaleFactor=1",
+  "geometry_local_dimensions": [
+    2.5,
+    2.5,
+    2.5
+  ],
+  "unity_started_this_diagnosis": false,
+  "fbx_version": 7400,
+  "output_sha256": "b77668f09737eb029bd989f44809b44040fcb0d7c1a538a205941be75a81ea16",
+  "new_fixture_or_validator": false
+}
