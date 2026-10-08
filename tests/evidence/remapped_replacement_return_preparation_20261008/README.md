@@ -1,0 +1,15 @@
+# T4 Unity return: prepared, runtime NOT RUN
+
+This preserves the already prepared first-party observation and authored expected faces. No new runner, schema or product implementation is introduced. Base product commit: 8cc593eb5606e4aaf861bf70f6a161ca439694c2. Unity has not been launched for this task; the next slot remains assigned by the parent.
+
+Pinned output SHA256: b77668f09737eb029bd989f44809b44040fcb0d7c1a538a205941be75a81ea16. The existing disposable TargetProject has an identical Output.unitypackage and ExpectedFaces.json; its only Assets file at preparation is the saved Editor observation. ProjectVersion is 2022.3.22f1, Packages manifest has empty dependencies, no result or project lock was present. ExpectedFaces SHA256: 25e74b49bdf9c68058469017197e5b5b0e4c234e2fbb6a25049c87d68ff0f058.
+
+After receiving the shared slot, recheck fresh project/process/start/owner/resource/lock identity and preserve all existing assets/settings. Invoke existing VapbReplacementReturnObservation.Run in this TargetProject. Its package callback waits for imported support code, explicitly invokes VapbFinalStateFinalizer.Apply("Assets/VAPBExport/manifest.json"), and checks BUILD_EXPORTED_STATIC_V2, actual mesh GUID, three actual Material GUID/fileIDs and all labelled triangles with multiplicity. Shape is compared to a transient Unity primitive Cube with world scale 2, not raw FBX dimensions. The fixed Unity-to-Blender frame is declared in expected-faces.json; there is no fitted transform. Record any mismatches without relaxing the expectation.
+
+Archive inspection found all nine serialized texture properties null in each of the three preserved Standard Materials. The existing observation does not capture textures. At runtime also inspect these null references on the returned materials using the existing Unity surface; a null-preservation result cannot prove non-null texture closure. Do not treat this preparation or an eventual bounded static-Cube result as native Skin, old Prefab override, winding/normal or full-product acceptance.
+
+At preparation another Editor process was present. CIM command-line/root inventory was denied in the restricted environment, so its project identity was not established. No retry, launch, shutdown or lease operation occurred. Fresh identity acquisition must succeed under the applicable permission/slot boundary before launch. No SDK, materials, packages or raw private logs are included in this save.
+
+Keep semantic result, process exit, owned-child absence, project lock and shared slot release as separate evidence. Stop on a formal denial; do not alter authentication, license, security or ACL settings. Original dirty work is outside this preparation and must remain protected.
+
+Requested model/reasoning: GPT-6.1 SOL / medium. Actual runtime model/reasoning was not exposed. No review subagent was called. Failure Atlas was cloned and relevant explicit-Finalizer, Material-face and process-lifecycle lessons consulted; no new reusable finding was established.
