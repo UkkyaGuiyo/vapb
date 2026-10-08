@@ -15,17 +15,18 @@ try:
     meshes=[o for o in bpy.context.scene.objects if o.type=='MESH'];assert len(meshes)==1;obj=meshes[0]
     assert len(obj.material_slots)==3 and all(s.material for s in obj.material_slots)
     source_materials={str(s.material.get('unity_material_guid')):s.material for s in obj.material_slots}
-    native=dict(operator='export_scene.vapb_unitypackage',modifier_types=[m.type for m in obj.modifiers],has_uv=bool(obj.data.uv_layers),root_context_present=bool(obj.get('_vapb_root_context_id')),edit_scale=1.25)
-    for v in obj.data.vertices:v.co*=1.25
-    for o in bpy.context.selected_objects:o.select_set(False)
-    obj.select_set(True);bpy.context.view_layer.objects.active=obj
-    try:
-        native['operator_result']=sorted(bpy.ops.export_scene.vapb_unitypackage(filepath=str(work/'NativeSkinOutput.unitypackage')))
-    except RuntimeError as error:
-        native['operator_result']=['CANCELLED'];native['exception_type']=type(error).__name__;native['local_error_message']=str(error)
-    native['output_created']=(work/'NativeSkinOutput.unitypackage').exists()
-    (work/'native-skin-export-boundary.json').write_text(json.dumps(native,indent=2)+'\n')
-    assert native['operator_result']==['CANCELLED'] and not native['output_created']
+    if '--replacement-only' not in sys.argv:
+        native=dict(operator='export_scene.vapb_unitypackage',modifier_types=[m.type for m in obj.modifiers],has_uv=bool(obj.data.uv_layers),root_context_present=bool(obj.get('_vapb_root_context_id')),edit_scale=1.25)
+        for v in obj.data.vertices:v.co*=1.25
+        for o in bpy.context.selected_objects:o.select_set(False)
+        obj.select_set(True);bpy.context.view_layer.objects.active=obj
+        try:
+            native['operator_result']=sorted(bpy.ops.export_scene.vapb_unitypackage(filepath=str(work/'NativeSkinOutput.unitypackage')))
+        except RuntimeError as error:
+            native['operator_result']=['CANCELLED'];native['exception_type']=type(error).__name__;native['local_error_message']=str(error)
+        native['output_created']=(work/'NativeSkinOutput.unitypackage').exists()
+        (work/'native-skin-export-boundary.json').write_text(json.dumps(native,indent=2)+'\n')
+        assert native['operator_result']==['CANCELLED'] and not native['output_created']
     bpy.data.objects.remove(obj,do_unlink=True)
     bpy.ops.mesh.primitive_cube_add();obj=bpy.context.object;obj.name='Authored replacement Cube'
     bpy.ops.object.mode_set(mode='EDIT');bpy.ops.mesh.select_all(action='SELECT');bpy.ops.uv.smart_project();bpy.ops.object.mode_set(mode='OBJECT')
