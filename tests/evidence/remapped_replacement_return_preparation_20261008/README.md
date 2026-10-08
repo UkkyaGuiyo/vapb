@@ -1,4 +1,8 @@
-# T4 Unity return: prepared, runtime NOT RUN
+# T4 Unity return: original output FAIL
+
+The first Unity return ran. Finalizer, Mesh/Material identity and Texture null checks passed; shape and full labelled-triangle comparison failed. See the runtime section and saved JSON below. Product acceptance remains unproven.
+
+## Historical preparation checkpoint
 
 This preserves the already prepared first-party observation and authored expected faces. No new runner, schema or product implementation is introduced. Base product commit: 8cc593eb5606e4aaf861bf70f6a161ca439694c2. Unity has not been launched for this task; the next slot remains assigned by the parent.
 
@@ -13,3 +17,15 @@ At preparation another Editor process was present. CIM command-line/root invento
 Keep semantic result, process exit, owned-child absence, project lock and shared slot release as separate evidence. Stop on a formal denial; do not alter authentication, license, security or ACL settings. Original dirty work is outside this preparation and must remain protected.
 
 Requested model/reasoning: GPT-6.1 SOL / medium. Actual runtime model/reasoning was not exposed. No review subagent was called. Failure Atlas was cloned and relevant explicit-Finalizer, Material-face and process-lifecycle lessons consulted; no new reusable finding was established.
+
+## First Unity return executed: FAIL on original pinned output
+
+Normal package import and explicit VapbFinalStateFinalizer.Apply ran once on Unity 2022.3.22f1. Apply returned true; the actual generated Mesh identity and all three Material GUID/fileIDs matched. The minimal probe addition checked every one of the nine serialized null Texture properties on all three returned Materials; all 27 were null. These log markers are captured in execution-original-output.json. No non-null Texture closure is claimed.
+
+The final shape failed: Unity reference Cube bounds were (2,2,2), returned bounds were (250,250,250), measured ratio (125,125,125), expected ratio 1.25. Full labelled triangle comparison failed in the declared common frame. It is premature to attribute this independently to face assignment because coordinate scale already differs. Do not normalize the observations to manufacture acceptance.
+
+The package's generated FBX meta contained only fileFormatVersion and GUID. Unity-generated ModelImporter meta has useFileScale=0 and globalScale=1. This is a concrete unit-setting candidate, not a proven causal diagnosis: an identical-FBX one-variable control has not run. No product fix was made. Original failure and exact output hash are preserved in unity-return-original-output.json.
+
+Owned Editor was absent, current Editor/shader/VRChat counts were zero, project lock was absent. The existing callback requested EditorApplication.Exit(1) and quitting callbacks ran, but OS exit code could not be captured because the process had already exited before wait acquisition. Child ancestry is unverified; no denied CIM retry or identity escalation was used. PID 31464 was freshly identified by executable path as the Unity Hub resources helper, not an Editor; owner/parent remained unavailable. No other process was stopped. The parent-assigned shared Unity slot is returned; no pool lease was claimed.
+
+All three pre-existing TargetProject files (probe after the explicit texture edit, Packages manifest, ProjectVersion) and the output package retained their prelaunch hashes. Unity-generated imports/settings/cache remain in the owned disposable TargetProject for diagnosis. Original input, source projects and unrelated dirty work were not touched. This is runtime failure evidence, not preparation-only or product acceptance. Failure Atlas knowledge update: none, because the causal unit hypothesis remains unisolated; existing importer-control and common-frame rules were applied.

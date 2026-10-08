@@ -1,0 +1,66 @@
+{
+  "native_skin_and_old_override": "NOT_TESTED",
+  "shader_process_count": 0,
+  "requested_model": "GPT-6.1 SOL",
+  "texture_null_log_markers": [
+    "VAPB_T4_TEXTURE_NULL=64f92a1bd9b35a040bf9e2c6d200b34c:9",
+    "VAPB_T4_TEXTURE_NULL=0318f358e4c29034aa90cc8c50b58a93:9",
+    "VAPB_T4_TEXTURE_NULL=eb805efb35118044db5e74adc652673a:9"
+  ],
+  "actual_model_effort": "UNOBSERVABLE",
+  "unity_run_count": 1,
+  "mesh_and_three_material_guid_fileid_match": true,
+  "project_lock_absent": true,
+  "slot": "RETURNED_TO_PARENT; no pool lease was claimed",
+  "owned_editor_absent": true,
+  "vrchat_process_count": 0,
+  "texture_null_checks": 27,
+  "normal_exit_request": "existing probe EditorApplication.Exit(1); quitting callbacks observed",
+  "labelled_triangle_comparison": "FAIL; common-frame coordinates differ; do not infer a separate face-assignment defect yet",
+  "os_exit_code": "UNAVAILABLE; owned process exited before wait acquired handle",
+  "observed_unity_world_dimensions": [
+    250,
+    250,
+    250
+  ],
+  "finalizer_apply": true,
+  "observed_ratio": [
+    125,
+    125,
+    125
+  ],
+  "unity_version": "2022.3.22f1",
+  "status": "FAIL_BOUNDED_T4_ORIGINAL_OUTPUT",
+  "original_target_files": [
+    {
+      "path": "Assets/Editor/VapbReplacementReturnObservation.cs",
+      "unchanged": true
+    },
+    {
+      "path": "Packages/manifest.json",
+      "unchanged": true
+    },
+    {
+      "path": "ProjectSettings/ProjectVersion.txt",
+      "unchanged": true
+    }
+  ],
+  "review_subagent_calls": 0,
+  "owned_child_ancestry": "UNVERIFIED; no CIM retry after earlier denial",
+  "unit_diagnosis": "Candidate: GUID-only generated FBX meta became ModelImporter useFileScale=0; causal one-variable control NOT_RUN",
+  "requested_effort": "medium",
+  "output_sha256": "b77668f09737eb029bd989f44809b44040fcb0d7c1a538a205941be75a81ea16",
+  "expected_unity_world_dimensions": [
+    2.5,
+    2.5,
+    2.5
+  ],
+  "editor_count": 0,
+  "product_source_changed": false,
+  "output_package_unchanged": true,
+  "source_unity_primitive_dimensions": [
+    2,
+    2,
+    2
+  ]
+}

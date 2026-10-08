@@ -73,7 +73,14 @@ public static class VapbReplacementReturnObservation
             {
                 bool identified=AssetDatabase.TryGetGUIDAndLocalFileIdentifier(materials[s],out string guid,out long id);
                 report.material_identity&=identified&&Array.IndexOf(allowed,guid)>=0&&id==2100000&&seen.Add(guid);
-                report.material_references[s]=new Reference{guid=guid,file_id=id.ToString()};int[] tris=mesh.GetTriangles(s);
+                report.material_references[s]=new Reference{guid=guid,file_id=id.ToString()};
+                // This pinned fixture has nine explicitly null serialized Texture references.
+                string[] textureProperties={"_BumpMap","_DetailAlbedoMap","_DetailMask","_DetailNormalMap","_EmissionMap","_MainTex","_MetallicGlossMap","_OcclusionMap","_ParallaxMap"};
+                foreach(string property in textureProperties)
+                    if(!materials[s].HasProperty(property)||materials[s].GetTexture(property)!=null)
+                        throw new InvalidOperationException("GATE_TEXTURE_NULL");
+                Debug.Log("VAPB_T4_TEXTURE_NULL="+guid+":9");
+                int[] tris=mesh.GetTriangles(s);
                 for(int t=0;t<tris.Length;t+=3)
                 {
                     var corners=new string[3];for(int c=0;c<3;c++){Vector3 u=renderer.transform.TransformPoint(vertices[tris[t+c]]);corners[c]=Point(new Vector3(-u.x,-u.z,u.y));}
