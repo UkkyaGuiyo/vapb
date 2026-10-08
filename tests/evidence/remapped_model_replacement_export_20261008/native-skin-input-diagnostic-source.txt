@@ -1,0 +1,26 @@
+import sys, json, hashlib, importlib.util, math
+from pathlib import Path
+import bpy
+repo=Path(sys.argv[sys.argv.index('--')+1]); work=Path(sys.argv[sys.argv.index('--')+2]); work.mkdir(parents=True,exist_ok=True)
+p=repo.parent/'artifacts/remapped-model-input-20261008-01/SourceProject/RemappedInput.unitypackage'
+sha=hashlib.sha256(p.read_bytes()).hexdigest();assert sha=='3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b'
+spec=importlib.util.spec_from_file_location('_strict',repo/'tests/strict_source_import.py');strict=importlib.util.module_from_spec(spec);spec.loader.exec_module(strict); addon=strict.load_source_package(repo);addon.register()
+from unitypackage_blender_importer.export.raw_assets import RawAssetRepository
+from unitypackage_blender_importer.blender.fbx_witness import source_skin_bone_uids
+from unitypackage_blender_importer.blender.fbx_receipt import RawFbxSemanticIndex
+from io_scene_fbx import parse_fbx
+try:
+ bpy.ops.object.select_all(action='SELECT');bpy.ops.object.delete(use_global=False)
+ assert bpy.ops.import_scene.unitypackage(filepath=str(p),import_mode='RECONSTRUCT',keep_extracted=True,source_storage_directory=str(work/'BlenderSources'))=={'FINISHED'}
+ meshes=[o for o in bpy.context.scene.objects if o.type=='MESH']; assert len(meshes)==1;m=meshes[0];assert len(m.modifiers)==1 and m.modifiers[0].type=='ARMATURE';rig=m.modifiers[0].object
+ assets=RawAssetRepository(p).read_all();fbxs=[a for a in assets if a.pathname.lower().endswith('.fbx')]; assert len(fbxs)==1; a=fbxs[0];raw=work/'Input.fbx';raw.write_bytes(a.asset_bytes)
+ model=m['_vapb_fbx_model_uid'];geom=m['_vapb_fbx_geometry_uid'];uids=source_skin_bone_uids(raw,model,geom);idx=RawFbxSemanticIndex.from_file(raw);assert idx.unique_source_model(int(model)) and idx.geometry_for_model(int(model))==int(geom)
+ tree,_=parse_fbx.parse(str(raw),use_namedtuple=True);objects=next(n for n in tree.elems if n.id==b'Objects');conn=next(n for n in tree.elems if n.id==b'Connections');by={n.props[0]:n for n in objects.elems};links=[n.props[1:3] for n in conn.elems if n.id==b'C' and n.props[0]==b'OO']
+ skins=[s for s,d in links if d==int(geom) and by[s].id==b'Deformer' and by[s].props[2]==b'Skin'];assert len(skins)==1
+ clusters=[s for s,d in links if d==skins[0]];rows=[]
+ for uid in clusters:
+  n=by[uid]; child={x.id:x for x in n.elems}; points=list(child[b'Indexes'].props[0]);weights=list(child[b'Weights'].props[0]);matrices={k.decode():len(child[k].props[0]) for k in (b'Transform',b'TransformLink') if k in child}; rows.append(dict(cluster_uid=str(uid),bone_uids=[str(s) for s,d in links if d==uid and by[s].id==b'Model'],weight_pairs=len(points),weights_finite=all(math.isfinite(w) for w in weights),matrix_lengths=matrices));assert len(points)==len(weights)
+ bones=[dict(model_uid=str(b.get('_vapb_fbx_model_uid','')),receipt_matches_pose=all(str(b.get(k,''))==str(rig.pose.bones[b.name].get(k,'')) and bool(b.get(k)) for k in ('_vapb_fbx_source_asset_guid','_vapb_fbx_source_asset_sha256','_vapb_fbx_model_uid','_vapb_fbx_bone_realization_id'))) for b in rig.data.bones]
+ report=dict(status='DIAGNOSED_EXISTING_PREFAB_VARIANT_ROUTE_BOUNDARY',input_sha256=sha,asset_count=len(assets),prefab_count=sum(a.pathname.lower().endswith('.prefab') for a in assets),source_fbx_guid=a.guid,source_fbx_sha256=hashlib.sha256(a.asset_bytes).hexdigest(),model_uid=model,geometry_uid=geom,explicit_model_geometry_relation=True,source_skin_bone_uids=sorted(uids),clusters=rows,imported_mesh_count=len(meshes),imported_armature_modifier_targets_rig=rig is not None,imported_bones=bones,source_bone_receipts_cover_cluster_bones=uids<=set(b['model_uid'] for b in bones),positive_vertex_weight_links=sum(g.weight>0 for v in m.data.vertices for g in v.groups),imported_package_provenance=bool(m.get('unity_source_package_id')),mesh_root_context_present=bool(m.get('_vapb_root_context_id')),rig_root_context_present=bool(rig.get('_vapb_root_context_id')),renderer_occurrence_roots=sum(bool(o.get('_vapb_renderer_occurrences')) for o in bpy.context.scene.objects),input_archive_unchanged=hashlib.sha256(p.read_bytes()).hexdigest()==sha,export_attempt='NOT_RUN_PREVIOUS_REFUSAL_PRESERVED',unity='NOT_RUN',bindpose_reconstruction='NONE',relationships_injected=False)
+ (work/'native-skin-input-diagnosis.json').write_text(json.dumps(report,indent=2)+'\n');print('VAPB_NATIVE_SKIN_DIAGNOSIS',json.dumps(report))
+finally:addon.unregister()

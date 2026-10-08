@@ -1,0 +1,64 @@
+{
+  "status": "DIAGNOSED_EXISTING_PREFAB_VARIANT_ROUTE_BOUNDARY",
+  "input_sha256": "3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b",
+  "asset_count": 4,
+  "prefab_count": 0,
+  "source_fbx_guid": "abcdefabcdefabcdefabcdefabcdefab",
+  "source_fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+  "model_uid": "208084244",
+  "geometry_uid": "329684292",
+  "explicit_model_geometry_relation": true,
+  "source_skin_bone_uids": [
+    "144385489",
+    "517309283"
+  ],
+  "clusters": [
+    {
+      "cluster_uid": "840830944",
+      "bone_uids": [
+        "144385489"
+      ],
+      "weight_pairs": 4,
+      "weights_finite": true,
+      "matrix_lengths": {
+        "Transform": 16,
+        "TransformLink": 16
+      }
+    },
+    {
+      "cluster_uid": "978690647",
+      "bone_uids": [
+        "517309283"
+      ],
+      "weight_pairs": 4,
+      "weights_finite": true,
+      "matrix_lengths": {
+        "Transform": 16,
+        "TransformLink": 16
+      }
+    }
+  ],
+  "imported_mesh_count": 1,
+  "imported_armature_modifier_targets_rig": true,
+  "imported_bones": [
+    {
+      "model_uid": "144385489",
+      "receipt_matches_pose": true
+    },
+    {
+      "model_uid": "517309283",
+      "receipt_matches_pose": true
+    }
+  ],
+  "source_bone_receipts_cover_cluster_bones": true,
+  "positive_vertex_weight_links": 8,
+  "imported_package_provenance": true,
+  "mesh_root_context_present": false,
+  "rig_root_context_present": false,
+  "renderer_occurrence_roots": 0,
+  "input_archive_unchanged": true,
+  "export_attempt": "NOT_RUN_PREVIOUS_REFUSAL_PRESERVED",
+  "unity": "NOT_RUN",
+  "bindpose_reconstruction": "NONE",
+  "relationships_injected": false
+}
