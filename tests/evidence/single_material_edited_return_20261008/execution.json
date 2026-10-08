@@ -1,0 +1,39 @@
+{
+  "status": "RECORDED_FAILURE_NO_RERUN",
+  "source_checkout_base": "f9327ba62e901dff9383f5b123ff5252f37c5f3f",
+  "publication_base": "c18d9ebfc3f5e170866c95b1c7bf077f9788ece6",
+  "source_checkout_uncommitted_sha256": {
+    "blender/model_witness_bridge.py": "bf12193d36d460a550a5138fda0f1fb6fc46f401733223a119e79d9d82cf2afe",
+    "operators/renderer_binding.py": "1248e99457dc857d4528ed8c1d2464f97071c44ca392ab1c6f5f5a8684a78395",
+    "tests/test_model_witness_bridge.py": "f50d3122d650cf95de7ad19475b9d48e5b803ce20a7986107e9ad12671a5840e",
+    "tests/test_unrelated_model_override.py": "92ca098f3dca80468a5ae27e46bc498c2e1be6d54e514e78997a7efe7908aef6",
+    "tests/test_confirm_material_face_boundary.py": "cb7e3ab14578c30d06cdcc11511819d5da42bf0c9a9199eefaa954d698f7b2f9",
+    "operators/import_unitypackage.py": "d0aa415c4b00a3bcfa0fc6b6bebc8221a39e7b8c074f089de1003c7becd6fae3"
+  },
+  "source_package_sha256": "c784c3f27d654fa8808daa77b152d2dd175f31c2f2549931df6394075bedcb4e",
+  "output_package_sha256": "0dffe5e25e649abccaf6e28f764c2e618f7cdddf14e7e2456d507c0a2a906f13",
+  "source_fbx_sha256": "033cbbfebf5afa8ad531b9ed6a87799e0827a36024c11b6aeffb145f32cc6031",
+  "edited_fbx_sha256": "347129d0a419313647785c6701bc544cde203eb9b3c33c441a7ed5f5d12615a7",
+  "return_probe_sha256": "87f66e3ed01bb8509df4893b002abd4bc977ba305c681842fbd86ec2f1adec92",
+  "source_probe_staged_sha256": "e28db44d50a8dc1f18c9d78f93ce56c21ae8b5316c5a921e945973c827fac3fc",
+  "source_unity_exit_code": 0,
+  "blender_exit_code": 0,
+  "return_unity_exit_code": 1,
+  "return_run_count": 1,
+  "return_project_fresh": true,
+  "source_package_not_imported_to_return": true,
+  "postflight": {
+    "editor_count": 0,
+    "owned_editor_absent": true,
+    "owned_child_count": 0,
+    "child_names": [],
+    "hub_serve_count": 1
+  },
+  "original_dirty6_unchanged_at_save": true,
+  "unity_shape_ratio": "UNPROVEN_NO_NATIVE_SOURCE_BOUNDS",
+  "model_effort_actual": "UNOBSERVABLE",
+  "requested_model": "GPT-6.1 Sol",
+  "requested_effort": "Medium",
+  "runtime_sandbox": "workspace-write",
+  "approval_reviewer": "auto_review"
+}

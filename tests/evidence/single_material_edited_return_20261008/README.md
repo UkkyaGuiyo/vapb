@@ -1,0 +1,13 @@
+# Single-material edited return: recorded failed gate
+
+One synthetic, author-owned source package was generated in Unity 2022.3.22f1 using the existing final-state source probe with a one-nonempty-submesh guard. The existing Blender roundtrip runner imported it, confirmed its sole Material, scaled mesh vertices by 1.25, saved/reopened the scene, and exported through the normal VAPB package operator. The original Material, Texture and Prefab payloads/metas were preserved. Raw FBX geometry bounds changed from 2 to 2.5 on each axis.
+
+The exact output SHA256 `0dffe5e25e649abccaf6e28f764c2e618f7cdddf14e7e2456d507c0a2a906f13` was imported once into a fresh Unity 2022.3.22f1 project. No source package was imported there. The implemented `VapbReferenceFinalizer.Apply("Assets/VAPBExport/manifest.json")` was explicitly invoked for `REBIND_DIRECT_RENDERER_V1`.
+
+The finalizer, edited-model Mesh identity, one nonempty submesh (12 triangles), exact Material GUID/fileID, and Texture identity passed. The frozen probe's absolute shape gate failed: it expected 2.5 in prefab space but Unity observed approximately 0.025 on each axis. The probe used raw FBX dimensions as the Unity expectation without recording original native Unity bounds in the same frame. Its `shape125=false` and OS exit code 1 are preserved verbatim; this does not establish a product scaling defect or a correct Unity 1.25 ratio. That ratio remains UNPROVEN. No expectation retuning or second run was performed.
+
+`blender-output-check.json` is the historical, pre-return stage result; its `unity_return: NOT_RUN` describes that earlier stage. `unity-return.json` is the subsequent actual return result. `VapbSingleMaterialReturnProbe.cs` is the exact executed probe, including the unsuccessful absolute gate, retained as evidence rather than an endorsed general validator. The packages, scenes, SDKs, purchased assets and raw process/log files are not included.
+
+Execution used checkout base `f9327ba62e901dff9383f5b123ff5252f37c5f3f` with six pre-existing uncommitted source/test files listed by hash in `execution.json`. Those changes are not part of this evidence commit. Source and return Unity exited through their normal shutdown paths (codes 0 and 1); postflight found zero Editors and zero owned children. The Unity slot was released.
+
+Scope: this supports single-material edit/export and the observed return reference checks only. Multiple-material face correspondence, winding/normals, general hierarchy, Variant/dependency completeness and full product roundtrip remain unproven. The minimum next step, after explicit restart authorization, is an original-native-Unity versus returned-Unity comparison in the same declared frame before changing any shape expectation.

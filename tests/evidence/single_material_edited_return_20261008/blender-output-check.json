@@ -1,0 +1,33 @@
+{
+  "status": "PASS_SINGLE_MATERIAL_BLENDER_EDIT_OUTPUT_ONLY",
+  "source_sha256": "c784c3f27d654fa8808daa77b152d2dd175f31c2f2549931df6394075bedcb4e",
+  "output_sha256": "0dffe5e25e649abccaf6e28f764c2e618f7cdddf14e7e2456d507c0a2a906f13",
+  "model_guid_preserved": "3858744948938584bb2f344670664ead",
+  "model_meta_and_path_preserved": true,
+  "fbx_payload_changed": true,
+  "raw_geometry_bbox_source": [
+    2.0,
+    2.0,
+    2.0
+  ],
+  "raw_geometry_bbox_output": [
+    2.5,
+    2.5,
+    2.5
+  ],
+  "shape_scale_ratio": [
+    1.25,
+    1.25,
+    1.25
+  ],
+  "material_guid": "1906388f1224e1544a0b8d4044c7deb5",
+  "material_file_id": "2100000",
+  "material_texture_prefab_payload_meta_preserved": true,
+  "existing_finalizer_kind": "REBIND_DIRECT_RENDERER_V1",
+  "unity_source_exit_code": 0,
+  "blender_exit_code": 0,
+  "dirty6_unchanged": true,
+  "unity_return": "NOT_RUN",
+  "multiple_material_mapping": "UNPROVEN",
+  "winding_normals_general_hierarchy": "UNPROVEN"
+}

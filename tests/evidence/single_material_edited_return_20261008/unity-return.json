@@ -1,0 +1,32 @@
+{
+    "status": "FAIL",
+    "error": "GATE_ASSERTIONS",
+    "unityVersion": "2022.3.22f1",
+    "outputSha256": "0dffe5e25e649abccaf6e28f764c2e618f7cdddf14e7e2456d507c0a2a906f13",
+    "finalizerApply": true,
+    "meshFromEditedModel": true,
+    "singleSubmesh": true,
+    "materialIdentity": true,
+    "textureIdentity": true,
+    "shape125": false,
+    "prefabGuid": "ef933b94f813e324c9cc7268e59ba927",
+    "meshGuid": "3858744948938584bb2f344670664ead",
+    "meshFileId": "5188283214565457084",
+    "materialGuid": "1906388f1224e1544a0b8d4044c7deb5",
+    "materialFileId": "2100000",
+    "textureGuid": "31a60e65d27bc634d951ab7b021a9643",
+    "textureFileId": "2800000",
+    "submeshCount": 1,
+    "triangleCount": 12,
+    "vertexCount": 24,
+    "meshBoundsSize": {
+        "x": 0.02499999850988388,
+        "y": 0.02499999850988388,
+        "z": 0.02499999850988388
+    },
+    "prefabSpaceBoundsSize": {
+        "x": 0.02499999850988388,
+        "y": 0.02499999850988388,
+        "z": 0.02499999850988388
+    }
+}
