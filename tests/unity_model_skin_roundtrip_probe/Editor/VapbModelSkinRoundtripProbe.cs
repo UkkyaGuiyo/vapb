@@ -25,7 +25,9 @@ public static class VapbModelSkinRoundtripProbe
         public string model_sha256;
         public string variant_path;
         public RendererCandidate[] renderer_candidates;
+        public MaterialBinding[] material_bindings;
     }
+    [Serializable] private sealed class MaterialBinding { public string guid, file_id; }
     [Serializable] private sealed class RendererCandidate
     {
         public string renderer_file_id;
@@ -65,6 +67,12 @@ public static class VapbModelSkinRoundtripProbe
         public float source_bounds_extent;
         public float edited_bounds_extent;
         public float vertex_change_threshold;
+        public bool native_geometry_125, native_weights_equal, native_bounds_contain_rest;
+        public string edited_mesh_guid, edited_mesh_file_id;
+        public bool native_material_identity, native_face_membership;
+        public string[] material_guid_file_ids;
+        public int triangle_count, null_texture_reference_count;
+        public Bounds returned_local_bounds;
     }
 
     static VapbModelSkinRoundtripProbe()
@@ -80,6 +88,10 @@ public static class VapbModelSkinRoundtripProbe
         try
         {
             string package = ProjectFile("Output.unitypackage");
+            if (File.Exists(ProjectFile("NativeSkinOutput.unitypackage"))) {
+                package = ProjectFile("NativeSkinOutput.unitypackage");
+                if (Hash(package) != "d99efbad6090258e910a7b838ab42ab25c66391f25fa06ab19473a799d29a545") throw new InvalidOperationException("PACKAGE_HASH_MISMATCH");
+            }
             if (!File.Exists(package)) throw new InvalidOperationException("PACKAGE_MISSING");
             SessionState.SetString(Phase, "importing");
             SessionState.SetFloat(Started, (float)EditorApplication.timeSinceStartup);
@@ -121,10 +133,12 @@ public static class VapbModelSkinRoundtripProbe
             if (manifest == null || manifest.reference_rebind_tasks == null ||
                 manifest.reference_rebind_tasks.Length != 1 ||
                 (manifest.reference_rebind_tasks[0].kind != "RESTORE_MODEL_SKIN_VARIANT_V1" &&
-                 manifest.reference_rebind_tasks[0].kind != "RESTORE_DIRECT_SKIN_VARIANT_V1"))
+                 manifest.reference_rebind_tasks[0].kind != "RESTORE_DIRECT_SKIN_VARIANT_V1" &&
+                 manifest.reference_rebind_tasks[0].kind != "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1"))
                 throw new InvalidOperationException("TASK_MISSING");
             Task task = manifest.reference_rebind_tasks[0];
-            string prefabPath = AssetDatabase.GUIDToAssetPath(task.prefab_guid);
+            bool native = task.kind == "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1";
+            string prefabPath = AssetDatabase.GUIDToAssetPath(native ? task.source_model_guid : task.prefab_guid);
             string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
             string editedPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
             report.first_apply = VapbModelSkinFinalizer.Apply(ManifestPath);
@@ -158,7 +172,7 @@ public static class VapbModelSkinRoundtripProbe
                 out sourceMeshId) || meshGuid != task.source_model_guid || sourceMeshId == 0)
                 throw new InvalidOperationException("SOURCE_MESH_ID_INVALID");
             Vector3[] sourceVertices = ReadSourceVertices(sourcePath, task.source_model_guid,
-                sourceMeshId, out report.source_bounds_extent);
+                sourceMeshId, out report.source_bounds_extent, out int[][] sourceIndices);
             variant = AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path);
             original = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             selected = FindEditedSkin(variant, editedPath);
@@ -178,12 +192,59 @@ public static class VapbModelSkinRoundtripProbe
             report.target_bones_and_root_preserved = BonesPreserved(selected, originalSkin);
             report.materials_preserved = SameMaterials(selected.sharedMaterials, originalSkin.sharedMaterials);
             report.siblings_preserved = SiblingsPreserved(variant, original, selected, ref report.sibling_renderer_count);
-            report.originals_unchanged = Hash(Disk(prefabPath)) == task.prefab_source_sha256 &&
+            report.originals_unchanged = (native || Hash(Disk(prefabPath)) == task.prefab_source_sha256) &&
                 Hash(Disk(sourcePath)) == task.source_model_sha256 &&
                 Hash(Disk(editedPath)) == task.model_sha256;
             string firstHash = Hash(Disk(task.variant_path));
             report.second_apply = VapbModelSkinFinalizer.Apply(ManifestPath);
             report.second_apply_unchanged = report.second_apply && firstHash == Hash(Disk(task.variant_path));
+            if (native)
+            {
+                variant = AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path);
+                selected = FindEditedSkin(variant, editedPath);
+                originalSkin = PrefabUtility.GetCorrespondingObjectFromSource(selected) as SkinnedMeshRenderer;
+                editedMesh = selected.sharedMesh;
+                string editedGuid; long editedId;
+                bool identity = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(editedMesh, out editedGuid, out editedId);
+                report.edited_mesh_guid = editedGuid; report.edited_mesh_file_id = editedId.ToString();
+                report.native_geometry_125 = sourceVertices.Length == editedVertices.Length;
+                for (int i=0; report.native_geometry_125 && i<sourceVertices.Length; i++)
+                    report.native_geometry_125 = (editedVertices[i]-sourceVertices[i]*1.25f).magnitude <= report.vertex_change_threshold*10;
+                var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
+                report.native_weights_equal = (bool)typeof(VapbModelSkinFinalizer).GetMethod("SameSkinInfluences", flags).Invoke(null, new object[] { originalSkin.sharedMesh, editedMesh });
+                report.native_material_identity = task.material_bindings != null && task.material_bindings.Length == selected.sharedMaterials.Length;
+                var expectedMaterials = new List<string>();
+                if(task.material_bindings!=null) foreach(var binding in task.material_bindings) expectedMaterials.Add(binding.guid+":"+binding.file_id);
+                report.material_guid_file_ids = new string[selected.sharedMaterials.Length];
+                for (int slot=0; slot<selected.sharedMaterials.Length; slot++)
+                {
+                    Material material = selected.sharedMaterials[slot];
+                    string guid; long id;
+                    bool known = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material, out guid, out id);
+                    report.material_guid_file_ids[slot]=guid+":"+id.ToString();
+                    report.native_material_identity &= known && expectedMaterials.Remove(report.material_guid_file_ids[slot]);
+                    foreach(string name in material.GetTexturePropertyNames())
+                        if(material.GetTexture(name)==null) report.null_texture_reference_count++;
+                }
+                report.native_material_identity &= expectedMaterials.Count==0;
+                report.native_face_membership=sourceIndices!=null && sourceIndices.Length==editedMesh.subMeshCount && report.materials_preserved;
+                for(int sub=0; sub<editedMesh.subMeshCount; sub++)
+                {
+                    int[] actualIndices=editedMesh.GetIndices(sub);
+                    report.triangle_count+=actualIndices.Length/3;
+                    if(sourceIndices==null || sub>=sourceIndices.Length || sourceIndices[sub].Length!=actualIndices.Length) { report.native_face_membership=false; continue; }
+                    for(int i=0;i<actualIndices.Length;i++) if(actualIndices[i]!=sourceIndices[sub][i]) report.native_face_membership=false;
+                }
+                report.returned_local_bounds=selected.localBounds;
+                report.native_bounds_contain_rest = (bool)typeof(VapbModelSkinFinalizer).GetMethod("BoundsContainsRestMesh", flags).Invoke(null, new object[] { selected, editedMesh, selected.bones, 0.001f });
+                report.pass = report.package_imported && report.first_apply && report.variant_created && report.variant_linked &&
+                    report.edited_mesh_bound && report.originals_unchanged && report.second_apply_unchanged &&
+                    report.geometry_matches_edited_model && report.topology_and_weights_valid && report.target_bones_and_root_preserved &&
+                    report.materials_preserved && report.siblings_preserved && report.native_geometry_125 &&
+                    report.native_weights_equal && report.native_bounds_contain_rest && report.native_material_identity && report.native_face_membership && identity && editedGuid==task.model_guid && editedGuid!=task.source_model_guid && editedId!=0;
+                report.error=report.pass ? "NONE" : "ASSERTION_FAILED";
+                Finish(report); return;
+            }
             if (task.kind == "RESTORE_DIRECT_SKIN_VARIANT_V1")
                 NegativeBadCandidate(task, sourceMeshId, firstHash, report);
             NegativeExtraComponent(task.variant_path, firstHash, report);
@@ -217,9 +278,9 @@ public static class VapbModelSkinRoundtripProbe
     }
 
     private static Vector3[] ReadSourceVertices(string path, string guid, long meshId,
-        out float boundsExtent)
+        out float boundsExtent, out int[][] indices)
     {
-        boundsExtent = 0;
+        boundsExtent = 0; indices = null;
         byte[] meta = File.ReadAllBytes(Disk(path) + ".meta");
         try
         {
@@ -237,6 +298,8 @@ public static class VapbModelSkinRoundtripProbe
                     foundGuid == guid && foundId == meshId)
                 {
                     boundsExtent = mesh.bounds.extents.magnitude;
+                    indices = new int[mesh.subMeshCount][];
+                    for (int sub=0; sub<indices.Length; sub++) indices[sub]=mesh.GetIndices(sub);
                     return mesh.vertices;
                 }
             }

@@ -1,0 +1,59 @@
+{
+  "status": "PASS_BOUNDED_NATIVE_SKIN_EXPORT_ONLY",
+  "input_sha256": "3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b",
+  "output_sha256": "d99efbad6090258e910a7b838ab42ab25c66391f25fa06ab19473a799d29a545",
+  "task": {
+    "bone_mappings": [
+      {
+        "edited_bone_realization_id": "9286b173-ff8c-4971-b76f-80d560bc5b5a",
+        "source_model_uid": "144385489"
+      },
+      {
+        "edited_bone_realization_id": "9298ea43-c6d8-40a5-8754-25a0c4c25973",
+        "source_model_uid": "517309283"
+      }
+    ],
+    "instance_edges": [],
+    "kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "material_bindings": [
+      {
+        "file_id": "2100000",
+        "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+        "transport_id": "VAPB-MAT-d3b1a1e87b1764cdcdc358aec0da5b0a"
+      },
+      {
+        "file_id": "2100000",
+        "guid": "0318f358e4c29034aa90cc8c50b58a93",
+        "transport_id": "VAPB-MAT-96fad34243e000fbaee3673da9844695"
+      },
+      {
+        "file_id": "2100000",
+        "guid": "eb805efb35118044db5e74adc652673a",
+        "transport_id": "VAPB-MAT-24c6fff92d6ed5fb377f570a2032ac39"
+      }
+    ],
+    "model_guid": "c06cb40623b05d5c7b8f0e8ca76d65a9",
+    "model_sha256": "e85591d73a514450f9494046b6875831173f0222b819165d3eb1e9e50feee82d",
+    "realization_id": "5ed105cd-effb-4639-b4f0-a7f1567ff2fc",
+    "source_geometry_uid": "329684292",
+    "source_model_guid": "abcdefabcdefabcdefabcdefabcdefab",
+    "source_model_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+    "source_model_uid": "208084244",
+    "source_model_uids": [
+      "208084244",
+      "278480507",
+      "144385489",
+      "517309283"
+    ],
+    "variant_path": "Assets/VAPBExport/EditedVariant_cec56239c90059c53a09d1d8c5bee343acfbba9a88186be594f18747fc8b3017.prefab",
+    "witness_noop_path": "Assets/VAPBExport/Witness_c06cb40623b05d5c7b8f0e8ca76d65a9_Noop.bytes",
+    "witness_noop_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+    "witness_path": "Assets/VAPBExport/Witness_c06cb40623b05d5c7b8f0e8ca76d65a9_Source.bytes",
+    "witness_sha256": "f49f5f07e7e16eb7d4cc51acd0b4196d5bed143f2b30565b6fa353c6f453371b"
+  },
+  "source_assets_and_meta_byte_preserved": true,
+  "editing_mesh_and_bones_unchanged_by_export": true,
+  "edit_scale": 1.25,
+  "unity_return": "NOT_RUN",
+  "scope": "single no-Prefab source-model Skin geometry edit"
+}

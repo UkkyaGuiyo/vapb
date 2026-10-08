@@ -1344,12 +1344,53 @@ public static class VapbModelSkinFinalizer
     private static bool BoundsContainsRestMesh(SkinnedMeshRenderer target, Mesh mesh,
         Transform[] boneFrames, float tolerance)
     {
+        return tolerance >= 0 && TryRestMeshBounds(target, mesh, boneFrames, out Bounds rest) &&
+            BoundsContainsPoint(rest.min, target.localBounds, tolerance) &&
+            BoundsContainsPoint(rest.max, target.localBounds, tolerance);
+    }
+    private static Bounds SourceModelBounds(SkinnedMeshRenderer target, Mesh mesh, Transform[] boneFrames)
+    {
+        if (!TryRestMeshBounds(target, mesh, boneFrames, out Bounds rest))
+            Reject("SOURCE_MODEL_BOUNDS_INVALID");
+        Bounds expanded = target.localBounds;
+        expanded.Encapsulate(rest.min); expanded.Encapsulate(rest.max);
+        return expanded;
+    }
+    private static void SaveSourceModelBounds(SkinnedMeshRenderer target, Bounds bounds)
+    {
+        // Renderer.localBounds is a transient override in 2022.3. Persist the same
+        // fields edited by Unity's SkinnedMeshRenderer Inspector instead.
+        using (var serialized = new SerializedObject(target))
+        {
+            SerializedProperty stored = serialized.FindProperty("m_AABB");
+            SerializedProperty dirty = serialized.FindProperty("m_DirtyAABB");
+            if (stored == null || stored.propertyType != SerializedPropertyType.Bounds ||
+                dirty == null || dirty.propertyType != SerializedPropertyType.Boolean)
+                Reject("SOURCE_MODEL_BOUNDS_STORAGE_UNAVAILABLE");
+            stored.boundsValue = bounds; dirty.boolValue = false;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+    }
+    private static bool SourceModelBoundsStored(SkinnedMeshRenderer target, Bounds expected)
+    {
+        using (var serialized = new SerializedObject(target))
+        {
+            SerializedProperty stored = serialized.FindProperty("m_AABB");
+            SerializedProperty dirty = serialized.FindProperty("m_DirtyAABB");
+            return stored != null && stored.propertyType == SerializedPropertyType.Bounds &&
+                dirty != null && dirty.propertyType == SerializedPropertyType.Boolean &&
+                !dirty.boolValue && SameBounds(stored.boundsValue, expected);
+        }
+    }
+    private static bool TryRestMeshBounds(SkinnedMeshRenderer target, Mesh mesh,
+        Transform[] boneFrames, out Bounds rest)
+    {
+        rest = default(Bounds);
         if (target == null || target.rootBone == null || mesh == null || boneFrames == null ||
-            boneFrames.Length == 0 || tolerance < 0 || !Finite(target.localBounds.center) ||
+            boneFrames.Length == 0 || !Finite(target.localBounds.center) ||
             !Finite(target.localBounds.extents) || target.localBounds.extents.x < 0 ||
             target.localBounds.extents.y < 0 || target.localBounds.extents.z < 0 ||
             mesh.bindposes == null || mesh.bindposes.Length != boneFrames.Length) return false;
-        Bounds bounds = target.localBounds;
         Matrix4x4 rootWorldToLocal = target.rootBone.worldToLocalMatrix;
         Matrix4x4 rootLocalToWorld = target.rootBone.localToWorldMatrix;
         if (!FiniteMatrix(rootWorldToLocal) || !FiniteMatrix(rootLocalToWorld) ||
@@ -1364,7 +1405,6 @@ public static class VapbModelSkinFinalizer
             if (!FiniteMatrix(rootSkinByBone[bone])) return false;
         }
         if (!FiniteMatrix(rootWorldToLocal)) return false;
-        BoundsToleranceEdges toleranceEdges = ExpandBoundsToFloatEdges(bounds, tolerance);
         Vector3[] vertices = mesh.vertices;
         if (vertices == null || vertices.Length == 0) return false;
         var counts = mesh.GetBonesPerVertex();
@@ -1390,7 +1430,8 @@ public static class VapbModelSkinFinalizer
                     totalWeight += weight.weight;
                 }
                 if (!Finite(rootLocalPoint) || Mathf.Abs(totalWeight - 1f) > 0.01f) return false;
-                if (!PointWithinBounds(rootLocalPoint, toleranceEdges)) return false;
+                if (vertex == 0) rest = new Bounds(rootLocalPoint, Vector3.zero);
+                else rest.Encapsulate(rootLocalPoint);
             }
             return weightIndex == weights.Length;
         }
@@ -1487,6 +1528,9 @@ public static class VapbModelSkinFinalizer
                 }
                 target.sharedMesh = plan.edited.mesh;
                 target.bones = bones;
+                if (plan.task.kind == SourceKind)
+                    SaveSourceModelBounds(target, SourceModelBounds(plan.target, plan.edited.mesh,
+                        MappedTargetBones(plan.edited, plan.source)));
                 if (plan.edited.materials != null) target.sharedMaterials = plan.edited.materials;
                 PrefabUtility.RecordPrefabInstancePropertyModifications(target);
             }
@@ -1530,6 +1574,9 @@ public static class VapbModelSkinFinalizer
                 expected.TryGetValue(skinTarget, out PreparedTask modifiedPlan) &&
                 (mod.propertyPath == "m_Mesh" || mod.propertyPath == "m_Bones.Array.size" ||
                  mod.propertyPath.StartsWith("m_Bones.Array.data[", StringComparison.Ordinal) ||
+                 (modifiedPlan.task.kind == SourceKind &&
+                  (Regex.IsMatch(mod.propertyPath, @"^m_AABB\.m_(Center|Extent)\.[xyz]$") ||
+                   mod.propertyPath == "m_DirtyAABB")) ||
                  (modifiedPlan.edited.materials != null && (mod.propertyPath == "m_Materials.Array.size" ||
                   mod.propertyPath.StartsWith("m_Materials.Array.data[", StringComparison.Ordinal))));
             bool rootDefault = PrefabUtility.IsDefaultOverride(mod) &&
@@ -1571,6 +1618,11 @@ public static class VapbModelSkinFinalizer
                 if (skin.sharedMesh != plan.edited.mesh || skin.rootBone == null ||
                     FollowSource(skin.rootBone, 1) != plan.target.rootBone ||
                     skin.bones.Length != plan.edited.editedBoneUids.Length) Reject("VARIANT_MISMATCH");
+                if (plan.task.kind == SourceKind &&
+                    (!SourceModelBoundsStored(skin, SourceModelBounds(plan.target, plan.edited.mesh,
+                        MappedTargetBones(plan.edited, plan.source))) ||
+                     !BoundsContainsRestMesh(skin, skin.sharedMesh, skin.bones, 0.001f)))
+                    Reject("VARIANT_RENDERER_STATE_CHANGED");
                 if (plan.requiresReplacementEligibility && (skin.sharedMesh.blendShapeCount != 0 ||
                     skin.shadowCastingMode != plan.target.shadowCastingMode ||
                     skin.receiveShadows != plan.target.receiveShadows ||

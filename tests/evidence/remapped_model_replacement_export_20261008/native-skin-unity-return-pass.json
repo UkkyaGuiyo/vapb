@@ -1,0 +1,103 @@
+{
+  "pass": true,
+  "error": "NONE",
+  "package_imported": true,
+  "first_apply": true,
+  "variant_created": true,
+  "variant_linked": true,
+  "edited_mesh_bound": true,
+  "originals_unchanged": true,
+  "second_apply": true,
+  "second_apply_unchanged": true,
+  "geometry_changed": true,
+  "vertex_layout_changed": false,
+  "geometry_matches_edited_model": true,
+  "topology_and_weights_valid": true,
+  "target_bones_and_root_preserved": true,
+  "materials_preserved": true,
+  "siblings_preserved": true,
+  "extra_component_rejected": false,
+  "rejected_variant_unchanged": false,
+  "variant_restored_after_negative": false,
+  "bad_candidate_rejected": false,
+  "bad_candidate_unchanged": false,
+  "manifest_restored_after_negative": false,
+  "selected_skin_count": 1,
+  "sibling_renderer_count": 0,
+  "edited_vertex_count": 24,
+  "edited_bone_count": 2,
+  "max_vertex_delta": 0.004330126103013754,
+  "source_bounds_extent": 0.017320508137345314,
+  "edited_bounds_extent": 0.021650634706020355,
+  "vertex_change_threshold": 1.0000000116860974e-07,
+  "native_geometry_125": true,
+  "native_weights_equal": true,
+  "native_bounds_contain_rest": true,
+  "edited_mesh_guid": "c06cb40623b05d5c7b8f0e8ca76d65a9",
+  "edited_mesh_file_id": "8378990625266265184",
+  "native_material_identity": true,
+  "native_face_membership": true,
+  "material_guid_file_ids": [
+    "eb805efb35118044db5e74adc652673a:2100000",
+    "0318f358e4c29034aa90cc8c50b58a93:2100000",
+    "64f92a1bd9b35a040bf9e2c6d200b34c:2100000"
+  ],
+  "triangle_count": 12,
+  "null_texture_reference_count": 27,
+  "returned_local_bounds": {
+    "m_Center": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0
+    },
+    "m_Extent": {
+      "x": 0.01249999925494194,
+      "y": 0.012499997392296791,
+      "z": 0.012499997392296791
+    }
+  },
+  "unity_version": "2022.3.22f1",
+  "output_sha256": "d99efbad6090258e910a7b838ab42ab25c66391f25fa06ab19473a799d29a545",
+  "scope": "single no-Prefab native Skin geometry edit; source Model Prefab base; separate Variant and new edited Mesh identity",
+  "normal_editor_exit_code": 0,
+  "editor_restart_verified": true,
+  "project_lock_absent": true,
+  "owned_editor_and_children_absent": true,
+  "source_preservation": {
+    "input_sha256": "3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b",
+    "source_assets": [
+      {
+        "guid": "0318f358e4c29034aa90cc8c50b58a93",
+        "source_path": "Assets/PublicMaterialSource/Material1.mat",
+        "unity_path": "Assets/VAPBExport/Unassigned/Materials/Material1.mat",
+        "asset_bytes_equal": true,
+        "meta_bytes_equal": true
+      },
+      {
+        "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+        "source_path": "Assets/PublicMaterialSource/Material0.mat",
+        "unity_path": "Assets/VAPBExport/Unassigned/Materials/Material0.mat",
+        "asset_bytes_equal": true,
+        "meta_bytes_equal": true
+      },
+      {
+        "guid": "abcdefabcdefabcdefabcdefabcdefab",
+        "source_path": "Assets/PublicMaterialSource/Input.fbx",
+        "unity_path": "Assets/PublicMaterialSource/Input.fbx",
+        "asset_bytes_equal": true,
+        "meta_bytes_equal": true
+      },
+      {
+        "guid": "eb805efb35118044db5e74adc652673a",
+        "source_path": "Assets/PublicMaterialSource/Material2.mat",
+        "unity_path": "Assets/VAPBExport/Unassigned/Materials/Material2.mat",
+        "asset_bytes_equal": true,
+        "meta_bytes_equal": true
+      }
+    ],
+    "existing_project_changed_paths": [
+      "Assets\\VAPBExport\\manifest.json",
+      "Assets\\VAPBExport\\manifest.json.meta"
+    ]
+  }
+}

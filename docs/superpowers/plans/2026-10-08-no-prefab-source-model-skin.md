@@ -34,3 +34,5 @@ Reuse existing model-skin Blender check; record exact output/source preservation
 - [ ] Parent Unity slot and runtime acceptance pending; no launch while VHS owns it.
 
 Checkpoint: producer/consumer implemented; 24 focused Python tests pass, product C# reference compilation passes, normal Blender native export passes. One fresh SOL/medium review found no critical/important issues; its minor direct-test main-guard placement was fixed. Unity import/NUnit/Variant ancestry/reload/bounds remain NOT_RUN. This is an export-only WIP checkpoint; runtime acceptance requires the parent-assigned Unity slot.
+
+Runtime checkpoint: parent-assigned dedicated Unity project used; final normal-import package, standard Finalizer, fresh Editor restart, important geometry/identity/face/Material/Weight/rest-bounds checks PASS. Product bounds persistence defect fixed and failures retained. NUnit/animation/render/general scopes remain untested. See native-skin-unity-return-pass.json. Owned Editors exited normally; lock gone and allocation released.
