@@ -1438,6 +1438,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 )
             prefab_roots = []
             prefab_object_maps = []
+            unresolved_witness_consumers = []
             composition_started = perf_counter()
             if prefabs and self.apply_prefab_transforms:
                 package_label = package_key.package_name or "UnityPackage"
@@ -1752,6 +1753,13 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                     for dependency in ready:
                         capture_dependency(context.scene, dependency)
                     if rejected:
+                        unresolved_witness_consumers.extend(rejected)
+                        for root in prefab_roots:
+                            persisted = json.loads(root['_vapb_renderer_occurrences'])
+                            occurrences = {row['occurrence_id'] for row in persisted['records']}
+                            persisted['issues'].extend(issue for issue in rejected
+                                                       if issue['occurrence_id'] in occurrences)
+                            root['_vapb_renderer_occurrences'] = json.dumps(persisted, sort_keys=True)
                         self.report({"WARNING"}, f"Unity model witness: {len(rejected)} consumer slot(s) unresolved")
                 for source_object in used_source_templates:
                     source_object.hide_set(True)
@@ -1909,6 +1917,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
             # every selected provider has created its materials and images.
             self._set_phase(context, "Resolving dependencies")
             dependency_counts = self._performance.measure("dependency_resolution", resolve_after_import, scene)
+            dependency_counts["unresolved"] += len(unresolved_witness_consumers)
             from ..blender.material_owner_usage import capture_scene_owner_usage
             capture_scene_owner_usage(scene.objects, bpy.data.materials)
             package_kind = "MIXED_PACKAGE" if fbx_paths and (material_library or supported_asset_count > len(fbx_paths)) else "GEOMETRY_PACKAGE" if fbx_paths else "ASSET_PROVIDER_PACKAGE"
@@ -1945,7 +1954,7 @@ class UNITYPACKAGE_OT_import(bpy.types.Operator, ImportHelper):
                 self.report({"INFO"}, f"Imported {fbx_summary['imported']}/{fbx_summary['total']} FBX file(s)")
             self._performance.add("scene_metadata", perf_counter() - scene_metadata_started)
             self._set_phase(context, "Finalizing import")
-            self._set_phase(context, "Import complete")
+            self._set_phase(context, "Import partial" if outcome["overall"] == "PARTIAL" else "Import complete")
             self._set_prepare_state("FINISHED")
             self._modal_registered = False
             self._cleanup_prepared(remove=not self.keep_extracted)

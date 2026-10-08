@@ -468,6 +468,17 @@ def find_witness_consumer(record, objects):
                 or projected_mesh["source_sha256"] != record["consumer_fbx_sha256"]):
             return None
         materials = matching[0]["materials"]
+        # The witness proves Renderer/Mesh identity, not native face order.
+        # Keep dependencies pending unless this assignment is order-independent.
+        count = matching[0].get("material_slot_count")
+        if (type(count) is not int
+                or count < 0 or {str(key) for key in materials} != {str(i) for i in range(count)}):
+            return None
+        identities = {None if value is None else (
+            str(value.get("source_package_id", "")), str(value.get("guid", "")).lower(),
+            str(value.get("file_id", ""))) for value in materials.values()}
+        if len(identities) > 1:
+            return None
         slot = record["consumer_slot_index"]
         if str(slot) in materials:
             reference = materials[str(slot)]

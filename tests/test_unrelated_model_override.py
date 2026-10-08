@@ -143,7 +143,8 @@ class UnrelatedModelOverrideTests(unittest.TestCase):
         root = {"_vapb_root_context_id": "root-context",
                 "_vapb_witness_package_sha256": PACKAGE_SHA,
                 "_vapb_renderer_occurrences": json.dumps(self.projection.to_dict())}
-        self.assertIs(self.objects[0], find_witness_consumer(dependencies[0], [root, *self.objects]))
+        # Scoped references survive; unknown slot coverage does not prove face assignment.
+        self.assertIsNone(find_witness_consumer(dependencies[0], [root, *self.objects]))
         wrong_material = copy.deepcopy(dependencies[0])
         wrong_material["target_file_id"] = "9999999"
         self.assertIsNone(find_witness_consumer(wrong_material, [root, *self.objects]))

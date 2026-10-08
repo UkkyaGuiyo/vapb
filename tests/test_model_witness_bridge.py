@@ -582,6 +582,20 @@ class ModelWitnessBridgeTests(unittest.TestCase):
         self.assertEqual([], bindings)
         self.assertEqual("SOURCE_IDENTITY_MISMATCH", issues[0]["code"])
 
+    def test_distinct_renderer_materials_need_face_correspondence(self):
+        current = record()
+        current["materials"][1] = {**current["materials"][0], "guid": "9" * 32}
+        current["material_slot_count"] = 2
+        obj = native()
+        # Equal counts cannot prove that source submesh 0 is Blender partition 0.
+        obj.data.polygons = [SimpleNamespace(material_index=i // 2)
+                             for i in range(4)]
+        dependencies = plan_witness_material_dependencies([(current, obj)], PACKAGE_SHA)
+        self.assertEqual(2, len(dependencies))
+        for dep in dependencies:
+            self.assertIsNone(find_witness_consumer(dep, [root(current), obj]))
+        self.assertEqual([], obj.data.materials)
+
     def test_exact_material_reference_produces_scoped_dependency(self):
         current = record()
         obj = native()

@@ -182,6 +182,11 @@ def _material_plan(record, mesh_obj):
         if len(matches) != 1:
             raise BindingError(f"Material slot {index} has no unique scoped material")
         plan.append(matches[0])
+    # Renderer identity does not prove Unity submesh to Blender face order.
+    # A uniform assignment is permutation-independent; distinct identities need
+    # a proven face correspondence, which this confirmation route lacks.
+    if plan and any(material is not plan[0] for material in plan):
+        raise BindingError('Material face correspondence is unresolved')
     return plan
 
 
