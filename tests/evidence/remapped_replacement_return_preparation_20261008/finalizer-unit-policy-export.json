@@ -1,0 +1,157 @@
+{
+  "status": "PASS_MULTIMATERIAL_REPLACEMENT_EXPORT_ONLY",
+  "input_sha256": "3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b",
+  "output_sha256": "84d71a322c7328d01b71f3a0e62d2b59daa5a8b1fd01ba1d9d7b67cb83265d85",
+  "output_fbx_sha256": "4a4e2115d142c8371a6934880b4488a4a65ab4cb380ceb647eed43dbc2d238bc",
+  "operator": "export_scene.vapb_final_state_unitypackage",
+  "route": "T4 replacement Cube; source Skin removed from editing scene",
+  "authored_material_faces": "absolute face normal X/Y/Z -> three exact selected Unity Material GUIDs",
+  "edit_scale": 1.25,
+  "source_mesh_local_bbox": [
+    2.0,
+    2.0,
+    2.0
+  ],
+  "edited_mesh_local_bbox": [
+    2.5,
+    2.5,
+    2.5
+  ],
+  "output_raw_geometry_bbox": [
+    2.5,
+    2.5,
+    2.5
+  ],
+  "expected_labelled_triangle_sha256": "6c96322a3db8207a7af05c00733a3fb4c4f70a44092dbb8f1e6c207216f477d4",
+  "actual_labelled_triangle_sha256": "6c96322a3db8207a7af05c00733a3fb4c4f70a44092dbb8f1e6c207216f477d4",
+  "full_labelled_triangle_multiset_matches": true,
+  "triangle_count": 12,
+  "distinct_material_count": 3,
+  "material_assets_preserved": [
+    {
+      "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+      "file_id": "2100000",
+      "payload_sha256": "ab1c60a01f1bb0ed5c8c0574b05a58416da93878f4973c84ff7cd5c4e50cde75",
+      "meta_sha256": "0f07720364293d4007e95f02fff2d89ea36999df63695382a0daab783b875ed3"
+    },
+    {
+      "guid": "0318f358e4c29034aa90cc8c50b58a93",
+      "file_id": "2100000",
+      "payload_sha256": "f234e7f981a838e5924d7388bced330d2ded7805915af0c3d0fd5e60824d98ea",
+      "meta_sha256": "b4e3bf7548a506cd314ac15fb3e97c56c00e9a0c1e10aa01eb38030ff0e88be9"
+    },
+    {
+      "guid": "eb805efb35118044db5e74adc652673a",
+      "file_id": "2100000",
+      "payload_sha256": "d8a5b176ed167574ec51b552a2123481a2ddf425715cf6017c364caea6c4d011",
+      "meta_sha256": "016e03711ca358779d3f8a0a619c3bbe63c3bd532957d205590901612acd46d0"
+    }
+  ],
+  "material_mappings": [
+    {
+      "asset_sha256": "ab1c60a01f1bb0ed5c8c0574b05a58416da93878f4973c84ff7cd5c4e50cde75",
+      "export_material_id": "VAPB-MAT-4b20c62a1aa24a3c9d4e924387ec7cfb",
+      "file_id": "2100000",
+      "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+      "shader": {
+        "classification": "UNITY_BUILTIN",
+        "file_id": "46",
+        "guid": "0000000000000000f000000000000000"
+      },
+      "textures": []
+    },
+    {
+      "asset_sha256": "f234e7f981a838e5924d7388bced330d2ded7805915af0c3d0fd5e60824d98ea",
+      "export_material_id": "VAPB-MAT-26cb00437c914733b973bda61516f198",
+      "file_id": "2100000",
+      "guid": "0318f358e4c29034aa90cc8c50b58a93",
+      "shader": {
+        "classification": "UNITY_BUILTIN",
+        "file_id": "46",
+        "guid": "0000000000000000f000000000000000"
+      },
+      "textures": []
+    },
+    {
+      "asset_sha256": "d8a5b176ed167574ec51b552a2123481a2ddf425715cf6017c364caea6c4d011",
+      "export_material_id": "VAPB-MAT-130da9b9fc9a413193a208c6e2e297e3",
+      "file_id": "2100000",
+      "guid": "eb805efb35118044db5e74adc652673a",
+      "shader": {
+        "classification": "UNITY_BUILTIN",
+        "file_id": "46",
+        "guid": "0000000000000000f000000000000000"
+      },
+      "textures": []
+    }
+  ],
+  "reference_rebind_tasks": [
+    {
+      "export_object_id": "VAPB-OBJ-2a046fe2bbb54c39af73b6ab796c9bd5",
+      "kind": "BUILD_EXPORTED_STATIC_V2",
+      "material_slots": [
+        {
+          "export_material_id": "VAPB-MAT-4b20c62a1aa24a3c9d4e924387ec7cfb",
+          "slot_index": "0"
+        },
+        {
+          "export_material_id": "VAPB-MAT-26cb00437c914733b973bda61516f198",
+          "slot_index": "1"
+        },
+        {
+          "export_material_id": "VAPB-MAT-130da9b9fc9a413193a208c6e2e297e3",
+          "slot_index": "2"
+        }
+      ],
+      "material_transport_version": 2,
+      "materials": [
+        {
+          "asset_sha256": "ab1c60a01f1bb0ed5c8c0574b05a58416da93878f4973c84ff7cd5c4e50cde75",
+          "export_material_id": "VAPB-MAT-4b20c62a1aa24a3c9d4e924387ec7cfb",
+          "file_id": "2100000",
+          "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+          "shader": {
+            "classification": "UNITY_BUILTIN",
+            "file_id": "46",
+            "guid": "0000000000000000f000000000000000"
+          },
+          "textures": []
+        },
+        {
+          "asset_sha256": "f234e7f981a838e5924d7388bced330d2ded7805915af0c3d0fd5e60824d98ea",
+          "export_material_id": "VAPB-MAT-26cb00437c914733b973bda61516f198",
+          "file_id": "2100000",
+          "guid": "0318f358e4c29034aa90cc8c50b58a93",
+          "shader": {
+            "classification": "UNITY_BUILTIN",
+            "file_id": "46",
+            "guid": "0000000000000000f000000000000000"
+          },
+          "textures": []
+        },
+        {
+          "asset_sha256": "d8a5b176ed167574ec51b552a2123481a2ddf425715cf6017c364caea6c4d011",
+          "export_material_id": "VAPB-MAT-130da9b9fc9a413193a208c6e2e297e3",
+          "file_id": "2100000",
+          "guid": "eb805efb35118044db5e74adc652673a",
+          "shader": {
+            "classification": "UNITY_BUILTIN",
+            "file_id": "46",
+            "guid": "0000000000000000f000000000000000"
+          },
+          "textures": []
+        }
+      ],
+      "model_guid": "9550d28d3b7c4a358e6ca2ba0e2d49a8",
+      "model_sha256": "4a4e2115d142c8371a6934880b4488a4a65ab4cb380ceb647eed43dbc2d238bc",
+      "prefab_path": "Assets/VAPBExport/Generated_2a046fe2bbb54c39af73b6ab796c9bd5.prefab"
+    }
+  ],
+  "editing_scene_unchanged_by_export": true,
+  "source_export_ids_unchanged": true,
+  "coordinate_quantization_decimals": 6,
+  "coordinate_frame": "edited Blender Mesh local versus output raw FBX Geometry local; no fitted transform",
+  "winding": "unoriented membership only",
+  "unity_return": "NOT_RUN",
+  "input_archive_unchanged": true
+}

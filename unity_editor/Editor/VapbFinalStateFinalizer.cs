@@ -366,6 +366,8 @@ public static class VapbFinalStateFinalizer
             ModelImporter importer = AssetImporter.GetAtPath(modelPath) as ModelImporter;
             if (importer == null) throw new InvalidOperationException("MODEL_IMPORTER_UNAVAILABLE");
             importer.materialName = ModelImporterMaterialName.BasedOnMaterialName;
+            // Only this hash-validated generated static model uses the export unit policy.
+            importer.useFileScale = true;
             importer.SaveAndReimport();
             GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
             if (model == null) throw new InvalidOperationException("MODEL_UNAVAILABLE");

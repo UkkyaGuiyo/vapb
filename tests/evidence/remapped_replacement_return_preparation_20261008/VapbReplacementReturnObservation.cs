@@ -13,11 +13,13 @@ public static class VapbReplacementReturnObservation
 {
     const string Phase="VAPB_T4_RETURN_PHASE", Started="VAPB_T4_RETURN_STARTED";
     const string Sha="b77668f09737eb029bd989f44809b44040fcb0d7c1a538a205941be75a81ea16";
+    const string ReturnSha="84d71a322c7328d01b71f3a0e62d2b59daa5a8b1fd01ba1d9d7b67cb83265d85";
+    const string ReturnPackage="FinalizerUnitOutput.unitypackage", ReturnResult="FinalizerUnitReturnObservation-02.json", ReturnFaces="FinalizerUnitExpectedFaces.json";
     const string ManifestPath="Assets/VAPBExport/manifest.json";
     static string Root { get { return Directory.GetParent(Application.dataPath).FullName; } }
     [Serializable] sealed class Manifest { public Task[] reference_rebind_tasks; }
     [Serializable] sealed class Task { public string kind,model_guid,prefab_path; }
-    [Serializable] sealed class Faces { public Row[] rows; }
+    [Serializable] sealed class Faces { public string output_sha256; public Row[] rows; }
     [Serializable] sealed class Row { public string key; public int count; }
     [Serializable] sealed class Reference { public string guid,file_id; }
     [Serializable] sealed class Result
@@ -40,10 +42,10 @@ public static class VapbReplacementReturnObservation
     {
         try
         {
-            if(Application.unityVersion!="2022.3.22f1"||File.Exists(Path.Combine(Root,"ReturnObservation.json")))throw new InvalidOperationException("GATE_ENVIRONMENT");
-            if(Hash(Path.Combine(Root,"Output.unitypackage"))!=Sha)throw new InvalidOperationException("GATE_OUTPUT_SHA");
+            if(Application.unityVersion!="2022.3.22f1"||File.Exists(Path.Combine(Root,ReturnResult)))throw new InvalidOperationException("GATE_ENVIRONMENT");
+            if(Hash(Path.Combine(Root,ReturnPackage))!=ReturnSha)throw new InvalidOperationException("GATE_OUTPUT_SHA");
             SessionState.SetFloat(Started,(float)EditorApplication.timeSinceStartup);SessionState.SetString(Phase,"importing");
-            AssetDatabase.ImportPackage(Path.Combine(Root,"Output.unitypackage"),false);
+            AssetDatabase.ImportPackage(Path.Combine(Root,ReturnPackage),false);
         }
         catch(Exception e){Finish(new Result{error=Safe(e)});}
     }
@@ -56,10 +58,17 @@ public static class VapbReplacementReturnObservation
         SessionState.SetString(Phase,"checking");var report=new Result();
         try
         {
-            report.finalizer_apply=(bool)finalizer.GetMethod("Apply",BindingFlags.Static|BindingFlags.Public).Invoke(null,new object[]{ManifestPath});
-            if(!report.finalizer_apply)throw new InvalidOperationException("GATE_FINALIZER");
             Task[] tasks=JsonUtility.FromJson<Manifest>(File.ReadAllText(Path.Combine(Root,ManifestPath))).reference_rebind_tasks;
             if(tasks.Length!=1||tasks[0].kind!="BUILD_EXPORTED_STATIC_V2")throw new InvalidOperationException("GATE_TASK");
+            var importer=AssetImporter.GetAtPath(AssetDatabase.GUIDToAssetPath(tasks[0].model_guid)) as ModelImporter;
+            Debug.Log(importer==null?"VAPB_T4_CORRECTED_IMPORTER_RAW=missing":"VAPB_T4_CORRECTED_IMPORTER_RAW=useFileScale="+importer.useFileScale+";fileScale="+importer.fileScale+";globalScale="+importer.globalScale);
+
+            report.finalizer_apply=(bool)finalizer.GetMethod("Apply",BindingFlags.Static|BindingFlags.Public).Invoke(null,new object[]{ManifestPath});
+            if(!report.finalizer_apply)throw new InvalidOperationException("GATE_FINALIZER");
+            importer=AssetImporter.GetAtPath(AssetDatabase.GUIDToAssetPath(tasks[0].model_guid)) as ModelImporter;
+            if(importer==null||!importer.useFileScale||Mathf.Abs(importer.fileScale-0.01f)>0.0000001f||importer.globalScale!=1f)
+                throw new InvalidOperationException("GATE_FINALIZED_GENERATED_UNITS");
+            Debug.Log("VAPB_T4_FINALIZED_IMPORTER=useFileScale=true;fileScale="+importer.fileScale+";globalScale="+importer.globalScale);
             GameObject prefab=AssetDatabase.LoadAssetAtPath<GameObject>(tasks[0].prefab_path);
             MeshRenderer[] rs=prefab.GetComponentsInChildren<MeshRenderer>(true);if(rs.Length!=1)throw new InvalidOperationException("GATE_RENDERERS");
             MeshRenderer renderer=rs[0];Mesh mesh=renderer.GetComponent<MeshFilter>().sharedMesh;
@@ -88,7 +97,9 @@ public static class VapbReplacementReturnObservation
                     actual[key]=actual.ContainsKey(key)?actual[key]+1:1;report.triangle_count++;
                 }
             }
-            Row[] expected=JsonUtility.FromJson<Faces>(File.ReadAllText(Path.Combine(Root,"ExpectedFaces.json"))).rows;
+            Faces expectedFaces=JsonUtility.FromJson<Faces>(File.ReadAllText(Path.Combine(Root,ReturnFaces)));
+            if(expectedFaces.output_sha256!=ReturnSha)throw new InvalidOperationException("GATE_EXPECTED_OUTPUT_SHA");
+            Row[] expected=expectedFaces.rows;
             report.face_membership=report.triangle_count==12&&actual.Count==expected.Length;
             foreach(Row row in expected)report.face_membership&=actual.TryGetValue(row.key,out int count)&&count==row.count;
             var rows=new List<Row>();foreach(var pair in actual)rows.Add(new Row{key=pair.Key,count=pair.Value});report.observed_triangles=rows.ToArray();
@@ -185,5 +196,5 @@ public static class VapbReplacementReturnObservation
     static string Point(Vector3 p){return Math.Round(p.x*1000000d).ToString(CultureInfo.InvariantCulture)+","+Math.Round(p.y*1000000d).ToString(CultureInfo.InvariantCulture)+","+Math.Round(p.z*1000000d).ToString(CultureInfo.InvariantCulture);}
     static string Hash(string path){using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(path))).Replace("-","").ToLowerInvariant();}
     static string Safe(Exception e){return e is InvalidOperationException&&e.Message.StartsWith("GATE_")?e.Message:e.GetType().Name;}
-    static void Finish(Result report){SessionState.SetString(Phase,"finished");report.unity_version=Application.unityVersion;report.output_sha256=Sha;using(var writer=new StreamWriter(new FileStream(Path.Combine(Root,"ReturnObservation.json"),FileMode.CreateNew)))writer.Write(JsonUtility.ToJson(report,true));Debug.Log("VAPB_T4_RETURN="+report.status+":"+report.error);EditorApplication.Exit(report.status.StartsWith("PASS")?0:1);}
+    static void Finish(Result report){SessionState.SetString(Phase,"finished");report.unity_version=Application.unityVersion;report.output_sha256=ReturnSha;using(var writer=new StreamWriter(new FileStream(Path.Combine(Root,ReturnResult),FileMode.CreateNew)))writer.Write(JsonUtility.ToJson(report,true));Debug.Log("VAPB_T4_RETURN="+report.status+":"+report.error);EditorApplication.Exit(report.status.StartsWith("PASS")?0:1);}
 }

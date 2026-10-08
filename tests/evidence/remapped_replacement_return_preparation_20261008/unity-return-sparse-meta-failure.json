@@ -1,0 +1,32 @@
+{
+    "status": "FAIL",
+    "error": "GATE_CORRECTED_IMPORTED_UNITS",
+    "unity_version": "2022.3.22f1",
+    "output_sha256": "b2b57738e0f440896f66eb285c0a9da429384835eaa1b2b82b424080cf16d193",
+    "mesh_guid": "",
+    "mesh_file_id": "",
+    "finalizer_apply": false,
+    "mesh_identity": false,
+    "material_identity": false,
+    "face_membership": false,
+    "shape125": false,
+    "submesh_count": 0,
+    "triangle_count": 0,
+    "source_unity_world_bounds": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "returned_unity_world_bounds": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "observed_ratio": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "material_references": [],
+    "observed_triangles": []
+}

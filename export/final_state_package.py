@@ -337,8 +337,7 @@ def export_final_state_package(context, mesh, output: Path):
         _stage_fbx(context, mesh, object_id, fbx, material_ids)
         payload = fbx.read_bytes()
     selected.add(StagedUnityAsset(model_guid, model_path, payload,
-        (f"fileFormatVersion: 2\nguid: {model_guid}\n"
-         "ModelImporter:\n  meshes:\n    useFileScale: 1\n").encode("ascii"),
+        f"fileFormatVersion: 2\nguid: {model_guid}\n".encode("ascii"),
         asset_type="MESH_ASSET", operation="CREATE", strategy="REGENERATE_FROM_BLENDER",
         export_identity={"export_object_id": object_id}))
     task = _build_final_state_task(object_id, model_guid, _sha(payload), prefab_path,
