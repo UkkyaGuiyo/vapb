@@ -91,6 +91,8 @@ def main():
         if object_id_before: assert exported_id == object_id_before
         fbx = next(a.asset_bytes for a in assets if a.pathname.lower().endswith(".fbx"))
         assert exported_id.encode() in fbx
+        fbx_meta = next(a.meta_bytes for a in assets if a.pathname.lower().endswith(".fbx"))
+        assert b"ModelImporter:" in fbx_meta and b"    useFileScale: 1\n" in fbx_meta, "GENERATED_FBX_USE_FILE_SCALE_MISSING"
         if phase == "unchanged":
             assert geometry_before == tuple(tuple(vertex.co) for vertex in cube.data.vertices)
         bpy.ops.wm.save_as_mainfile(filepath=str(blend))

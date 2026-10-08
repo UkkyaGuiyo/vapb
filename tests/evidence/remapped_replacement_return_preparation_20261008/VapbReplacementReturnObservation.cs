@@ -105,6 +105,81 @@ public static class VapbReplacementReturnObservation
         catch(Exception e){report.error=Safe(e);}
         Finish(report);
     }
+    // Same pinned FBX, one importer setting, native-model measurement only.
+    // Original output/FAIL and generated Prefab remain untouched.
+    public static void RunUnitScaleControl()
+    {
+        var report=new Result();string modelPath=null;byte[] originalMeta=null;
+        Vector3 before=Vector3.zero,restored=Vector3.zero;
+        string resultPath=Path.Combine(Root,"UnitScaleControlObservation.json");
+        try
+        {
+            if(Application.unityVersion!="2022.3.22f1"||File.Exists(resultPath)
+                ||!File.Exists(Path.Combine(Root,"ReturnObservation.json")))
+                throw new InvalidOperationException("GATE_CONTROL_ENVIRONMENT");
+            if(Hash(Path.Combine(Root,"Output.unitypackage"))!=Sha)
+                throw new InvalidOperationException("GATE_OUTPUT_SHA");
+            Task[] tasks=JsonUtility.FromJson<Manifest>(File.ReadAllText(Path.Combine(Root,ManifestPath))).reference_rebind_tasks;
+            if(tasks.Length!=1||tasks[0].kind!="BUILD_EXPORTED_STATIC_V2")
+                throw new InvalidOperationException("GATE_TASK");
+            modelPath=AssetDatabase.GUIDToAssetPath(tasks[0].model_guid);
+            if(Hash(Path.Combine(Root,modelPath))!="e236f2b12d0117b30d46c6345a468c8d904ed989f5e5ef70a883732fb8748f40")
+                throw new InvalidOperationException("GATE_FBX_SHA");
+            var importer=AssetImporter.GetAtPath(modelPath) as ModelImporter;
+            if(importer==null||importer.useFileScale||importer.globalScale!=1)
+                throw new InvalidOperationException("GATE_IMPORTER_BASELINE");
+            originalMeta=File.ReadAllBytes(Path.Combine(Root,modelPath+".meta"));
+            var native=AssetDatabase.LoadAssetAtPath<GameObject>(modelPath).GetComponentsInChildren<MeshRenderer>(true);
+            if(native.Length!=1)throw new InvalidOperationException("GATE_RENDERERS");
+            before=BoundsSize(native[0].transform,native[0].GetComponent<MeshFilter>().sharedMesh.vertices);
+            Debug.Log("VAPB_T4_UNIT_BEFORE="+before+";useFileScale=false;fileScale="+importer.fileScale+";globalScale="+importer.globalScale);
+            importer.useFileScale=true;importer.SaveAndReimport();
+            string changedMeta=File.ReadAllText(Path.Combine(Root,modelPath+".meta"));
+            string normalized=System.Text.RegularExpressions.Regex.Replace(changedMeta,@"(?m)^(\s*useFileScale:) 1\r?$","$1 0");
+            string originalText=System.Text.Encoding.UTF8.GetString(originalMeta);
+            if(normalized.Replace("\r\n","\n")!=originalText.Replace("\r\n","\n"))
+                throw new InvalidOperationException("GATE_OTHER_META_CHANGED");
+            native=AssetDatabase.LoadAssetAtPath<GameObject>(modelPath).GetComponentsInChildren<MeshRenderer>(true);
+            Mesh mesh=native[0].GetComponent<MeshFilter>().sharedMesh;
+            report.returned_unity_world_bounds=BoundsSize(native[0].transform,mesh.vertices);
+            report.mesh_identity=AssetDatabase.TryGetGUIDAndLocalFileIdentifier(mesh,out string guid,out long id)&&guid==tasks[0].model_guid;
+            report.mesh_guid=guid;report.mesh_file_id=id.ToString();report.submesh_count=mesh.subMeshCount;
+            for(int s=0;s<mesh.subMeshCount;s++)report.triangle_count+=mesh.GetTriangles(s).Length/3;
+            GameObject source=GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try{source.transform.localScale=Vector3.one*2;report.source_unity_world_bounds=BoundsSize(source.transform,source.GetComponent<MeshFilter>().sharedMesh.vertices);}
+            finally{UnityEngine.Object.DestroyImmediate(source);}
+            Vector3 a=report.source_unity_world_bounds,b=report.returned_unity_world_bounds;
+            report.observed_ratio=new Vector3(b.x/a.x,b.y/a.y,b.z/a.z);report.shape125=Near(b,a*1.25f);
+            Debug.Log("VAPB_T4_UNIT_AFTER="+b+";useFileScale=true;fileScale="+importer.fileScale);
+            if(!Near(before,a*125f)||!report.shape125||!report.mesh_identity||report.triangle_count!=12)
+                throw new InvalidOperationException("GATE_UNIT_CONTROL");
+            report.status="PASS_UNIT_SCALE_CAUSAL_CONTROL_ONLY";
+        }
+        catch(Exception e){report.error=Safe(e);}
+        finally
+        {
+            if(originalMeta!=null)
+            {
+                try
+                {
+                    File.WriteAllBytes(Path.Combine(Root,modelPath+".meta"),originalMeta);
+                    AssetDatabase.ImportAsset(modelPath,ImportAssetOptions.ForceUpdate);
+                    byte[] restoredMeta=File.ReadAllBytes(Path.Combine(Root,modelPath+".meta"));
+                    if(!System.Linq.Enumerable.SequenceEqual(originalMeta,restoredMeta))throw new InvalidOperationException("GATE_META_RESTORE");
+                    var native=AssetDatabase.LoadAssetAtPath<GameObject>(modelPath).GetComponentsInChildren<MeshRenderer>(true);
+                    restored=BoundsSize(native[0].transform,native[0].GetComponent<MeshFilter>().sharedMesh.vertices);
+                    var importer=AssetImporter.GetAtPath(modelPath) as ModelImporter;
+                    if(importer.useFileScale||!Near(before,restored))throw new InvalidOperationException("GATE_SCALE_RESTORE");
+                    Debug.Log("VAPB_T4_UNIT_RESTORED="+restored+";metaBytesExact=true;useFileScale=false");
+                }
+                catch(Exception e){report.status="FAIL";report.error=Safe(e);}
+            }
+        }
+        report.unity_version=Application.unityVersion;report.output_sha256=Sha;
+        using(var writer=new StreamWriter(new FileStream(resultPath,FileMode.CreateNew)))writer.Write(JsonUtility.ToJson(report,true));
+        Debug.Log("VAPB_T4_UNIT_CONTROL="+report.status+":"+report.error);
+        EditorApplication.Exit(report.status=="PASS_UNIT_SCALE_CAUSAL_CONTROL_ONLY"?0:1);
+    }
     static Vector3 BoundsSize(Transform transform,Vector3[] vertices){var b=new Bounds(transform.TransformPoint(vertices[0]),Vector3.zero);foreach(Vector3 p in vertices)b.Encapsulate(transform.TransformPoint(p));return b.size;}
     static bool Near(Vector3 a,Vector3 b){return Mathf.Abs(a.x-b.x)<=0.0001f&&Mathf.Abs(a.y-b.y)<=0.0001f&&Mathf.Abs(a.z-b.z)<=0.0001f;}
     static string Point(Vector3 p){return Math.Round(p.x*1000000d).ToString(CultureInfo.InvariantCulture)+","+Math.Round(p.y*1000000d).ToString(CultureInfo.InvariantCulture)+","+Math.Round(p.z*1000000d).ToString(CultureInfo.InvariantCulture);}

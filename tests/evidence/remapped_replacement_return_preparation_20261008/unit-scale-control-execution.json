@@ -1,0 +1,58 @@
+{
+  "exact_fbx_unchanged": true,
+  "original_package_and_original_fail_preserved": true,
+  "requested_effort": "medium",
+  "project_lock_absent": true,
+  "full_product_acceptance": "UNPROVEN",
+  "preexisting_target_files_changed": 0,
+  "restored_unity_world_bounds": [
+    250,
+    250,
+    250
+  ],
+  "unit_tests_initial_attempt": "12 setup errors: default temporary directory unavailable; dependency-provider module and unused-slot export test",
+  "original_meta_bytes_exact_after_restore": true,
+  "actual_main_model_effort": "UNOBSERVABLE",
+  "shader_and_upm_absent": true,
+  "code_review_effort": "medium",
+  "before_unity_world_bounds": [
+    250,
+    250,
+    250
+  ],
+  "unit_control_run_count": 1,
+  "regression_setup_attempt": "existing reopen test had multiple meshes; setup failed before export; preserved",
+  "editor_absent": true,
+  "after_unity_world_bounds": [
+    2.499999761581421,
+    2.499999761581421,
+    2.499999761581421
+  ],
+  "status": "PASS_UNIT_SETTING_CAUSAL_CONTROL_ONLY",
+  "code_review_runs": 1,
+  "minimum_free_ram_mb_gate": 4096,
+  "vrchat_client_same_pid_start_executable_after_control": true,
+  "source_material_texture_and_prefab_assets_unchanged": true,
+  "relevant_unit_tests": 25,
+  "peak_working_set": "UNAVAILABLE",
+  "owned_child_ancestry": "UNVERIFIED; no denied CIM retry; known shader/UPM processes absent",
+  "regression_red": "existing create-phase export fails GENERATED_FBX_USE_FILE_SCALE_MISSING, exit1",
+  "unity_slot": "RETURNED_TO_PARENT",
+  "unit_tests_corrected_attempt": "25 PASS with current-task-owned tempfile.tempdir; no global environment or ACL change",
+  "product_patch": "new generated static FBX meta only: ModelImporter.meshes.useFileScale=1",
+  "vrchat_client_untouched": true,
+  "regression_green": "same existing create-phase export passes FINAL_STATE_PACKAGE_PASS create, exit0",
+  "only_meta_difference_during_control": "useFileScale: 0 -> 1",
+  "code_review_model": "GPT-6.1 SOL",
+  "unity_exit_code": 0,
+  "free_ram_mb_at_start": 4214,
+  "source_importer_meta_patch": false,
+  "requested_model": "GPT-6.1 SOL",
+  "corrected_t4_product_unity_return": "NOT_RUN; emitted partial ModelImporter defaults/parsing still require fresh-package acceptance",
+  "markers": [
+    "VAPB_T4_UNIT_BEFORE=(250.00, 250.00, 250.00);useFileScale=false;fileScale=1;globalScale=1",
+    "VAPB_T4_UNIT_AFTER=(2.50, 2.50, 2.50);useFileScale=true;fileScale=0.01",
+    "VAPB_T4_UNIT_RESTORED=(250.00, 250.00, 250.00);metaBytesExact=true;useFileScale=false",
+    "VAPB_T4_UNIT_CONTROL=PASS_UNIT_SCALE_CAUSAL_CONTROL_ONLY:"
+  ]
+}

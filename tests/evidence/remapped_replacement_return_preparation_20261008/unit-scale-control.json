@@ -1,0 +1,32 @@
+{
+    "status": "PASS_UNIT_SCALE_CAUSAL_CONTROL_ONLY",
+    "error": "",
+    "unity_version": "2022.3.22f1",
+    "output_sha256": "b77668f09737eb029bd989f44809b44040fcb0d7c1a538a205941be75a81ea16",
+    "mesh_guid": "a6c6d423d2284d6a982e74da20428d31",
+    "mesh_file_id": "4835601312745627800",
+    "finalizer_apply": false,
+    "mesh_identity": true,
+    "material_identity": false,
+    "face_membership": false,
+    "shape125": true,
+    "submesh_count": 3,
+    "triangle_count": 12,
+    "source_unity_world_bounds": {
+        "x": 2.0,
+        "y": 2.0,
+        "z": 2.0
+    },
+    "returned_unity_world_bounds": {
+        "x": 2.499999761581421,
+        "y": 2.499999761581421,
+        "z": 2.499999761581421
+    },
+    "observed_ratio": {
+        "x": 1.2499998807907105,
+        "y": 1.2499998807907105,
+        "z": 1.2499998807907105
+    },
+    "material_references": [],
+    "observed_triangles": []
+}
