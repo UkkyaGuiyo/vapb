@@ -1,0 +1,68 @@
+{
+  "status": "PASS_BOUNDED_NORMAL_REMAPPED_MODEL_IMPORT",
+  "source_checkout_commit": "530e6fa2f504f928942d4e7e45376bf560376528",
+  "original_fixture_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "normal_input_sha256": "3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b",
+  "unity_version": "2022.3.22f1",
+  "blender_version": "5.2.1 LTS",
+  "unity_exit_code": 0,
+  "blender_exit_code": 0,
+  "unity_run_count": 1,
+  "blender_run_count": 1,
+  "unity_preflight_editor_count": 0,
+  "unity_preflight_free_ram_mb": 6528,
+  "unity_postflight": {
+    "editor_count": 0,
+    "owned_editor_absent": true,
+    "owned_child_count": 0,
+    "project_lock_absent": true
+  },
+  "blender_postflight": {
+    "owned_blender_absent": true,
+    "owned_child_count": 0
+  },
+  "source_assets_restoration": [
+    {
+      "path": "Assets/PublicMaterialSource/Material1.mat",
+      "unchanged": true
+    },
+    {
+      "path": "Assets/PublicMaterialSource/Material1.mat.meta",
+      "unchanged": true
+    },
+    {
+      "path": "Assets/PublicMaterialSource/Material0.mat",
+      "unchanged": true
+    },
+    {
+      "path": "Assets/PublicMaterialSource/Material0.mat.meta",
+      "unchanged": true
+    },
+    {
+      "path": "Assets/PublicMaterialSource/Input.fbx",
+      "unchanged": true
+    },
+    {
+      "path": "Assets/PublicMaterialSource/Input.fbx.meta",
+      "unchanged": true
+    },
+    {
+      "path": "Assets/PublicMaterialSource/Material2.mat",
+      "unchanged": true
+    },
+    {
+      "path": "Assets/PublicMaterialSource/Material2.mat.meta",
+      "unchanged": true
+    }
+  ],
+  "original_archive_and_dirty6_unchanged": true,
+  "unity_preparation_script_sha256": "b076b8381de1cf52ccd7f162d5d9d32d51ecf167db6bab0b33f7ab3e11b84e3d",
+  "blender_observation_script_sha256": "55aef84f893074dc8be7b39d637c7a160bae9cdc71a718c2b858f4d044ae00cf",
+  "no_prefab": true,
+  "no_diagnostic_mapping_in_product": true,
+  "product_source_changed": false,
+  "full_product_acceptance": "UNPROVEN",
+  "requested_model": "GPT-6.1 Sol",
+  "requested_effort": "Medium",
+  "actual_model_effort": "UNOBSERVABLE"
+}

@@ -1,0 +1,31 @@
+{
+  "status": "PASS_RAW_FBX_FACE_AND_EXPLICIT_REMAP_IDENTITY",
+  "package_sha256": "3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b",
+  "fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+  "triangle_count": 12,
+  "raw_fbx_expected_triangle_count": 12,
+  "material_slot_identities": [
+    [
+      "64f92a1bd9b35a040bf9e2c6d200b34c",
+      "2100000",
+      "sha256:3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b"
+    ],
+    [
+      "0318f358e4c29034aa90cc8c50b58a93",
+      "2100000",
+      "sha256:3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b"
+    ],
+    [
+      "eb805efb35118044db5e74adc652673a",
+      "2100000",
+      "sha256:3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b"
+    ]
+  ],
+  "full_labelled_triangle_multiset_matches": true,
+  "coordinate_frame": "raw FBX geometry local versus native Blender Mesh local; no fit",
+  "coordinate_quantization_decimals": 6,
+  "winding": "not asserted; corners unoriented",
+  "normal_import": true,
+  "confirm_or_identity_repair": false,
+  "prefab_present": false
+}
