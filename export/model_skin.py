@@ -22,6 +22,19 @@ def group_model_skin_tasks(tasks):
     if not tasks:
         raise ValueError('No skin tasks selected')
     result = deepcopy(list(tasks))
+    source_tasks = [task for task in result if task.get('kind') == 'RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1']
+    if source_tasks:
+        if len(result) != 1:
+            raise ValueError('Source-model Skin requires one task')
+        task = source_tasks[0]
+        _guid(task['source_model_guid'])
+        _sha(task['source_model_sha256'])
+        edited_guid = _guid(task['model_guid'])
+        if edited_guid == task['source_model_guid'] or not task.get('realization_id'):
+            raise ValueError('Source and edited model identities must differ')
+        if task.get('prefab_guid') or task.get('instance_edges') or task.get('renderer_candidates'):
+            raise ValueError('Source-model Skin cannot carry Prefab evidence')
+        return tuple(result)
     prefabs, realizations, models = set(), set(), set()
     for task in result:
         try:
@@ -231,3 +244,30 @@ def direct_skin_task(metadata, bone_mappings, assets):
             'realization_id': realization, 'instance_edges': [],
             'renderer_candidates': candidates, 'bone_mappings': _bone_rows(bone_mappings),
             'variant_path': f'Assets/VAPBExport/EditedVariant_{suffix}.prefab'}
+
+
+def source_model_skin_task(metadata, bone_mappings, assets):
+    """One real source FBX root; Unity witnesses resolve its native identities."""
+    if metadata.get('prefab_guid') or metadata.get('prefab_source_sha256') or metadata.get('instance_edges'):
+        raise ValueError('Source-model Skin cannot carry Prefab evidence')
+    model_guid = _guid(metadata.get('source_model_guid'))
+    model_sha = _sha(metadata.get('source_model_sha256'))
+    model_uid = _id(metadata.get('source_model_uid'))
+    geometry_uid = _id(metadata.get('source_geometry_uid'))
+    realization = metadata.get('realization_id')
+    if not isinstance(realization, str) or not realization:
+        raise ValueError('Source-model realization is incomplete')
+    by_guid = {}
+    for source in assets:
+        guid = _guid(source.guid)
+        if guid in by_guid or PurePosixPath(source.pathname).suffix.lower() == '.prefab':
+            raise ValueError('Source-model asset identity is duplicated or has Prefab context')
+        by_guid[guid] = source
+    _asset(by_guid, model_guid, '.fbx', model_sha)
+    identity = f'SOURCE_MODEL_SKIN_V1:{model_guid}:{model_sha}:{realization}'
+    suffix = hashlib.sha256(identity.encode()).hexdigest()
+    return dict(kind='RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1', source_model_guid=model_guid,
+                source_model_sha256=model_sha, source_model_uid=model_uid,
+                source_geometry_uid=geometry_uid, realization_id=realization,
+                instance_edges=[], bone_mappings=_bone_rows(bone_mappings),
+                variant_path=f'Assets/VAPBExport/EditedVariant_{suffix}.prefab')

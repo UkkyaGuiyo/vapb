@@ -111,6 +111,35 @@ PrefabInstance:
             with self.assertRaises(ValueError):
                 model_skin_task(self.metadata, bones, self.assets)
 
+class SourceModelSkinTaskTests(unittest.TestCase):
+    setUp = ModelSkinTaskTests.setUp
+    def source_metadata(self):
+        return {key: value for key, value in self.metadata.items()
+                if key not in ('prefab_guid', 'prefab_source_sha256', 'instance_edges')}
+
+    def test_source_model_task_has_no_invented_prefab(self):
+        from unitypackage_blender_importer.export.model_skin import source_model_skin_task, group_model_skin_tasks
+        task = source_model_skin_task(self.source_metadata(), self.bones, [self.assets[-1]])
+        self.assertEqual(task['kind'], 'RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1')
+        self.assertNotIn('prefab_guid', task)
+        self.assertEqual(task['instance_edges'], [])
+        self.assertEqual(task['source_geometry_uid'], self.metadata['source_geometry_uid'])
+        task['model_guid'] = 'd' * 32
+        self.assertEqual(group_model_skin_tasks([task]), (task,))
+        with self.assertRaises(ValueError):
+            group_model_skin_tasks([task, task])
+
+    def test_source_model_rejects_false_revision_prefab_and_duplicate_source(self):
+        from unitypackage_blender_importer.export.model_skin import source_model_skin_task
+        metadata = self.source_metadata()
+        for sources in (self.assets, [self.assets[-1], self.assets[-1]], []):
+            with self.assertRaises(ValueError):
+                source_model_skin_task(metadata, self.bones, sources)
+        for key, value in (('source_model_sha256', '0' * 64), ('source_geometry_uid', '0'),
+                           ('prefab_guid', self.root), ('instance_edges', self.metadata['instance_edges'])):
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                source_model_skin_task({**metadata, key: value}, self.bones, [self.assets[-1]])
+
 
 if __name__ == '__main__':
     unittest.main()

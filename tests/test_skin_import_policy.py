@@ -11,6 +11,8 @@ class SkinImportPolicyTests(unittest.TestCase):
         value=json.loads(asset.asset_bytes)
         self.assertEqual(value,dict(version=1,model_guid='a'*32,model_sha256='b'*64))
         self.assertIn('a'*32,asset.pathname)
+        source_task = dict(task, kind='RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1')
+        self.assertEqual(skin_weight_policy_assets([source_task]), (asset,))
         self.assertEqual(skin_weight_policy_assets([task,task]),(asset,))
 
     def test_missing_revision_or_conflicting_revision_rejects(self):

@@ -71,6 +71,7 @@ public static class VapbModelSkinFinalizer
 {
     private const string Kind = "RESTORE_MODEL_SKIN_VARIANT_V1";
     private const string DirectKind = "RESTORE_DIRECT_SKIN_VARIANT_V1";
+    private const string SourceKind = "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1";
     private const string Schema = "vapb-export-manifest-1";
     private const string ExportMarkerSourceSha256 = "01e692ecda93ed309f284c743e32caa6c46f94d6b81c51ca91d5a94495b41eb1";
     private static string witnessPath;
@@ -103,6 +104,7 @@ public static class VapbModelSkinFinalizer
         public string source_model_guid;
         public string source_model_sha256;
         public string source_model_uid;
+        public string source_geometry_uid;
         public InstanceEdge[] instance_edges;
         public RendererCandidate[] renderer_candidates;
         public string model_guid;
@@ -199,7 +201,7 @@ public static class VapbModelSkinFinalizer
             return manifest != null && manifest.schema_version == Schema &&
                 manifest.reference_rebind_tasks != null &&
                 Array.Exists(manifest.reference_rebind_tasks, task =>
-                    task != null && (task.kind == Kind || task.kind == DirectKind));
+                    task != null && (task.kind == Kind || task.kind == DirectKind || task.kind == SourceKind));
         }
         catch { return false; }
     }
@@ -224,7 +226,7 @@ public static class VapbModelSkinFinalizer
                 if (imported.Add(path)) RefreshEditedModel(path,
                     plan.task.material_bindings != null && plan.task.material_bindings.Length != 0);
             }
-            string prefabPath = AssetDatabase.GUIDToAssetPath(plans[0].task.prefab_guid);
+            string prefabPath = AssetDatabase.GUIDToAssetPath(SourceRootGuid(plans[0].task));
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefab == null || HasMissingScripts(prefab)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
             var targets = new HashSet<SkinnedMeshRenderer>();
@@ -311,9 +313,20 @@ public static class VapbModelSkinFinalizer
         return authorized;
     }
 
+    private static string SourceRootGuid(Task task)
+    { return task.kind == SourceKind ? task.source_model_guid : task.prefab_guid; }
+
     private static void ValidateBatch(Task[] tasks)
     {
         if (tasks == null || tasks.Length == 0) Reject("MANIFEST_UNSUPPORTED");
+        foreach (Task task in tasks)
+            if (task != null && task.kind == SourceKind)
+            {
+                if (tasks.Length != 1) Reject("SOURCE_MODEL_SINGLE_TASK_REQUIRED");
+                ValidateTask(task);
+                if (task.model_guid == task.source_model_guid) Reject("TASK_BATCH_INVALID");
+                return;
+            }
         var realizations = new HashSet<string>(StringComparer.Ordinal);
         var sourceGuids = new HashSet<string>(StringComparer.Ordinal);
         var editedGuids = new HashSet<string>(StringComparer.Ordinal);
@@ -335,6 +348,7 @@ public static class VapbModelSkinFinalizer
     private static void PreflightScriptDependencies(Manifest manifest)
     {
         if (manifest.external_dependencies == null || manifest.external_dependencies.Length == 0) return;
+        if (manifest.reference_rebind_tasks[0].kind == SourceKind) Reject("SOURCE_MODEL_EXTERNAL_DEPENDENCY_UNSUPPORTED");
         var dependencies = new List<ExternalDependency>();
         var references = new HashSet<string>(StringComparer.Ordinal);
         foreach (ExternalDependency dependency in manifest.external_dependencies)
@@ -435,16 +449,16 @@ public static class VapbModelSkinFinalizer
 
     private static void CheckSourceHashes(Task task)
     {
-        string prefabPath = AssetDatabase.GUIDToAssetPath(task.prefab_guid);
+        string prefabPath = AssetDatabase.GUIDToAssetPath(SourceRootGuid(task));
         string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
         string editedPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
-        if (!PrefabPath(prefabPath) || !FbxPath(sourcePath) || !FbxPath(editedPath) ||
+        if (!(task.kind == SourceKind ? FbxPath(prefabPath) : PrefabPath(prefabPath)) || !FbxPath(sourcePath) || !FbxPath(editedPath) ||
             sourcePath == editedPath || !FileHash(Disk(sourcePath)).Equals(task.source_model_sha256,
                 StringComparison.OrdinalIgnoreCase) || !FileHash(Disk(editedPath)).Equals(task.model_sha256,
                 StringComparison.OrdinalIgnoreCase)) Reject("SOURCE_HASH_OR_PATH_MISMATCH");
-        if (!FileHash(Disk(prefabPath)).Equals(task.prefab_source_sha256, StringComparison.OrdinalIgnoreCase))
+        if (task.kind != SourceKind && !FileHash(Disk(prefabPath)).Equals(task.prefab_source_sha256, StringComparison.OrdinalIgnoreCase))
             Reject("STALE_PREFAB_SOURCE");
-        if (task.kind == DirectKind) return;
+        if (task.kind == DirectKind || task.kind == SourceKind) return;
         foreach (InstanceEdge edge in task.instance_edges)
         {
             string path = AssetDatabase.GUIDToAssetPath(edge.container_guid);
@@ -456,12 +470,12 @@ public static class VapbModelSkinFinalizer
     private static PreparedTask PrepareWitness(Task task)
     {
         CheckSourceHashes(task);
-        string prefabPath = AssetDatabase.GUIDToAssetPath(task.prefab_guid);
+        string prefabPath = AssetDatabase.GUIDToAssetPath(SourceRootGuid(task));
         string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
         byte[] sourceBytes = File.ReadAllBytes(Disk(sourcePath));
         byte[] sourceMeta = File.ReadAllBytes(Disk(sourcePath) + ".meta");
         bool direct = task.kind == DirectKind;
-        if (!direct)
+        if (!direct && task.kind != SourceKind)
         {
             if (task.instance_edges[0].container_guid != task.prefab_guid ||
                 task.instance_edges[task.instance_edges.Length - 1].source_guid != task.source_model_guid)
@@ -488,12 +502,24 @@ public static class VapbModelSkinFinalizer
         string editedPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
         string sourceGuid = task.source_model_guid;
         bool direct = task.kind == DirectKind;
-        SkinnedMeshRenderer target = direct ? ResolveDirectOccurrence(prefab, task, mapping.meshId) :
+        bool sourceModel = task.kind == SourceKind;
+        if (sourceModel && PrefabUtility.GetPrefabAssetType(prefab) != PrefabAssetType.Model)
+            Reject("SOURCE_MODEL_ROOT_UNSUPPORTED");
+        SkinnedMeshRenderer target = sourceModel ? SourceRendererById(sourcePath, sourceGuid, mapping.rendererId) :
+            direct ? ResolveDirectOccurrence(prefab, task, mapping.meshId) :
             ResolveOccurrence(prefab, task, mapping.rendererId);
         if (target.sharedMesh == null || target.bones == null || target.bones.Length == 0 ||
             target.rootBone == null) Reject("SOURCE_SKIN_UNSUPPORTED");
         string[] targetBoneIds = null;
-        SkinnedMeshRenderer sourceRenderer = direct ?
+        if (sourceModel)
+        {
+            if (prefab.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length != 1)
+                Reject("SOURCE_MODEL_SINGLE_SKIN_REQUIRED");
+            targetBoneIds = new string[target.bones.Length];
+            for (int i = 0; i < target.bones.Length; i++)
+                targetBoneIds[i] = LocalId(target.bones[i], sourceGuid).ToString(CultureInfo.InvariantCulture);
+        }
+        SkinnedMeshRenderer sourceRenderer = sourceModel ? target : direct ?
             SourceRendererById(sourcePath, sourceGuid, mapping.rendererId) :
             SourceLeaf(target, task, out targetBoneIds);
         if (sourceRenderer == null || sourceRenderer.sharedMesh == null) Reject("SOURCE_SKIN_UNSUPPORTED");
@@ -527,6 +553,18 @@ public static class VapbModelSkinFinalizer
         if (!source.bonesByUid.ContainsKey(source.rootUid))
             source.bonesByUid.Add(source.rootUid, target.rootBone);
         EditedIdentity edited = ResolveEdited(task, editedPath, mapping, source);
+        if (sourceModel)
+        {
+            if (!SameNormalSkinIndexLayout(mapping.sourceLayout, edited.mesh))
+                Reject("SOURCE_MODEL_INDEX_LAYOUT_CHANGED");
+            if (source.sourceBoneUids.Length != edited.editedBoneUids.Length)
+                Reject("SOURCE_MODEL_BONE_ORDER_CHANGED");
+            for (int i = 0; i < source.sourceBoneUids.Length; i++)
+                if (source.sourceBoneUids[i] != edited.editedBoneUids[i])
+                    Reject("SOURCE_MODEL_BONE_ORDER_CHANGED");
+            if (!SameSkinInfluences(target.sharedMesh, edited.mesh))
+                Reject("SOURCE_MODEL_WEIGHTS_CHANGED");
+        }
         CheckSkinCompatibility(mapping, target, edited, source, direct);
         plan.requiresReplacementEligibility = RequiresReplacementEligibility(task.kind,
             mapping.sourceLayout, edited.mesh);
@@ -538,12 +576,24 @@ public static class VapbModelSkinFinalizer
     private static void ValidateTask(Task task)
     {
         bool direct = task.kind == DirectKind;
-        if ((task.kind != Kind && !direct) || !ValidGuid(task.prefab_guid) || !ValidGuid(task.source_model_guid) ||
-            !ValidGuid(task.model_guid) || !ValidSha(task.prefab_source_sha256) ||
+        bool sourceModel = task.kind == SourceKind;
+        if (sourceModel)
+        {
+            if (!String.IsNullOrEmpty(task.prefab_guid) || !String.IsNullOrEmpty(task.prefab_source_sha256) ||
+                !ValidUid(task.source_geometry_uid) || task.instance_edges == null || task.instance_edges.Length != 0 ||
+                (task.renderer_candidates != null && task.renderer_candidates.Length != 0))
+                Reject("SOURCE_MODEL_CONTEXT_INVALID");
+            string suffix = HashBytes(Encoding.UTF8.GetBytes("SOURCE_MODEL_SKIN_V1:" + task.source_model_guid + ":" +
+                task.source_model_sha256 + ":" + task.realization_id));
+            if (task.variant_path != "Assets/VAPBExport/EditedVariant_" + suffix + ".prefab")
+                Reject("SOURCE_MODEL_PATH_INVALID");
+        }
+        if ((task.kind != Kind && !direct && !sourceModel) || (!sourceModel && !ValidGuid(task.prefab_guid)) || !ValidGuid(task.source_model_guid) ||
+            !ValidGuid(task.model_guid) || (!sourceModel && !ValidSha(task.prefab_source_sha256)) ||
             !ValidSha(task.source_model_sha256) || !ValidSha(task.model_sha256) ||
             !ValidSha(task.witness_noop_sha256) || !ValidSha(task.witness_sha256) ||
             !ValidUid(task.source_model_uid) || String.IsNullOrEmpty(task.realization_id) ||
-            task.instance_edges == null || (direct ? task.instance_edges.Length != 0 : task.instance_edges.Length == 0) ||
+            task.instance_edges == null || ((direct || sourceModel) ? task.instance_edges.Length != 0 : task.instance_edges.Length == 0) ||
             task.bone_mappings == null || task.bone_mappings.Length == 0 ||
             task.source_model_uids == null || task.source_model_uids.Length == 0 ||
             !PayloadPath(task.witness_noop_path) || !PayloadPath(task.witness_path) ||
@@ -1109,6 +1159,40 @@ public static class VapbModelSkinFinalizer
                 !SameMatrix(mesh.bindposes[i], expected, 0.001f)) Reject("EDITED_REST_MISMATCH");
         }
         ValidateWeights(mesh, edited.editedBoneUids.Length);
+    }
+
+    private static bool SameSkinInfluences(Mesh source, Mesh edited)
+    {
+        if (source == null || edited == null || source.vertexCount != edited.vertexCount) return false;
+        var sourceCounts = source.GetBonesPerVertex(); var editedCounts = edited.GetBonesPerVertex();
+        var sourceWeights = source.GetAllBoneWeights(); var editedWeights = edited.GetAllBoneWeights();
+        try
+        {
+            if (sourceCounts.Length != source.vertexCount || editedCounts.Length != edited.vertexCount) return false;
+            int a = 0, b = 0;
+            for (int vertex = 0; vertex < source.vertexCount; vertex++)
+            {
+                if (sourceCounts[vertex] != editedCounts[vertex]) return false;
+                var expected = new Dictionary<int, float>();
+                for (int i = 0; i < sourceCounts[vertex]; i++)
+                {
+                    if (a >= sourceWeights.Length) return false;
+                    BoneWeight1 w = sourceWeights[a++];
+                    if (!Finite(w.weight) || expected.ContainsKey(w.boneIndex)) return false;
+                    expected.Add(w.boneIndex, w.weight);
+                }
+                for (int i = 0; i < editedCounts[vertex]; i++)
+                {
+                    if (b >= editedWeights.Length) return false;
+                    BoneWeight1 w = editedWeights[b++]; float weight;
+                    if (!Finite(w.weight) || !expected.TryGetValue(w.boneIndex, out weight) ||
+                        Mathf.Abs(weight - w.weight) > 0.000001f) return false;
+                    expected.Remove(w.boneIndex);
+                }
+            }
+            return a == sourceWeights.Length && b == editedWeights.Length;
+        }
+        finally { sourceCounts.Dispose(); editedCounts.Dispose(); sourceWeights.Dispose(); editedWeights.Dispose(); }
     }
 
     private static bool SameNormalSkinIndexLayout(MeshLayout old, Mesh mesh)

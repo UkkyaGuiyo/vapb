@@ -10,7 +10,8 @@ def skin_weight_policy_assets(tasks):
     revisions = {}
     for task in tasks:
         if task.get('kind') not in {'REBIND_SKINNED_RENDERER_V1',
-                'RESTORE_MODEL_SKIN_VARIANT_V1', 'RESTORE_DIRECT_SKIN_VARIANT_V1'}:
+                'RESTORE_MODEL_SKIN_VARIANT_V1', 'RESTORE_DIRECT_SKIN_VARIANT_V1',
+                'RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1'}:
             continue
         guid, sha = task.get('model_guid', ''), task.get('model_sha256', '')
         if not re.fullmatch('[0-9a-f]{32}', guid) or not re.fullmatch('[0-9a-f]{64}', sha):

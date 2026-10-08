@@ -15,6 +15,31 @@ try:
     meshes=[o for o in bpy.context.scene.objects if o.type=='MESH'];assert len(meshes)==1;obj=meshes[0]
     assert len(obj.material_slots)==3 and all(s.material for s in obj.material_slots)
     source_materials={str(s.material.get('unity_material_guid')):s.material for s in obj.material_slots}
+    if '--native-only' in sys.argv:
+        for v in obj.data.vertices: v.co *= 1.25
+        vertices = [tuple(v.co) for v in obj.data.vertices]
+        rig = obj.modifiers[0].object
+        bone_state = [(b.get('_vapb_fbx_model_uid'), b.get('_vapb_fbx_bone_realization_id'),
+                       tuple(tuple(row) for row in b.matrix_local)) for b in rig.data.bones]
+        obj.select_set(True);bpy.context.view_layer.objects.active=obj
+        output = work/'NativeSkinOutput.unitypackage'
+        assert bpy.ops.export_scene.vapb_unitypackage(filepath=str(output)) == {'FINISHED'}
+        assets = RawAssetRepository(output).read_all();source = RawAssetRepository(package).read_all()
+        by_guid = {a.guid:a for a in assets}
+        assert all(by_guid[a.guid].asset_bytes == a.asset_bytes and by_guid[a.guid].meta_bytes == a.meta_bytes for a in source)
+        assert vertices == [tuple(v.co) for v in obj.data.vertices]
+        assert bone_state == [(b.get('_vapb_fbx_model_uid'), b.get('_vapb_fbx_bone_realization_id'),
+                               tuple(tuple(row) for row in b.matrix_local)) for b in rig.data.bones]
+        manifest = json.loads(next(a.asset_bytes for a in assets if a.pathname=='Assets/VAPBExport/manifest.json'))
+        task = manifest['reference_rebind_tasks'][0]
+        assert task['kind']=='RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1' and not task.get('prefab_guid')
+        assert task['model_guid'] != task['source_model_guid'] and not task['instance_edges']
+        report = dict(status='PASS_BOUNDED_NATIVE_SKIN_EXPORT_ONLY', input_sha256=input_sha,
+                      output_sha256=hashlib.sha256(output.read_bytes()).hexdigest(), task=task,
+                      source_assets_and_meta_byte_preserved=True, editing_mesh_and_bones_unchanged_by_export=True,
+                      edit_scale=1.25, unity_return='NOT_RUN', scope='single no-Prefab source-model Skin geometry edit')
+        (work/'native-skin-export-observation.json').write_text(json.dumps(report,indent=2)+'\n')
+        print('VAPB_NATIVE_SKIN_EXPORT',report['status']);sys.exit(0)
     if '--replacement-only' not in sys.argv:
         native=dict(operator='export_scene.vapb_unitypackage',modifier_types=[m.type for m in obj.modifiers],has_uv=bool(obj.data.uv_layers),root_context_present=bool(obj.get('_vapb_root_context_id')),edit_scale=1.25)
         for v in obj.data.vertices:v.co*=1.25

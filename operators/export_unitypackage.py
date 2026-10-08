@@ -312,11 +312,11 @@ def export_skin_package(context, mesh, output):
     return _write_package(tree, manifest, output)
 
 
-def _prepare_model_skin(context, mesh, assets, *, direct=False):
+def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=False):
     """Defer model Renderer identity to Unity while preserving source assets."""
     from ..blender.fbx_witness import prepare_witness, source_export_scale_options, source_skin_bone_uids
     from ..blender.fbx_receipt import RECEIPT_VERSION
-    from ..export.model_skin import model_skin_task, direct_skin_task, model_skin_material_bindings
+    from ..export.model_skin import model_skin_task, direct_skin_task, source_model_skin_task, model_skin_material_bindings
     if context.mode != 'OBJECT' or mesh is None or mesh.type != 'MESH':
         raise ValueError('オブジェクトモードでモデル由来のSkin Meshを選択してください')
     if mesh.library or mesh.data.library or len(mesh.users_scene) != 1:
@@ -336,32 +336,37 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False):
     realization = mesh.get('_vapb_fbx_realization_id', '')
     if not realization or sum(o.get('_vapb_fbx_realization_id') == realization for o in bpy.data.objects) != 1:
         raise ValueError('Meshの実体識別子がないか重複しています')
-    context_id = mesh.get('_vapb_root_context_id', '')
-    roots = [o for o in context.scene.objects if o.get('_vapb_renderer_occurrences')
-             and o.get('_vapb_root_context_id') == context_id]
-    if not context_id or len(roots) != 1 or rig.get('_vapb_root_context_id') != context_id:
-        raise ValueError('選択したSkinのPrefabルートまたはArmatureの所属が不明です')
-    edges = json.loads(mesh.get('_vapb_model_instance_edge_path', '[]'))
-    if (not isinstance(edges, list) or bool(edges) == direct or
-            edges != json.loads(rig.get('_vapb_model_instance_edge_path', '[]'))):
-        raise ValueError('MeshとArmatureのモデルインスタンス経路が一致しません')
-    root_guid = roots[0].get('unity_composition_member_id', '')
-    if (not root_guid or root_guid != mesh.get('unity_composition_member_id') or
-            (not direct and root_guid != edges[0].get('container_asset_guid'))):
-        raise ValueError('選択ルートとモデルインスタンスの元Prefabが一致しません')
     package_id = mesh.get('unity_source_package_id', '')
-    if (roots[0].get('unity_source_package_id') != package_id or
-            any(edge.get('container_package_id') != package_id for edge in edges)):
-        raise ValueError('Packageを跨ぐモデルSkinの復元はこの経路では未対応です')
-    prefabs = [a for a in assets if a.guid == root_guid]
-    if len(prefabs) != 1:
-        raise ValueError('元Prefabを一意に取得できません')
+    if source_model:
+        if (not package_id or rig.get('unity_source_package_id') != package_id or
+                any(mesh.get(key) or rig.get(key) for key in
+                    ('_vapb_root_context_id', 'unity_composition_member_id', '_vapb_model_instance_edge_path'))):
+            raise ValueError('Source-model Skin provenance is incomplete or carries Prefab context')
+        edges = []
+    else:
+        context_id = mesh.get('_vapb_root_context_id', '')
+        roots = [o for o in context.scene.objects if o.get('_vapb_renderer_occurrences')
+                 and o.get('_vapb_root_context_id') == context_id]
+        if not context_id or len(roots) != 1 or rig.get('_vapb_root_context_id') != context_id:
+            raise ValueError('選択したSkinのPrefabルートまたはArmatureの所属が不明です')
+        edges = json.loads(mesh.get('_vapb_model_instance_edge_path', '[]'))
+        if (not isinstance(edges, list) or bool(edges) == direct or
+                edges != json.loads(rig.get('_vapb_model_instance_edge_path', '[]'))):
+            raise ValueError('MeshとArmatureのモデルインスタンス経路が一致しません')
+        root_guid = roots[0].get('unity_composition_member_id', '')
+        if (not root_guid or root_guid != mesh.get('unity_composition_member_id') or
+                (not direct and root_guid != edges[0].get('container_asset_guid'))):
+            raise ValueError('選択ルートとモデルインスタンスの元Prefabが一致しません')
+        package_id = mesh.get('unity_source_package_id', '')
+        if (roots[0].get('unity_source_package_id') != package_id or
+                any(edge.get('container_package_id') != package_id for edge in edges)):
+            raise ValueError('Packageを跨ぐモデルSkinの復元はこの経路では未対応です')
+        prefabs = [a for a in assets if a.guid == root_guid]
+        if len(prefabs) != 1:
+            raise ValueError('元Prefabを一意に取得できません')
     source_guid = mesh.get('_vapb_fbx_source_asset_guid', '')
     source_sha = mesh.get('_vapb_fbx_source_asset_sha256', '')
     metadata = {
-        'prefab_guid': mesh.get('unity_composition_member_id', ''),
-        'prefab_source_sha256': (hashlib.sha256(prefabs[0].asset_bytes).hexdigest() if direct
-                                 else edges[0].get('container_revision_sha256', '')),
         'source_model_guid': source_guid, 'source_model_sha256': source_sha,
         'source_model_uid': mesh.get('_vapb_fbx_model_uid', ''),
         'source_geometry_uid': mesh.get('_vapb_fbx_geometry_uid', ''),
@@ -371,6 +376,10 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False):
                             'instance_file_id': str(e.get('prefab_instance_file_id', '')),
                             'source_guid': e.get('source_prefab_guid', '')} for e in edges],
     }
+    if not source_model:
+        metadata.update(prefab_guid=mesh.get('unity_composition_member_id', ''),
+                        prefab_source_sha256=(hashlib.sha256(prefabs[0].asset_bytes).hexdigest()
+                                              if direct else edges[0].get('container_revision_sha256', '')))
     bones = []
     for bone in rig.data.bones:
         pose = rig.pose.bones.get(bone.name)  # Same native bone, not a Unity identity lookup.
@@ -382,7 +391,7 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False):
             raise ValueError('元モデルと異なるBoneはこの復元経路では未対応です')
         bones.append({'edited_bone_realization_id': str(bone[keys[3]]),
                       'source_model_uid': str(bone[keys[2]])})
-    task = (direct_skin_task if direct else model_skin_task)(metadata, bones, assets)
+    task = (source_model_skin_task if source_model else direct_skin_task if direct else model_skin_task)(metadata, bones, assets)
     task['material_bindings'] = model_skin_material_bindings(_materials(mesh, package_id, assets))
     original = next(a for a in assets if a.guid == task['source_model_guid'])
     guid = hashlib.sha256(('VAPB_MODEL_SKIN_V1:' + package_id + ':' + realization).encode()).hexdigest()[:32]
@@ -445,7 +454,8 @@ def export_model_skin_packages(context, meshes, output, *, direct_flags=None):
         raise ValueError('出力先が既にあります。新しいファイル名を指定してください')
     scope_keys = ('unity_source_package_id', '_vapb_root_context_id', 'unity_composition_member_id')
     scopes = {tuple(mesh.get(key, '') for key in scope_keys) for mesh in meshes}
-    if len(scopes) != 1 or any(not value for value in next(iter(scopes))):
+    source_model = len(meshes) == 1 and all(not meshes[0].get(key) for key in scope_keys[1:])
+    if len(scopes) != 1 or (not source_model and any(not value for value in next(iter(scopes)))):
         raise ValueError('選択したSkinは同じPackage・Prefab個体に属する必要があります')
     realizations = [mesh.get('_vapb_fbx_realization_id', '') for mesh in meshes]
     if not all(realizations) or len(set(realizations)) != len(realizations):
@@ -463,7 +473,7 @@ def export_model_skin_packages(context, meshes, output, *, direct_flags=None):
         direct_flags = [not bool(mesh.get('_vapb_model_instance_edge_path')) for mesh in meshes]
     if len(direct_flags) != len(meshes):
         raise ValueError('Skinの出力対象と参照方式が一致しません')
-    prepared = [_prepare_model_skin(context, mesh, assets, direct=direct)
+    prepared = [_prepare_model_skin(context, mesh, assets, direct=direct, source_model=source_model)
                 for mesh, direct in zip(meshes, direct_flags)]
     tasks = group_model_skin_tasks([task for task, _ in prepared])
     tree, manifest = materialize_model_package([source], [], generator_version='0.4.0',

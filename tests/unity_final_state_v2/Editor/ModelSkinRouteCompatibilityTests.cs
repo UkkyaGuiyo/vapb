@@ -210,6 +210,66 @@ public sealed class ModelSkinRouteCompatibilityTests
         return BitConverter.ToSingle(BitConverter.GetBytes(bits), 0);
     }
 
+    [Test]
+    public void SourceModelTaskRejectsPrefabEvidenceAndMixedBatch()
+    {
+        Type finalizer = FindFinalizer();
+        Type taskType = finalizer.GetNestedType("Task", BindingFlags.NonPublic);
+        object task = Activator.CreateInstance(taskType, true);
+        Action<string, object> set = (key, value) => taskType.GetField(key).SetValue(task, value);
+        set("kind", "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1");
+        set("source_model_guid", new string('a', 32)); set("source_model_sha256", new string('1', 64));
+        set("source_model_uid", "101"); set("source_geometry_uid", "202"); set("realization_id", "single-skin");
+        set("model_guid", new string('b', 32)); set("model_sha256", new string('2', 64));
+        set("witness_noop_sha256", new string('3', 64)); set("witness_sha256", new string('4', 64));
+        set("witness_noop_path", "Assets/VAPBExport/noop.bytes"); set("witness_path", "Assets/VAPBExport/witness.bytes");
+        set("source_model_uids", new[] { "101", "303" });
+        set("instance_edges", Array.CreateInstance(finalizer.GetNestedType("InstanceEdge", BindingFlags.NonPublic), 0));
+        Type boneType = finalizer.GetNestedType("BoneMapping", BindingFlags.NonPublic);
+        object bone = Activator.CreateInstance(boneType, true);
+        boneType.GetField("source_model_uid").SetValue(bone, "303");
+        boneType.GetField("edited_bone_realization_id").SetValue(bone, "edited-bone");
+        Array bones = Array.CreateInstance(boneType, 1); bones.SetValue(bone, 0); set("bone_mappings", bones);
+        string identity = "SOURCE_MODEL_SKIN_V1:" + new string('a', 32) + ":" + new string('1', 64) + ":single-skin";
+        string hash;
+        using (var sha = System.Security.Cryptography.SHA256.Create())
+            hash = BitConverter.ToString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(identity))).Replace("-", "").ToLowerInvariant();
+        set("variant_path", "Assets/VAPBExport/EditedVariant_" + hash + ".prefab");
+        Invoke(finalizer, "ValidateTask", task);
+        Assert.AreEqual(new string('a', 32), Invoke(finalizer, "SourceRootGuid", task));
+        set("prefab_guid", new string('c', 32));
+        var error = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", task));
+        Assert.AreEqual("SOURCE_MODEL_CONTEXT_INVALID", error.InnerException.Message);
+        set("prefab_guid", null);
+        Array tasks = Array.CreateInstance(taskType, 2); tasks.SetValue(task, 0); tasks.SetValue(task, 1);
+        error = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateBatch", (object)tasks));
+        Assert.AreEqual("SOURCE_MODEL_SINGLE_TASK_REQUIRED", error.InnerException.Message);
+        set("variant_path", "Assets/VAPBExport/EditedVariant_wrong.prefab");
+        error = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", task));
+        Assert.AreEqual("SOURCE_MODEL_PATH_INVALID", error.InnerException.Message);
+    }
+
+    [Test]
+    public void SourceModelInfluencesRejectChangedWeightsAndBoneSlots()
+    {
+        Type finalizer = FindFinalizer();
+        Mesh source = TriangleWithShape(); Mesh edited = UnityEngine.Object.Instantiate(source);
+        try
+        {
+            var weights = new BoneWeight[3];
+            for (int i = 0; i < weights.Length; i++)
+                weights[i] = new BoneWeight { boneIndex0 = 0, boneIndex1 = 1, weight0 = 0.75f, weight1 = 0.25f };
+            source.boneWeights = weights; edited.boneWeights = weights;
+            Assert.IsTrue((bool)Invoke(finalizer, "SameSkinInfluences", source, edited));
+            weights[0].weight0 = 0.5f; weights[0].weight1 = 0.5f; edited.boneWeights = weights;
+            Assert.IsFalse((bool)Invoke(finalizer, "SameSkinInfluences", source, edited));
+            weights[0].weight0 = 0.75f; weights[0].weight1 = 0.25f;
+            weights[0].boneIndex0 = 1; weights[0].boneIndex1 = 0; edited.boneWeights = weights;
+            Assert.IsFalse((bool)Invoke(finalizer, "SameSkinInfluences", source, edited));
+        }
+        finally { UnityEngine.Object.DestroyImmediate(source); UnityEngine.Object.DestroyImmediate(edited); }
+    }
+
     private static Type FindFinalizer()
     {
         foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
