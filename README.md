@@ -23,6 +23,8 @@ VAPBは、たとえば次のような用途を対象にしています。
 
 ## What VAPB does
 
+For the generated static final-state return route: import the exported `.unitypackage` into Unity, wait until the imported Editor scripts finish compiling, select `Assets/VAPBExport/manifest.json`, then run **Tools > VAPB > Build Final State Prefab**. This explicit action applies the generated model unit policy and Material bindings; automatic application during package import is not required. Use **Apply Selected Export Manifest** only for the separate source-bound export route described below. The bounded three-Material T4 result and its remaining limits are recorded in [the return evidence](tests/evidence/remapped_replacement_return_preparation_20261008/README.md).
+
 For the normal `.unitypackage`-to-Blender editing workflow, users do not need to import the input package into a Unity project or manually export an FBX first. Any temporary extraction and FBX interchange is handled internally by the add-on. A Unity Editor/project is a development verification oracle, not a prerequisite for starting the Blender import; importing the finished output package into Unity is a separate return step.
 
 VAPB is an experimental **Blender add-on for importing VRChat / VRC avatar UnityPackage files into Blender**, editing supported avatar geometry and assets in Blender, and returning supported results to Unity. It is designed for workflows such as **UnityPackage to Blender**, **VRChat avatar editing in Blender**, and **Blender-centered avatar customization** without manually rebuilding every Unity-side assignment after each edit.

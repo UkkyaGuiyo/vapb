@@ -1,5 +1,7 @@
 # VAPB development handoff
 
+Latest bounded T4 replacement return: [normal return procedure and evidence](tests/evidence/remapped_replacement_return_preparation_20261008/README.md). Import the output, finish compiling its Editor support, select `Assets/VAPBExport/manifest.json`, then use **Tools > VAPB > Build Final State Prefab**. The Finalizer unit policy passed for this replacement Cube; original and sparse-meta outputs remain FAIL. Native no-Prefab Skin, old override ambiguity and winding remain open. This checkpoint supersedes only the historical status of this T4 return.
+
 This is a continuation handoff, not a product-completion statement. **STOPPED / INCOMPLETE** applies only to the earlier private-corpus compatibility campaign; it does not suspend public synthetic development. For the normal `.unitypackage`-to-Blender workflow, Unity project import and manual FBX export are not user prerequisites. The add-on handles temporary extraction/FBX interchange internally; Unity Editor/projects serve as development verification oracles, while importing the finished output package into Unity is a separate return step.
 
 ## Planning task record — 2026-10-06
