@@ -1,0 +1,16 @@
+{
+  "operator": "export_scene.vapb_unitypackage",
+  "modifier_types": [
+    "ARMATURE"
+  ],
+  "has_uv": true,
+  "root_context_present": false,
+  "edit_scale": 1.25,
+  "operator_result": [
+    "CANCELLED"
+  ],
+  "exception_type": "RuntimeError",
+  "output_created": false,
+  "status": "WIP_NO_PREFAB_CONTEXT_SKIN_EXPORT",
+  "refusal": "Selected Skin requires the same Package/Prefab instance context"
+}

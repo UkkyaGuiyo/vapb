@@ -1,0 +1,35 @@
+{
+  "status": "WIP_UNITY_RETURN_NOT_RUN",
+  "source_checkout_commit": "7d053eb6bb9af1c227436bfc6ccf8ad0757c71fb",
+  "input_sha256": "3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b",
+  "output_sha256": "b77668f09737eb029bd989f44809b44040fcb0d7c1a538a205941be75a81ea16",
+  "first_attempt": {
+    "route": "incorrect static classification of imported Skin",
+    "blender_exit_code": 1,
+    "stopped_before_edit_or_export": true,
+    "retained_locally": true
+  },
+  "second_attempt": {
+    "route": "record native Skin refusal, then approved T4 replacement Cube",
+    "blender_exit_code": 0,
+    "native_skin_output_created": false,
+    "replacement_output_created": true
+  },
+  "observation_script_sha256": "cdfe4fdd4aeae7f7c2b3c66371a5d97a17cdc671f2be18e1185ebb6b56ca3e85",
+  "postflight": {
+    "owned_blender_absent": true,
+    "owned_child_count": 0,
+    "unity_started_this_step": false
+  },
+  "original_archive_normal_input_source_settings_dirty6_unchanged": true,
+  "product_source_changed": false,
+  "next_unity_finalizer": "VapbFinalStateFinalizer.Apply(Assets/VAPBExport/manifest.json)",
+  "next_unity_task_kind": "BUILD_EXPORTED_STATIC_V2",
+  "next_minimum": "Fresh owned Unity: exact output, explicit recipe Apply, authored Cube dimensions and full Material-face membership by exact GUID/fileID; no ordinal-only validation",
+  "unity_return": "NOT_RUN",
+  "native_skin_route": "WIP unsupported without Prefab instance context",
+  "full_product_acceptance": "UNPROVEN",
+  "requested_model": "GPT-6.1 Sol",
+  "requested_effort": "Medium",
+  "actual_model_effort": "UNOBSERVABLE"
+}
