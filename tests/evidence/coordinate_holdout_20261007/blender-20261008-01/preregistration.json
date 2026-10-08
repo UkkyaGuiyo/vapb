@@ -1,0 +1,17 @@
+{
+  "authored_oracle_sha256": "7cc4a751d227e8a1dda6a89d20d866f7222b74234fc52fb4fc26dab14c6f8fde",
+  "contract_sha256": "b534a4f2067372c145f7ef72faff016ee134322888eb63cbd215521da704fb01",
+  "created_utc": "2026-10-08T00:48:53+00:00",
+  "schema": "vapb-coordinate-holdout-preregistration-v1",
+  "source_sha256": {
+    "capture_blender.py": "53ad3623f1cba8d028569a99aeffa72bfb3c1d7ba3063f60862b55910b5e81c2",
+    "contract.py": "984902d776da2415161d47bebd4611a81c1dc13b1739ed490418da6d949138eb",
+    "generate_fixtures.py": "0af046497940f73d64cf5d6b5014d60f5286d6548216da14a135cdd4ca9b7e79",
+    "oracle.py": "a9fcfe06b02b2b0f4dcbab45b171ed0bdc29bb1249f48614a38d30dcf619395d",
+    "prepare_contract.py": "4f0f2a597679152b39f58844e72b08daaf20ab92384be4f645d7b3940550f275",
+    "test_oracle.py": "b0a741a698e1d6c1760095f7fcaa3364501dd60d970eebe8b64c2959f465c984",
+    "test_preregistration.py": "9c04d02e7cb39995b36411893d477b33002f9a52a454f2c5139da7ba79eeb95c"
+  },
+  "status": "FROZEN_BEFORE_EXPORT_AND_IMPORT",
+  "tolerance": 0.0001
+}

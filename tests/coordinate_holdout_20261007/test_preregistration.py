@@ -20,6 +20,11 @@ class PreregistrationTests(unittest.TestCase):
                   "authored_oracle_sha256": hashlib.sha256(oracle).hexdigest()}
         return prereg, source, contract, oracle
 
+    def test_persisted_contract_matches_consumer_expectation(self):
+        frozen = json.loads(canonical_bytes(public_contract()))
+        self.assertEqual(frozen, public_contract())
+        frozen["cases"][0]["scale"][0] = 2.0
+        self.assertNotEqual(frozen, public_contract())
     def test_frozen_payload_accepts_exact_pinned_bytes(self):
         prereg, source, contract, oracle = self.payload()
         self.assertTrue(verify_frozen_payload(prereg, source, contract, oracle))

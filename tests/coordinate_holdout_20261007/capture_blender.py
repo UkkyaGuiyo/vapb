@@ -128,7 +128,7 @@ def main():
     if actual_manifest_sha != expected_manifest_sha:
         raise RuntimeError("MANIFEST_EXTERNAL_HASH_MISMATCH")
     prereg, prereg_hash = validate_prereg(prereg_dir)
-    if bpy.app.version_string != ENGINE_VERSIONS["blender"]:
+    if bpy.app.version != tuple(int(part) for part in ENGINE_VERSIONS["blender"].split(".")):
         raise RuntimeError("BLENDER_VERSION_MISMATCH:" + bpy.app.version_string)
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if manifest.get("schema") != "vapb-coordinate-holdout-manifest-v1":
@@ -192,7 +192,7 @@ def main():
               "status": "PASS" if max(h1_delta, h2_delta) <= TOLERANCE else "FAIL"}
     blender_authored_status = "PASS" if all(row["status"] == "PASS" for row in authored_rows) else "FAIL"
     result = {"schema": "vapb-coordinate-holdout-blender-capture-v1",
-              "blender_version": bpy.app.version_string,
+              "blender_version": ".".join(map(str, bpy.app.version)), "blender_version_string": bpy.app.version_string,
               "blender_import_controls": BLENDER_IMPORT_CONTROLS,
               "manifest_sha256": sha256(manifest_path), "preregistration_sha256": prereg_hash,
               "candidate_status": "NOT_RUN_UNITY_CAPTURE_REQUIRED",

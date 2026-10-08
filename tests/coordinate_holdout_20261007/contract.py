@@ -87,7 +87,7 @@ def validate_contract():
 
 def public_contract():
     return {"schema": "vapb-coordinate-holdout-contract-v1", "geometry": deepcopy(GEOMETRY),
-            "cases": deepcopy(CASES), "export_controls": deepcopy(EXPORT_CONTROLS),
+            "cases": deepcopy(list(CASES)), "export_controls": deepcopy(EXPORT_CONTROLS),
             "blender_import_controls": deepcopy(BLENDER_IMPORT_CONTROLS),
             "unity_import_settings": deepcopy(UNITY_IMPORT_SETTINGS),
             "engine_versions": deepcopy(ENGINE_VERSIONS),

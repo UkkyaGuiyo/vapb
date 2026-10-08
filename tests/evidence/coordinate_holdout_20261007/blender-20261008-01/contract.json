@@ -1,0 +1,446 @@
+{
+  "blender_import_controls": {
+    "automatic_bone_orientation": false,
+    "axis_forward": "-Z",
+    "axis_up": "Y",
+    "global_scale": 1.0,
+    "use_anim": false,
+    "use_custom_props": true,
+    "use_image_search": false
+  },
+  "candidate": {
+    "Cworld": [
+      [
+        -1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "D": "diag(-s, s, s, 1)",
+    "authored_unit_ratio": "unit_scale_length / H0.unit_scale_length",
+    "diagnostic_only_residuals": [
+      "world_matrix_chain_point"
+    ],
+    "expected_raw_unit_scale_factor": {
+      "H0": 100.0,
+      "H1": 100.0,
+      "H2": 10.0,
+      "H3": 10.0
+    },
+    "holdout_policy": "no fitting, no rebase, each frozen case evaluated independently; candidate is not validated until Unity capture passes",
+    "matrix_convention": "column vectors; W_U * D = Cworld * W_B; XYZ Euler uses T * Rz * Ry * Rx * S",
+    "metadata_relative_tolerance": 0.0001,
+    "required_observation_checks": [
+      "one_mesh_one_root",
+      "exact_case_set",
+      "exact_18_authored_U_tags",
+      "blender_authored_hypothesis",
+      "within_tool_H1_over_H0",
+      "within_tool_H2_over_0.1_H0"
+    ],
+    "required_residuals": [
+      "local",
+      "world_matrix",
+      "world_point"
+    ],
+    "tolerance_max_abs_per_component": 0.0001
+  },
+  "cases": [
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "id": "H0",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "-Y",
+      "axis_up": "X",
+      "id": "H1",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "id": "H2",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "unit_scale_length": 0.1,
+      "unit_system": "METRIC"
+    },
+    {
+      "axis_forward": "-Y",
+      "axis_up": "X",
+      "id": "H3",
+      "location": [
+        1.375,
+        -2.125,
+        0.625
+      ],
+      "rotation_degrees": [
+        31.0,
+        -19.0,
+        47.0
+      ],
+      "scale": [
+        -1.25,
+        0.6,
+        1.8
+      ],
+      "unit_scale_length": 0.1,
+      "unit_system": "METRIC"
+    }
+  ],
+  "engine_versions": {
+    "blender": "5.2.1",
+    "unity": "2022.3.22f1"
+  },
+  "expected_fbx_axis_tuple": {
+    "X/-Y": [
+      0,
+      1,
+      1,
+      1,
+      2,
+      1
+    ],
+    "Y/-Z": [
+      1,
+      1,
+      2,
+      1,
+      0,
+      1
+    ]
+  },
+  "export_controls": {
+    "add_leaf_bones": false,
+    "apply_scale_options": "FBX_SCALE_UNITS",
+    "apply_unit_scale": true,
+    "axis_forward": "-Z",
+    "axis_up": "Y",
+    "bake_anim": false,
+    "bake_space_transform": false,
+    "global_scale": 1.0,
+    "object_types": [
+      "MESH"
+    ],
+    "path_mode": "AUTO",
+    "use_custom_props": true,
+    "use_mesh_modifiers": false
+  },
+  "geometry": {
+    "faces": [
+      {
+        "face_id": "face-00",
+        "material_id": "holdout-material-A",
+        "uvs": [
+          [
+            100.0,
+            0.125
+          ],
+          [
+            101.0,
+            0.25
+          ],
+          [
+            102.0,
+            0.375
+          ]
+        ],
+        "vertices": [
+          0,
+          1,
+          2
+        ]
+      },
+      {
+        "face_id": "face-01",
+        "material_id": "holdout-material-A",
+        "uvs": [
+          [
+            108.0,
+            0.125
+          ],
+          [
+            109.0,
+            0.25
+          ],
+          [
+            110.0,
+            0.375
+          ]
+        ],
+        "vertices": [
+          3,
+          4,
+          5
+        ]
+      },
+      {
+        "face_id": "face-02",
+        "material_id": "holdout-material-B",
+        "uvs": [
+          [
+            116.0,
+            0.125
+          ],
+          [
+            117.0,
+            0.25
+          ],
+          [
+            118.0,
+            0.375
+          ]
+        ],
+        "vertices": [
+          6,
+          7,
+          8
+        ]
+      },
+      {
+        "face_id": "face-03",
+        "material_id": "holdout-material-B",
+        "uvs": [
+          [
+            124.0,
+            0.125
+          ],
+          [
+            125.0,
+            0.25
+          ],
+          [
+            126.0,
+            0.375
+          ]
+        ],
+        "vertices": [
+          9,
+          10,
+          11
+        ]
+      },
+      {
+        "face_id": "face-04",
+        "material_id": "holdout-material-C",
+        "uvs": [
+          [
+            132.0,
+            0.125
+          ],
+          [
+            133.0,
+            0.25
+          ],
+          [
+            134.0,
+            0.375
+          ]
+        ],
+        "vertices": [
+          12,
+          13,
+          14
+        ]
+      },
+      {
+        "face_id": "face-05",
+        "material_id": "holdout-material-C",
+        "uvs": [
+          [
+            140.0,
+            0.125
+          ],
+          [
+            141.0,
+            0.25
+          ],
+          [
+            142.0,
+            0.375
+          ]
+        ],
+        "vertices": [
+          15,
+          16,
+          17
+        ]
+      }
+    ],
+    "geometry_id": "vapb-coordinate-holdout-20261007-v1",
+    "materials": [
+      "holdout-material-A",
+      "holdout-material-B",
+      "holdout-material-C"
+    ],
+    "vertices": [
+      [
+        0.17,
+        -0.29,
+        0.43
+      ],
+      [
+        1.93,
+        -0.11,
+        0.67
+      ],
+      [
+        0.38,
+        1.27,
+        0.91
+      ],
+      [
+        -0.61,
+        0.32,
+        1.43
+      ],
+      [
+        0.84,
+        0.73,
+        1.91
+      ],
+      [
+        -0.27,
+        1.88,
+        1.16
+      ],
+      [
+        -1.21,
+        -0.42,
+        0.24
+      ],
+      [
+        -0.33,
+        -1.73,
+        0.59
+      ],
+      [
+        -1.67,
+        -0.86,
+        1.38
+      ],
+      [
+        0.49,
+        -1.14,
+        1.72
+      ],
+      [
+        1.56,
+        -0.37,
+        2.13
+      ],
+      [
+        0.11,
+        -0.68,
+        2.64
+      ],
+      [
+        -0.92,
+        1.31,
+        -0.57
+      ],
+      [
+        0.23,
+        2.07,
+        -0.19
+      ],
+      [
+        -1.38,
+        0.76,
+        0.36
+      ],
+      [
+        1.12,
+        0.54,
+        -1.29
+      ],
+      [
+        2.31,
+        0.91,
+        -0.63
+      ],
+      [
+        0.77,
+        1.69,
+        -0.84
+      ]
+    ]
+  },
+  "schema": "vapb-coordinate-holdout-contract-v1",
+  "unity_import_settings": {
+    "bakeAxisConversion": false,
+    "globalScale": 1.0,
+    "importNormals": "Import",
+    "importTangents": "CalculateMikk",
+    "meshCompression": "Off",
+    "preserveHierarchy": false,
+    "useFileScale": true,
+    "useFileUnits": true
+  }
+}

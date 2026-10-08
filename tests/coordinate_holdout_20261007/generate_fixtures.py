@@ -80,7 +80,7 @@ def main():
     errors = validate_contract()
     if errors:
         raise RuntimeError("INVALID_HOLDOUT_CONTRACT:" + ",".join(errors))
-    if bpy.app.version_string != "5.2.1":
+    if bpy.app.version != (5, 2, 1):
         raise RuntimeError("BLENDER_VERSION_MISMATCH:" + bpy.app.version_string)
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     if len(args) != 2:
@@ -137,7 +137,7 @@ def main():
         actual = float(row["raw_unit_scale_factor"])
         if not math.isfinite(actual) or abs(actual - expected) > abs(expected) * METADATA_TOLERANCE:
             raise RuntimeError("RAW_UNIT_METADATA_MISMATCH:%s:%r:%r" % (row["id"], actual, expected))
-    manifest = {"schema": "vapb-coordinate-holdout-manifest-v1", "blender_version": bpy.app.version_string,
+    manifest = {"schema": "vapb-coordinate-holdout-manifest-v1", "blender_version": ".".join(map(str, bpy.app.version)), "blender_version_string": bpy.app.version_string,
                 "preregistration_sha256": prereg_hash,
                 "contract_sha256": prereg["contract_sha256"],
                 "authored_oracle_sha256": prereg["authored_oracle_sha256"],
