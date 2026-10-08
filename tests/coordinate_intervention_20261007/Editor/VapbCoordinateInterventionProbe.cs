@@ -167,10 +167,17 @@ public static class VapbCoordinateInterventionProbe
         context.result_path = Argument("-vapbCoordinateResult");
         string resultPath = context.result_path;
         string manifestPath = Argument("-vapbCoordinateManifest");
-        string manifestBytes = File.ReadAllText(manifestPath, Encoding.UTF8);
-        Manifest manifest = JsonUtility.FromJson<Manifest>(manifestBytes);
-        if (manifest == null || manifest.cases == null || manifest.cases.Length != 7 || manifest.spec == null)
+        byte[] manifestBytes = File.ReadAllBytes(manifestPath);
+        string manifestHash = Sha256(manifestBytes);
+        Manifest manifest = JsonUtility.FromJson<Manifest>(Encoding.UTF8.GetString(manifestBytes));
+        bool holdout = HasArgument("-vapbCoordinateHoldout");
+        int expectedCount = holdout ? 4 : 7;
+        if (manifest == null || manifest.cases == null || manifest.cases.Length != expectedCount || manifest.spec == null)
             throw new InvalidOperationException("MANIFEST_SHAPE_INVALID");
+        if (holdout && (manifest.schema != "vapb-coordinate-holdout-unity-input-v1"
+            || !manifest.cases.Select(c => c.id).SequenceEqual(new[] { "H0", "H1", "H2", "H3" })
+            || manifestHash != Argument("-vapbCoordinateManifestSha256")))
+            throw new InvalidOperationException("HOLDOUT_MANIFEST_BINDING_INVALID");
         if (!AllModelsImported(manifest))
         {
             if (++importWaitTicks <= 120)
@@ -186,7 +193,7 @@ public static class VapbCoordinateInterventionProbe
         var result = new Result
         {
             unity_version = Application.unityVersion,
-            manifest_sha256 = Sha256(manifestPath),
+            manifest_sha256 = manifestHash,
             errors = Array.Empty<string>(),
         };
         var captured = new List<CapturedCase>();
@@ -195,9 +202,15 @@ public static class VapbCoordinateInterventionProbe
             captured.Add(CaptureCase(fixtureCase, manifest.spec.geometry, errors));
         if (!SameImporterSettings(captured))
             errors.Add("MODEL_IMPORTER_SETTINGS_DIFFER_BETWEEN_CASES");
+        if (holdout && captured.Any(c => c.hierarchy.Length != 1
+            || c.importer.bake_axis_conversion || !c.importer.use_file_scale || !c.importer.use_file_units
+            || c.importer.global_scale != 1f || c.importer.import_normals != "Import"
+            || c.importer.import_tangents != "CalculateMikk" || c.importer.preserve_hierarchy
+            || c.importer.mesh_compression != "Off"))
+            errors.Add("HOLDOUT_ROOT_OR_FROZEN_IMPORTER_SETTINGS_MISMATCH");
         result.cases = captured.ToArray();
         result.errors = errors.ToArray();
-        bool allMapped = captured.Count == 7 && captured.All(c => c.face_membership_matches_source_identity
+        bool allMapped = captured.Count == expectedCount && captured.All(c => c.face_membership_matches_source_identity
             && c.unmatched_face_count == 0);
         result.status = allMapped && errors.Count == 0
             ? "UNITY_FACE_IDENTITY_CAPTURED"
@@ -435,6 +448,11 @@ public static class VapbCoordinateInterventionProbe
             .ToString(CultureInfo.InvariantCulture)).OrderBy(value => value, StringComparer.Ordinal));
     }
 
+    private static string Sha256(byte[] bytes)
+    {
+        using (var sha = SHA256.Create())
+            return BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", "").ToLowerInvariant();
+    }
     private static string Sha256(string path)
     {
         using (var stream = File.OpenRead(path))

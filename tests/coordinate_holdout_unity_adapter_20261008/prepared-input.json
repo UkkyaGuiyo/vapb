@@ -1,0 +1,294 @@
+{
+  "adapter_sources_sha256": {
+    "ProbeCaptureExitGuard.cs": "9e0c3926d5f4d22af38448bad08173bc7a035b5cd23d07b7afa42e3e0496dc52",
+    "VapbCoordinateInterventionProbe.cs": "0f7fcaf7dafd5e1c3486ddb81830db98e8d19509a7f7f0584401b6b8c7123198",
+    "prepare_unity_manifest.py": "da72b93a3345c3a23b1a3bd193b94f71a5e8292664fc32ad5db0713185e11aba"
+  },
+  "blender_version": "5.2.1",
+  "cases": [
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "factor": "independent-holdout",
+      "filename": "H0.fbx",
+      "id": "H0",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "026d6f693646a986e8d4d7bd51445dcee1b9e8c348c616a58df97701e15c98f3",
+      "source_material_fbx_uids": [
+        796483452,
+        926812674,
+        898478742
+      ],
+      "source_material_ids": [
+        "holdout-material-A",
+        "holdout-material-B",
+        "holdout-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_HO_MATERIAL_A",
+        "VAPB_HO_MATERIAL_B",
+        "VAPB_HO_MATERIAL_C"
+      ],
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "-Y",
+      "axis_up": "X",
+      "factor": "independent-holdout",
+      "filename": "H1.fbx",
+      "id": "H1",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "38383e01fc14278fc05f2552ae2b694086c050dd604cac4317fb97b41f62009b",
+      "source_material_fbx_uids": [
+        796483452,
+        926812674,
+        898478742
+      ],
+      "source_material_ids": [
+        "holdout-material-A",
+        "holdout-material-B",
+        "holdout-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_HO_MATERIAL_A",
+        "VAPB_HO_MATERIAL_B",
+        "VAPB_HO_MATERIAL_C"
+      ],
+      "unit_scale_length": 1.0,
+      "unit_system": "NONE"
+    },
+    {
+      "axis_forward": "-Z",
+      "axis_up": "Y",
+      "factor": "independent-holdout",
+      "filename": "H2.fbx",
+      "id": "H2",
+      "location": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "rotation_degrees": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "scale": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "sha256": "70b37c029ef9de4189222b6006b24b0de0e51b349a1053ace1a0fdd29ff50b1f",
+      "source_material_fbx_uids": [
+        796483452,
+        926812674,
+        898478742
+      ],
+      "source_material_ids": [
+        "holdout-material-A",
+        "holdout-material-B",
+        "holdout-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_HO_MATERIAL_A",
+        "VAPB_HO_MATERIAL_B",
+        "VAPB_HO_MATERIAL_C"
+      ],
+      "unit_scale_length": 0.1,
+      "unit_system": "METRIC"
+    },
+    {
+      "axis_forward": "-Y",
+      "axis_up": "X",
+      "factor": "independent-holdout",
+      "filename": "H3.fbx",
+      "id": "H3",
+      "location": [
+        1.375,
+        -2.125,
+        0.625
+      ],
+      "rotation_degrees": [
+        31.0,
+        -19.0,
+        47.0
+      ],
+      "scale": [
+        -1.25,
+        0.6,
+        1.8
+      ],
+      "sha256": "9727fe13d09b6920757d4b84f83d46b36a18353fbde36a88a4481524acf426da",
+      "source_material_fbx_uids": [
+        796483452,
+        926812674,
+        898478742
+      ],
+      "source_material_ids": [
+        "holdout-material-A",
+        "holdout-material-B",
+        "holdout-material-C"
+      ],
+      "source_material_names": [
+        "VAPB_HO_MATERIAL_A",
+        "VAPB_HO_MATERIAL_B",
+        "VAPB_HO_MATERIAL_C"
+      ],
+      "unit_scale_length": 0.1,
+      "unit_system": "METRIC"
+    }
+  ],
+  "preregistration_sha256": "a75edd729c68799091b5bbb904480fa7be3830f6a8071e9cf3edfaf7e4b17036",
+  "schema": "vapb-coordinate-holdout-unity-input-v1",
+  "source_manifest_sha256": "b203347a088ea4925231111e707704505473911b9b7ae18262b82cc6d8dd0401",
+  "spec": {
+    "geometry": {
+      "faces": [
+        {
+          "face_id": "face-00",
+          "material": "holdout-material-A",
+          "uvs": [
+            {
+              "x": 100.0,
+              "y": 0.125
+            },
+            {
+              "x": 101.0,
+              "y": 0.25
+            },
+            {
+              "x": 102.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-01",
+          "material": "holdout-material-A",
+          "uvs": [
+            {
+              "x": 108.0,
+              "y": 0.125
+            },
+            {
+              "x": 109.0,
+              "y": 0.25
+            },
+            {
+              "x": 110.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-02",
+          "material": "holdout-material-B",
+          "uvs": [
+            {
+              "x": 116.0,
+              "y": 0.125
+            },
+            {
+              "x": 117.0,
+              "y": 0.25
+            },
+            {
+              "x": 118.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-03",
+          "material": "holdout-material-B",
+          "uvs": [
+            {
+              "x": 124.0,
+              "y": 0.125
+            },
+            {
+              "x": 125.0,
+              "y": 0.25
+            },
+            {
+              "x": 126.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-04",
+          "material": "holdout-material-C",
+          "uvs": [
+            {
+              "x": 132.0,
+              "y": 0.125
+            },
+            {
+              "x": 133.0,
+              "y": 0.25
+            },
+            {
+              "x": 134.0,
+              "y": 0.375
+            }
+          ]
+        },
+        {
+          "face_id": "face-05",
+          "material": "holdout-material-C",
+          "uvs": [
+            {
+              "x": 140.0,
+              "y": 0.125
+            },
+            {
+              "x": 141.0,
+              "y": 0.25
+            },
+            {
+              "x": 142.0,
+              "y": 0.375
+            }
+          ]
+        }
+      ],
+      "geometry_id": "vapb-coordinate-holdout-20261007-v1",
+      "materials": [
+        "holdout-material-A",
+        "holdout-material-B",
+        "holdout-material-C"
+      ]
+    },
+    "schema": "vapb-coordinate-holdout-probe-spec-v1"
+  }
+}
