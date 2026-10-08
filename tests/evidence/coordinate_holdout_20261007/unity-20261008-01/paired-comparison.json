@@ -1,0 +1,68 @@
+{
+  "blender_capture_sha256": "1c1941357bed53058d30e140b6ff79741844c035dfebafb17ea662292329b117",
+  "candidate_status": "PASS",
+  "cases": [
+    {
+      "candidate_maxima": {
+        "local": 0.0,
+        "world_matrix": 5.960464477539063e-08,
+        "world_matrix_chain_point": 1.8708001769951466e-07,
+        "world_point": 1.8708001769951466e-07
+      },
+      "candidate_status": "PASS",
+      "case_id": "H0",
+      "unity_authored_status": "PASS",
+      "unity_authored_world_max_abs": 3.4809113846900885e-07
+    },
+    {
+      "candidate_maxima": {
+        "local": 0.0,
+        "world_matrix": 3.178651297730539e-08,
+        "world_matrix_chain_point": 8.391639760851888e-08,
+        "world_point": 8.391639760851888e-08
+      },
+      "candidate_status": "PASS",
+      "case_id": "H1",
+      "unity_authored_status": "PASS",
+      "unity_authored_world_max_abs": 3.075599795954176e-07
+    },
+    {
+      "candidate_maxima": {
+        "local": 1.7881393449270533e-08,
+        "world_matrix": 7.450580596923828e-09,
+        "world_matrix_chain_point": 2.2641908237197583e-08,
+        "world_point": 3.4562837036844485e-08
+      },
+      "candidate_status": "PASS",
+      "case_id": "H2",
+      "unity_authored_status": "PASS",
+      "unity_authored_world_max_abs": 4.0113924515416954e-08
+    },
+    {
+      "candidate_maxima": {
+        "local": 1.7881393449270533e-08,
+        "world_matrix": 3.427267075695184e-08,
+        "world_matrix_chain_point": 8.064508805194492e-08,
+        "world_point": 6.66844579555459e-08
+      },
+      "candidate_status": "PASS",
+      "case_id": "H3",
+      "unity_authored_status": "PASS",
+      "unity_authored_world_max_abs": 1.1395663712665538e-07
+    }
+  ],
+  "comparison_source_sha256": "25d23c2130dd9b39b4ced92221b6cf18da299216c1859b77e8b3e7d0f99249cc",
+  "prepared_input_sha256": "0848806638b57e43f5ff1f245a9e42935ca0184e5df42f7e39f662b175f86af3",
+  "preregistration_sha256": "a75edd729c68799091b5bbb904480fa7be3830f6a8071e9cf3edfaf7e4b17036",
+  "schema": "vapb-coordinate-holdout-paired-result-v1",
+  "scope": "Four single-root synthetic holdouts only; not external-package Material GUID/fileID or full product round-trip acceptance.",
+  "source_manifest_sha256": "b203347a088ea4925231111e707704505473911b9b7ae18262b82cc6d8dd0401",
+  "tolerance": 0.0001,
+  "unity_authored_status": "PASS",
+  "unity_capture_sha256": "9512bfef157b125de501b6c717590d85c40bd3c05832344a85f1998176c81872",
+  "unity_within_tool": {
+    "H1_minus_H0_max_abs": 2.4473462190144346e-07,
+    "H2_minus_0.1_H0_max_abs": 1.7881393449270533e-08,
+    "status": "PASS"
+  }
+}
