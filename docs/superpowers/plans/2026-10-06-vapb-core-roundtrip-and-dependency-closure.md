@@ -1,96 +1,96 @@
 # VAPB Core Round-trip and Dependency Closure Implementation Plan
 
-> **For implementation agents:** This document records a proposed work sequence. It does not grant or revoke authorization. Proceed only within user authorization already in force and repository instructions; do not add a fresh per-step approval condition. The intended main implementer is GPT-6 LUNA low; request GPT-6.1 SOL medium for design/code review of new work, not to repeat completed reviews.
+## Planning revision — 2026-10-08
 
-**Goal:** Close the public CPD gap by proving Prefab Renderer Material and FBX `externalObjects` late binding through separate exact-identity routes, then progress through VAPB product acceptance gates in their documented dependency order.
+User-approved overengineering correction. The current priority is the earliest failed boundary of the required end-to-end workflow, not completion of all late-provider and recovery permutations before testing the core. This revises scheduling and work size only: product requirements, strict semantic contracts, established data formats and original evidence are unchanged.
 
-**Architecture:** Preserve product boundaries documented in [`2026-10-06-vapb-core-roundtrip-and-dependency-closure-design.md`](../specs/2026-10-06-vapb-core-roundtrip-and-dependency-closure-design.md). First freeze a versioned consumer/source-row/ownership contract. Then repair the Prefab test fixture, evolve the externalObjects parser without dropping raw identity, and implement capture-to-bind through the existing FBX receipt and slot-ownership system. Integrate, review, run focused plus regression evidence, then advance separate product release gates.
+**Goal:** Prove direct `.unitypackage` input into Blender and Unity return in both required cases: unchanged input, and Blender-authored replacement geometry receiving the intended Unity Material/state automatically. Then close the remaining required dependency/campaign/release gates.
 
-**Stack:** Python, Blender 5.2.1 LTS synthetic fixtures; Unity 2022.3.22f1 only where the changed source requires Finalizer verification. Do not add dependencies without explicit authorization. Keep all evidence public-synthetic and path/asset sanitized.
+**Architecture:** Reuse existing import/export operators, identity/receipt mechanisms, Finalizer and discriminating tests. Keep source identity, Blender final-state Export IDs and Unity post-import identity distinct. Fix one demonstrated broken semantic edge at a time; do not create another witness, parser, receipt or orchestration system simply to continue a historical checklist.
 
-## Work ownership and dependency graph
+**Stack:** Existing Python, Blender 5.2.1 LTS and approved Unity 2022.3.22f1 verification environment. No additional dependency, SDK update, runtime launch or permission change is authorized by this planning revision.
 
-| Work | Owner | Exclusive files | Depends on | Parallel? |
-|---|---|---|---|---|
-| Contract freeze | Design owner + SOL medium review | Design doc, schema/status/key proposal | Current user authorization and repository instructions | Serial; blocks coding until contract is frozen |
-| Prefab route fixture | LUNA low | `tests/blender_cross_package_dependency_test.py` | Contract; valid MeshFilter serialized reference | Can parallel with parser after contract freeze |
-| externalObjects parser | LUNA low | `unity/material_mapping.py`, parser unit-test file(s) | Contract; preserve old callers | Can parallel with Prefab fixture only |
-| Receipt capture/resolution | One LUNA low owner | `blender/material_builder.py`, `blender/dependency_resolver.py`, narrowly scoped receipt helper only if required | Parser merged/reviewed and fixture route established | Do not parallel-edit shared capture/resolver files |
-| Integration and regression | Integration owner | Test orchestration, checkpoints/evidence docs | Both routes merged | Serial |
-| Review | GPT-6.1 SOL medium | Read-only review, findings | Concrete diff and evidence | After each contract/code boundary; no rerun of completed reviews |
+**Authority:** [PRODUCT_SPEC](../../../PRODUCT_SPEC.md), [Core Product Model](../../VAPB_CORE_PRODUCT_MODEL_20260928.md), [approved design](../specs/2026-10-06-vapb-core-roundtrip-and-dependency-closure-design.md), [R2 discriminating plan](2026-10-06-r2-roundtrip-discriminating-verification.md), current `START_HERE.md`, `TEST_STRATEGY.md` and latest relevant evidence. The old contents of this file remain in Git at `f9327ba62e901dff9383f5b123ff5252f37c5f3f`.
 
-## Phase 0 - Re-entry and contract gate (completed 2026-10-06)
+Existing Phase 0–3 contract/parser/binding checkpoints are historical completed or partial work, not instructions to recreate them. Current user/AGENTS routing governs the primary engineer and review; this revision supersedes fixed LUNA staffing and automatic per-stage review in the linked older plans without removing required safety/semantic review.
 
-1. **Verify the authorized workspace**
-   - From clean `feature/r2-material-slot-reorder`, fetch without force and verify canonical origin `https://github.com/UkkyaGuiyo/vapb`, branch, HEAD, and tracked/untracked state.
-   - Read `START_HERE.md`, this plan, design, CPD checkpoint, Stage3 QA, relevant product authority, and Failure Atlas index plus relevant exact-receipt/ownership lessons.
-   - Preserve existing user probes and any pre-existing local-only evidence. Never reconcile by deleting or overwriting an unexplained file.
-   - If the verified branch or source differs, stop and update the plan/evidence before implementation.
-2. **Freeze data and status contracts**
-   - Specify exact field names/types for `consumer_receipt_version`, package/FBX identity, Model/Geometry UID, Object/Mesh receipt, realization ID, strict slot index, source row identity/raw+validated target identity, mapping validity/ambiguity, dependency status, and stable key.
-   - Decide same-slot Prefab-vs-FBX record precedence/ownership explicitly. No coding split until resolved.
-   - Define legacy records as unresolved absent receipt; define duplicate receipt/provider, stale mesh, malformed raw fileID, ambiguous source row, and ownership-changed behavior as fail-closed.
-   - Review contract with SOL medium. Record accepted schema and migration behavior in public docs before parallel implementation. **Completed:** SOL medium reviewed read-only; the accepted schema/overlap/migration decisions are recorded in the design above. Independent Phase 1A and 1B work may proceed in parallel.
+## 1. Product constraints retained
 
-## Phase 1 - Independent route REDs
+- Normal input is UnityPackage(s) directly into Blender. A Unity input project or manual FBX export is not a user prerequisite. Development-only Unity observations/witnesses may diagnose a seam but cannot become a mandatory product workflow.
+- Blender final geometry/topology, UV, bones/weights/Shape Keys, editable hierarchy/Transform, Material slots and face assignment are authoritative at export. The user may delete all imported Meshes and create a replacement. Source geometry lineage is required only for a specific source-index-dependent preservation claim, not all successful export.
+- Unity serialized Material/Texture/component state remains independently preserved recipe data. Material preview is approximate; matching names/counts/screenshots are not identity or face-assignment proof.
+- Source GUID/fileID/package/occurrence evidence remains essential for import, dependency recovery, Prefab/Variant and reusable asset identity. Exact provider/consumer and owned-slot rules are not weakened.
+- Required selected Material/Texture/Prefab assets must be self-contained in output. Only explicit approved framework dependencies remain external. Do not require reimporting original asset packages to make ordinary output work.
+- Preserve the existing strict Skin transport acceptance contract. Do not replace exact required identity/representation checks with epsilon/ULP tolerance or infer visual/deformation equivalence. Unsupported context remains unsupported.
+- Material human-readable path organization must preserve serialized bytes, `m_Name`, GUID and `.meta`. Preserve the specified ordering of this milestone before mandatory Hierarchy Parity, and Hierarchy Parity before broad Unity/VRC component restoration.
+- Semantic Cleanup, Weight Transfer, Semantic Bone Merge, practical Japanese UI and verified distribution remain mandatory campaign requirements, not removed because the first core milestone is smaller.
+- Use owned synthetic fixtures and authorized isolated processes. Preserve user scenes/probes, original archives, failed output and unrelated dirty/untracked files. No silent fixture repair, deletion, retuning, security bypass or automatic SDK install. Public records exclude private assets, secrets, identifiers and raw private logs.
 
-**2026-10-06 checkpoint:** P1-A fixture edit has GPT-6.1 SOL medium static approval; the cross-package Blender runner is blocked at source archive storage before its later assertions. `import_package()` and `run_grouped_synthetic()` omit `source_storage_directory`, so the operator falls back to Blender `DATAFILES/vapb/sources` and calls `archive_source()` even when `keep_extracted=False`. The observed write fails with `WinError 5 Access Denied`. The specific OS/sandbox cause is unknown. No profile/config redirection or access-denial workaround was attempted. P1-B structured parser has GPT-6.1 SOL medium approval after two fix rounds; `tests.test_materials` passes 21/21 and changed Python `py_compile` passes. P2 exact FBX consumer binding has GPT-6.1 SOL medium review; three findings were fixed and re-reviewed. The synthetic P2 Blender integration script passed in Blender 5.2.1 LTS, including late/provider-first/local binding, exact GUID+fileID, wrong ID/provider recovery, duplicate consumer, shared Mesh isolation, Prefab material/null claim ordering, no-slot, user edit, repeat, and save/reopen. No Unity/VRC semantic claim is made. This checkpoint is saved in commit `1e24b190410bde96e2a7862eca592e2a3c085b13` on the authorized feature branch.
+## 2. Active sequence: closest failed boundary first
 
-### 1A. Repair the Prefab Renderer fixture only
+### R0 — Choose the exact next discriminating question
 
-- Owner/file: LUNA low; `tests/blender_cross_package_dependency_test.py` only.
-- Construct a valid serialized MeshFilter reference and use the existing real projection/witness capture route. Do not use a Prefab wrapper's fileID or display name as native Mesh identity.
-- Assert exact `PREFAB_RENDERER_MATERIAL` dependency record, provider identity, consumer receipt, actual Blender material slot assignment, and slot ownership status.
-- Keep its RED/GREEN distinct from externalObjects. No product code modifications in this phase.
-- Gate: failure before fixture repair demonstrates invalid fixture; after repair the exact route assertions pass. Do not interpret this as proof of FBX external mapping.
+- [ ] Read the latest relevant evidence and identify the first unproved or contradicted edge: input provenance, import identity/face assignment, export closure, persistence, coordinate transport or fresh Unity application. Do not infer its current result from old summary counts.
+- [ ] Keep fixture/source/expected semantics fixed for that question. Reuse accepted parser/receipt/CPD components; read completed work instead of rerunning all Phase 0 tasks.
+- [ ] Prefer the next existing discriminating test. New helper/schema/holdout machinery needs a concrete missing capability and smaller-alternative comparison.
 
-### 1B. Preserve externalObjects source rows
+### R1 — Strict unchanged core route
 
-- Owner/files: LUNA low; `unity/material_mapping.py` and focused parser unit tests.
-- Add a structured row/API while preserving compatibility for existing call sites until they migrate. Carry original raw name/GUID/fileID scalars, canonical validated identity, row identity, duplicate/collision and malformed/null status.
-- Test ordinary row, duplicate row/name, duplicate target, malformed/fractional/missing fileID, explicit null, and deterministic row identity. Confirm invalid values cannot become valid through coercion.
-- Do not choose provider or scene consumer by material name.
-- Gate: parser retains enough information to refuse ambiguous/malformed input; old tests/callers remain green.
+Use the linked R2 plan's T0-A/T0-B/T0-C/T1 and U0 contracts, not a parallel new verification framework.
 
-## Phase 2 - Exact FBX consumer capture and late binding
+- [ ] T0-A: fresh production import; compare immediate Material GUID/fileID/package and face association against independent input expectations before any repair. No assignment/injected receipt can be smuggled into a no-edit claim. If the present probe requires a development witness, label that condition and keep direct-input product acceptance open.
+- [ ] On T0-A failure, stop downstream success claims and trace the missing reference/provider/consumer/face edge. Do not repair the scene and continue as unchanged PASS.
+- [ ] T0-B/C: unchanged export, scene/source preservation and output closure. Inspect actual Material/meta/Texture where present, manifest and generated FBX associations. Use independent input expectations, not the current possibly-wrong Blender state as its own oracle.
+- [ ] T1: verify save/reopen of the same route where persistence is claimed. Do not simultaneously move/delete source archives or introduce absent providers; those are separate hypotheses.
+- [ ] U0: once the existing source/output prerequisites hold and the isolated Unity slot is authorized, inspect the exact output in fresh Unity with explicit Finalizer/build steps where required. Record GUID/local IDs, Material/face/submesh association, hierarchy/Transform and relevant state. Do not wait for unrelated provider permutations before this essential return proof.
 
-- Owner/files: one LUNA low owner for `blender/material_builder.py`, `blender/dependency_resolver.py`, and any strictly necessary receipt helper. Do not divide these shared files among concurrent implementers.
-- Capture evidence from the actual imported FBX native Object/Mesh via existing persistent receipt validators: source package, FBX GUID/SHA, Model UID, Geometry UID, Object/Mesh receipt IDs, realization/occurrence, and exact slot. Preserve the external mapping source row and raw target fileID.
-- Integrate receipt/source-row identity into the dependency record key. Preserve semantic dependency type so Prefab and FBX routes cannot alias.
-- Resolve only a unique exact receipt-matching consumer and exact GUID/fileID provider, then require existing initial/applied slot ownership validation. Never reconstitute initial ownership from current scene state.
-- Keep legacy receipt-free records unresolved. Refuse duplicate consumers, duplicate/ambiguous mapping rows, stale or changed mesh receipt, invalid slot, wrong fileID, or ambiguous providers with stable status and no slot mutation.
-- Separate provider discovery count from successful binding count in diagnostics.
-- Tests: provider absent then added; reverse import order; same-name/wrong-GUID refusal; exact GUID+fileID bind; wrong fileID; duplicate provider; duplicate consumer receipt; repeated source occurrence/shared mesh; malformed/null row; user-edited slot preserved before provider arrival; slot reorder/deletion; provider removal/re-addition; rename; repeat resolve; save/close/reopen.
-- Gate: assert exact native mesh slot before and after each operation; exact dependency status and owner; no silent partial binding; scene save/reopen preserves record and slot state.
+**Exit:** bounded unchanged E2E evidence or one localized failure. Archive creation, Blender-only success, scalar fits and a working witness fixture alone do not establish the product workflow.
 
-## Phase 3 - Integrate, review, and regression
+### R2 — Resolve coordinate/face hypotheses without fitting the test
 
-1. Integrate Prefab fixture and parser changes, then external capture/resolver changes in dependency order.
-2. Run focused parser, receipt, occurrence projection, witness, Prefab, and CPD tests. Then run relevant existing dependency/import outcome, built-in preview, texture role, and Skin/Shape parity suites from `TEST_STRATEGY.md` (CPD-003..013, MPV-001..012, and related MPI/SPD cases as impacted).
-3. Run Python compile checks and Blender 5.2.1 synthetic operator tests. Include Blender save/reopen where persistence/ownership is asserted. Record exact command, interpreter/app version, source SHA, fixture/package SHA, process exit, result files, and post-run file/process inventory.
-4. Ask SOL medium for one read-only review of the new contract/diff, concentrating on raw-vs-normalized identity, key role separation, legacy behavior, ownership and failure-closed mutation. Fix findings and verify affected tests; do not rerun already-completed review without material new changes.
-5. Do not rerun the completed Stage3 Unity suite unless relevant Finalizer/C# source changes. If new Unity work is needed, use only the authorized isolated disposable project, preserve owned markers, add no package, and run Editors serially. Stop on licensing/access failures rather than bypassing them.
-6. Update CPD checkpoint and `TEST_RESULTS.md` with bounded evidence and remaining gaps. Keep machine-local raw logs and private assets out of Git.
+Use existing coordinate intervention/holdout work only where it answers the current boundary. Keep preregistered inputs, expected conversion and tolerances fixed. A candidate inferred from observed cases requires unseen controls before a broader claim. Shape correspondence, winding/normal transport and Material-to-face identity are independent claims.
 
-## Phase 4 - VAPB Core Round-trip First product acceptance gates (separate from CPD completion)
+Stop after a decisive counterexample; preserve it and revise the hypothesis explicitly. Do not keep adding cases that measure the same settled question, tune thresholds after seeing failure, or use source/display order as the fix. A correction to product source needs a minimal regression for the reproduced error and relevant existing regression checks.
 
-1. **Unchanged E2E:** `.unitypackage` direct Blender import, no edits, VAPB export, fresh Unity import; verify required Material/state reconstruction.
-2. **Geometry replacement E2E:** import; delete all imported meshes; create and UV unwrap Cube; assign Unity-derived Blender Materials; export; fresh Unity import; verify intended Material assignments without relying on source Mesh lineage.
-3. **Material organization:** satisfy the constrained naming/path policy without changing serialized bytes, `m_Name`, GUID, or `.meta` identity; verify portable collisions and repeated Finalizer/reimport for the supported scope.
-4. **Hierarchy Parity:** after material organization and before broad Unity/VRC restoration, automate semantic parent/child, transform chain, renderer owner, armature/bone, occurrence multiplicity, and save/reopen checks. Names/screenshots alone do not pass.
-5. **Mandatory campaign scope:** Semantic Cleanup, Weight Transfer, Semantic Bone Merge, practical Japanese UI, and verified distribution all require their own acceptance evidence. No CPD test substitutes for them.
-6. **Distribution:** fresh checkout/build; only intended runtime files; no private assets/SDKs/secrets/local paths; selected required assets self-contained and only explicitly declared framework dependencies external; verify final package in fresh Unity import and record immutable source/artifact hashes.
-7. Do not introduce integrations or dependencies that are absent from VAPB product authority. Keep third-party framework dependencies explicit and do not bundle private source assets or SDKs.
+### R3 — Edited and replacement geometry
 
-## Release and merge gates
+- [ ] Reuse T3's minimal edit control if needed to isolate transport from replacement. It is a diagnostic, not a new product restriction.
+- [ ] T4: remove imported Meshes, create/unwrap the specified Cube, assign Unity-derived Materials and export through the existing final-state route. Use current final geometry/UV/Material-face data, not source vertex lineage, as the expectation.
+- [ ] U1: import that exact output into fresh Unity and verify intended Material/state reattachment. Keep unchanged and replacement routes/results distinct.
 
-- All Phase 0-3 acceptance tests pass from a clean checkout at the recorded SHA.
-- Both product E2E cases and mandatory campaign requirements are independently green for the claimed release scope.
-- Hierarchy Parity is complete before broad Unity/VRC component restoration claims.
-- All unresolved/unsupported contexts are visible; no names, candidate counts, discovery-only results, or approximate preview are reported as successful binding/reconstruction.
-- Public docs/logs contain no private assets, identifiers, machine paths, raw private logs, or undeclared dependencies.
-- New code receives focused SOL review and integration regression evidence. Save evidence in docs with exact commit/branch/hash; follow the user authorization already in force for repository changes.
+**Exit:** both required core proof cases, with limitations stated. This milestone is not the complete product campaign.
 
-## Current completion state
+## 3. Conditional dependency closure work — former Phases 0–3
 
-Phase 0 contract and Phase 1A/1B implementation are complete in the saved checkpoint. Phase 2 implementation and the synthetic receipt integration are complete and reviewed; Phase 3 broader regression is still pending. Focused parser tests passed 21/21, changed Python sources/tests passed `py_compile`, `git diff --check` passed, and `tests/blender_fbx_external_material_receipt_test.py` passed in Blender 5.2.1 LTS. Blender process metadata showed no running Blender before launch and none after exit. Blender emitted nonfatal warnings that the existing preferences file was not readable and default TEMP generation failed; the background test nevertheless exited 0 and completed save/reopen using its run-local temporary directory. The separate Prefab cross-package runner stopped during `archive_source()` at Blender's default `DATAFILES/vapb/sources` write with `WinError 5 Access Denied`; the denial was not bypassed, and no later assertions ran. The cause of that OS denial is unknown. No Unity tests were rerun because no Finalizer/C# source changed. The saved implementation checkpoint is `1e24b190410bde96e2a7862eca592e2a3c085b13` on `feature/r2-material-slot-reorder`; the remote branch was fetched and the commit plus key files were read back successfully.
+Run this before a core gate only if that gate demonstrably depends on it. Otherwise keep it downstream of the basic E2E proof. Deferral is sequencing, not deletion of required supported behavior from release.
+
+| Existing responsibility | Preserve / perform only as needed |
+|---|---|
+| Phase 0 contract | Reuse the accepted consumer/source-row/slot ownership contract and precedence. Do not refreeze unchanged schemas or add a new ID family. |
+| Phase 1A Prefab route | Reuse the correct MeshFilter/reference fixture and exact Prefab Renderer Material consumer evidence. Its result does not prove the FBX externalObjects route. |
+| Phase 1B externalObjects parser | Preserve raw and validated name/GUID/fileID, row identity, explicit null, malformed and ambiguous statuses and current caller compatibility. Do not coerce invalid IDs or select by Material name. |
+| Phase 2 consumer binding | Reuse actual native Object/Mesh receipts, package/FBX/Model/Geometry identity and the exact slot. Require unique exact provider and retained ownership; no ownership reconstructed from current edited state. Provider discovery is not successful binding. |
+| Phase 3 regression | Run tests affected by the actual contract/source change, including persistence if claimed. Existing relevant full dependency/import/Skin/Shape regression follows before release, not as an unchanged per-investigation ritual. |
+
+CPD-006 and duplicate-provider/consumer, provider removal/re-addition, user-edited slot, reorder/deletion, rename and import-order permutations remain important for the scope they protect. Choose the smallest pending-provider/untouched-versus-user-edited control when that behavior is in scope; do not execute the whole permutation matrix while strict import/face mapping already fails. No release claim may omit a required supported dependency case merely because it was deferred during diagnosis.
+
+Keep exact Texture Image datablock/node identity checks where textures exist; node/record counts alone are insufficient. The existing no-Texture strict fixture cannot claim texture closure. A changed assertion is a test correction unless it actually reproduces a product defect.
+
+## 4. Remaining product campaign and final acceptance
+
+- [ ] Complete unchanged and replacement E2E through normal user input without mandatory pre-import Unity preparation.
+- [ ] Complete constrained Material organization and its collision/repeat/save/reimport coverage for claimed routes without modifying Material bytes or `m_Name`.
+- [ ] Complete mandatory semantic Hierarchy Parity: parent/child, Transform chains, renderer owner, armature/bones and occurrence multiplicity; persistence where promised. Do this before broad Unity/VRC restoration as product authority requires.
+- [ ] Complete Semantic Cleanup, Weight Transfer, Semantic Bone Merge and practical Japanese UI against their existing approved requirements and tests. Preserve strict Skin/state boundaries; do not infer these from Material tests.
+- [ ] Close required CPD/regression/unsupported-reporting gaps for the claimed release. Relevant Finalizer/C# changes require corresponding Unity evidence; unchanged unrelated Unity suites need not be rerun during every Python diagnostic.
+- [ ] Validate a fresh build/package and clean Unity import with correct self-contained selected assets and explicit framework dependencies. Inspect actual distributed content, licenses, setup instructions and exclusion of private/SDK/test payloads. Release/merge/publication follow current explicit authorization, not this file alone.
+
+## 5. Ownership, evidence and stop rules
+
+One primary engineer owns the current failing seam. Split work only across genuinely independent files; shared material_builder/dependency_resolver/receipt contracts have one writer. Independent scope/design/code review is proportional to new risk; do not respawn agents to repeat an accepted review.
+
+Keep original T0/T1/T2/T3/T4/U0/U1 IDs and historical results. This revision reorders optional work, never rewrites old failures or claims a new experiment occurred. Source/final-state/Unity identity domains, fixture revisions, process exit and actual semantic observations remain traceable using existing records.
+
+If tooling work keeps expanding without a new semantic observation, compare standard APIs, current probes and the smallest bounded control before more infrastructure. A missing permission/resource is a blocker, not a product defect or permission to bypass a guard. Do not automatically resume an explicitly stopped project or knowledge collection.
+
+Planning completion means these instructions are saved and readable. No code, fixture, oracle, threshold, dependency, runtime result or product acceptance was changed by this revision.
