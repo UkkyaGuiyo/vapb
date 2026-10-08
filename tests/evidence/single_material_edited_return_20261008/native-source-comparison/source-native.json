@@ -1,0 +1,19 @@
+{
+    "unityVersion": "2022.3.22f1",
+    "sourcePackageSha256": "c784c3f27d654fa8808daa77b152d2dd175f31c2f2549931df6394075bedcb4e",
+    "prefabGuid": "ef933b94f813e324c9cc7268e59ba927",
+    "meshGuid": "3858744948938584bb2f344670664ead",
+    "meshFileId": "-1944139265773155678",
+    "vertexCount": 24,
+    "submeshCount": 1,
+    "meshBoundsSize": {
+        "x": 0.019999999552965165,
+        "y": 0.019999999552965165,
+        "z": 0.019999999552965165
+    },
+    "prefabSpaceBoundsSize": {
+        "x": 0.019999999552965165,
+        "y": 0.019999999552965165,
+        "z": 0.019999999552965165
+    }
+}

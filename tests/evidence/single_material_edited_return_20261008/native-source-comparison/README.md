@@ -1,0 +1,9 @@
+# Same Unity frame: original source measurement
+
+The original SourceProject was opened once in Unity 2022.3.22f1. Its original Prefab GUID and Mesh GUID/fileID were checked; no import, export, asset repair or return rerun was performed. `VapbSourceBoundsMeasurement.cs` records the exact same prefab-space vertex formula used in the saved return probe. The original package, FBX, importer meta, Prefab and six original uncommitted source/test files retained their pre-run hashes.
+
+Original native Unity bounds are approximately 0.02 on each axis. The previously saved return bounds are approximately 0.025. `comparison.json` compares returned bounds against original bounds times the required 1.25, with the unchanged absolute per-component tolerance 0.0001 from the original probe. All three components pass; observed ratios and residuals are recorded. No expected multiplier or tolerance was fitted to the result.
+
+The parent `unity-return.json` retains its original FAIL: that earlier probe compared native Unity bounds with a literal 2.5 from raw FBX coordinates. This new same-frame comparison establishes only the synthetic single-material Prefab's bounded scale control. It does not turn the old run into an overall PASS or establish axis/winding/normal fidelity, multiple-Material face correspondence, general hierarchy, replacement geometry, Variant/dependency completeness or full product acceptance.
+
+The observation marker and normal Unity shutdown were observed; the measurement code requested `EditorApplication.Exit(0)`. The process had already ended before OS exit-code polling, so that code is explicitly unknown. Postflight confirmed zero Editors, zero owned children and no SourceProject lock; the Unity slot was returned. Raw logs and personal paths are kept local and are not included.

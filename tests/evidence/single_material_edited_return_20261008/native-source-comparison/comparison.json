@@ -1,0 +1,52 @@
+{
+  "status": "PASS_BOUNDED_NATIVE_PREFAB_SPACE_SCALE_125",
+  "unity_version": "2022.3.22f1",
+  "source_sha256": "c784c3f27d654fa8808daa77b152d2dd175f31c2f2549931df6394075bedcb4e",
+  "output_sha256": "0dffe5e25e649abccaf6e28f764c2e618f7cdddf14e7e2456d507c0a2a906f13",
+  "return_record_commit": "fac9a1962a03be526d02c034fcd1fd4661d24e48",
+  "source_prefab_space_bounds": {
+    "x": 0.019999999552965164,
+    "y": 0.019999999552965164,
+    "z": 0.019999999552965164
+  },
+  "return_prefab_space_bounds": {
+    "x": 0.02499999850988388,
+    "y": 0.02499999850988388,
+    "z": 0.02499999850988388
+  },
+  "required_scale": 1.25,
+  "absolute_component_tolerance": 0.0001,
+  "expected_return_bounds": {
+    "x": 0.024999999441206455,
+    "y": 0.024999999441206455,
+    "z": 0.024999999441206455
+  },
+  "observed_ratio": {
+    "x": 1.2499999534338702,
+    "y": 1.2499999534338702,
+    "z": 1.2499999534338702
+  },
+  "absolute_residual": {
+    "x": 9.313225746154785E-10,
+    "y": 9.313225746154785E-10,
+    "z": 9.313225746154785E-10
+  },
+  "comparison_formula": "root.InverseTransformPoint(renderer.TransformPoint(mesh vertex)); same saved return formula",
+  "source_measurement_count": 1,
+  "return_rerun_count": 0,
+  "measurement_script_sha256": "f684f524ab7988b4990e7fb48bd0cce3f73e9af88020394cf0b1825a4adcdfc9",
+  "original_input_and_dirty6_hashes_unchanged": true,
+  "normal_exit_requested": 0,
+  "normal_shutdown_observed": true,
+  "os_exit_code": null,
+  "os_exit_code_note": "Process ended before polling; OS code not observed",
+  "postflight": {
+    "editor_count": 0,
+    "owned_editor_absent": true,
+    "owned_child_count": 0,
+    "source_lock_absent": true
+  },
+  "old_raw_fbx_absolute_gate": "FAIL retained unchanged",
+  "multiple_material_face_correspondence": "UNRESOLVED",
+  "full_roundtrip_product": "UNPROVEN"
+}
