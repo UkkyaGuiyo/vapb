@@ -193,3 +193,49 @@ Next product seam is the proven difference between original and edited native
 rootBone selection, followed separately by the source-default/edited weight
 comparison. Current strict root/influence guards remain unchanged; root identity
 transport is not complete. No new runner/schema or fabricated Bone was added.
+
+
+## Source Skin root selection: Cluster connection-order correction
+
+The previous `EDITED_ROOT_INVALID` refusal is causally isolated to the generated
+FBX's Cluster-to-Skin OO connection sequence. Source Skin sequence is Bone UID
+`763348336`, then `251529238`; Blender's generated sequence was reversed. Existing
+exact Bone receipts map both identities; both remain siblings under source Null
+UID `51419677`. No parent substitution or Bone reparenting is needed.
+
+Three exact-FBX controls changed only the named row/object sequence (and required
+package hashes). Model object order alone and Bone-to-parent connection order alone
+both retain the incorrect native root `763348336`. Those approaches were reverted.
+Changing only Cluster-to-Skin OO row order produces the original native root
+`251529238`. This establishes a bounded causal result for this input; it does not
+assert Unity's undocumented root-selection algorithm for all models.
+
+The producer now reads the original selected Skin's ordered cluster membership,
+resolves generated clusters by existing exact Bone realization receipts, and
+reorders only those existing connection positions in its private staged FBX.
+All other FBX values and links are verified against the expected parsed graph
+before replacement. Missing/duplicate/unknown identities refuse. The operation
+is scoped to the established SourceKind shared-parent route. Finalizer root,
+hierarchy, index, matrix and weight guards, Bone parenting, source inputs, and
+manifest schema are unchanged.
+
+Fresh normal Blender import/save-reopen/1.25 edit/export succeeds. Source FBX/meta,
+Scene, hierarchy/rest/deform and all 87 raw positive associations are preserved;
+tampered-parent UID, duplicate realization and reparenting controls reject.
+Normal Unity package import and existing Apply now match native root UID
+`251529238`, then formally reject `SOURCE_MODEL_WEIGHTS_CHANGED`: original native
+60 positive associations versus edited 87. No Variant is produced; Unity shape
+multiplier and full Skin roundtrip remain unverified. Zero Material slots make
+Material/Texture acceptance inapplicable here. This remains separate from the
+ThreeMaterial replacement and override/winding work.
+
+Owned Unity exits normally with code 1 for the refusal; all 2,842 protected files
+are unchanged, owned children and project lock are absent, and pool/mutex are
+released. Independent GPT-6.1 SOL/medium product review reports no actionable
+findings. Focused tests cover receipt-based ordering, original row preservation,
+incomplete/duplicate links and wrong semantic roles.
+
+Public safe evidence:
+[transferred-cluster-order-root-cause.json](../../../tests/evidence/remapped_model_replacement_export_20261008/transferred-cluster-order-root-cause.json).
+The next unresolved product boundary is source-default/edited weight parity
+60/87; root-order correction does not authorize relaxing that guard.

@@ -253,6 +253,10 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *,
                     path_mode='STRIP', embed_textures=False)
         if result != {'FINISHED'} or not output.is_file():
             raise ValueError('Skin FBXの書き出しに失敗しました')
+        if skin_binding.get('parent_transform_mapping'):
+            from ..blender.fbx_witness import preserve_skin_cluster_order
+            preserve_skin_cluster_order(output, skin_binding['mappings'],
+                                        skin_binding['source_skin_cluster_order'])
     finally:
         for obj in reversed(copies):
             bpy.data.objects.remove(obj, do_unlink=True)
@@ -420,7 +424,9 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
         if (not index.unique_source_model(int(task['source_model_uid'])) or
                 index.geometry_for_model(int(task['source_model_uid'])) != int(task['source_geometry_uid'])):
             raise ValueError('元FBXのModelとGeometryの関係を確認できません')
-        selected_uids = source_skin_bone_uids(raw, task['source_model_uid'], task['source_geometry_uid'])
+        source_bone_order = source_skin_bone_uids(raw, task['source_model_uid'],
+                                                 task['source_geometry_uid'], ordered=True)
+        selected_uids = frozenset(source_bone_order)
         bones = [row for row in task['bone_mappings'] if row['source_model_uid'] in selected_uids]
         if {row['source_model_uid'] for row in bones} != selected_uids:
             raise ValueError('元SkinのBoneをすべて出所記録から取得できません')
@@ -451,7 +457,8 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
             raise ValueError('BoneのModel UIDが元FBXにありません')
         edited = folder / 'edited.fbx'
         _export_staged_skin(context, mesh, rig, edited, {'mappings': bones,
-                            'parent_transform_mapping': task.get('parent_transform_mapping')},
+                            'parent_transform_mapping': task.get('parent_transform_mapping'),
+                            'source_skin_cluster_order': source_bone_order},
                             scale_options=scale_options, source_skin_only=True,
                             material_bindings=task['material_bindings'])
         payload, noop_bytes, witness_bytes = edited.read_bytes(), noop.read_bytes(), witness.read_bytes()

@@ -48,8 +48,40 @@ class SkinMembershipTests(unittest.TestCase):
         self.links += [(51, 50)]
         with self.assertRaises(ValueError): self.read(reader)
 
+    def test_cluster_link_order_uses_exact_bone_receipts_and_keeps_other_rows(self):
+        from unitypackage_blender_importer.blender.fbx_witness import ordered_skin_cluster_connections
+        def bone(uid, receipt):
+            return Node(id=b'Model', props=[uid, b'same-label', b'LimbNode'], elems=[
+                Node(id=b'Properties70', elems=[Node(id=b'P', props=[b'_vapb_fbx_bone_realization_id', receipt.encode()])])])
+        objects = [bone(901, 'a'), bone(902, 'b')]
+        objects += [Node(id=b'Deformer', props=[uid, b'', kind], elems=[])
+                    for uid, kind in ((1001, b'Skin'), (1040, b'Cluster'), (1041, b'Cluster'))]
+        rows = [Node(id=b'C', props=[b'OO', a, b]) for a,b in
+                ((901,1040),(902,1041),(1041,1001),(901,90),(1040,1001))]
+        mappings = [dict(source_model_uid='50', edited_bone_realization_id='a'),
+                    dict(source_model_uid='51', edited_bone_realization_id='b')]
+        original = list(rows)
+        ordered = ordered_skin_cluster_connections(objects, rows, mappings, ['50','51'])
+        self.assertEqual(ordered, [rows[0],rows[1],rows[4],rows[3],rows[2]])
+        self.assertEqual(rows, original)
+        self.assertTrue(all(a is b for a,b in zip(ordered[:2],rows[:2])))
+        self.assertIs(ordered[3], rows[3])
+        self.assertEqual(ordered_skin_cluster_connections(objects, rows, mappings, ['51','50']), rows)
+        for changed, order in ((rows, ['50']), (rows, ['50','50','51']),
+                               (rows[:-1], ['50','51']), (rows+[rows[2]], ['50','51']),
+                               (rows[1:], ['50','51'])):
+            with self.subTest(order=order), self.assertRaises(ValueError):
+                ordered_skin_cluster_connections(objects, changed, mappings, order)
+        objects[0].props[2] = b'Null'
+        with self.assertRaises(ValueError):
+            ordered_skin_cluster_connections(objects, rows, mappings, ['50','51'])
+
     def test_membership_comes_from_clusters_including_empty_clusters(self):
         self.assertEqual(self.read(), frozenset({'50', '51'}))
+        ordered = lambda *args: source_skin_bone_uids(*args, ordered=True)
+        self.assertEqual(self.read(ordered), ('50', '51'))
+        self.links[2:4] = reversed(self.links[2:4])
+        self.assertEqual(self.read(ordered), ('51', '50'))
 
     def test_missing_or_ambiguous_connections_rejected(self):
         original = list(self.links)

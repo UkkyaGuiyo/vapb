@@ -1,0 +1,107 @@
+{
+  "base_commit": "fa3621ea338865bdc725d704a822037dcea76bf2",
+  "status": "NATIVE_ROOT_ORDER_FIXED_WEIGHT_PARITY_REJECTED",
+  "unity_version": "2022.3.22f1",
+  "blender_version": "5.2.1 LTS",
+  "causal_controls": [
+    {
+      "change": "Model object order only",
+      "package_sha256": "f017ae578cd7553c155f471b452aed49bc3d30356c0be901ae746374baba285e",
+      "edited_root_source_uid": "763348336",
+      "apply_rejection": "EDITED_ROOT_INVALID",
+      "all_other_fbx_values_uids_and_hierarchy_preserved": true
+    },
+    {
+      "change": "Bone-to-parent connection order only",
+      "package_sha256": "3aa935d1a2da64c2853da23fabc46c8acfae4a42955eca43991878b97fbac4c2",
+      "edited_root_source_uid": "763348336",
+      "apply_rejection": "EDITED_ROOT_INVALID",
+      "all_other_fbx_values_uids_and_hierarchy_preserved": true
+    },
+    {
+      "change": "Cluster-to-Skin connection order only",
+      "package_sha256": "d159842a629b6a770a1248bcaed709696ad3cb69dfca2e86ffa64c4384aa33b4",
+      "edited_root_source_uid": "251529238",
+      "apply_rejection": "SOURCE_MODEL_WEIGHTS_CHANGED",
+      "all_other_fbx_values_uids_and_hierarchy_preserved": true
+    }
+  ],
+  "normal_product_export": {
+    "input_sha256": "55ebf30c4484fc03415b8b7f843fc760bf443a5298d33db56196b90245863c04",
+    "source_fbx_sha256": "4d16ca1b16521f2cafbddb5eba94c732e33aa4c1c937c4a83f582a11829fee23",
+    "output_sha256": "568da58a6d820a7566a014a640085f066be4117a0d8db1406eb499a267665701",
+    "vertices": 45,
+    "faces": 15,
+    "material_slots": 0,
+    "scale": 1.25,
+    "negative_controls": [
+      "tampered_parent_uid",
+      "duplicate_parent_realization",
+      "reparented_bone"
+    ],
+    "bone_hierarchy_rest_and_deform_preserved": true,
+    "parent_object_receipt_after_reopen": true,
+    "source_asset_and_meta_preserved": true,
+    "edited_scene_unchanged": true,
+    "raw_cluster_weights_exact_source": true,
+    "raw_positive_associations": 87,
+    "cluster_link_order_matches_source": true,
+    "source_cluster_bone_uid_order": [
+      "763348336",
+      "251529238"
+    ]
+  },
+  "normal_unity_apply": {
+    "package_imported": true,
+    "first_apply": false,
+    "variant_created": false,
+    "source_root_guid_file_id": "93abeaa4aa085ea4c0473b03f94eb0e4:2606333175405744531",
+    "source_parent_guid_file_id": "93abeaa4aa085ea4c0473b03f94eb0e4:7617400270062902505",
+    "edited_root_source_uid": "251529238",
+    "source_bones_share_parent": true,
+    "edited_bones_share_marked_parent": true,
+    "marked_parent_unique": true,
+    "source_fbx_meta_preserved_after_apply": true,
+    "refused_variant_absent": true,
+    "apply_rejection": "SOURCE_MODEL_WEIGHTS_CHANGED",
+    "apply_exception": "",
+    "parent_observation_error": "",
+    "source_weights_observation_error": "",
+    "source_positive_weights": 60,
+    "edited_positive_weights": 87
+  },
+  "lifecycle": {
+    "normal_owned_exit_code": 1,
+    "protected_files": 2842,
+    "protected_files_changed": 0,
+    "input_unchanged": true,
+    "active_owned_children": 0,
+    "project_lock_present": false,
+    "pool_released": true,
+    "mutex_released": true
+  },
+  "scope": {
+    "finalizer_guards_unchanged": true,
+    "bone_reparenting": false,
+    "root_substitution": false,
+    "schema_changes": false,
+    "material_texture_parity": "NOT_APPLICABLE_ZERO_SLOTS",
+    "unity_shape_multiplier": "NOT_MEASURED_APPLY_REJECTED",
+    "overall_skin_roundtrip": "NOT_COMPLETE"
+  },
+  "review": {
+    "model": "GPT-6.1 SOL",
+    "reasoning": "medium",
+    "scope": "new Cluster connection-order product diff",
+    "actionable_findings": 0
+  },
+  "focused_tests": {
+    "red": "missing ordered_skin_cluster_connections ImportError observed before implementation",
+    "green": 22,
+    "modules": [
+      "test_fbx_skin_membership",
+      "test_model_skin",
+      "test_fbx_receipt"
+    ]
+  }
+}

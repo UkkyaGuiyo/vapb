@@ -83,7 +83,7 @@ def source_export_scale_options(source, scene_unit_scale):
     raise ValueError('Source FBX unit convention is not yet supported for skin restoration')
 
 
-def source_skin_bone_uids(source, model_uid, geometry_uid):
+def source_skin_bone_uids(source, model_uid, geometry_uid, *, ordered=False):
     """Read one original Skin's explicit bone membership, including empty clusters."""
     from io_scene_fbx import parse_fbx
     decoded, _ = parse_fbx.parse(str(source), use_namedtuple=True)
@@ -128,7 +128,103 @@ def source_skin_bone_uids(source, model_uid, geometry_uid):
         bones.append(str(linked[0]))
     if len(set(bones)) != len(bones):
         raise ValueError('Source FBX skin bone membership is duplicated')
-    return frozenset(bones)
+    return tuple(bones) if ordered else frozenset(bones)
+
+
+def ordered_skin_cluster_connections(objects, connections, bone_mappings, source_bone_order):
+    """Preserve the original Skin's cluster-link sequence using exact Bone receipts."""
+    order = tuple(source_bone_order)
+    mapping = {}
+    for row in bone_mappings:
+        uid, receipt = row['source_model_uid'], row['edited_bone_realization_id']
+        if not uid or not receipt or uid in mapping or receipt in mapping.values():
+            raise ValueError('Skin Bone receipts are missing or duplicated')
+        mapping[uid] = receipt
+    if not order or len(set(order)) != len(order) or set(order) != set(mapping):
+        raise ValueError('Source Skin cluster order is incomplete or duplicated')
+    nodes = {}
+    selected = {}
+    for node in objects:
+        if (not node.props or type(node.props[0]) is not int or
+                not node.props[0] or node.props[0] in nodes):
+            raise ValueError('Exported FBX object identity is invalid or duplicated')
+        uid = node.props[0]
+        nodes[uid] = node
+        markers = [p.props[-1] for container in node.elems if container.id == b'Properties70'
+                   for p in container.elems if p.id == b'P' and p.props and
+                   p.props[0] == b'_vapb_fbx_bone_realization_id']
+        if markers:
+            if (node.id != b'Model' or len(node.props) < 3 or node.props[2] != b'LimbNode'
+                    or len(markers) != 1 or not isinstance(markers[0], bytes)):
+                raise ValueError('Exported Bone receipt has an invalid semantic role')
+            receipt = markers[0].decode('utf8')
+            if receipt not in mapping.values() or receipt in selected:
+                raise ValueError('Exported Bone receipt is unknown or duplicated')
+            selected[receipt] = uid
+    if set(selected) != set(mapping.values()):
+        raise ValueError('Exported Bone receipts are incomplete')
+    skins = [uid for uid,n in nodes.items() if n.id == b'Deformer' and len(n.props) == 3 and n.props[2] == b'Skin']
+    clusters = {uid for uid,n in nodes.items() if n.id == b'Deformer' and len(n.props) == 3 and n.props[2] == b'Cluster'}
+    if len(skins) != 1 or not clusters:
+        raise ValueError('Exported Skin is missing or ambiguous')
+    incoming = {}
+    positions = []
+    for position, row in enumerate(connections):
+        if row.id == b'C' and row.props and row.props[0] == b'OO':
+            if len(row.props) != 3 or any(type(uid) is not int for uid in row.props[1:]):
+                raise ValueError('Exported object connection is invalid')
+            child, parent = row.props[1:]
+            incoming.setdefault(parent, []).append(child)
+            if parent == skins[0]:
+                if child not in clusters:
+                    raise ValueError('Exported Skin has an unknown cluster link')
+                positions.append(position)
+    linked = incoming.get(skins[0], [])
+    if set(linked) != clusters or len(linked) != len(clusters):
+        raise ValueError('Exported Skin cluster links are incomplete or duplicated')
+    bone_to_source = {selected[receipt]: uid for uid,receipt in mapping.items()}
+    rows_by_source = {}
+    for position in positions:
+        row = connections[position]
+        bones = incoming.get(row.props[1], [])
+        if len(bones) != 1 or bones[0] not in bone_to_source:
+            raise ValueError('Exported cluster Bone link is missing or ambiguous')
+        source = bone_to_source[bones[0]]
+        if source in rows_by_source:
+            raise ValueError('Exported Skin Bone membership is duplicated')
+        rows_by_source[source] = row
+    if set(rows_by_source) != set(order):
+        raise ValueError('Exported Skin membership differs from source')
+    result = list(connections)
+    for position, source in zip(positions, order):
+        result[position] = rows_by_source[source]
+    return result
+
+
+def preserve_skin_cluster_order(output, bone_mappings, source_bone_order):
+    """Rewrite only private staged Cluster-to-Skin rows; verify all other FBX data."""
+    from io_scene_fbx import encode_bin, parse_fbx
+    output = Path(output)
+    temporary = output.with_suffix(output.suffix + '.ordered')
+    if temporary.exists():
+        raise ValueError('Skin order rewrite output is occupied')
+    decoded, version = parse_fbx.parse(str(output), use_namedtuple=True)
+    objects = [n for n in decoded.elems if n.id == b'Objects']
+    connections = [n for n in decoded.elems if n.id == b'Connections']
+    if len(objects) != 1 or len(connections) != 1:
+        raise ValueError('Exported Skin graph is unavailable')
+    connections[0].elems[:] = ordered_skin_cluster_connections(
+        objects[0].elems, connections[0].elems, bone_mappings, source_bone_order)
+    expected = canonical(decoded)
+    try:
+        encode_bin.write(str(temporary), encode_node(decoded, False), version)
+        actual, actual_version = parse_fbx.parse(str(temporary), use_namedtuple=True)
+        if actual_version != version or canonical(actual) != expected:
+            raise ValueError('Skin order rewrite changed FBX semantics')
+        temporary.replace(output)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
 
 
 def source_skin_shared_parent(source, model_uid, geometry_uid, *, allow_single=False):
