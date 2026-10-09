@@ -274,3 +274,26 @@ this distribution gate. Reuse normal import, Assistant explicit Apply, separate
 Variant and original-file protection checks, including both declared nonnull
 Texture roles. Missing old override correspondence remains unsupported and is
 not inferred from names or slot order. This is not whole-product acceptance.
+
+### Installed distribution: normal Unity return accepted (2026-10-09)
+
+`distribution-native-skin-return-summary.json` closes the preceding pending Unity
+gate using the actual output produced by the repaired installed distribution ZIP.
+The output was normally imported into the existing dedicated ReturnProject after
+fresh frame/PID/project/lock/RAM checks. The automatic Japanese Assistant prompt,
+read-only preflight, Cancel, menu reopen, Retry and explicit Apply passed through
+the existing API probe. A separate selected Variant retains its original source
+link. No input preprocessing, GUID/fileID edit, manifest repair or inferred Material
+assignment was required. This is API-handler acceptance, not human visual acceptance.
+
+Existing native acceptance confirmed 24 vertices, 12 triangles, 2 bones/weights,
+3 exact Material identities and submesh face membership, both nonnull Texture roles,
+and 1.25 geometry measured entirely in the same Unity space. All 10 original source
+Asset/meta files are byte-identical; all 37 preexisting protected files are unchanged.
+The owned normal Editor exited 0, its descendants and project lock are absent, and
+the frame lease is released. Detailed identifiers/hashes/paths and raw logs remain
+local; the public summary contains only stage results, counts and code provenance.
+
+This completes one representative installed-addon Package-to-Blender-to-Unity return.
+It does not accept old override correspondence gaps, arbitrary Skin/bone/Texture
+changes, whole Avatars or VRChat upload. Existing broader product campaign remains.
