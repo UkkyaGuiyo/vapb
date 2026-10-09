@@ -1,0 +1,229 @@
+{
+  "base_commit": "8372f06b54b6c8f797549fa2ede553931939e2af",
+  "status": "WEIGHT_AUTHORITY_GATE_MISMATCH_CONFIRMED_NO_PRODUCT_FIX",
+  "package_sha256": "568da58a6d820a7566a014a640085f066be4117a0d8db1406eb499a267665701",
+  "source_fbx_sha256": "4d16ca1b16521f2cafbddb5eba94c732e33aa4c1c937c4a83f582a11829fee23",
+  "unity_version": "2022.3.22f1",
+  "source_raw_positive_count": 87,
+  "blender_export_raw_positive_count": 87,
+  "source_normal_native_positive_count": 60,
+  "edited_policy_native_positive_count": 87,
+  "extra_native_positive_count": 27,
+  "shared_numeric_changed_count": 21,
+  "extra_rows": [
+    {
+      "cps": [
+        3,
+        4,
+        5
+      ],
+      "native_vertices": [
+        3,
+        5,
+        4
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 9.999999717180685e-10,
+      "edited_native_weight": 9.999999717180685e-10,
+      "edited_float32_bits": "3089705f",
+      "source_normal_native": "ABSENT"
+    },
+    {
+      "cps": [
+        6,
+        7,
+        8
+      ],
+      "native_vertices": [
+        6,
+        8,
+        7
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 9.99999993922529e-09,
+      "edited_native_weight": 9.99999993922529e-09,
+      "edited_float32_bits": "322bcc77",
+      "source_normal_native": "ABSENT"
+    },
+    {
+      "cps": [
+        9,
+        10,
+        11
+      ],
+      "native_vertices": [
+        9,
+        11,
+        10
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 9.999999974752427e-07,
+      "edited_native_weight": 9.999999974752427e-07,
+      "edited_float32_bits": "358637bd",
+      "source_normal_native": "ABSENT"
+    },
+    {
+      "cps": [
+        12,
+        13,
+        14
+      ],
+      "native_vertices": [
+        12,
+        14,
+        13
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 9.999999747378752e-06,
+      "edited_native_weight": 9.999999747378752e-06,
+      "edited_float32_bits": "3727c5ac",
+      "source_normal_native": "ABSENT"
+    },
+    {
+      "cps": [
+        15,
+        16,
+        17
+      ],
+      "native_vertices": [
+        15,
+        17,
+        16
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 9.999999747378752e-05,
+      "edited_native_weight": 9.999999747378752e-05,
+      "edited_float32_bits": "38d1b717",
+      "source_normal_native": "ABSENT"
+    },
+    {
+      "cps": [
+        18,
+        19,
+        20
+      ],
+      "native_vertices": [
+        18,
+        20,
+        19
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 0.0002500000118743628,
+      "edited_native_weight": 0.0002500000118743628,
+      "edited_float32_bits": "3983126f",
+      "source_normal_native": "ABSENT"
+    },
+    {
+      "cps": [
+        21,
+        22,
+        23
+      ],
+      "native_vertices": [
+        21,
+        23,
+        22
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 0.0005000000237487257,
+      "edited_native_weight": 0.0005000000237487257,
+      "edited_float32_bits": "3a03126f",
+      "source_normal_native": "ABSENT"
+    },
+    {
+      "cps": [
+        24,
+        25,
+        26
+      ],
+      "native_vertices": [
+        24,
+        26,
+        25
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 0.0008999999845400453,
+      "edited_native_weight": 0.0008999999845400453,
+      "edited_float32_bits": "3a6bedfa",
+      "source_normal_native": "ABSENT"
+    },
+    {
+      "cps": [
+        27,
+        28,
+        29
+      ],
+      "native_vertices": [
+        27,
+        29,
+        28
+      ],
+      "source_bone_uid": "763348336",
+      "source_raw_weight": 0.000999000039882958,
+      "edited_native_weight": 0.000999000039882958,
+      "edited_float32_bits": "3a82f0e1",
+      "source_normal_native": "ABSENT"
+    }
+  ],
+  "identity_proof": {
+    "cp": "unique complete fixture-authored UV CP labels on both native meshes; native array order is not CP identity",
+    "bone": "existing exact Bone realization receipts; unchanged Finalizer source/edited Bone-order guards reached weight gate",
+    "all_edited_cp_bone_associations_match_raw": true
+  },
+  "existing_numeric_diagnostic": {
+    "model": "M5_divide_then_reciprocal",
+    "compared": 87,
+    "expected_actual_bit_mismatches": 0,
+    "production_finalizer_consumes_this_data": false
+  },
+  "causal_boundary": {
+    "same_input_fbx_control": "existing without-policy / production-policy / repeated-policy capture",
+    "without_policy": 60,
+    "production_policy": 87,
+    "repeated_policy": 87,
+    "source_policy": "normal original import without generated-model policy",
+    "edited_policy": "exact generated GUID/SHA Custom/255/minBoneWeight=0",
+    "blender_created_new_influences": false,
+    "root_source_uid": "251529238",
+    "apply_rejection": "SOURCE_MODEL_WEIGHTS_CHANGED",
+    "variant_created": false
+  },
+  "spec_conformance": {
+    "authority": "PRODUCT_SPEC Blender Final State Authority and Skin Transport Acceptance Contract",
+    "wrong_gate": "ResolvePrepared compares native original against generated edited mesh",
+    "missing_production_data": [
+      "authoritative exported CP-to-native correspondence",
+      "canonical exported CP/Bone influence identities",
+      "revision/policy-bound expected Unity float32 bits"
+    ],
+    "minimum_proposal": "Use existing export and Finalizer paths to transport bounded authoritative data and validate exact retention/expected bits; preserve root/hierarchy/bindpose/revision/rollback guards. No new runner. Generic CP mapping must be proven first; fixture UV labels cannot be a production requirement.",
+    "rejected_shortcuts": [
+      "remove source-weight gate alone",
+      "relax numeric tolerance",
+      "drop tiny influences",
+      "edit original model/meta",
+      "change expected counts only",
+      "use source policy witness as final-state authority"
+    ]
+  },
+  "review": {
+    "model": "GPT-6.1 SOL",
+    "reasoning": "medium",
+    "recommendation": "KEEP existing preservation policy and identity guards; DEFER guard-only fix"
+  },
+  "lifecycle": {
+    "normal_owned_exit_code": 1,
+    "protected_files": 2850,
+    "protected_files_changed": 0,
+    "input_unchanged": true,
+    "owned_children": 0,
+    "project_lock_present": false,
+    "pool_and_mutex_released": true
+  },
+  "scope": {
+    "production_code_changes": false,
+    "diagnostic_only": true,
+    "client_validation": "NOT_RUN",
+    "full_skin_roundtrip": "NOT_COMPLETE"
+  }
+}

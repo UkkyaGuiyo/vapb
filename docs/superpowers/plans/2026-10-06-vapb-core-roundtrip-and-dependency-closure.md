@@ -239,3 +239,46 @@ Public safe evidence:
 [transferred-cluster-order-root-cause.json](../../../tests/evidence/remapped_model_replacement_export_20261008/transferred-cluster-order-root-cause.json).
 The next unresolved product boundary is source-default/edited weight parity
 60/87; root-order correction does not authorize relaxing that guard.
+
+
+## Source-default versus exported weight authority boundary
+
+Fresh observation of the actual normal Blender output identifies all 27 extra
+native influences: source Bone UID `763348336`, CP3 through CP29, nine positive
+levels from `1e-9` through `0.000999`, three CPs per level. Every one already
+exists in the original raw FBX and survives Blender import/edit/export. Native
+CPs are joined using the fixture's complete unique UV labels and exact Bone
+receipts; array order differs from CP order and is not used as identity.
+
+The original normal Unity import retains 60 positives, while the generated
+model's existing exact-revision preservation policy retains all 87. The existing
+same-FBX no-policy/policy/repeated-policy causal control reproduces 60/87/87.
+The actual package's 87 native associations match the raw CP/Bone set, and all
+87 expected bits from the existing bounded M5 model match (zero mismatches).
+There are also 21 changed shared values because the original drops the small
+influence and retains its remaining Bone at weight one.
+
+The refusal is the Finalizer's `SameSkinInfluences(originalNative, editedNative)`
+gate, which compares two different import policies. Product weights are already
+authoritative from Blender under the approved specification. Neither removing
+this gate alone nor treating a policy-applied original witness as final-state
+authority proves the required exported retention and bitwise representation.
+Production tasks currently lack authoritative CP correspondence, canonical
+exported influences and expected bits; the diagnostic numeric model is not a
+production consumer. Independent SOL/medium review confirms this boundary.
+
+Minimum complete repair: carry only the necessary exported Mesh/CP/Bone,
+revision/policy and expected-bit data through existing producer/Finalizer paths,
+then replace the incorrect weight-authority comparison with exact retention and
+bitwise validation. First prove the smallest generic CP mapping; do not require
+users to carry fixture UV labels. No new runner/framework, root substitution,
+reparenting, tolerance change, tiny-weight deletion or original-data rewrite is
+proposed. The earlier no-new-schema scope cannot provide that absent data.
+
+No product change is claimed at this checkpoint. Apply still formally refuses
+`SOURCE_MODEL_WEIGHTS_CHANGED`, root UID stays `251529238`, and no Variant exists.
+Owned Unity exits normally with code 1; 2,850 protected files are unchanged,
+children/lock absent, pool/mutex released. Client validation is NOT_RUN. Further
+Unity launches await the newly prioritized shared slot.
+
+[Exact grouped values and scope](../../../tests/evidence/remapped_model_replacement_export_20261008/transferred-weight-authority-boundary.json).
