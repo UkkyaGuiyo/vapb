@@ -751,7 +751,73 @@ public static class VapbModelSkinFinalizer
         if (String.IsNullOrEmpty(path) || !path.StartsWith("Assets/VAPBExport/", StringComparison.Ordinal) ||
             !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || path.Contains("..") ||
             AssetDatabase.LoadAssetAtPath<TextAsset>(path) == null) Reject("MANIFEST_UNAVAILABLE");
-        return JsonUtility.FromJson<Manifest>(File.ReadAllText(Disk(path)));
+        return ParseManifestJson(File.ReadAllText(Disk(path)));
+    }
+
+    [Serializable] private sealed class JsonPropertyName { public string value; }
+    private static Manifest ParseManifestJson(string json)
+    {
+        Manifest manifest = JsonUtility.FromJson<Manifest>(json);
+        if (manifest?.reference_rebind_tasks == null) return manifest;
+        // Unity allocates missing serializable reference objects. Preserve JSON absence,
+        // without treating explicit empty receipt objects as absent or weakening validation.
+        var present = new List<HashSet<string>>();
+        int depth = 0, arrayDepth = -1, arrayStart = -1, taskIndex = -1;
+        bool sawTasks = false;
+        for (int i = 0; i < json.Length; i++)
+        {
+            char c = json[i];
+            if (c == '"')
+            {
+                int start = i++;
+                for (; i < json.Length; i++)
+                {
+                    if (json[i] == '\\') { i++; continue; }
+                    if (json[i] == '"') break;
+                }
+                if (i >= json.Length) Reject("MANIFEST_JSON_INVALID");
+                int colon = i + 1;
+                while (colon < json.Length && Char.IsWhiteSpace(json[colon])) colon++;
+                if (colon >= json.Length || json[colon] != ':' ||
+                    (depth != 1 && depth != arrayDepth + 1)) continue;
+                string key = JsonUtility.FromJson<JsonPropertyName>("{\"value\":" + json.Substring(start, i - start + 1) + "}").value;
+                int value = colon + 1;
+                while (value < json.Length && Char.IsWhiteSpace(json[value])) value++;
+                if (depth == 1 && key == "reference_rebind_tasks")
+                {
+                    if (sawTasks || value >= json.Length || json[value] != '[') Reject("MANIFEST_JSON_INVALID");
+                    sawTasks = true; arrayStart = value;
+                }
+                else if (arrayDepth > 0 && depth == arrayDepth + 1 && taskIndex >= 0 &&
+                    (key == "weight_transport" || key == "parent_transform_mapping"))
+                {
+                    bool isNull = value + 4 <= json.Length && json.Substring(value, 4) == "null";
+                    if (isNull) present[taskIndex].Remove(key); else present[taskIndex].Add(key);
+                }
+                continue;
+            }
+            if (c == '{' || c == '[')
+            {
+                if (i == arrayStart) arrayDepth = depth + 1;
+                if (c == '{' && arrayDepth > 0 && depth == arrayDepth)
+                { taskIndex++; present.Add(new HashSet<string>(StringComparer.Ordinal)); }
+                depth++;
+            }
+            else if (c == '}' || c == ']')
+            {
+                if (c == ']' && depth == arrayDepth) arrayDepth = -1;
+                depth--;
+            }
+        }
+        if (present.Count != manifest.reference_rebind_tasks.Length) Reject("MANIFEST_JSON_INVALID");
+        for (int i = 0; i < present.Count; i++)
+        {
+            Task task = manifest.reference_rebind_tasks[i];
+            if (task == null) continue;
+            if (!present[i].Contains("weight_transport")) task.weight_transport = null;
+            if (!present[i].Contains("parent_transform_mapping")) task.parent_transform_mapping = null;
+        }
+        return manifest;
     }
 
     private static bool PrefabPath(string path) { return !String.IsNullOrEmpty(path) && path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase); }

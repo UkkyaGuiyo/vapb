@@ -10,6 +10,25 @@ public sealed class ModelSkinRouteCompatibilityTests
     private const string NormalKind = "RESTORE_MODEL_SKIN_VARIANT_V1";
 
     [Test]
+    public void JsonMissingOptionalReceiptsStayAbsentWhileExplicitObjectsStayPresent()
+    {
+        Type finalizer = FindFinalizer();
+        foreach (string tail in new[] { "", ",\"weight_transport\":null,\"parent_transform_mapping\":null" })
+        {
+            object parsed = Invoke(finalizer, "ParseManifestJson", "{\"reference_rebind_tasks\":[{\"kind\":\"RESTORE_DIRECT_SKIN_VARIANT_V1\"" + tail + "}]}");
+            object task = ((Array)parsed.GetType().GetField("reference_rebind_tasks").GetValue(parsed)).GetValue(0);
+            Assert.IsNull(task.GetType().GetField("weight_transport").GetValue(task));
+            Assert.IsNull(task.GetType().GetField("parent_transform_mapping").GetValue(task));
+        }
+        object explicitParsed = Invoke(finalizer, "ParseManifestJson", "{\"reference_rebind_tasks\":[{\"kind\":\"RESTORE_DIRECT_SKIN_VARIANT_V1\",\"weight_transport\":{},\"parent_transform_mapping\":{}}]}");
+        object explicitTask = ((Array)explicitParsed.GetType().GetField("reference_rebind_tasks").GetValue(explicitParsed)).GetValue(0);
+        Assert.IsNotNull(explicitTask.GetType().GetField("weight_transport").GetValue(explicitTask));
+        Assert.IsNotNull(explicitTask.GetType().GetField("parent_transform_mapping").GetValue(explicitTask));
+        TargetInvocationException error = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", explicitTask));
+        Assert.AreEqual("WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED", error.InnerException.Message);
+    }
+
+    [Test]
     public void SameIndexLayoutWithMatchingShapesKeepsLegacyMultiSkinScope()
     {
         Type finalizer = FindFinalizer();

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using UnityEditor;
@@ -11,11 +12,11 @@ using UnityEngine;
 public static class VapbSkinRoundtripProbe
 {
     public static Action BoundedCapture;
-    private const string Folder = "Assets/VapbSkinRoundtrip";
-    private const string Input = Folder + "/Input.fbx";
-    private const string Prefab = Folder + "/Avatar.prefab";
-    private const string MaterialPath = Folder + "/Original.mat";
-    private const string TexturePath = Folder + "/Original.png";
+    private static string Folder => SessionState.GetBool("VAPB_PHYSBONE_CASE", false) ? "Assets/VapbOwnedPhysBonePreservedSlots" : "Assets/VapbSkinRoundtrip";
+    private static string Input => Folder + "/Input.fbx";
+    private static string Prefab => Folder + "/Avatar.prefab";
+    private static string MaterialPath => Folder + "/Original.mat";
+    private static string TexturePath => Folder + "/Original.png";
     private const string Manifest = "Assets/VAPBExport/manifest.json";
     private const string Phase = "VAPB_SKIN_ROUNDTRIP_PHASE";
     private const string ImportStart = "VAPB_SKIN_ROUNDTRIP_IMPORT_START";
@@ -59,6 +60,7 @@ public static class VapbSkinRoundtripProbe
         public string kind;
         public string model_guid;
         public string realization_id;
+        public string variant_path;
         public BoneTask[] bones;
         public string root_bone_target_transform_file_id;
     }
@@ -81,6 +83,8 @@ public static class VapbSkinRoundtripProbe
         public bool materialsPreserved;
         public bool sourceModelUnchanged;
         public bool unrelatedStatePreserved;
+        public bool nativePhysBoneAndColliderPreserved;
+        public bool sdkScriptsResolved;
         public bool expectedDeformation;
         public float deformationMaxError;
         public float deformationMaxExpected;
@@ -141,6 +145,137 @@ public static class VapbSkinRoundtripProbe
     public static void PrepareTexture()
     {
         PrepareCore(false, true);
+    }
+
+    public static void PreparePhysBonePreservedSlots() { PreparePhysBone(); }
+    public static void ValidatePhysBonePreservedSlots() { ValidatePhysBone(); }
+    public static void PreparePhysBone()
+    {
+        SessionState.SetBool("VAPB_PHYSBONE_CASE", true);
+        PrepareCore(false, false);
+    }
+    public static void ValidatePhysBone()
+    {
+        SessionState.SetBool("VAPB_PHYSBONE_CASE", true);
+        Validate();
+    }
+    private static Type SdkComponent(string name)
+    {
+        var matches = TypeCache.GetTypesDerivedFrom<MonoBehaviour>().Where(t => t.Name == name &&
+            t.FullName.StartsWith("VRC.", StringComparison.Ordinal)).ToArray();
+        if (matches.Length != 1) throw new InvalidOperationException("SDK_COMPONENT_TYPE_NOT_UNIQUE");
+        return matches[0];
+    }
+    private static SerializedProperty Property(SerializedObject value, string name)
+    {
+        var prop = value.FindProperty(name);
+        if (prop == null) throw new InvalidOperationException("SDK_SERIALIZED_PROPERTY_UNAVAILABLE:" + name);
+        return prop;
+    }
+    private static void AddPhysBone(GameObject root, SkinnedMeshRenderer skin)
+    {
+        var owner = new GameObject("OwnedPhysBone"); owner.transform.SetParent(skin.bones[0], false);
+        var colliderOwner = new GameObject("OwnedCollider"); colliderOwner.transform.SetParent(root.transform, false);
+        var collider = (MonoBehaviour)colliderOwner.AddComponent(SdkComponent("VRCPhysBoneCollider"));
+        var bone = (MonoBehaviour)owner.AddComponent(SdkComponent("VRCPhysBone"));
+        var co = new SerializedObject(collider);
+        Property(co, "rootTransform").objectReferenceValue = null;
+        Property(co, "radius").floatValue = 0.125f; co.ApplyModifiedPropertiesWithoutUndo();
+        var bo = new SerializedObject(bone);
+        Property(bo, "rootTransform").objectReferenceValue = null;
+        Property(bo, "pull").floatValue = 0.2f; Property(bo, "spring").floatValue = 0.3f;
+        Property(bo, "stiffness").floatValue = 0.4f; Property(bo, "gravity").floatValue = 0.5f;
+        var refs = Property(bo, "colliders"); refs.arraySize = 1;
+        refs.GetArrayElementAtIndex(0).objectReferenceValue = collider; bo.ApplyModifiedPropertiesWithoutUndo();
+        ComponentState(root); // Resolve real MonoScript GUID/fileID now, never invent one.
+    }
+    private static string ComponentState(GameObject root)
+    {
+        var result = new System.Text.StringBuilder();
+        foreach (var typeName in new[] { "VRCPhysBone", "VRCPhysBoneCollider" })
+        {
+            var components = root.GetComponentsInChildren(SdkComponent(typeName), true);
+            if (components.Length != 1) throw new InvalidOperationException("SDK_COMPONENT_COUNT");
+            var component = (MonoBehaviour)components[0];
+            var script = MonoScript.FromMonoBehaviour(component);
+            if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(script, out string guid, out long id) ||
+                string.IsNullOrEmpty(guid) || id == 0 || !AssetDatabase.GetAssetPath(script).StartsWith("Packages/com.vrchat."))
+                throw new InvalidOperationException("SDK_SCRIPT_ID_UNRESOLVED");
+            result.Append(typeName).Append(':').Append(guid).Append(':').Append(id);
+            var so = new SerializedObject(component);
+            if (Property(so, "rootTransform").objectReferenceValue != null)
+                throw new InvalidOperationException("SDK_NULL_ROOT_CHANGED");
+            foreach (var name in typeName == "VRCPhysBone" ? new[] { "pull", "spring", "stiffness", "gravity" } : new[] { "radius" })
+                result.Append('|').Append(name).Append('=').Append(Property(so, name).floatValue.ToString("R", CultureInfo.InvariantCulture));
+            if (typeName == "VRCPhysBone")
+            {
+                var refs = Property(so, "colliders");
+                var all = root.GetComponentsInChildren(SdkComponent("VRCPhysBoneCollider"), true);
+                if (refs.arraySize != 1 || refs.GetArrayElementAtIndex(0).objectReferenceValue != all.Single())
+                    throw new InvalidOperationException("SDK_COLLIDER_REFERENCE_CHANGED");
+                result.Append("|collider=owned-native-component");
+            }
+            result.AppendLine();
+        }
+        return result.ToString();
+    }
+    private static void ValidatePhysBoneImported()
+    {
+        var report = new Report { phase = "native_physbone", error = "UNEXPECTED_EXCEPTION" };
+        try
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
+            string before = ComponentState(source);
+            if (before != File.ReadAllText(ProjectFile("PhysBoneSourceState.txt"))) throw new InvalidOperationException("SOURCE_COMPONENT_CHANGED");
+            string sourceHash = FileHash(AssetFile(Prefab));
+            var output = JsonUtility.FromJson<OutputManifest>(File.ReadAllText(AssetFile(Manifest)));
+            var task = output.reference_rebind_tasks.Single();
+            report.packageImported = true;
+            var parse = typeof(VapbModelSkinFinalizer).GetMethod("ParseManifestJson", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            if (parse == null) throw new InvalidOperationException("OPTIONAL_JSON_READER_MISSING");
+            foreach (string tail in new[] { "", ",\"weight_transport\":null,\"parent_transform_mapping\":null", ",\"unknown\":{\"weight_transport\":{}},\"label\":\"weight_transport\"" })
+            {
+                var m = parse.Invoke(null, new object[] { "{\"reference_rebind_tasks\":[{\"kind\":\"RESTORE_DIRECT_SKIN_VARIANT_V1\"" + tail + "}]}" });
+                var a = (Array)m.GetType().GetField("reference_rebind_tasks").GetValue(m); var item = a.GetValue(0);
+                if (item.GetType().GetField("weight_transport").GetValue(item) != null || item.GetType().GetField("parent_transform_mapping").GetValue(item) != null)
+                    throw new InvalidOperationException("ABSENT_OPTIONAL_JSON_CONTROL_FAILED");
+            }
+            var explicitM = parse.Invoke(null, new object[] { "{\"reference_rebind_tasks\":[{\"kind\":\"RESTORE_DIRECT_SKIN_VARIANT_V1\",\"weight_transport\":{},\"parent_transform_mapping\":{}}]}" });
+            var explicitTasks = (Array)explicitM.GetType().GetField("reference_rebind_tasks").GetValue(explicitM); var explicitItem = explicitTasks.GetValue(0);
+            if (explicitItem.GetType().GetField("weight_transport").GetValue(explicitItem) == null || explicitItem.GetType().GetField("parent_transform_mapping").GetValue(explicitItem) == null)
+                throw new InvalidOperationException("EXPLICIT_OPTIONAL_JSON_CONTROL_FAILED");
+            try {
+                typeof(VapbModelSkinFinalizer).GetMethod("ValidateTask", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static).Invoke(null, new[] { explicitItem });
+                throw new InvalidOperationException("EXPLICIT_EMPTY_RECEIPT_ACCEPTED");
+            } catch (System.Reflection.TargetInvocationException error) {
+                if (error.InnerException.Message != "WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED") throw;
+            }
+            Debug.Log("NATIVE_OPTIONAL_JSON_CONTROLS_PASS");
+            var read = typeof(VapbModelSkinFinalizer).GetMethod("ReadManifest", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            var decoded = read.Invoke(null, new object[] { Manifest });
+            var tasks = (Array)decoded.GetType().GetField("reference_rebind_tasks").GetValue(decoded);
+            var decodedTask = tasks.GetValue(0);
+            Debug.Log("NATIVE_OPTIONAL_OBJECT_DIAGNOSIS weight_transport=" + (decodedTask.GetType().GetField("weight_transport").GetValue(decodedTask) != null)
+                + " parent_transform_mapping=" + (decodedTask.GetType().GetField("parent_transform_mapping").GetValue(decodedTask) != null));
+            report.firstApply = VapbModelSkinFinalizer.Apply(Manifest);
+            if (!report.firstApply) throw new InvalidOperationException("FIRST_APPLY_FAILED");
+            var variant = AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path);
+            if (variant == null || PrefabUtility.GetCorrespondingObjectFromSource(variant) != source)
+                throw new InvalidOperationException("VARIANT_SOURCE_MISMATCH");
+            report.nativePhysBoneAndColliderPreserved = ComponentState(variant) == before;
+            foreach (var name in new[] { "VRCPhysBone", "VRCPhysBoneCollider" })
+                if (PrefabUtility.GetCorrespondingObjectFromSource(variant.GetComponentsInChildren(SdkComponent(name), true).Single()) !=
+                    source.GetComponentsInChildren(SdkComponent(name), true).Single()) throw new InvalidOperationException("COMPONENT_SOURCE_MISMATCH");
+            report.sdkScriptsResolved = true;
+            string first = FileHash(AssetFile(task.variant_path));
+            report.secondApply = VapbModelSkinFinalizer.Apply(Manifest);
+            report.secondApplyUnchanged = FileHash(AssetFile(task.variant_path)) == first;
+            report.sourceModelUnchanged = FileHash(AssetFile(Prefab)) == sourceHash;
+            report.pass = report.firstApply && report.nativePhysBoneAndColliderPreserved && report.secondApply && report.secondApplyUnchanged && report.sourceModelUnchanged;
+            report.error = report.pass ? "NONE" : "COMPONENT_ASSERTION_FAILED";
+        }
+        catch (Exception error) { report.error = error.Message; }
+        Finish(report);
     }
 
     public static void PrepareMultiSkin()
@@ -272,6 +407,28 @@ public static class VapbSkinRoundtripProbe
                     throw new InvalidOperationException("TEXTURE_IMPORT_FAILED");
             }
             AssetDatabase.CreateAsset(material, MaterialPath);
+            if (SessionState.GetBool("VAPB_PHYSBONE_CASE", false))
+            {
+                // Reuse the existing three-slot owned fixture without collapsing native submeshes.
+                // Explicit importer remaps preserve known face semantics instead of guessing overrides.
+                var importer = AssetImporter.GetAtPath(Input) as ModelImporter;
+                var modelMaterials = AssetDatabase.LoadAllAssetsAtPath(Input).OfType<Material>().ToArray();
+                if (importer == null || modelMaterials.Length != 3) throw new InvalidOperationException("SOURCE_MATERIAL_IDENTIFIERS_UNAVAILABLE");
+                for (int slot = 0; slot < modelMaterials.Length; slot++)
+                {
+                    Material target = material;
+                    if (slot > 0 && SessionState.GetBool("VAPB_PHYSBONE_CASE", false))
+                    {
+                        target = new Material(shader) { name = "OwnedSlot" + slot };
+                        AssetDatabase.CreateAsset(target, Folder + "/OwnedSlot" + slot + ".mat");
+                    }
+                    importer.AddRemap(new AssetImporter.SourceAssetIdentifier(modelMaterials[slot]), target);
+                }
+                importer.SaveAndReimport();
+                model = AssetDatabase.LoadAssetAtPath<GameObject>(Input);
+                imported = SingleSkin(model);
+            }
+
             GameObject instance = PrefabUtility.InstantiatePrefab(model) as GameObject;
             if (instance == null) throw new InvalidOperationException("MODEL_INSTANCE_FAILED");
             try
@@ -282,7 +439,7 @@ public static class VapbSkinRoundtripProbe
                 SkinnedMeshRenderer skin = SingleSkin(instance);
                 if (skin == null || skin.bones.Length != imported.bones.Length)
                     throw new InvalidOperationException("UNPACK_SKIN_UNSUPPORTED");
-                skin.sharedMaterials = new[] { material };
+                skin.sharedMaterials = SessionState.GetBool("VAPB_PHYSBONE_CASE", false) ? imported.sharedMaterials : new[] { material };
                 GameObject sentinel = new GameObject("UnrelatedSentinel");
                 sentinel.transform.SetParent(instance.transform, false);
                 sentinel.transform.localPosition = new Vector3(4f, 5f, 6f);
@@ -291,6 +448,7 @@ public static class VapbSkinRoundtripProbe
                     skin.bones[1].localRotation *= Quaternion.Euler(0f, 0f, 12f);
                     skin.rootBone = sentinel.transform;
                 }
+                if (SessionState.GetBool("VAPB_PHYSBONE_CASE", false)) AddPhysBone(instance, skin);
                 if (PrefabUtility.SaveAsPrefabAsset(instance, Prefab) == null)
                     throw new InvalidOperationException("PREFAB_SAVE_FAILED");
             }
@@ -335,9 +493,10 @@ public static class VapbSkinRoundtripProbe
                 original_vertex_count = renderer.sharedMesh.vertexCount
             };
             File.WriteAllText(ProjectFile("SourceInfo.json"), JsonUtility.ToJson(info, true));
-            AssetDatabase.ExportPackage(textured ? new[] { Input, Prefab, MaterialPath, TexturePath } :
+            if (SessionState.GetBool("VAPB_PHYSBONE_CASE", false)) File.WriteAllText(ProjectFile("PhysBoneSourceState.txt"), ComponentState(prefab));
+            AssetDatabase.ExportPackage(SessionState.GetBool("VAPB_PHYSBONE_CASE", false) ? new[] { Input, Prefab, MaterialPath, Folder + "/OwnedSlot1.mat", Folder + "/OwnedSlot2.mat" } : textured ? new[] { Input, Prefab, MaterialPath, TexturePath } :
                 new[] { Input, Prefab, MaterialPath }, ProjectFile("Source.unitypackage"),
-                ExportPackageOptions.IncludeDependencies);
+                SessionState.GetBool("VAPB_PHYSBONE_CASE", false) ? ExportPackageOptions.Default : ExportPackageOptions.IncludeDependencies);
             report.pass = File.Exists(ProjectFile("Source.unitypackage"));
             report.error = report.pass ? "NONE" : "PACKAGE_MISSING";
         }
@@ -362,6 +521,7 @@ public static class VapbSkinRoundtripProbe
     {
         if (SessionState.GetString(Phase, "") != "completed") return;
         SessionState.SetString(Phase, "validating");
+        if (SessionState.GetBool("VAPB_PHYSBONE_CASE", false)) { ValidatePhysBoneImported(); return; }
         var report = new Report { phase = "validate", error = "UNEXPECTED_EXCEPTION" };
         try
         {
@@ -597,6 +757,7 @@ public static class VapbSkinRoundtripProbe
     private static void Finish(Report report)
     {
         SessionState.SetString(Phase, "");
+        SessionState.SetBool("VAPB_PHYSBONE_CASE", false);
         if (report.pass && File.Exists(ProjectFile("BoundedBlender.json")))
         {
             try { if (BoundedCapture == null) throw new InvalidOperationException(); BoundedCapture(); }

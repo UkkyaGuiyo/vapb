@@ -1,0 +1,55 @@
+{
+  "status": "PASS_BOUNDED_NATIVE_PHYSBONE_COLLIDER_RETURN",
+  "scope": "one existing first-party three-Material Skin fixture with one native PhysBone and one native Collider; explicit author remaps preserve submeshes",
+  "unity": "2022.3.22f1",
+  "blender": {
+    "normal_import_save_reopen_edit_export": true,
+    "geometry_edit_scale": 1.25,
+    "source_package_unchanged": true,
+    "prefab_and_meta_byte_identical": true,
+    "sdk_payload_absent": true,
+    "developer_helper_source_sha256": "d08f52786a902fbf4e05bc99342cd5ee71f7e794e6d99713774fa0f0653696b5",
+    "published_faf4518_zip_unchanged": true,
+    "installed_base_helper_restored_after_developer_exports": true
+  },
+  "sdk_type_and_monoscript_identity": "resolved from existing installed SDK using native TypeCache/MonoScript/AssetDatabase; no guessed GUIDs",
+  "source": {
+    "physbones": 1,
+    "colliders": 1,
+    "null_roots": 2,
+    "pull": 0.2,
+    "spring": 0.3,
+    "stiffness": 0.4,
+    "gravity": 0.5,
+    "collider_radius": 0.125,
+    "collider_reference": "one native owned component"
+  },
+  "unity_result": {
+    "packageImported": true,
+    "firstApply": true,
+    "nativePhysBoneAndColliderPreserved": true,
+    "sdkScriptsResolved": true,
+    "sourceModelUnchanged": true,
+    "secondApply": true,
+    "secondApplyUnchanged": true
+  },
+  "native_optional_json_controls": "PASS missing/null receipts absent; nested unrelated names ignored; explicit empty objects retained and rejected",
+  "native_baseline_failure": "JSON missing optional receipts became non-null empty objects in JsonUtility.FromJson; WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED before Apply",
+  "product_fix": "ReadManifest preserves exact top-level task optional-property absence; explicit objects continue through unchanged validation; no weight policy/context expansion",
+  "protected_files_unchanged": 2987,
+  "normal_exit_code": 0,
+  "owned_children_and_lock_absent": true,
+  "pool_and_mutex_released": true,
+  "other_retained_attempts": [
+    "initial source missing explicit FBX Material mapping: normal export refused",
+    "same Material across three native submeshes: topology/layout return refused",
+    "single-slot author copy with unused Material definitions: normal export refused"
+  ],
+  "limits": {
+    "gui_clicks": "NOT_RUN",
+    "physics_simulation_client_avatar_descriptor_contacts_animation": "NOT_RUN",
+    "whole_product": "NOT_COMPLETE",
+    "full_same_case_geometry_material_weight_acceptance": "NOT_ASSERTED; component-specific native observer only"
+  },
+  "publication": "first-party observer/source and aggregate result only; SDK, private assets, raw logs, exact SDK GUID/fileID tables, PIDs and private paths excluded"
+}
