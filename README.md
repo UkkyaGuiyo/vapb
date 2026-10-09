@@ -8,6 +8,8 @@ Current installable WIP snapshot: `vapb-c5585a6.zip`, code commit `c5585a669320f
 python tools/build_distribution_zip.py --repo . --revision c5585a669320faece2133cab80470ca65104fa09 --output vapb-c5585a6.zip
 ```
 
+Source checkpoint after this ZIP: Semantic Bone Merge now refuses equivalent Bone mappings whose parent correspondence differs. This small source fix is not included in `vapb-c5585a6.zip`; see [the regression result](TEST_RESULTS.md#bone-merge-parent-correspondence-2026-10-09).
+
 Standard isolated Blender installation passed. The sole runtime change fixes Unity JSON reading of absent optional Skin receipts. Focused native JSON controls and normal Unity import/Finalizer Apply/repeat passed for one first-party PhysBone/Collider case using the existing SDK, preserving null roots, settings, real script identities and the native Collider reference. [Native component scope and retained failures](tests/evidence/remapped_model_replacement_export_20261008/native-physbone-collider-roundtrip.json) and [earlier distribution observations](tests/evidence/remapped_model_replacement_export_20261008/distribution-native-skin-return-summary.json) remain separate. The unchanged current ZIP also passed one [native ContactSender return](tests/evidence/remapped_model_replacement_export_20261008/native-contact-sender-roundtrip.json): explicit bone Transform identity, radius, tag and source correspondence survive Apply/repeat. GUI clicks, client simulation and full Avatar state remain unverified. This is an installable WIP snapshot. SDK and input assets are not included in the add-on ZIP.
 
 
@@ -129,6 +131,8 @@ This README and the Git history intentionally disclose the use of AI in developm
 - **Nキー → VAPB → Bone Merge**: 基準Aと対象Bを選び、候補を取得します。各BoneについてA側への対応またはB固有Boneとしての保持を明示確認し、解析後に実行します。移植先のrest / pose、Meshの変形、Bone親参照を検証し、失敗時は戻します。Bは保持し、Weight Transferは別操作です。
 - Bone Mergeの不明なUnity/VRC参照、Animation、Constraint、特殊なBone設定、共有データ、名前衝突、多対一対応は現在保護して停止します。これらを含む全面的な統合・Unity復元は引き続き実装中です。
   同等BoneのDeform（変形に使う）設定がA/Bで違う場合も、付け替え前に停止します。A/BのBone設定と対応を確認して再解析してください。
+
+同等 Bone の親が確定 mapping と一致しない場合は、Mesh の付け替え前に停止します。A/B の親階層と対応を確認して再解析してください。親の自動変更は行いません。
 
 ### UnityPackage書き出し：直接Prefabの静的Mesh
 

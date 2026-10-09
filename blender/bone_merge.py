@@ -136,6 +136,10 @@ def prepare_merge(a, b, choices, scene):
             raise ValueError("B Bone に未対応の参照があります")
         if classifications[bone.name] == 'EQUIVALENT':
             target = a.data.bones[remap[bone.name]]
+            expected_parent = remap[bone.parent.name] if bone.parent else None
+            actual_parent = target.parent.name if target.parent else None
+            if actual_parent != expected_parent:
+                raise ValueError("同等 Bone の親対応が一致しません。A/B の親階層と確定 mapping を確認してください")
             if target.use_deform != bone.use_deform:
                 raise ValueError("同等 Bone の Deform 設定が一致しません。A/B の変形設定を確認してください")
             if not _close_matrix(a.matrix_world @ target.matrix_local,

@@ -222,3 +222,19 @@ Weight Transfer, target-only group preservation, rollback and Undo. The four
 nearest `test_bone_merge` policy tests PASS. Both owned Blender processes exit
 zero after GREEN; no Unity run, original packages, private assets or SDK work.
 This closes this concrete §11 defect, not broad Bone Merge/VRC or product release.
+
+
+## Bone Merge parent correspondence (2026-10-09)
+
+PRODUCT_SPEC section 11 requires explicit equivalent correspondence and preserved skin deformation. A concrete native Blender defect was reproduced: A and B have matching Bone World Rest/current Pose, but A's Extra is root-level while B's Extra is under Root. Existing preflight and Apply accepted the merge, keeping Rest geometry; identical 0.5 Root translations then differ by 0.5000000000000577 in evaluated world vertices.
+
+The four-line read-only preflight compares each equivalent target's actual parent against the explicitly confirmed remap of the source parent. A mismatch stops before UUID/remap writes, Bone creation or Mesh modifier/group changes. It does not infer correspondence from matching names or reparent either rig.
+
+Verification on Blender 5.2.1 LTS:
+
+- RED: existing native suite with the new regression exits 9, `Equivalent parent mismatch accepted`.
+- GREEN: both parent-mismatch directions refused with source groups/modifier, parent links, geometry and identity state preserved. A positive renamed-root mapping succeeds and preserves evaluated geometry after parent translation.
+- Existing full Bone Merge runtime suite passes: Deform controls, posed/transplanted chain, Bone parenting, protected references, collision, rollback and Undo.
+- Four nearest pure policy tests PASS; diff check PASS. Unrelated suites and Unity were not rerun.
+
+A first positive observer compared renamed post-merge groups against the old B Bone names; it was corrected to capture the original B deformation before merge. This observation failure was not another product defect. The initial defect remains distinct from the earlier Deform-flag fix. The existing c5585a6 ZIP remains unchanged and does not contain this source checkpoint. General Animation/Unity-VRC remapping, GUI and whole-product completion are not asserted.

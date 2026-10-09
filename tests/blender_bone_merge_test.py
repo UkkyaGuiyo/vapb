@@ -148,7 +148,61 @@ def equivalent_deform_flag_test():
     print('BONE_MERGE_DEFORM_FLAG_PASS mismatch_refused=2 matching_flags=2 future_pose_preserved=2 no_mutation_on_refusal=1')
 
 
+def equivalent_parent_mapping_test():
+    """Equal Rest/current Pose must not hide a different future parent chain."""
+    from types import SimpleNamespace
+    for detach_reference in (True, False):
+        reset()
+        a = rig('Reference parent', (0, 0, 0), (0, 0, 0), extra=True)
+        b = rig('Source parent', (0, 0, 0), (0, 0, 0), extra=True)
+        obj, modifier = mesh('Parent weighted', b)
+        detached = a if detach_reference else b
+        bpy.context.view_layer.objects.active = detached
+        bpy.ops.object.mode_set(mode='EDIT')
+        detached.data.edit_bones['Extra'].parent = None
+        bpy.ops.object.mode_set(mode='OBJECT')
+        rows = [SimpleNamespace(source_name=n, classification='EQUIVALENT',
+                                target_name=n, confirmed=True) for n in ('Root', 'Extra')]
+        before = evaluated_world_vertices(obj)
+        parents = (a.data.bones['Extra'].parent, b.data.bones['Extra'].parent)
+        groups = tuple((g.name, g.lock_weight) for g in obj.vertex_groups)
+        weights = tuple(tuple((g.group, g.weight) for g in v.groups) for v in obj.data.vertices)
+        try:
+            prepare_merge(a, b, rows, bpy.context.scene)
+        except ValueError as error:
+            assert '親' in str(error)
+        else:
+            raise AssertionError('Equivalent parent mismatch accepted')
+        assert modifier.object is b
+        assert groups == tuple((g.name, g.lock_weight) for g in obj.vertex_groups)
+        assert weights == tuple(tuple((g.group, g.weight) for g in v.groups) for v in obj.data.vertices)
+        assert parents == (a.data.bones['Extra'].parent, b.data.bones['Extra'].parent)
+        assert REMAP_PROPERTY not in a and LOCAL_ID_PROPERTY not in a and LOCAL_ID_PROPERTY not in b
+        assert all((x-y).length < 1e-6 for x,y in zip(before,evaluated_world_vertices(obj)))
+    reset()
+    a = rig('Reference matched parent', (0, 0, 0), (0, 0, 0), extra=True)
+    b = rig('Source matched parent', (0, 0, 0), (0, 0, 0), extra=True)
+    a.data.bones['Root'].name = 'ReferenceRoot'
+    obj, modifier = mesh('Matched parent weighted', b)
+    rows = [SimpleNamespace(source_name='Root', classification='EQUIVALENT',
+                            target_name='ReferenceRoot', confirmed=True),
+            SimpleNamespace(source_name='Extra', classification='EQUIVALENT',
+                            target_name='Extra', confirmed=True)]
+    # Observe B before merge renames its Root vertex group to ReferenceRoot.
+    b.pose.bones['Root'].location.x = .5
+    original = evaluated_world_vertices(obj)
+    b.pose.bones['Root'].location.x = 0
+    bpy.context.view_layer.update()
+    assert bone_merge_module.apply_merge(prepare_merge(a,b,rows,bpy.context.scene)) == (0,1)
+    a.pose.bones['ReferenceRoot'].location.x = .5
+    returned = evaluated_world_vertices(obj)
+    assert all((x-y).length < 1e-6 for x,y in zip(returned,original))
+    assert b.name in bpy.data.objects
+    print('BONE_MERGE_PARENT_MAPPING_PASS mismatch_refused=2 renamed_mapping_preserved=1 future_pose_preserved=1 no_mutation_on_refusal=1')
+
+
 def main():
+    equivalent_parent_mapping_test()
     equivalent_deform_flag_test()
     for cls in BONE_MERGE_CLASSES:
         bpy.utils.register_class(cls)
