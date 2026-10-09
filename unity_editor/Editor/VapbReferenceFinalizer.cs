@@ -81,6 +81,7 @@ public static class VapbReferenceFinalizer
     {
         public string kind;
         public string prefab_guid;
+        public string variant_path;
         public string renderer_file_id;
         public string model_guid;
         public string model_sha256;
@@ -131,9 +132,76 @@ public static class VapbReferenceFinalizer
     [MenuItem("Tools/VAPB/Apply Selected Export Manifest")]
     private static void ApplySelected()
     {
+        // Batch callers use Apply directly; this menu is an explicit user action.
+        if (Application.isBatchMode) return;
         string path = AssetDatabase.GetAssetPath(Selection.activeObject);
+        var outputs = new HashSet<string>(StringComparer.Ordinal);
+        var targets = new HashSet<string>(StringComparer.Ordinal);
+        bool variant = VapbModelSkinFinalizer.Handles(path);
+        try
+        {
+            Manifest manifest = ReadManifest(path);
+            if (manifest == null || manifest.schema_version != "vapb-export-manifest-1" ||
+                manifest.reference_rebind_tasks == null || manifest.reference_rebind_tasks.Length == 0)
+                throw new InvalidOperationException("MANIFEST_UNSUPPORTED");
+            if (!variant) ValidateTaskSyntax(manifest);
+            foreach (Task task in manifest.reference_rebind_tasks)
+            {
+                if (task == null) throw new InvalidOperationException("TASK_UNSUPPORTED");
+                string target = AssetDatabase.GUIDToAssetPath(
+                    task.kind == "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1" ? task.source_model_guid : task.prefab_guid);
+                if (string.IsNullOrEmpty(target)) throw new InvalidOperationException("PREFAB_UNAVAILABLE");
+                targets.Add(target);
+                if (variant)
+                {
+                    if ((task.kind != "RESTORE_MODEL_SKIN_VARIANT_V1" &&
+                         task.kind != "RESTORE_DIRECT_SKIN_VARIANT_V1" &&
+                         task.kind != "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1") ||
+                        string.IsNullOrEmpty(task.variant_path) ||
+                        !task.variant_path.StartsWith("Assets/VAPBExport/", StringComparison.Ordinal) ||
+                        !task.variant_path.EndsWith(".prefab", StringComparison.Ordinal) ||
+                        task.variant_path.Contains("..") || task.variant_path.Contains("\\"))
+                        throw new InvalidOperationException("TASK_UNSUPPORTED");
+                    outputs.Add(task.variant_path);
+                }
+                else outputs.Add(target);
+            }
+        }
+        catch (Exception exception)
+        {
+            Debug.LogError("VAPB_FINALIZER_CONFIRMATION_REJECTED=" + exception.Message);
+            EditorUtility.DisplayDialog("VAPB：適用できません",
+                "対象の編集データを確認できませんでした。詳細はConsoleを確認してください。", "閉じる");
+            return;
+        }
+        // This fallback describes the operation; full identity/dependency checks
+        // remain in Apply. Do not label this limited inspection a preflight pass.
+        string message = "VAPBの編集データを検出しました。\n\n対象：\n" +
+            string.Join("\n", new List<string>(targets).ToArray()) +
+            "\n\n" + (variant ? "編集Mesh/Skinを別のPrefab Variantに接続します。元のPrefabを保持します。" :
+                "対象PrefabのMesh/SkinとMaterial参照を更新します。対象Prefab自体を保存します。") +
+            "\nBone/rootBoneの再接続を含む参照と編集範囲は、適用時に既存Finalizerで検証します。" +
+            "\n\n保存先：\n" + string.Join("\n", new List<string>(outputs).ToArray()) +
+            "\n\n適用前の全検証は未実施です。未対応の編集や参照不一致は適用時に拒否されます。";
+        if (!EditorUtility.DisplayDialog("VAPB：編集内容を適用", message, "適用", "キャンセル")) return;
         if (!Apply(path))
+        {
             Debug.LogError("VAPB_FINALIZER_FAILED");
+            EditorUtility.DisplayDialog("VAPB：適用できませんでした",
+                "Finalizerが適用を拒否しました。詳細はConsoleを確認してください。", "閉じる");
+            return;
+        }
+        foreach (string output in outputs)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(output);
+            if (prefab == null) continue;
+            Selection.activeObject = prefab;
+            EditorGUIUtility.PingObject(prefab);
+            break;
+        }
+        EditorUtility.DisplayDialog("VAPB：適用結果",
+            "適用処理が完了しました。\n保存先：\n" + string.Join("\n", new List<string>(outputs).ToArray()) +
+            "\n\nPrefabを開いて編集内容を確認してください。対応範囲は書き出した編集データに限られます。", "閉じる");
     }
 
     [MenuItem("Tools/VAPB/Apply Selected Export Manifest", true)]

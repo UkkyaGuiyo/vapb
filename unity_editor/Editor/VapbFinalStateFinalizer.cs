@@ -98,8 +98,42 @@ public static class VapbFinalStateFinalizer
     [MenuItem("Tools/VAPB/Build Final State Prefab")]
     private static void ApplySelected()
     {
+        if (Application.isBatchMode) return;
         string path = AssetDatabase.GetAssetPath(Selection.activeObject);
-        if (!Apply(path) && LastResult != "PARTIAL") Debug.LogError("VAPB_FINAL_STATE_FAILED");
+        Task task;
+        try { task = ReadTask(path); }
+        catch (Exception exception)
+        {
+            Debug.LogError("VAPB_FINAL_STATE_CONFIRMATION_REJECTED=" + exception.Message);
+            EditorUtility.DisplayDialog("VAPB：適用できません",
+                "対象の編集データを確認できませんでした。詳細はConsoleを確認してください。", "閉じる");
+            return;
+        }
+        if (!EditorUtility.DisplayDialog("VAPB：編集内容を適用",
+            "VAPBの編集データから、静的MeshとMaterial参照を持つPrefabを生成します。" +
+            "\n保存先：\n" + task.prefab_path +
+            "\n\n元の入力Prefabは保持します。Skin/Boneの復元はこの操作の対象外です。" +
+            "\n適用前の全検証は未実施です。参照不一致や保存先の衝突は適用時に検証します。" +
+            "\n外部Shader等の依存が不足すると、結果が部分対応になる場合があります。",
+            "適用", "キャンセル")) return;
+        bool complete = Apply(path);
+        if (!complete && LastResult != "PARTIAL")
+        {
+            Debug.LogError("VAPB_FINAL_STATE_FAILED");
+            EditorUtility.DisplayDialog("VAPB：適用できませんでした",
+                "Finalizerが適用を拒否しました。詳細はConsoleを確認してください。", "閉じる");
+            return;
+        }
+        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(task.prefab_path);
+        if (prefab != null)
+        {
+            Selection.activeObject = prefab;
+            EditorGUIUtility.PingObject(prefab);
+        }
+        EditorUtility.DisplayDialog("VAPB：適用結果",
+            (complete ? "Prefabの生成が完了しました。" :
+                "部分対応：Prefabは生成されましたが、外部依存の解決が必要です。詳細はConsoleを確認してください。") +
+            "\n保存先：\n" + task.prefab_path + "\n\nPrefabを開いて編集内容を確認してください。", "閉じる");
     }
 
     [MenuItem("Tools/VAPB/Build Final State Prefab", true)]
