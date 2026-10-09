@@ -20,12 +20,15 @@ from ..export.model_package import SourcePackage, ModelReplacement, TextureRepla
 from ..export.package_writer import UnityPackageWriter
 from ..export.raw_assets import RawAssetRepository
 from ..export.staging import StagedUnityAsset
-from ..export.final_state_package import export_final_state_package
+from ..export.final_state_package import export_final_state_package, _material_texture_guids
 from ..export.triangle_staging import frozen_export_meshes
 
 
 def _materials(mesh, package_id, assets):
     result = []
+    sources = {asset.guid: asset for asset in assets}
+    # Same reserved Unity resource GUIDs as the existing Skin/direct closure checks.
+    builtins = {'0' * 32, '0000000000000000e000000000000000', '0000000000000000f000000000000000'}
     for slot in mesh.material_slots:
         material = slot.material
         if material is None:
@@ -35,8 +38,15 @@ def _materials(mesh, package_id, assets):
             raise ValueError('素材の出所Packageが異なります。依存Packageの書き出しは未対応です')
         guid = material.get('unity_material_guid', '')
         file_id = material.get('unity_material_file_id', '')
-        if not guid or not file_id or not any(a.guid == guid for a in assets):
+        source = sources.get(guid)
+        if not guid or not file_id or source is None:
             raise ValueError('素材の元Assetを確認できません。新規素材はこの経路では未対応です')
+        # Unity serialized state is authoritative even for unpreviewed properties.
+        # Inspect only selected .mat assets; do not reinterpret embedded FBX Materials.
+        if source.pathname.lower().endswith('.mat'):
+            missing = _material_texture_guids(source.asset_bytes) - sources.keys() - builtins
+            if missing:
+                raise ValueError('素材のTexture参照を元Package内で解決できません。依存Textureの欠落した出力は作成しません')
         result.append({'guid': guid, 'file_id': str(file_id)})
     return result
 

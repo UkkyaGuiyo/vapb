@@ -193,3 +193,29 @@ Scope remains one author-owned source-model Skin: 24 vertices, 12 triangles,
 non-null Texture closure, broad hierarchy/component semantics, old overrides
 and winding boundaries remain unaccepted. Local raw logs, binary packages and
 process/lease records are not published.
+
+### Serialized Texture closure source fix: Blender verified, Unity pending (2026-10-09)
+
+`serialized-texture-closure-source-fix.json` records a reproduced product defect:
+native source-model Skin export succeeded while a selected Material contained an
+unpreviewed nonnull serialized Texture reference whose provider was absent. The
+existing export-only observer result is explicitly rejected as closure acceptance.
+Preview Image nodes did not expose this reference.
+
+The source exporter now reuses the existing strict serialized Material parser for
+selected source `.mat` assets and rejects missing non-builtin Texture providers.
+It leaves null references, reserved Unity resources, embedded FBX Materials and
+unused Materials within the existing bounded rules. It does not guess identities
+or modify serialized source Material bytes. Actual Blender regression changed
+from one failure to 13 passing tests; the real missing-provider export now rejects
+without producing output or changing input, mesh or bones.
+
+A separate author-owned input supplies one real PNG referenced by both `_MainTex`
+and unpreviewed `FutureTexture`. Source GUIDs/paths were rebased before import to
+avoid colliding with earlier protected originals. After saving/reopening Blender,
+native Skin 1.25 export passed with all source Asset/meta bytes, including the PNG,
+preserved. The JSON contains the exact prepared package hash and next-frame checks.
+Unity nonnull Texture identity, scale and face acceptance remain NOT_RUN while the
+shared Unity frame belongs to other projects. Provider presence does not establish
+universal Texture type/fileID support. Old override/winding acceptance is unchanged.
+No new runner, manifest schema or generic reference parser was introduced.

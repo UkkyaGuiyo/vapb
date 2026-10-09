@@ -83,5 +83,50 @@ Material:
         with self.assertRaises(ValueError):
             _material_texture_guids(self.payload)
 
+
+try:
+    import bpy
+except ImportError:
+    bpy = None
+
+@unittest.skipIf(bpy is None, "actual Skin export operator requires Blender")
+class SkinExportTextureClosure(unittest.TestCase):
+    def test_selected_material_requires_unpreviewed_texture_provider(self):
+        from unitypackage_blender_importer.operators.export_unitypackage import _materials
+        from unitypackage_blender_importer.export.raw_assets import RawAsset
+        parser = ExportReferenceSafety()
+        parser.parse('FutureTexture')
+        material = bpy.data.materials.new('SourceTextureClosure')
+        mesh = bpy.data.meshes.new('SourceTextureClosure')
+        obj = bpy.data.objects.new('SourceTextureClosure', mesh)
+        try:
+            material['unity_source_package_id'] = 'sha256:' + 'a' * 64
+            material['unity_material_guid'] = 'a' * 32
+            material['unity_material_file_id'] = '2100000'
+            mesh.materials.append(material)
+            source = RawAsset('a' * 32, 'Assets/Source.mat', parser.payload, b'guid: ' + b'a' * 32)
+            # No preview Image node exists for this serialized future property.
+            with self.assertRaisesRegex(ValueError, 'Texture'):
+                _materials(obj, material['unity_source_package_id'], [source])
+            provider = RawAsset('2' * 32, 'Assets/Color.png', b'source-png', b'guid: ' + b'2' * 32)
+            self.assertEqual([{'guid': 'a' * 32, 'file_id': '2100000'}],
+                _materials(obj, material['unity_source_package_id'], [source, provider]))
+            self.assertEqual(parser.payload, source.asset_bytes)
+            parser.parse('FutureTexture', file_id='0')
+            null_source = RawAsset('a' * 32, 'Assets/Source.mat', parser.payload, source.meta_bytes)
+            self.assertEqual([{'guid': 'a' * 32, 'file_id': '2100000'}],
+                _materials(obj, material['unity_source_package_id'], [null_source]))
+            unused = RawAsset('b' * 32, 'Assets/Unused.mat', source.asset_bytes, b'guid: ' + b'b' * 32)
+            self.assertEqual([{'guid': 'a' * 32, 'file_id': '2100000'}],
+                _materials(obj, material['unity_source_package_id'], [null_source, unused]))
+            parser.parse('FutureTexture', file_id='10300', guid='0000000000000000f000000000000000')
+            builtin_source = RawAsset('a' * 32, 'Assets/Source.mat', parser.payload, source.meta_bytes)
+            self.assertEqual([{'guid': 'a' * 32, 'file_id': '2100000'}],
+                _materials(obj, material['unity_source_package_id'], [builtin_source]))
+        finally:
+            bpy.data.objects.remove(obj)
+            bpy.data.meshes.remove(mesh)
+            bpy.data.materials.remove(material)
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

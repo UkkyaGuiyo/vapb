@@ -1,0 +1,73 @@
+{
+  "status": "SOURCE_FIX_VERIFIED_BLENDER_UNITY_RETURN_NOT_RUN",
+  "baseline_commit": "2583cb7a1747b9225df6791d0fe276963c8f9642",
+  "scope": "selected source .mat serialized Texture closure during native no-Prefab Skin export",
+  "product_defect_before_fix": {
+    "input_sha256": "f896bc22e4854824392b835efb1b79e12779b37ded748b29cc8c42b8f78a08f8",
+    "export_finished": true,
+    "serialized_unpreviewed_texture_reference_preserved": true,
+    "referenced_texture_provider_absent": true,
+    "conclusion": "INVALID_OUTPUT; the reused observer export-only PASS is not dependency-closure acceptance"
+  },
+  "fix": "reuse strict serialized material texture reference parser for selected source .mat assets; require non-builtin providers in the source archive before export",
+  "regression": {
+    "actual_blender_tests": 13,
+    "before": "FAIL: missing provider did not raise",
+    "after": "PASS",
+    "controls": [
+      "unpreviewed nonnull reference rejects missing provider",
+      "present provider accepted",
+      "null accepted",
+      "unused material not examined",
+      "reserved builtin resource accepted"
+    ],
+    "nearest_existing_export_and_transport_suite": {
+      "tests": 22,
+      "result": "PASS",
+      "runtime": "Blender 5.2.1"
+    }
+  },
+  "after_fix_missing_provider": {
+    "status": "REJECTED_MISSING_SERIALIZED_TEXTURE_PROVIDER",
+    "output_created": false,
+    "input_sha256": "f896bc22e4854824392b835efb1b79e12779b37ded748b29cc8c42b8f78a08f8",
+    "editing_geometry_and_bones_unchanged": true,
+    "input_bytes_unchanged": true,
+    "unity": "NOT_RUN"
+  },
+  "present_provider": {
+    "input_sha256": "b144717da3939ffcaa35c1e76b3e93e1792fd781fdb2baa65493050a574bb19d",
+    "output_sha256": "41b1868f7b5bb5c2afd21c52ca59535e839be1d952eb767ec702fb7a74a70912",
+    "task_kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "texture_guid": "22222222222222222222222222222222",
+    "texture_file_id": "2800000",
+    "serialized_texture_roles": [
+      "_MainTex",
+      "FutureTexture"
+    ],
+    "texture_payload_sha256": "7f2538a6e81af23e034f8ca2efc2cb5f1d7d709f502fa30bdccfebe774e4ecab",
+    "source_assets_and_meta_byte_preserved": true,
+    "texture_asset_and_meta_byte_preserved": true,
+    "scene_saved_reopened": true,
+    "editing_mesh_and_bones_unchanged_by_export": true,
+    "blender_edit_scale": 1.25,
+    "unity_return": "NOT_RUN",
+    "private_artifact_directory": "nonnull-texture-native-20261009-01",
+    "prepared_output_filename": "NativeSkinOutput.unitypackage",
+    "owned_input_identity": "rebased source GUIDs and paths avoid replacing earlier protected originals; raw FBX retained"
+  },
+  "next_owned_unity_frame": [
+    "verify prepared output SHA256",
+    "use existing dedicated ReturnProject and normal Assistant import/reload/explicit Apply",
+    "reuse existing Skin probe for face membership, exact Material identities, weights, source ancestry and Unity-space scale",
+    "verify _MainTex resolves to source texture GUID/fileID and unknown serialized FutureTexture row remains intact",
+    "protect original Assets/Scenes/settings; release only owned Editor children and lock"
+  ],
+  "limitations": [
+    "no Unity launch or nonnull Unity acceptance in this checkpoint",
+    "provider presence is not a universal texture type/fileID validator",
+    "no inferred assignment for incomplete override input",
+    "no winding or broad hierarchy/component acceptance"
+  ],
+  "publication": "code/tests and sanitized observations only; binary inputs/outputs, raw private logs and process records remain local"
+}
