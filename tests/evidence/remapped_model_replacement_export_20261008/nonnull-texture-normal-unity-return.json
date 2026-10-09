@@ -1,0 +1,144 @@
+{
+  "status": "PASS_BOUNDED_NONNULL_TEXTURE_SOURCE_SKIN_RETURN",
+  "source_baseline_commit": "67eabdf5b62215bae2b820adae96d166d2602f3a",
+  "input_package_sha256": "b144717da3939ffcaa35c1e76b3e93e1792fd781fdb2baa65493050a574bb19d",
+  "exported_package_sha256": "41b1868f7b5bb5c2afd21c52ca59535e839be1d952eb767ec702fb7a74a70912",
+  "unity_version": "2022.3.22f1",
+  "editor_mode": "normal dedicated existing ReturnProject; no SDK/MCP",
+  "assistant": {
+    "manifest_disk_kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "manifest_loaded_kind": "BUILD_EXPORTED_STATIC_V2",
+    "manifest_loaded_guid": "b336eab55f53cbe47e82eece8dbae291",
+    "manifest_loaded_asset_path": "Assets/VAPBExport/manifest.json",
+    "reload_window_observed": false,
+    "reload_assets_unchanged": false,
+    "pass": true,
+    "automatic_window_observed": true,
+    "manual_entry_requested": false,
+    "japanese_title": true,
+    "preflight_ready": true,
+    "preflight_assets_unchanged": true,
+    "cancel_assets_unchanged": true,
+    "cancel_recorded": true,
+    "manual_menu_reopened": true,
+    "retry_ready": true,
+    "output_created": true,
+    "output_selected": true,
+    "applied_recorded": true,
+    "restart_no_prompt": false,
+    "restart_assets_unchanged": false,
+    "error": "",
+    "action_transport": "Unity Editor API invokes the same UI handlers; no human clicks",
+    "identity": "5efc0a61fa7a4cefab2b1f3fd993aaf826e53038188cf7f0e53938674375e5cd"
+  },
+  "skin_return": {
+    "pass": true,
+    "error": "NONE",
+    "package_imported": true,
+    "first_apply": true,
+    "variant_created": true,
+    "variant_linked": true,
+    "edited_mesh_bound": true,
+    "originals_unchanged": true,
+    "second_apply": true,
+    "second_apply_unchanged": true,
+    "geometry_changed": true,
+    "vertex_layout_changed": false,
+    "geometry_matches_edited_model": true,
+    "topology_and_weights_valid": true,
+    "target_bones_and_root_preserved": true,
+    "materials_preserved": true,
+    "siblings_preserved": true,
+    "extra_component_rejected": false,
+    "rejected_variant_unchanged": false,
+    "variant_restored_after_negative": false,
+    "bad_candidate_rejected": false,
+    "bad_candidate_unchanged": false,
+    "manifest_restored_after_negative": false,
+    "selected_skin_count": 1,
+    "sibling_renderer_count": 0,
+    "edited_vertex_count": 24,
+    "edited_bone_count": 2,
+    "max_vertex_delta": 0.004330126103013754,
+    "source_bounds_extent": 0.017320508137345314,
+    "edited_bounds_extent": 0.021650634706020355,
+    "vertex_change_threshold": 1.0000000116860974e-07,
+    "native_geometry_125": true,
+    "native_weights_equal": true,
+    "native_bounds_contain_rest": true,
+    "native_geometry_expected_scale": true,
+    "expected_native_scale": 1.25,
+    "edited_mesh_guid": "6ce04c90fdcfc75ba60bf565d59d1798",
+    "edited_mesh_file_id": "8378990625266265184",
+    "native_material_identity": true,
+    "native_face_membership": true,
+    "material_guid_file_ids": [
+      "da1cf95acc8e60dc5dd94e5d51ede6bd:2100000",
+      "9895ad1afc2df138d0dc57722a9846c0:2100000",
+      "2f15f557f8028a10fdd543dd1c55a61f:2100000"
+    ],
+    "triangle_count": 12,
+    "null_texture_reference_count": 26,
+    "nonnull_texture_reference_count": 2,
+    "nonnull_texture_guid_file_ids": [
+      "22222222222222222222222222222222:2800000",
+      "22222222222222222222222222222222:2800000"
+    ],
+    "nonnull_texture_properties": [
+      "2:_MainTex",
+      "2:FutureTexture"
+    ],
+    "native_texture_identity": true,
+    "returned_local_bounds": {
+      "m_Center": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "m_Extent": {
+        "x": 0.01249999925494194,
+        "y": 0.012499997392296791,
+        "z": 0.012499997392296791
+      }
+    }
+  },
+  "original_preservation": {
+    "current_protected_files": 26,
+    "earlier_protected_files": 57,
+    "protected_differences": [],
+    "earlier_differences": [],
+    "source_package_asset_meta_files": 10,
+    "source_package_differences": []
+  },
+  "cleanup": {
+    "frame_returned": true,
+    "owned_children_absent": true,
+    "accepted_exit_code": 0,
+    "owned_editor_absent": true,
+    "released_utc": "2026-10-09T10:13:20.5748289Z",
+    "project_lock_absent": true
+  },
+  "observer_correction": {
+    "first_observer_exit_code": 1,
+    "first_observer_accepted": false,
+    "cause": "incorrect one-reference count assumption; author-owned input already declared two roles for the same provider",
+    "observed_before_correction": [
+      "same exact Texture GUID/fileID for _MainTex and FutureTexture",
+      "all existing Skin checks passed"
+    ],
+    "correction": "explicit expected role count 2, record property roles, compare each actual reference to source and exact provider GUID/fileID",
+    "accepted_verification": "same imported output and separate Variant on normal Editor restart; no reimport, product patch, identity repair or original save",
+    "accepted_exit_code": 0
+  },
+  "scope": "one no-Prefab author-owned remapped source Skin, geometry edit 1.25, three Materials and one nonnull PNG in two serialized roles",
+  "not_run": [
+    "old Prefab override ambiguity",
+    "old winding/normals boundary",
+    "broad hierarchy/components",
+    "new Texture creation",
+    "Texture pixel editing",
+    "generic negative mutation fields in the reused Skin report"
+  ],
+  "reference_compile": "PASS Unity 2022.3 reference assemblies",
+  "publication": "self-authored probe and sanitized evidence only; binary assets and raw private/process records remain local"
+}

@@ -219,3 +219,33 @@ Unity nonnull Texture identity, scale and face acceptance remain NOT_RUN while t
 shared Unity frame belongs to other projects. Provider presence does not establish
 universal Texture type/fileID support. Old override/winding acceptance is unchanged.
 No new runner, manifest schema or generic reference parser was introduced.
+
+### Nonnull Texture source Skin: normal Unity return accepted (2026-10-09)
+
+`nonnull-texture-normal-unity-return.json` records the next owned Unity frame.
+The exact prepared package was normally imported into the existing dedicated
+ReturnProject. Assistant automatic prompt, preflight, Cancel, Retry, explicit
+Apply and selected separate Variant passed through the existing API probe.
+No human visual/click acceptance is claimed. Existing source-to-Variant ancestry,
+24 vertices, 12 triangles, 2 bones/weights, 3 Material GUID/fileID identities,
+exact submesh face indices, bounds and Unity-space 1.25 geometry passed.
+
+Both `_MainTex` and serialized `FutureTexture` resolve to the one original PNG
+GUID/fileID `22222222222222222222222222222222:2800000`. The first new observer
+incorrectly expected one reference, although the input already declared two roles.
+That exit-1 result is rejected as acceptance. The minimal existing probe correction
+requires an explicit expected role count and records actual properties; a normal
+Editor restart on the same imported output then passed with exit 0. No product
+repair, reimport, guessed assignment or original save was used to obtain the pass.
+
+The earlier 57 protected files and current 26-file snapshot have zero differences.
+All 10 source input Asset/meta files, including PNG and raw Material references,
+are byte-identical after Unity import/Apply. Owned Editors/children and lock were
+absent and the lease/frame was released. The initial `unity.exe` process was an
+identified Unity Hub `serve` process and was left untouched. Ownership start times
+are compared as UTC ticks because PowerShell JSON decodes them as DateTime values.
+
+This closes the bounded nonnull reference preservation gate. It does not accept
+old override/winding boundaries, arbitrary Texture types/fileIDs, pixel edits,
+new Textures, or whole-product coverage. Generic negative-test booleans in the
+reused native Skin report are NOT_RUN, rather than negative-test acceptance.

@@ -73,7 +73,9 @@ public static class VapbModelSkinRoundtripProbe
         public string edited_mesh_guid, edited_mesh_file_id;
         public bool native_material_identity, native_face_membership;
         public string[] material_guid_file_ids;
-        public int triangle_count, null_texture_reference_count;
+        public int triangle_count, null_texture_reference_count, nonnull_texture_reference_count;
+        public string[] nonnull_texture_guid_file_ids, nonnull_texture_properties;
+        public bool native_texture_identity;
         public Bounds returned_local_bounds;
     }
 
@@ -421,6 +423,12 @@ public static class VapbModelSkinRoundtripProbe
                 var expectedMaterials = new List<string>();
                 if(task.material_bindings!=null) foreach(var binding in task.material_bindings) expectedMaterials.Add(binding.guid+":"+binding.file_id);
                 report.material_guid_file_ids = new string[selected.sharedMaterials.Length];
+                var textureIdentities = new List<string>();
+                var textureProperties = new List<string>();
+                report.native_texture_identity = true;
+                string[] args = Environment.GetCommandLineArgs();
+                int expectedTextureIndex = Array.IndexOf(args, "-vapbExpectedTexture");
+                string expectedTexture = expectedTextureIndex >= 0 && expectedTextureIndex+1 < args.Length ? args[expectedTextureIndex+1] : null;
                 for (int slot=0; slot<selected.sharedMaterials.Length; slot++)
                 {
                     Material material = selected.sharedMaterials[slot];
@@ -429,7 +437,26 @@ public static class VapbModelSkinRoundtripProbe
                     report.material_guid_file_ids[slot]=guid+":"+id.ToString();
                     report.native_material_identity &= known && expectedMaterials.Remove(report.material_guid_file_ids[slot]);
                     foreach(string name in material.GetTexturePropertyNames())
-                        if(material.GetTexture(name)==null) report.null_texture_reference_count++;
+                    {
+                        Texture texture = material.GetTexture(name);
+                        report.native_texture_identity &= texture == originalSkin.sharedMaterials[slot].GetTexture(name);
+                        if(texture==null) { report.null_texture_reference_count++; continue; }
+                        string textureGuid; long textureId;
+                        report.native_texture_identity &= AssetDatabase.TryGetGUIDAndLocalFileIdentifier(texture, out textureGuid, out textureId);
+                        report.nonnull_texture_reference_count++;
+                        textureIdentities.Add(textureGuid+":"+textureId.ToString());
+                        textureProperties.Add(slot.ToString()+":"+name);
+                    }
+                }
+                report.nonnull_texture_guid_file_ids = textureIdentities.ToArray();
+                report.nonnull_texture_properties = textureProperties.ToArray();
+                if(expectedTexture != null)
+                {
+                    int countIndex = Array.IndexOf(args, "-vapbExpectedTextureCount");
+                    int expectedCount;
+                    if(countIndex<0 || countIndex+1>=args.Length || !Int32.TryParse(args[countIndex+1], out expectedCount) || expectedCount<=0)
+                        throw new InvalidOperationException("EXPLICIT_TEXTURE_ROLE_COUNT_REQUIRED");
+                    report.native_texture_identity &= textureIdentities.Count==expectedCount && textureIdentities.TrueForAll(value => value==expectedTexture);
                 }
                 report.native_material_identity &= expectedMaterials.Count==0;
                 report.native_face_membership=sourceIndices!=null && sourceIndices.Length==editedMesh.subMeshCount && report.materials_preserved;
@@ -446,7 +473,7 @@ public static class VapbModelSkinRoundtripProbe
                     report.edited_mesh_bound && report.originals_unchanged && report.second_apply_unchanged &&
                     report.geometry_matches_edited_model && report.topology_and_weights_valid && report.target_bones_and_root_preserved &&
                     report.materials_preserved && report.siblings_preserved && report.native_geometry_expected_scale &&
-                    report.native_weights_equal && report.native_bounds_contain_rest && report.native_material_identity && report.native_face_membership && identity && editedGuid==task.model_guid && editedGuid!=task.source_model_guid && editedId!=0;
+                    report.native_weights_equal && report.native_bounds_contain_rest && report.native_material_identity && report.native_texture_identity && report.native_face_membership && identity && editedGuid==task.model_guid && editedGuid!=task.source_model_guid && editedId!=0;
                 report.error=report.pass ? "NONE" : "ASSERTION_FAILED";
                 Finish(report); return;
             }
