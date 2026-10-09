@@ -2,7 +2,16 @@
 
 ## Current handoff
 
-For the current branch, evidence status, and exact next action, start at [START_HERE.md](START_HERE.md). The real-corpus campaign is incomplete; this link is a handoff, not a completion claim.
+Current installable WIP snapshot: `vapb-faf4518.zip`, code commit `faf451816e2a8fd7a9783fb987e5a0fe38b69486`, SHA-256 `2c7fab1fed092329f21dc0570d7fc89fe769078dd50c1a1a358f3e3565960f50`. Rebuild from this checkout with:
+
+```powershell
+python tools/build_distribution_zip.py --repo . --revision faf451816e2a8fd7a9783fb987e5a0fe38b69486 --output vapb-faf4518.zip
+```
+
+Standard isolated Blender installation passed. Installed code produced a normal Skin/Material/Texture export that passed Unity 2022.3.22f1 import and Finalizer Apply/repeat Apply: geometry 1.25 in Unity units, 45 vertices, 15 triangles, exact exported positive weights, Material identity/face membership, two non-null Texture roles, Bone/root and original asset preservation. [Distribution observations and limits](tests/evidence/remapped_model_replacement_export_20261008/distribution-native-skin-return-summary.json) retain the corrected observer failure separately. This is a bounded WIP snapshot; actual human GUI clicks and representative Unity/VRC serialized state remain unverified. No release or binary Git commit is implied.
+
+
+For the current branch, evidence status, and exact next action, start at [START_HERE.md](START_HERE.md). Specific remaining product requirements and evidence limits are recorded below; campaign coverage is not a substitute for completing those requirements.
 
 **VAPB (VRC Avatar Package Bridge)** は、VRChat / VRC向けアバター・衣装・小物の `.unitypackage` をBlenderへ直接読み込み、BlenderでMesh・Bone・Weight・Shape Key・UV・Textureなどを編集し、対応範囲の結果をUnityへ戻す作業を支援する無料・オープンソースのBlender Add-onです。
 

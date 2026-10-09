@@ -50,5 +50,57 @@
     "arbitrary_skin_bone_changes_texture_types_avatar_or_vrchat_upload": "NOT_ACCEPTED",
     "whole_product": "NOT_COMPLETE"
   },
-  "publication": "input/output hashes, asset GUIDs, task identifiers, PID, private filesystem paths and raw logs excluded; exact evidence retained locally"
+  "publication": "input/output hashes, asset GUIDs, task identifiers, PID, private filesystem paths and raw logs excluded; exact evidence retained locally",
+  "current_distribution_checkpoint": {
+    "status": "PASS_BOUNDED_INSTALLED_DISTRIBUTION_RETURN_NOT_WHOLE_PRODUCT",
+    "distribution_code_commit": "faf451816e2a8fd7a9783fb987e5a0fe38b69486",
+    "zip_filename": "vapb-faf4518.zip",
+    "zip_sha256": "2c7fab1fed092329f21dc0570d7fc89fe769078dd50c1a1a358f3e3565960f50",
+    "selected_source_members": 115,
+    "zip_crc_pass": true,
+    "standard_isolated_install_enable_disable_exit_code": 0,
+    "installed_runtime_origin_and_bytes_match_zip": true,
+    "normal_import_save_reopen_edit_export": true,
+    "installed_bone_merge_deform_controls_pass": true,
+    "zip_helper_count": 7,
+    "skin_output_required_helper_count": 5,
+    "output_helpers_exact_set_and_bytes_match_zip": true,
+    "blender_export_observer_exit_code": 1,
+    "observer_correction": "Product export and focused installed Bone Merge checks completed. Final observer incorrectly required all seven distribution helpers for a five-helper Skin route; subsequent offline exact route set/byte check passed without re-export. Original nonzero exit is retained.",
+    "unity": {
+      "pass": true,
+      "first_apply": true,
+      "second_apply": true,
+      "second_apply_unchanged": true,
+      "originals_unchanged": true,
+      "native_triangle_indices_equal": true,
+      "native_geometry_125": true,
+      "target_bones_and_root_preserved": true,
+      "native_material_identity": true,
+      "native_face_membership": true,
+      "native_texture_identity": true,
+      "exported_weights_validated": true,
+      "source_positive_weights": 60,
+      "edited_positive_weights": 87,
+      "edited_vertex_count": 45,
+      "triangle_count": 15,
+      "nonnull_texture_reference_count": 2,
+      "weight_ulp_rejected": true,
+      "weight_raw_rejected": true,
+      "weight_data_rejected": true,
+      "cp_label_rejected": true,
+      "decode_budget_rejected": true
+    },
+    "unity_exit_code": 0,
+    "protected_files_unchanged": 2923,
+    "owned_children_and_lock_absent": true,
+    "pool_and_mutex_released": true,
+    "limits": {
+      "human_gui_click_acceptance": "NOT_RUN; API/operator and Assistant handler observations are not human visual acceptance",
+      "texture_pixel_edit": "NOT_RUN_THIS_CASE",
+      "serialized_unity_vrc_components": "NOT_RUN_THIS_CASE; source has no representative AvatarDescriptor/PhysBone/Contact/animation state",
+      "private_real_input_and_provider_terms": "NOT_QUALIFIED_BY_THIS_FIRST_PARTY_CASE",
+      "whole_product": "NOT_COMPLETE"
+    }
+  }
 }

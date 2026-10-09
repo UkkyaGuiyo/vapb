@@ -359,3 +359,16 @@ four nearest policy tests pass. README explains the refusal and retry.
 
 [Concrete evidence and scope](../../../TEST_RESULTS.md).
 Other campaign and release gates remain pending; no whole-product claim.
+
+
+## Current installed ZIP checkpoint (2026-10-09)
+
+Product spec section 21 now has a current installable WIP ZIP from code commit `faf451816e2a8fd7a9783fb987e5a0fe38b69486`: `vapb-faf4518.zip`, SHA-256 `2c7fab1fed092329f21dc0570d7fc89fe769078dd50c1a1a358f3e3565960f50`. Existing builder, standard installer, normal Blender route and existing Unity probe were reused; no new product runner/schema was introduced. The installed route and current Bone Merge Deform rejection controls passed. Unity normal import and Apply/repeat passed on the installed output, with unchanged protected files and all owned resources returned. The final Blender observer exited 1 because it expected seven distribution helpers instead of the Skin route's five; an offline exact set/byte check corrected that observation without repeating export. Historical evidence remains intact.
+
+Concrete remaining clauses, rather than a blanket campaign gate:
+
+- Sections 12/21: visible GUI acceptance. One minimal run is ZIP installation into clean Blender settings, author-owned copy import, a small vertex edit, normal export, ordinary Unity import, Japanese Assistant Apply, then selected separate Variant inspection for shape, face materials/Textures and Bone/root. Operator/handler evidence exists; actual visual clicks are NOT_RUN because this environment exposes no desktop interaction tool. No Python console or manual GUID work belongs in this user flow.
+- Section 7: serialized Unity/VRC state. This first-party no-Prefab source has no representative AvatarDescriptor, PhysBone, Contact or animation references. Use one existing author-owned representative input and compare its known source/return state and references. Missing evidence here is source-to-return component preservation, not an exhaustive combination campaign. A reproduced product mismatch would justify a minimum implementation fix; the absence of a mismatch in this synthetic Skin case does not prove there is no independent implementation work left.
+- Sections 14/15 and core roundtrip priority: rights-qualified real-input verification is not supplied by this first-party fixture. Verify provider terms and use an existing owned copy locally; do not publish assets, SDK or private logs. Existing private evidence remains distinct from this checkpoint.
+
+No whole-product completion or all-Material/Avatar acceptance is asserted. The immediate GUI run and one representative component-state comparison are the next bounded evidence steps; do not expand them into every fixture combination or new verification infrastructure.
