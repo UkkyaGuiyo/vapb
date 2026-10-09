@@ -1,0 +1,71 @@
+{
+  "status": "PINNED_SOURCE_FRAME_AND_WINDING_EXPLAINED_BY_INDEPENDENT_UV_CORRESPONDENCE",
+  "scope": "same pinned source FBX/Unity Mesh, not a production import mapping or broad roundtrip PASS",
+  "source_fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+  "source_mesh_guid": "abcdefabcdefabcdefabcdefabcdefab",
+  "source_mesh_file_id": "3538053534738119282",
+  "old_source_vertices_and_submesh_indices_exactly_match_new_read_only_observation": true,
+  "old_source_metadata_context": "old report remains untouched; current explicit-remap meta differs, but exact same source vertex/index arrays and Mesh GUID/fileID join are required",
+  "correspondence_basis": "only unordered UV triangle triples and exact within-triangle UV corner identity; no positions, Material identity, slot count, normal or fitted transform used to select matches",
+  "uv_triangle_count": 12,
+  "uv_signatures_unique": true,
+  "uv_corner_identity": "exact source UV pairs (dyadic values in this fixture)",
+  "predeclared_C": [
+    [
+      -0.01,
+      0,
+      0
+    ],
+    [
+      0,
+      0.01,
+      0
+    ],
+    [
+      0,
+      0,
+      0.01
+    ]
+  ],
+  "det_C": -1e-06,
+  "position_C_max_absolute_residual": 6.332993504609696e-10,
+  "normal_C_inverse_transpose_max_normalized_residual": 2.980192188948433e-11,
+  "direct_order_count": 0,
+  "uniform_reversed_order_count": 12,
+  "minimum_geometric_face_normal_vs_imported_corner_normal_dot": 0.9999997499964002,
+  "diagnosis": "index reversal accompanies the measured negative-determinant mesh-local coordinate conversion; inverse-transpose normal transport remains aligned with geometric facing, so the observed reversal alone is not an inverted-normal product defect",
+  "controls": {
+    "wrong_axis_rejected": true,
+    "changed_UV_rejected": true,
+    "duplicate_UV_triangle_rejected": true,
+    "one_triangle_order_reversal_detected_separately": true
+  },
+  "source_probe_hashes_unchanged": true,
+  "limitations": [
+    "fixture UV signatures are unique; ambiguous/repeated UVs cannot certify this correspondence",
+    "does not generalize C to other import policies or assets",
+    "does not supply missing Material correspondence at ordinary product import",
+    "does not accept historical confirmed override output or arbitrary edited normals/winding",
+    "cross-application rendering/culling and historical output normals acceptance NOT_RUN"
+  ],
+  "baseline_commit": "0e281f0210cbed841f6b8a73a834131af454032b",
+  "protected_existing_files": 211,
+  "protected_differences": 0,
+  "unity_version": "2022.3.22f1",
+  "unity_exit_code": 0,
+  "frame_released_utc": "2026-10-09T10:34:26.6603774Z",
+  "source_probe": "existing VapbCoordinateFrameProbe; read-only MeshData normals/UV0/submesh indices, normal Editor, no Apply/reimport/Scene save",
+  "parser_sources": {
+    "import_fbx.py": "262127c8e6af3e748d696d81070366f39e449aa73e6bc1d9463092b5cbf86741",
+    "fbx_utils.py": "66a15d79d5eaf490176b439f22fb01963efcd46e06702eff224a84135e636fb3",
+    "parse_fbx.py": "96fe3f11b5c9b2950d9c434857e3b0db1a1b558510e2ad360b767643a69c2047"
+  },
+  "source_snapshot_sha256": "561bb83165031b52a98cbc809d59b2032e6866be1f1764c1c8428a1ab78b25b7",
+  "old_diagnostic_sha256": "f93f3e51f5c9435b291909cc105ef1f8b88de91ab5c8f9a988d06cebf2471079",
+  "source": {
+    "fixture_path": "tests/unity_model_material_probe/fixtures/ThreeSlotSource.unitypackage",
+    "fixture_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c"
+  },
+  "replay": "diagnose_pinned_uv_source_frame on exact source FBX, source-uv-normal-observation.json and unchanged unity-diagnostic.json, using the pinned Blender FBX parser",
+  "publication": "self-authored existing probe/verifier code and sanitized synthetic observations only; no raw logs or process/private paths"
+}

@@ -628,6 +628,94 @@ def main():
     return 0
 
 
+def diagnose_pinned_uv_source_frame(fbx_path, snapshot_path, old_diagnostic_path, blender_fbx_source):
+    """Read-only fixture diagnosis using UV identity before position/normal checks.
+
+    No production mapping, fitted transform or Material-based correspondence.
+    Ambiguous UV triangle/corner signatures refuse; the predeclared C is only
+    certified for this pinned source observation, never used by the importer.
+    """
+    parser=load_parser(blender_fbx_source)
+    fbx=Path(fbx_path);assert sha256(fbx)==PIN_FBX
+    root,_=parser.parse(str(fbx),use_namedtuple=True)
+    geo=next(n for block in root.elems if block.id==b'Objects' for n in block.elems if n.id==b'Geometry' and n.props[0]==329684292)
+    get=lambda node,key:next(child.props[0] for child in node.elems if child.id==key)
+    uv_layer=next(n for n in geo.elems if n.id==b'LayerElementUV')
+    normal_layer=next(n for n in geo.elems if n.id==b'LayerElementNormal')
+    for layer in (uv_layer,normal_layer):
+     assert get(layer,b'MappingInformationType')==b'ByPolygonVertex' and get(layer,b'ReferenceInformationType')==b'IndexToDirect'
+    uv_values=list(get(uv_layer,b'UV'));uv_indices=list(get(uv_layer,b'UVIndex'))
+    normal_values=list(get(normal_layer,b'Normals'));normal_indices=list(get(normal_layer,b'NormalsIndex'))
+    positions=list(get(geo,b'Vertices'));raw_indices=list(get(geo,b'PolygonVertexIndex'))
+    assert len(raw_indices)==36 and all(value<0 for value in raw_indices[2::3])
+    raw_points=[tuple(positions[3*i:3*i+3]) for i in range(len(positions)//3)]
+    raw_corner_ids=[-v-1 if v<0 else v for v in raw_indices]
+    raw_uv=[tuple(uv_values[2*i:2*i+2]) for i in uv_indices]
+    raw_normals=[tuple(normal_values[3*i:3*i+3]) for i in normal_indices]
+    snapshot=json.loads(Path(snapshot_path).read_text(encoding='utf-8-sig'));assert snapshot['pass'] and snapshot['source_sha256']==PIN_FBX
+    old=json.loads(Path(old_diagnostic_path).read_text())
+    assert snapshot['asset_guid']==old['source_renderer_mesh_guid'] and int(snapshot['mesh_file_id'])==old['source_renderer_mesh_local_file_id']
+    assert snapshot['source_local_vertices']==old['source_mesh_vertices']
+    assert [s['indices'] for s in snapshot['source_submeshes']]==[s['indices'] for s in old['source_submeshes']]
+    vec=lambda row:tuple(row[axis] for axis in ('x','y','z'))
+    uv=lambda row:tuple(row[axis] for axis in ('x','y'))
+    q=lambda v:tuple(v)
+    signature=lambda values:tuple(sorted(values))
+    cyclic=lambda values:min(tuple(values[i:]+values[:i]) for i in range(3))
+    raw_triangles=[list(range(i,i+3)) for i in range(0,36,3)]
+    raw_keys=[signature([q(raw_uv[i]) for i in tri]) for tri in raw_triangles]
+    assert len(set(raw_keys))==12,'UV_TRIANGLE_SIGNATURE_AMBIGUOUS'
+    lookup=dict(zip(raw_keys,raw_triangles))
+    actual_tris=[s['indices'][i:i+3] for s in snapshot['source_submeshes'] for i in range(0,len(s['indices']),3)]
+    actual_keys=[signature([uv(snapshot['source_uv0'][i]) for i in tri]) for tri in actual_tris]
+    assert Counter(raw_keys)==Counter(actual_keys),'UV_TRIANGLE_MULTISET_MISMATCH'
+    pos_error=normal_error=0;reverse=direct=0;dot_min=1;rows=[]
+    cross=lambda a,b:(a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0])
+    sub=lambda a,b:tuple(x-y for x,y in zip(a,b))
+    unit=lambda v:tuple(x/math.sqrt(sum(y*y for y in v)) for x in v)
+    dot=lambda a,b:sum(x*y for x,y in zip(a,b))
+    for tri,key in zip(actual_tris,actual_keys):
+     raw=lookup[key];corner_lookup={q(raw_uv[i]):i for i in raw};assert len(corner_lookup)==3
+     raw_oriented=[q(raw_uv[i]) for i in raw];actual_oriented=[uv(snapshot['source_uv0'][i]) for i in tri]
+     is_reverse=cyclic(list(reversed(raw_oriented)))==cyclic(actual_oriented)
+     is_direct=cyclic(raw_oriented)==cyclic(actual_oriented)
+     reverse+=is_reverse;direct+=is_direct
+     for i in tri:
+      raw_corner=corner_lookup[uv(snapshot['source_uv0'][i])]
+      point=raw_points[raw_corner_ids[raw_corner]];expected=(-point[0]*.01,point[1]*.01,point[2]*.01)
+      actual=vec(snapshot['source_local_vertices'][i]);pos_error=max(pos_error,max(abs(a-b) for a,b in zip(expected,actual)))
+      n=raw_normals[raw_corner];expected_normal=unit((-n[0],n[1],n[2]));actual_normal=unit(vec(snapshot['source_local_normals'][i]))
+      normal_error=max(normal_error,max(abs(a-b) for a,b in zip(expected_normal,actual_normal)))
+     points=[vec(snapshot['source_local_vertices'][i]) for i in tri]
+     face_normal=unit(cross(sub(points[1],points[0]),sub(points[2],points[0])))
+     for i in tri:dot_min=min(dot_min,dot(face_normal,unit(vec(snapshot['source_local_normals'][i]))))
+     rows.append({'uv_signature':key,'direct_order':is_direct,'reversed_order':is_reverse})
+    assert pos_error<1e-7 and normal_error<1e-5 and reverse==12 and direct==0
+    assert dot_min>.999,'GEOMETRY_NORMAL_FACING_MISMATCH'
+    # Controls concern this bounded read-only diagnosis, not a production mapping.
+    wrong_axis_error=max(abs(-raw_points[raw_corner_ids[c]][1]*.01-vec(snapshot['source_local_vertices'][i])[1]) for tri,key in zip(actual_tris,actual_keys) for i in tri for c in [dict((q(raw_uv[j]),j) for j in lookup[key])[uv(snapshot['source_uv0'][i])]])
+    changed_keys=actual_keys.copy();changed_keys[0]=tuple([(123.,456.)]*3)
+    duplicate_keys=actual_keys.copy();duplicate_keys[0]=duplicate_keys[1]
+    one_reversed=list(actual_tris[0]);one_reversed.reverse()
+    assert wrong_axis_error>.001 and Counter(changed_keys)!=Counter(raw_keys) and Counter(duplicate_keys)!=Counter(raw_keys)
+    assert cyclic([uv(snapshot['source_uv0'][i]) for i in one_reversed])==cyclic([q(raw_uv[i]) for i in lookup[actual_keys[0]]])
+    report={'status':'PINNED_SOURCE_FRAME_AND_WINDING_EXPLAINED_BY_INDEPENDENT_UV_CORRESPONDENCE',
+     'scope':'same pinned source FBX/Unity Mesh, not a production import mapping or broad roundtrip PASS',
+     'source_fbx_sha256':sha256(fbx),'source_mesh_guid':snapshot['asset_guid'],'source_mesh_file_id':snapshot['mesh_file_id'],
+     'old_source_vertices_and_submesh_indices_exactly_match_new_read_only_observation':True,
+     'old_source_metadata_context':'old report remains untouched; current explicit-remap meta differs, but exact same source vertex/index arrays and Mesh GUID/fileID join are required',
+     'correspondence_basis':'only unordered UV triangle triples and exact within-triangle UV corner identity; no positions, Material identity, slot count, normal or fitted transform used to select matches',
+     'uv_triangle_count':12,'uv_signatures_unique':True,'uv_corner_identity':'exact source UV pairs (dyadic values in this fixture)',
+     'predeclared_C':[[ -.01,0,0],[0,.01,0],[0,0,.01]],'det_C':-1e-6,
+     'position_C_max_absolute_residual':pos_error,'normal_C_inverse_transpose_max_normalized_residual':normal_error,
+     'direct_order_count':direct,'uniform_reversed_order_count':reverse,'minimum_geometric_face_normal_vs_imported_corner_normal_dot':dot_min,
+     'diagnosis':'index reversal accompanies the measured negative-determinant mesh-local coordinate conversion; inverse-transpose normal transport remains aligned with geometric facing, so the observed reversal alone is not an inverted-normal product defect',
+     'controls':{'wrong_axis_rejected':wrong_axis_error>.001,'changed_UV_rejected':True,'duplicate_UV_triangle_rejected':True,'one_triangle_order_reversal_detected_separately':True},
+     'source_probe_hashes_unchanged':snapshot['hashes_unchanged'],
+     'limitations':['fixture UV signatures are unique; ambiguous/repeated UVs cannot certify this correspondence','does not generalize C to other import policies or assets','does not supply missing Material correspondence at ordinary product import','does not accept historical confirmed override output or arbitrary edited normals/winding']}
+    return report
+
+
 if __name__ == "__main__":
     try:
         raise SystemExit(main())

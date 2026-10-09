@@ -118,3 +118,37 @@ candidate remains unproven; current triangle staging already preserves ordered
 triangles and original corner normals. [Unity's documented front-face rule](https://docs.unity3d.com/2022.3/Documentation/Manual/AnatomyofaMesh.html) alone does
 not justify a particular importer reflection. No new runner, manifest schema,
 generic parser, Unity launch or original Asset/meta modification was introduced.
+
+## Latest bounded source winding diagnosis: independent UV correspondence (2026-10-09)
+
+`uv-anchored-frame-and-winding.json` explains the previously observed reversal
+for the pinned source Mesh. The existing frame probe reads normals, UV0 and
+submesh indices through read-only MeshData in the existing dedicated Project.
+`source-uv-normal-observation.json` is a public synthetic observation. Source
+GUID/fileID, all 24 vertex values and submesh index arrays exactly match the
+unchanged earlier Unity diagnostic. The current explicit-remap meta is different;
+this join does not pretend the two metadata contexts are identical.
+
+Correspondence is selected solely by unique unordered UV triangle triples and
+unique within-triangle UV corners, before inspecting positions or normals.
+All 12 signatures are unique, using exact dyadic UV values without quantization.
+The already declared C = 0.01 * reflectX then matches every corresponding point
+with maximum residual 6.33e-10. Its normalized inverse-transpose normal transform
+matches with maximum residual 2.98e-11. All 12 corner orders are reversed and
+none are direct; geometric face normals agree with imported corner normals
+(minimum dot 0.99999975). Thus the reversal accompanies this measured negative
+determinant conversion; reversal alone was not proof of inverted product normals.
+
+The existing verifier now exposes `diagnose_pinned_uv_source_frame` for replay.
+It reuses the pinned FBX parser, produces no production map and writes no files.
+Wrong-axis, changed/duplicate UV and one-triangle order controls pass. Normal
+Editor exited 0, all 211 existing Asset/settings/package files remained byte
+identical, owned Editor/children and lock were absent, and the frame was released.
+There was no Apply, reimport, Scene save, new runner or production schema change.
+
+This is a fixture-bound source orientation diagnosis. Ambiguous/repeated UV
+signatures reject, and C is not generalized to other assets/import policies.
+Historical outputs and UNPROVEN reports remain intact. Old override face/Material
+correspondence is still absent from ordinary input and remains unresolved; the
+diagnostic does not introduce a guessed Material assignment or accept the old
+confirmed override export or arbitrary edited normals/winding.
