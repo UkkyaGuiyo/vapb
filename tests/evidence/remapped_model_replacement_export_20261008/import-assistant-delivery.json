@@ -1,0 +1,30 @@
+{
+  "status": "PASS_EXPORT_HELPER_DELIVERY_AND_ISOLATED_REFERENCE_COMPILE_ONLY",
+  "results": [
+    {
+      "route": "native",
+      "package_sha256": "95c2c22b02615c3baa03f65336fe1315319b7811c204959c48c064f38c06bc4b",
+      "assistant_guid": "f8d79524935995afa312c6faf909c2d4",
+      "assistant_source_sha256": "ea7e6c2de581c4a96e1a61dbca12205f0b8e1c74a083e0abb306614180c12349",
+      "all_embedded_csharp_bytes_match_source": true,
+      "csharp_asset_count": 5,
+      "unity_2022_3_reference_compile_exit": 0
+    },
+    {
+      "route": "static",
+      "package_sha256": "d4a6e138bebbc5c50f9a7ea41941eebdc7b5020d42bb0cbf792862d44ff9827a",
+      "assistant_guid": "f8d79524935995afa312c6faf909c2d4",
+      "assistant_source_sha256": "ea7e6c2de581c4a96e1a61dbca12205f0b8e1c74a083e0abb306614180c12349",
+      "all_embedded_csharp_bytes_match_source": true,
+      "csharp_asset_count": 3,
+      "unity_2022_3_reference_compile_exit": 0
+    }
+  ],
+  "unity_editor_launched": false,
+  "automatic_detection": "NOT_RUN",
+  "preflight_runtime": "NOT_RUN",
+  "cancel_asset_preservation": "NOT_RUN",
+  "explicit_apply_ui": "NOT_RUN",
+  "restart_prompt_suppression": "NOT_RUN",
+  "historical_probe_note": "First static observation used historical no-Prefab Skin rejection mode and stopped because this source kind is now supported. Original output retained; existing --replacement-only mode then passed. No product code or test assertion was changed for that mode mismatch."
+}

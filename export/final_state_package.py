@@ -344,11 +344,13 @@ def export_final_state_package(context, mesh, output: Path):
                                   material_records, slot_material_ids)
     first_party = Path(__file__).resolve().parents[1] / "unity_editor"
     support = (
+        ("Assets/VAPBExport/Editor/VapbImportAssistant.cs", first_party / "Editor/VapbImportAssistant.cs"),
         ("Assets/VAPBExport/VapbExportObjectMarker.cs", first_party / "VapbExportObjectMarker.cs"),
         ("Assets/VAPBExport/Editor/VapbFinalStateFinalizer.cs",
          first_party / "Editor/VapbFinalStateFinalizer.cs"),
     )
-    support_guids = {path: _sha(path.encode())[:32] for path, _ in support}
+    support_guids = {path: _sha((("VAPB_EXPORT_HELPER_V1:" + path) if path.endswith("/VapbImportAssistant.cs") else path).encode())[:32]
+                     for path, _ in support}
     manifest_path = "Assets/VAPBExport/manifest.json"
     manifest_guid = _sha(manifest_path.encode())[:32]
     manifest = ExportManifest(

@@ -558,6 +558,8 @@ def _write_package(tree, manifest, output):
         ('Assets/VAPBExport/VapbRealizationMarker.cs', (first_party / 'VapbRealizationMarker.cs').read_bytes()),
         ('Assets/VAPBExport/Editor/VapbReferenceFinalizer.cs',
          (first_party / 'Editor/VapbReferenceFinalizer.cs').read_bytes())]
+    generated.append(('Assets/VAPBExport/Editor/VapbImportAssistant.cs',
+                      (first_party / 'Editor/VapbImportAssistant.cs').read_bytes()))
     generated.append(('Assets/VAPBExport/Editor/VapbModelSkinFinalizer.cs',
                       (first_party / 'Editor/VapbModelSkinFinalizer.cs').read_bytes()))
     if policies:
@@ -610,7 +612,7 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
             self.layout.label(text='Skinは骨対応の確認が必要。Unityの既存骨階層・restを保持')
             self.layout.label(text='形状・ウェイト・素材を出力。新規骨・Nestedは未対応')
         self.layout.label(text='保持済みPackageの原本資産も全件含みます')
-        self.layout.label(text='Unity import後にmanifestを選択しVAPB復元メニューを実行')
+        self.layout.label(text='UnityへImport後、VAPB確認画面から［適用］')
 
     def execute(self, context):
         try:
@@ -623,7 +625,7 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
                        not any(mod.type == 'ARMATURE' for mod in obj.modifiers) for obj in selected):
                     raise ValueError('複数Meshの出力は元モデル由来のSkinのみ対応しています')
                 export_model_skin_packages(context, selected, self.filepath)
-                self.report({'INFO'}, f'{len(selected)}個のSkinを出力しました。Unity側の参照復元が必要です')
+                self.report({'INFO'}, f'{len(selected)}個のSkinを出力しました。UnityへImportし、VAPB確認画面から適用してください')
                 return {'FINISHED'}
             mesh = selected[0]
             binding = json.loads(mesh.get('_vapb_renderer_binding', '{}')) if mesh else {}
@@ -639,7 +641,7 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
         except (OSError, RuntimeError, ValueError, KeyError) as exc:
             self.report({'ERROR'}, f'書き出しを停止しました: {exc}')
             return {'CANCELLED'}
-        self.report({'INFO'}, 'UnityPackageを書き出しました。Unity側の参照復元が必要です')
+        self.report({'INFO'}, 'UnityPackageを書き出しました。UnityへImportし、VAPB確認画面から適用してください')
         return {'FINISHED'}
 
 
@@ -656,7 +658,7 @@ class VAPB_OT_export_final_state_unitypackage(bpy.types.Operator, ExportHelper):
         except (OSError, RuntimeError, ValueError, KeyError) as exc:
             self.report({'ERROR'}, f'完成形の書き出しを停止しました: {exc}')
             return {'CANCELLED'}
-        self.report({'INFO'}, '新しい静的Mesh UnityPackageを作成しました。Unity側でRecipeを適用してください')
+        self.report({'INFO'}, '新しい静的Mesh UnityPackageを作成しました。UnityへImportし、VAPB確認画面から適用してください')
         return {'FINISHED'}
 
 

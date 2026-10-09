@@ -98,42 +98,7 @@ public static class VapbFinalStateFinalizer
     [MenuItem("Tools/VAPB/Build Final State Prefab")]
     private static void ApplySelected()
     {
-        if (Application.isBatchMode) return;
-        string path = AssetDatabase.GetAssetPath(Selection.activeObject);
-        Task task;
-        try { task = ReadTask(path); }
-        catch (Exception exception)
-        {
-            Debug.LogError("VAPB_FINAL_STATE_CONFIRMATION_REJECTED=" + exception.Message);
-            EditorUtility.DisplayDialog("VAPB：適用できません",
-                "対象の編集データを確認できませんでした。詳細はConsoleを確認してください。", "閉じる");
-            return;
-        }
-        if (!EditorUtility.DisplayDialog("VAPB：編集内容を適用",
-            "VAPBの編集データから、静的MeshとMaterial参照を持つPrefabを生成します。" +
-            "\n保存先：\n" + task.prefab_path +
-            "\n\n元の入力Prefabは保持します。Skin/Boneの復元はこの操作の対象外です。" +
-            "\n適用前の全検証は未実施です。参照不一致や保存先の衝突は適用時に検証します。" +
-            "\n外部Shader等の依存が不足すると、結果が部分対応になる場合があります。",
-            "適用", "キャンセル")) return;
-        bool complete = Apply(path);
-        if (!complete && LastResult != "PARTIAL")
-        {
-            Debug.LogError("VAPB_FINAL_STATE_FAILED");
-            EditorUtility.DisplayDialog("VAPB：適用できませんでした",
-                "Finalizerが適用を拒否しました。詳細はConsoleを確認してください。", "閉じる");
-            return;
-        }
-        GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(task.prefab_path);
-        if (prefab != null)
-        {
-            Selection.activeObject = prefab;
-            EditorGUIUtility.PingObject(prefab);
-        }
-        EditorUtility.DisplayDialog("VAPB：適用結果",
-            (complete ? "Prefabの生成が完了しました。" :
-                "部分対応：Prefabは生成されましたが、外部依存の解決が必要です。詳細はConsoleを確認してください。") +
-            "\n保存先：\n" + task.prefab_path + "\n\nPrefabを開いて編集内容を確認してください。", "閉じる");
+        VapbImportAssistant.Show(AssetDatabase.GetAssetPath(Selection.activeObject));
     }
 
     [MenuItem("Tools/VAPB/Build Final State Prefab", true)]
@@ -141,6 +106,40 @@ public static class VapbFinalStateFinalizer
     {
         return Selection.activeObject is TextAsset &&
             AssetDatabase.GetAssetPath(Selection.activeObject) == ManifestPath;
+    }
+
+    [InitializeOnLoadMethod]
+    private static void RegisterAssistant()
+    {
+        VapbImportAssistant.Register(TaskKind, InspectForAssistant, Apply, () => LastResult == "PARTIAL");
+    }
+    private static VapbImportAssistant.Inspection InspectForAssistant(string path)
+    {
+        Task task = ReadTask(path);
+        string modelPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
+        if (String.IsNullOrEmpty(modelPath) || !modelPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase) ||
+            HashFile(modelPath) != task.model_sha256) throw new InvalidOperationException("MODEL_REVISION_MISMATCH");
+        var references = new List<ReferenceResult>();
+        ResolveMaterials(task, references);
+        GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(modelPath);
+        if (model == null || model.GetComponentsInChildren<MeshRenderer>(true).Length != 1 ||
+            model.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length != 0)
+            throw new InvalidOperationException("MODEL_STRUCTURE_UNSUPPORTED");
+        string disk = DiskPath(task.prefab_path);
+        GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(task.prefab_path);
+        if (File.Exists(disk) || File.Exists(disk + ".meta") || existing != null)
+        {
+            VapbExportObjectMarker[] markers = existing == null ? new VapbExportObjectMarker[0] :
+                existing.GetComponentsInChildren<VapbExportObjectMarker>(true);
+            if (markers.Length != 1 || markers[0].exportObjectId != task.export_object_id)
+                throw new InvalidOperationException("PREFAB_ALREADY_DIFFERS");
+        }
+        bool partial = references.Exists(reference => reference.status == "EXTERNAL_DEPENDENCY_REQUIRED");
+        return new VapbImportAssistant.Inspection { target = modelPath, output = task.prefab_path, count = 1,
+            partial = partial,
+            changes = "完成形の静的MeshとMaterial参照を別Prefabに生成します。元の入力Prefabを保持します。Skin/Boneの復元はこの経路の対象外です。",
+            warning = partial ? "外部Shader等の依存が必要です。MeshとMaterialは復元できますが、見た目の完成には指定された依存の導入が必要です。詳細はConsoleを確認してください。" :
+                "モデル・Material/Texture参照・保存先の事前確認を通過しました。適用時に面とMaterialの対応を再検証します。" };
     }
 
     private static string DiskPath(string assetPath)

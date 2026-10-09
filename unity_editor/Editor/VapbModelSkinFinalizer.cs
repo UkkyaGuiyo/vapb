@@ -193,6 +193,54 @@ public static class VapbModelSkinFinalizer
         public bool requiresReplacementEligibility;
     }
 
+    [InitializeOnLoadMethod]
+    private static void RegisterAssistant()
+    {
+        VapbImportAssistant.Register(Kind, InspectForAssistant, Apply);
+        VapbImportAssistant.Register(DirectKind, InspectForAssistant, Apply);
+        VapbImportAssistant.Register(SourceKind, InspectForAssistant, Apply);
+    }
+
+    private static VapbImportAssistant.Inspection InspectForAssistant(string path)
+    {
+        Manifest manifest = ReadManifest(path);
+        if (manifest == null || manifest.schema_version != Schema) Reject("MANIFEST_UNSUPPORTED");
+        ValidateBatch(manifest.reference_rebind_tasks);
+        PreflightScriptDependencies(manifest);
+        Task first = manifest.reference_rebind_tasks[0];
+        string rootPath = AssetDatabase.GUIDToAssetPath(SourceRootGuid(first));
+        GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(rootPath);
+        if (root == null || HasMissingScripts(root)) Reject("PREFAB_UNAVAILABLE_OR_MISSING_SCRIPT");
+        foreach (Task task in manifest.reference_rebind_tasks)
+        {
+            CheckSourceHashes(task);
+            Payload(task.witness_noop_path, task.witness_noop_sha256);
+            Payload(task.witness_path, task.witness_sha256);
+            ResolveMaterialBindings(task);
+            GameObject edited = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(task.model_guid));
+            if (edited == null || HasMissingScripts(edited)) Reject("EDITED_MODEL_UNAVAILABLE");
+            SkinnedMeshRenderer[] skins = edited.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            if (skins.Length != 1 || skins[0].sharedMesh == null || skins[0].rootBone == null ||
+                (skins[0].bones.Length == 0 || skins[0].bones.Length > task.bone_mappings.Length ||
+                 task.bone_mappings.Length > skins[0].bones.Length + 1)) Reject("EDITED_BONES_INVALID");
+            if (task.kind == SourceKind && (PrefabUtility.GetPrefabAssetType(root) != PrefabAssetType.Model ||
+                root.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length != 1))
+                Reject("SOURCE_MODEL_SINGLE_SKIN_REQUIRED");
+        }
+        string disk = Disk(first.variant_path);
+        GameObject existing = AssetDatabase.LoadAssetAtPath<GameObject>(first.variant_path);
+        if (File.Exists(disk) || File.Exists(disk + ".meta") || existing != null)
+        {
+            if (existing == null || PrefabUtility.GetPrefabAssetType(existing) != PrefabAssetType.Variant ||
+                AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(existing)) != rootPath)
+                Reject("VARIANT_PATH_OCCUPIED");
+        }
+        return new VapbImportAssistant.Inspection {
+            target = rootPath, output = first.variant_path, count = manifest.reference_rebind_tasks.Length,
+            changes = "編集Meshとウェイトを別Prefab Variantへ復元します。原本・骨階層・Material参照を保持し、Bone/rootBoneを再接続します。既存Unity設定の未対応変更は推測しません。",
+            warning = "source・編集データ・素材・必要Script・保存先の事前確認を通過しました。FBXの出所識別・骨のrest・編集範囲は、適用時に再検証します。未対応なら適用を拒否します。" };
+    }
+
     public static bool Handles(string manifestAssetPath)
     {
         try
@@ -1054,9 +1102,10 @@ public static class VapbModelSkinFinalizer
         return edited;
     }
 
-    private static Material[] ResolveMaterialTransport(Task task, SkinnedMeshRenderer native)
+    private static Dictionary<string, Material> ResolveMaterialBindings(Task task)
     {
-        if (task.material_bindings == null || task.material_bindings.Length == 0) return null;
+        if (task.material_bindings == null || task.material_bindings.Length == 0)
+            return new Dictionary<string, Material>(StringComparer.Ordinal);
         var materialByLabel = new Dictionary<string, Material>(StringComparer.Ordinal);
         foreach (MaterialBinding binding in task.material_bindings)
         {
@@ -1080,6 +1129,13 @@ public static class VapbModelSkinFinalizer
                 Reject("MATERIAL_TRANSPORT_AMBIGUOUS");
             materialByLabel[binding.transport_id] = resolved;
         }
+        return materialByLabel;
+    }
+
+    private static Material[] ResolveMaterialTransport(Task task, SkinnedMeshRenderer native)
+    {
+        if (task.material_bindings == null || task.material_bindings.Length == 0) return null;
+        Dictionary<string, Material> materialByLabel = ResolveMaterialBindings(task);
         Material[] carriers = native.sharedMaterials;
         if (carriers.Length != native.sharedMesh.subMeshCount) Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
         var assigned = new Material[carriers.Length];

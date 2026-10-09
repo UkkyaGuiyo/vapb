@@ -135,6 +135,11 @@ public static class VapbReferenceFinalizer
         // Batch callers use Apply directly; this menu is an explicit user action.
         if (Application.isBatchMode) return;
         string path = AssetDatabase.GetAssetPath(Selection.activeObject);
+        if (VapbModelSkinFinalizer.Handles(path))
+        {
+            VapbImportAssistant.Show(path);
+            return;
+        }
         var outputs = new HashSet<string>(StringComparer.Ordinal);
         var targets = new HashSet<string>(StringComparer.Ordinal);
         bool variant = VapbModelSkinFinalizer.Handles(path);

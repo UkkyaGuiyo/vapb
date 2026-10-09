@@ -89,3 +89,29 @@ The exact reopened unchanged package SHA256 422b21c5326e73256eccbc999a191f7d9af2
 Input archive hash is unchanged. Independent GUID-bound comparisons show source FBX/meta and all three Material/meta bytes equal the pinned input. Existing Scene/ProjectSettings are unchanged; only the owned probe and generated manifest differed from the backed-up preflight state. Standard import and RunImported exited 0; owned Editor/children are absent, Project lock is gone, and the parent Unity allocation is released. Hub remained untouched. No product defect was found or product source changed in this acceptance step. No new runner/framework or additional/repeated RunImported trial was used.
 
 This closes bounded unchanged save/reopen/Unity acceptance for the explicit-remap, no-Prefab author-owned Skin input and complements the separate bounded edited/replacement evidence. It does not repair the old ambiguous Prefab override input or establish full-product/Texture/animation/winding acceptance. GUI clicks, cancellation, animation extremes and native-only negative mutation checks remain NOT_RUN. Normal product/Blender/Editor API execution is not actual-client-click PASS. Main requested SOL/medium; actual main runtime settings are not exposed. No additional reviewer was called. Fresh formal usage showed 0% used; no reset action was performed.
+
+
+### Import Assistant implementation checkpoint (2026-10-09)
+
+The output now embeds a Japanese Unity Import Assistant in both source-model
+Skin and final-state static packages. It detects supported manifests after
+script reload and a stable Editor, performs existing read-only task/source/hash,
+Material and dependency checks, and offers explicit Apply / Cancel / Retry.
+Prompt/cancel/applied identities are stored under project Library, outside
+Assets. Source witness import and restoration remain inside explicit Apply.
+The direct-prefab legacy menu remains a diagnostic fallback; this checkpoint
+is not acceptance of every legacy route or the complete product campaign.
+
+`import-assistant-delivery.json` records the actual native/static output package
+hashes, identical Assistant GUID, source-byte comparisons and separate Unity
+2022.3 reference compilations of each package's embedded C# files. Both existing
+Blender export observations passed. No Unity Editor was launched for this
+checkpoint. Automatic first-import detection, read-only preflight Asset-byte
+preservation, actual Apply/Cancel clicks, restart prompt suppression and result
+selection are **NOT_RUN** and must be verified in the existing owned return
+project when the shared Unity slot is assigned. Compilation is not GUI evidence.
+
+The first static invocation selected the historical native-refusal mode, whose
+assertion now contradicts the already implemented source-model Skin route.
+The original output was retained. The existing `--replacement-only` mode then
+passed without changing a product implementation or test assertion.
