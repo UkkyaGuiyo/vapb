@@ -434,3 +434,6 @@ Implemented the next concrete section 11 gap: animation through B_ONLY Bone crea
 
 
 2026-10-09 implementation checkpoint: independently observed normal imports now reach equivalent Bone Merge and ordinary Skin export. Authored native Action loss was reproduced in actual exported FBX (zero AnimationCurve objects despite FINISHED). Both existing rest-pose Skin routes now stop such output without dropping the clip; native Action/Undo regression and non-animated normal export pass. Animation-to-Unity return is explicitly unimplemented and needs a real clip/binding consumer, not a schema-only or fixture-only claim. New merged package is prepared locally for the existing leased Unity return path; no Unity launch or ZIP rebuild in this checkpoint.
+
+
+Next leased Unity action is concretely prepared, not a request to repeat preparation: existing source-model Skin probe on the newly merged and 1.25-edited non-animated package, SHA a193572f59810cabbf1e9e4815a6f1db8e8432ea1856735cb14b2e9f0b148b39. Parent frame assignment remains required; fresh Project/PID/start/lease/lock/resource validation occurs at execution, never from old PIDs. Compare geometry in original/final Unity spaces and restore/check Material/Texture/Bone references. Authored Action transport remains separately unimplemented.

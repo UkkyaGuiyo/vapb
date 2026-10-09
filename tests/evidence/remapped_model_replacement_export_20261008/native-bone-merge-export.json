@@ -14,5 +14,13 @@
   "nonanimated_normal_export_after_fix": "PASS",
   "unity_return": "NOT_RUN",
   "edited_animation_unity_transport": "UNIMPLEMENTED",
-  "distribution_zip_rebuilt": false
+  "distribution_zip_rebuilt": false,
+  "prepared_edited_merge_package_sha256": "a193572f59810cabbf1e9e4815a6f1db8e8432ea1856735cb14b2e9f0b148b39",
+  "prepared_blender_dimension_ratios": [
+    1.25,
+    1.25,
+    1.2499999781936015
+  ],
+  "prepared_unity_probe": "existing VapbModelSkinRoundtripProbe.Validate",
+  "unity_execution_state": "WAITING_SHARED_FRAME; launcher syntax checked only"
 }
