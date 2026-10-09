@@ -25,8 +25,12 @@ public static class VapbModelSkinRoundtripProbe
         public string model_sha256;
         public string variant_path;
         public RendererCandidate[] renderer_candidates;
+        public ParentTransformMapping parent_transform_mapping;
+        public BoneMapping[] bone_mappings;
         public MaterialBinding[] material_bindings;
     }
+    [Serializable] private sealed class ParentTransformMapping { public string source_model_uid, edited_transform_realization_id; }
+    [Serializable] private sealed class BoneMapping { public string source_model_uid, edited_bone_realization_id; }
     [Serializable] private sealed class MaterialBinding { public string guid, file_id; }
     [Serializable] private sealed class RendererCandidate
     {
@@ -77,6 +81,13 @@ public static class VapbModelSkinRoundtripProbe
         public string[] nonnull_texture_guid_file_ids, nonnull_texture_properties;
         public bool native_texture_identity;
         public Bounds returned_local_bounds;
+        public string source_root_guid_file_id, source_parent_guid_file_id, edited_root_source_uid;
+        public string[] source_bone_parent_guid_file_ids;
+        public bool source_bones_share_parent, edited_bones_share_marked_parent, marked_parent_unique;
+        public bool source_fbx_meta_preserved_after_apply, refused_variant_absent;
+        public string apply_rejection, apply_exception, parent_observation_error, source_weights_observation_error;
+        public int source_positive_weights, edited_positive_weights;
+
     }
 
     static VapbModelSkinRoundtripProbe()
@@ -293,7 +304,17 @@ public static class VapbModelSkinRoundtripProbe
         try
         {
             string package = ProjectFile("Output.unitypackage");
-            if (File.Exists(ProjectFile("NativeSkinOutput.unitypackage"))) {
+            string[] gateArgs = Environment.GetCommandLineArgs();
+            int gateIndex = Array.IndexOf(gateArgs, "-vapbPackage");
+            if (gateIndex >= 0)
+            {
+                int hashIndex = Array.IndexOf(gateArgs, "-vapbPackageSha256");
+                if (gateIndex+1 >= gateArgs.Length || hashIndex < 0 || hashIndex+1 >= gateArgs.Length)
+                    throw new InvalidOperationException("PACKAGE_IDENTITY_REQUIRED");
+                package = gateArgs[gateIndex+1];
+                if (Hash(package) != gateArgs[hashIndex+1]) throw new InvalidOperationException("PACKAGE_HASH_MISMATCH");
+            }
+            else if (File.Exists(ProjectFile("NativeSkinOutput.unitypackage"))) {
                 package = ProjectFile("NativeSkinOutput.unitypackage");
                 if (Hash(package) != "d99efbad6090258e910a7b838ab42ab25c66391f25fa06ab19473a799d29a545") throw new InvalidOperationException("PACKAGE_HASH_MISMATCH");
             }
@@ -346,7 +367,24 @@ public static class VapbModelSkinRoundtripProbe
             string prefabPath = AssetDatabase.GUIDToAssetPath(native ? task.source_model_guid : task.prefab_guid);
             string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
             string editedPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
-            report.first_apply = VapbModelSkinFinalizer.Apply(ManifestPath);
+            string beforeSource = Hash(Disk(sourcePath)), beforeSourceMeta = Hash(Disk(sourcePath)+".meta");
+            Application.LogCallback gateLog = (message, trace, kind) => {
+                if (kind == LogType.Exception) report.apply_exception = message;
+                const string prefix = "VAPB_MODEL_SKIN_VARIANT_REJECTED=";
+                if (kind == LogType.Error && message.StartsWith(prefix, StringComparison.Ordinal))
+                    report.apply_rejection = message.Substring(prefix.Length);
+            };
+            Application.logMessageReceived += gateLog;
+            try { report.first_apply = VapbModelSkinFinalizer.Apply(ManifestPath); }
+            finally { Application.logMessageReceived -= gateLog; }
+            report.source_fbx_meta_preserved_after_apply = beforeSource == Hash(Disk(sourcePath)) && beforeSourceMeta == Hash(Disk(sourcePath)+".meta");
+            report.refused_variant_absent = !report.first_apply && !File.Exists(Disk(task.variant_path)) && !File.Exists(Disk(task.variant_path)+".meta");
+            if (task.parent_transform_mapping != null)
+            {
+                try { ObserveSharedParent(task, report, sourcePath, editedPath); }
+                catch (Exception error) { report.parent_observation_error = error.Message; }
+            }
+
             if (!report.first_apply) throw new InvalidOperationException("FIRST_APPLY_FAILED");
             GameObject variant = AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path);
             GameObject original = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
@@ -507,6 +545,48 @@ public static class VapbModelSkinRoundtripProbe
                 ? error.Message : "UNEXPECTED_EXCEPTION";
         }
         Finish(report);
+    }
+
+    private static string NativeIdentity(UnityEngine.Object value)
+    {
+        return value != null && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out string guid, out long id)
+            ? guid+":"+id.ToString(System.Globalization.CultureInfo.InvariantCulture) : null;
+    }
+    private static void ObserveSharedParent(Task task, Report report, string sourcePath, string editedPath)
+    {
+        GameObject sourceRoot = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
+        GameObject editedRoot = AssetDatabase.LoadAssetAtPath<GameObject>(editedPath);
+        var source = sourceRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+        var edited = editedRoot.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+        if (source.Length != 1 || edited.Length != 1) return;
+        report.source_root_guid_file_id = NativeIdentity(source[0].rootBone);
+        Transform parent = source[0].rootBone == null ? null : source[0].rootBone.parent;
+        report.source_parent_guid_file_id = NativeIdentity(parent);
+        report.source_bone_parent_guid_file_ids = new string[source[0].bones.Length];
+        report.source_bones_share_parent = parent != null && source[0].bones.Length >= 2;
+        for (int i=0; i<source[0].bones.Length; i++)
+        {
+            report.source_bone_parent_guid_file_ids[i] = NativeIdentity(source[0].bones[i].parent);
+            report.source_bones_share_parent &= source[0].bones[i].parent == parent;
+        }
+        string rootReceipt = edited[0].rootBone?.GetComponent<VapbRealizationMarker>()?.boneRealizationId;
+        foreach (BoneMapping row in task.bone_mappings)
+            if (row.edited_bone_realization_id == rootReceipt) report.edited_root_source_uid = row.source_model_uid;
+        Transform editedParent = null; int count = 0;
+        foreach (VapbRealizationMarker marker in editedRoot.GetComponentsInChildren<VapbRealizationMarker>(true))
+            if (marker.realizationId == task.parent_transform_mapping.edited_transform_realization_id)
+            { count++; editedParent = marker.transform; }
+        report.marked_parent_unique = count == 1;
+        report.edited_bones_share_marked_parent = count == 1 && edited[0].bones.Length >= 2;
+        foreach (Transform bone in edited[0].bones) report.edited_bones_share_marked_parent &= bone.parent == editedParent;
+        try
+        {
+            using (var weights = source[0].sharedMesh.GetAllBoneWeights())
+                foreach (var weight in weights) if (weight.weight > 0) report.source_positive_weights++;
+            using (var weights = edited[0].sharedMesh.GetAllBoneWeights())
+                foreach (var weight in weights) if (weight.weight > 0) report.edited_positive_weights++;
+        }
+        catch (Exception error) { report.source_weights_observation_error = error.Message; }
     }
 
     private static Vector3[] ReadSourceVertices(string path, string guid, long meshId,

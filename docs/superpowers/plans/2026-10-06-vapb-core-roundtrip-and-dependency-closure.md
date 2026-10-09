@@ -158,3 +158,38 @@ tests, observe root/parent transport separately from strict influence equality,
 and preserve source, project and lease. A SOURCE_MODEL_WEIGHTS_CHANGED refusal
 would be a separate source-default/edited-weight boundary, not success or an
 authorization to weaken equality. See transferred-parent-transform-export.json.
+
+
+### Actual shared-parent Unity gate (2026-10-09)
+
+The parent assigned a slot and the exact prepared package was normally imported
+in the existing leased Avatar pool project with the existing roundtrip probe.
+Apply rejected `EDITED_ROOT_INVALID`: original rootBone remains witnessed source
+UID 251529238 (fileID 2606333175405744531), while the edited native importer chose
+the sibling UID 763348336. Both imported edited bones share the uniquely marked
+parent; both original bones share source parent fileID 7617400270062902505.
+This observes parent receipt transport, not complete consumer acceptance: the
+actual root equality guard executes before the new parent hierarchy validation.
+
+Native positive-weight counts are source-default 60 and edited 87. The influence
+guard was not reached because root validation rejected first. Keep these two
+boundaries separate; do not retune either guard or rewrite historical refusal.
+No Variant was created, so ancestry/reload/returned geometry 1.25 are NOT_MEASURED.
+Source FBX/meta bytes after Apply, all 2,834 pre-existing project files after
+restoration and exact package bytes remain unchanged. Editor exited normally
+with code 1, owned child tree is empty, project lock is absent; formal pool lease
+and shared mutex were released before further record/review work. Compiler
+errors zero. No SDK/private logs/project files are published.
+
+One fresh SOL/medium review limited to the new observer found three P2 issues:
+Error-versus-Exception reason capture, optional observation obscuring post-Apply
+invariance, and legacy fixed-package precedence before explicit selection.
+All were corrected locally; product plus observer reference compilation passes.
+Corrected observer was not rerun in Editor; the formal actual reason is retained
+separately from the unchanged runtime JSON. See
+transferred-parent-transform-unity-refusal.json.
+
+Next product seam is the proven difference between original and edited native
+rootBone selection, followed separately by the source-default/edited weight
+comparison. Current strict root/influence guards remain unchanged; root identity
+transport is not complete. No new runner/schema or fabricated Bone was added.
