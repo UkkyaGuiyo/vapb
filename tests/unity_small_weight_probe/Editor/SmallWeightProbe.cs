@@ -172,4 +172,84 @@ public static class SmallWeightProbe
         File.WriteAllText(Path.Combine(Project,"PolicyNegative.json"),JsonUtility.ToJson(new Report {status=rejected>0?"REJECTED":"FALSE_PASS",errors=rejected,cases=new[]{capture}},true));
         EditorApplication.Exit(rejected>0?0:1);
     }
+
+    // One source identity observation through the existing product witness.
+    [Serializable] private sealed class RootTask {
+        public string kind, source_model_guid, source_model_sha256, source_model_uid, source_geometry_uid;
+        public string[] source_model_uids;
+    }
+    [Serializable] private sealed class RootGate {
+        public RootTask task;
+        public string source_path, source_meta_sha256, noop_sha256, witness_sha256;
+    }
+    [Serializable] public sealed class RootRow {
+        public string guid, uid, parent_guid, parent_uid;
+        public long id, parent_id;
+    }
+    [Serializable] public sealed class RootReport {
+        public string version, status, error, source_hash;
+        public bool root_null, source_bytes_restored, source_meta_restored, root_reference_stable;
+        public RootRow root;
+        public RootRow[] bones;
+    }
+    private static RootRow RootReference(Transform transform, string sourceGuid,
+        Dictionary<string,long> uidToId) {
+        if(transform==null) return null;
+        if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(transform,out string guid,out long id)
+            || guid!=sourceGuid || id==0) throw new Exception("ROOT_TRANSFORM_ID_UNPROVEN");
+        string[] uids=uidToId.Where(p=>p.Value==id).Select(p=>p.Key).ToArray();
+        if(uids.Length!=1) throw new Exception("ROOT_UID_UNPROVEN");
+        var row=new RootRow {guid=guid,id=id,uid=uids[0]};
+        if(transform.parent!=null) {
+            if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(transform.parent,out string pg,out long pi)
+                || pg!=sourceGuid || pi==0) throw new Exception("ROOT_PARENT_ID_UNPROVEN");
+            string[] puids=uidToId.Where(p=>p.Value==pi).Select(p=>p.Key).ToArray();
+            if(puids.Length!=1) throw new Exception("ROOT_PARENT_UID_UNPROVEN");
+            row.parent_guid=pg;row.parent_id=pi;row.parent_uid=puids[0];
+        }
+        return row;
+    }
+    public static void RootIdentityControl() {
+        var report=new RootReport {version=Application.unityVersion,status="FAIL"};
+        string[] args=Environment.GetCommandLineArgs();
+        int index=Array.IndexOf(args,"-vapbRootGate");
+        string folder=index>=0 && index+1<args.Length ? args[index+1] : null;
+        try {
+            if(folder==null || Application.unityVersion!="2022.3.22f1") throw new Exception("ROOT_GATE_INVALID");
+            var gate=JsonUtility.FromJson<RootGate>(File.ReadAllText(Path.Combine(folder,"RootGate.json")));
+            string source=AssetDatabase.GUIDToAssetPath(gate.task.source_model_guid);
+            if(source!=gate.source_path || Hash(Path.Combine(Project,source))!=gate.task.source_model_sha256
+                || Hash(Path.Combine(Project,source+".meta"))!=gate.source_meta_sha256
+                || Hash(Path.Combine(folder,"Noop.fbx"))!=gate.noop_sha256
+                || Hash(Path.Combine(folder,"Witness.fbx"))!=gate.witness_sha256)
+                throw new Exception("ROOT_GATE_REVISION_MISMATCH");
+            byte[] original=File.ReadAllBytes(Path.Combine(Project,source));
+            byte[] meta=File.ReadAllBytes(Path.Combine(Project,source+".meta"));
+            var before=AssetDatabase.LoadAssetAtPath<GameObject>(source).GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+            bool rootNull=before.rootBone==null;
+            long rootId=0;
+            if(!rootNull) AssetDatabase.TryGetGUIDAndLocalFileIdentifier(before.rootBone,out string bg,out rootId);
+            var flags=System.Reflection.BindingFlags.Public|System.Reflection.BindingFlags.NonPublic;
+            Type taskType=typeof(VapbModelSkinFinalizer).GetNestedType("Task",flags);
+            object task=JsonUtility.FromJson(JsonUtility.ToJson(gate.task),taskType);
+            var witness=typeof(VapbModelSkinFinalizer).GetMethod("RunWitness",flags|System.Reflection.BindingFlags.Static);
+            object result=witness.Invoke(null,new object[]{source,task,original,meta,
+                File.ReadAllBytes(Path.Combine(folder,"Noop.fbx")),File.ReadAllBytes(Path.Combine(folder,"Witness.fbx"))});
+            var uidToId=(Dictionary<string,long>)result.GetType().GetField("transformIds",flags|System.Reflection.BindingFlags.Instance).GetValue(result);
+            var skin=AssetDatabase.LoadAssetAtPath<GameObject>(source).GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+            report.root_null=skin.rootBone==null;
+            report.root=RootReference(skin.rootBone,gate.task.source_model_guid,uidToId);
+            report.bones=skin.bones.Select(b=>RootReference(b,gate.task.source_model_guid,uidToId)).ToArray();
+            report.root_reference_stable=rootNull==report.root_null && (rootNull || rootId==report.root.id);
+            report.source_bytes_restored=File.ReadAllBytes(Path.Combine(Project,source)).SequenceEqual(original);
+            report.source_meta_restored=File.ReadAllBytes(Path.Combine(Project,source+".meta")).SequenceEqual(meta);
+            report.source_hash=gate.task.source_model_sha256;
+            if(!report.root_reference_stable || !report.source_bytes_restored || !report.source_meta_restored)
+                throw new Exception("ROOT_SOURCE_RESTORE_FAILED");
+            report.status="OBSERVED";
+        } catch(Exception e) {report.error=e.GetBaseException().Message;Debug.LogException(e);}
+        if(folder!=null) File.WriteAllText(Path.Combine(folder,"RootResult.json"),JsonUtility.ToJson(report,true));
+        Debug.Log("VAPB_ROOT_IDENTITY_"+report.status);
+        EditorApplication.Exit(report.status=="OBSERVED"?0:1);
+    }
 }

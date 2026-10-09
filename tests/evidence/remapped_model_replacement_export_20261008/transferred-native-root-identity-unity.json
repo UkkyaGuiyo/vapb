@@ -1,0 +1,77 @@
+{
+  "start_commit": "f83397d7d767745d88ae805e4a08f0859f612ce9",
+  "purpose": "Existing product witness observation of the exact transferred first-party source root identity",
+  "source_fbx_sha256": "4d16ca1b16521f2cafbddb5eba94c732e33aa4c1c937c4a83f582a11829fee23",
+  "source_meta_sha256": "c6447904584cdb09b76b7356491ac00957a21597dc9d628a9d88815ada84f948",
+  "noop_sha256": "4d16ca1b16521f2cafbddb5eba94c732e33aa4c1c937c4a83f582a11829fee23",
+  "witness_sha256": "77d21b65e742c53c9f543e7ca1368bd61b3bb6875dcb1e0362496778c4cbecef",
+  "source_model_uid": "620743515",
+  "source_model_uids": [
+    "620743515",
+    "51419677",
+    "763348336",
+    "251529238"
+  ],
+  "observation": {
+    "version": "2022.3.22f1",
+    "status": "OBSERVED",
+    "error": "",
+    "source_hash": "4d16ca1b16521f2cafbddb5eba94c732e33aa4c1c937c4a83f582a11829fee23",
+    "root_null": false,
+    "source_bytes_restored": true,
+    "source_meta_restored": true,
+    "root_reference_stable": true,
+    "root": {
+      "guid": "93abeaa4aa085ea4c0473b03f94eb0e4",
+      "uid": "251529238",
+      "parent_guid": "93abeaa4aa085ea4c0473b03f94eb0e4",
+      "parent_uid": "51419677",
+      "id": 2606333175405744531,
+      "parent_id": 7617400270062902505
+    },
+    "bones": [
+      {
+        "guid": "93abeaa4aa085ea4c0473b03f94eb0e4",
+        "uid": "763348336",
+        "parent_guid": "93abeaa4aa085ea4c0473b03f94eb0e4",
+        "parent_uid": "51419677",
+        "id": 6445739624358102005,
+        "parent_id": 7617400270062902505
+      },
+      {
+        "guid": "93abeaa4aa085ea4c0473b03f94eb0e4",
+        "uid": "251529238",
+        "parent_guid": "93abeaa4aa085ea4c0473b03f94eb0e4",
+        "parent_uid": "51419677",
+        "id": 2606333175405744531,
+        "parent_id": 7617400270062902505
+      }
+    ]
+  },
+  "raw_shared_noncluster_model_uid": "51419677",
+  "root_is_cluster_bone": true,
+  "root_is_shared_null_parent": false,
+  "sibling_bone_is_not_descendant_of_root": true,
+  "compile_pass": true,
+  "process_exit_code": 0,
+  "protected_existing_files": 2830,
+  "protected_changed_files": 0,
+  "retained_existing_probe_bytes_restored": true,
+  "owned_children_absent": true,
+  "project_lock_absent": true,
+  "mutex_released": true,
+  "pool_released_utc": "2026-10-09T18:51:37.5509781Z",
+  "product_result": "NOT_EXPORTED: earlier producer roots != 1 rejection retained",
+  "consumer_static_boundary": "ResolveEdited: a Bone parent outside source.bonesByUid is treated as null, then a non-root Bone rejects BONE_HIERARCHY_UNSUPPORTED. This consumer rejection was not executed here.",
+  "smallest_supported_extension": [
+    "Preserve the witnessed existing cluster-Bone root reference, rather than replacing it with the shared Null parent.",
+    "Carry and validate the exact shared outside-Bone parent Transform and its source raw UID in the existing receipt/marker machinery; do not remove the root or hierarchy guards globally.",
+    "Prove the sibling ancestry, source/edited native handles, rest matrices and exact selected scope in a bounded source-model branch before permitting export.",
+    "Then verify the distinct source-default versus preserved-edited tiny influence boundary, without relaxing strict Skin acceptance."
+  ],
+  "limitations": [
+    "Root identity observation only; no product Apply or Variant created.",
+    "No Bone reparenting, source root replacement, guard relaxation or fabricated receipt.",
+    "No commercial materials or whole-product acceptance."
+  ]
+}
