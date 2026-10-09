@@ -16,7 +16,9 @@ try:
     assert len(obj.material_slots)==3 and all(s.material for s in obj.material_slots)
     source_materials={str(s.material.get('unity_material_guid')):s.material for s in obj.material_slots}
     if '--native-only' in sys.argv:
-        for v in obj.data.vertices: v.co *= 1.25
+        edit_scale = 1.0 if '--native-unchanged' in sys.argv else 1.25
+        if edit_scale != 1.0:
+            for v in obj.data.vertices: v.co *= edit_scale
         vertices = [tuple(v.co) for v in obj.data.vertices]
         rig = obj.modifiers[0].object
         bone_state = [(b.get('_vapb_fbx_model_uid'), b.get('_vapb_fbx_bone_realization_id'),
@@ -37,7 +39,7 @@ try:
         report = dict(status='PASS_BOUNDED_NATIVE_SKIN_EXPORT_ONLY', input_sha256=input_sha,
                       output_sha256=hashlib.sha256(output.read_bytes()).hexdigest(), task=task,
                       source_assets_and_meta_byte_preserved=True, editing_mesh_and_bones_unchanged_by_export=True,
-                      edit_scale=1.25, unity_return='NOT_RUN', scope='single no-Prefab source-model Skin geometry edit')
+                      edit_scale=edit_scale, unity_return='NOT_RUN', scope='single no-Prefab source-model Skin unchanged export' if edit_scale == 1.0 else 'single no-Prefab source-model Skin geometry edit')
         (work/'native-skin-export-observation.json').write_text(json.dumps(report,indent=2)+'\n')
         print('VAPB_NATIVE_SKIN_EXPORT',report['status']);sys.exit(0)
     if '--replacement-only' not in sys.argv:

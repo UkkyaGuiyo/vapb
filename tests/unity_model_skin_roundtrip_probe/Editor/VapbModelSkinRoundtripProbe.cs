@@ -68,6 +68,8 @@ public static class VapbModelSkinRoundtripProbe
         public float edited_bounds_extent;
         public float vertex_change_threshold;
         public bool native_geometry_125, native_weights_equal, native_bounds_contain_rest;
+        public bool native_geometry_expected_scale;
+        public float expected_native_scale;
         public string edited_mesh_guid, edited_mesh_file_id;
         public bool native_material_identity, native_face_membership;
         public string[] material_guid_file_ids;
@@ -207,9 +209,11 @@ public static class VapbModelSkinRoundtripProbe
                 string editedGuid; long editedId;
                 bool identity = AssetDatabase.TryGetGUIDAndLocalFileIdentifier(editedMesh, out editedGuid, out editedId);
                 report.edited_mesh_guid = editedGuid; report.edited_mesh_file_id = editedId.ToString();
-                report.native_geometry_125 = sourceVertices.Length == editedVertices.Length;
-                for (int i=0; report.native_geometry_125 && i<sourceVertices.Length; i++)
-                    report.native_geometry_125 = (editedVertices[i]-sourceVertices[i]*1.25f).magnitude <= report.vertex_change_threshold*10;
+                report.expected_native_scale = Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbNativeUnchanged") >= 0 ? 1f : 1.25f;
+                report.native_geometry_expected_scale = sourceVertices.Length == editedVertices.Length;
+                for (int i=0; report.native_geometry_expected_scale && i<sourceVertices.Length; i++)
+                    report.native_geometry_expected_scale = (editedVertices[i]-sourceVertices[i]*report.expected_native_scale).magnitude <= report.vertex_change_threshold*10;
+                report.native_geometry_125 = report.expected_native_scale == 1.25f && report.native_geometry_expected_scale;
                 var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
                 report.native_weights_equal = (bool)typeof(VapbModelSkinFinalizer).GetMethod("SameSkinInfluences", flags).Invoke(null, new object[] { originalSkin.sharedMesh, editedMesh });
                 report.native_material_identity = task.material_bindings != null && task.material_bindings.Length == selected.sharedMaterials.Length;
@@ -240,7 +244,7 @@ public static class VapbModelSkinRoundtripProbe
                 report.pass = report.package_imported && report.first_apply && report.variant_created && report.variant_linked &&
                     report.edited_mesh_bound && report.originals_unchanged && report.second_apply_unchanged &&
                     report.geometry_matches_edited_model && report.topology_and_weights_valid && report.target_bones_and_root_preserved &&
-                    report.materials_preserved && report.siblings_preserved && report.native_geometry_125 &&
+                    report.materials_preserved && report.siblings_preserved && report.native_geometry_expected_scale &&
                     report.native_weights_equal && report.native_bounds_contain_rest && report.native_material_identity && report.native_face_membership && identity && editedGuid==task.model_guid && editedGuid!=task.source_model_guid && editedId!=0;
                 report.error=report.pass ? "NONE" : "ASSERTION_FAILED";
                 Finish(report); return;
