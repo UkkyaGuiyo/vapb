@@ -20,7 +20,9 @@ from ..export.model_package import SourcePackage, ModelReplacement, TextureRepla
 from ..export.package_writer import UnityPackageWriter
 from ..export.raw_assets import RawAssetRepository
 from ..export.staging import StagedUnityAsset
-from ..export.final_state_package import export_final_state_package, _material_texture_guids
+from ..export.final_state_package import export_final_state_package, _material_texture_guids, _material_data
+from ..export.material_naming import allocate_material_paths
+from ..blender.material_owner_usage import proven_owners
 from ..export.triangle_staging import frozen_export_meshes
 
 
@@ -454,6 +456,26 @@ def export_model_skin_package(context, mesh, output, *, direct=False):
     return export_model_skin_packages(context, [mesh], output, direct_flags=[direct])
 
 
+def _source_model_material_paths(meshes, package_id, assets):
+    """Name already validated source Materials from retained exact usage only."""
+    sources = {asset.guid: asset for asset in assets}
+    rows = {}
+    for mesh in meshes:
+        for slot in mesh.material_slots:
+            material = slot.material
+            if material is None:
+                continue
+            guid, file_id = material.get('unity_material_guid'), str(material.get('unity_material_file_id'))
+            source = sources[guid]
+            owners = proven_owners(material, package_id, guid, file_id, source.asset_bytes)
+            row = rows.setdefault(guid, {'guid': guid, 'name': _material_data(source.asset_bytes).name, 'owners': {}})
+            for owner, label in owners.items():
+                if owner in row['owners'] and row['owners'][owner] != label:
+                    raise ValueError('conflicting Material owner labels')
+                row['owners'][owner] = label
+    return allocate_material_paths(rows.values())
+
+
 def export_model_skin_packages(context, meshes, output, *, direct_flags=None):
     """Stage all selected skin edits before publishing one package/Variant task set."""
     from ..export.model_skin import group_model_skin_tasks
@@ -488,6 +510,7 @@ def export_model_skin_packages(context, meshes, output, *, direct_flags=None):
     tasks = group_model_skin_tasks([task for task, _ in prepared])
     tree, manifest = materialize_model_package([source], [], generator_version='0.4.0',
         blender_version=bpy.app.version_string,
+        material_paths=_source_model_material_paths(meshes, package_id, assets) if source_model else None,
         texture_replacements=_working_textures(meshes[0], package_id, assets,
                                                additional_meshes=meshes[1:]))
     generated = [asset for _, entries in prepared for asset in entries]

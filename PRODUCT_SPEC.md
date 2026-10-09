@@ -129,8 +129,12 @@ Only output pathname/filename may change; GUID and original .meta are retained. 
 must be deterministic and portable, including casefold/path constraints.
 Hybrid naming is implemented in the static final-state export route, with
 persistent exact occurrence Material usage, Shared/Unassigned and symmetric
-portable collisions. Legacy/no-evidence Materials remain Unassigned. Other
-model/skin export routes remain outside this naming feature. Fresh Unity
+portable collisions. Legacy/no-evidence Materials remain Unassigned. The single
+no-Prefab source-model Skin route now reuses the same allocator for its selected
+source Materials, with exact retained usage or Unassigned, path-only MOVE and
+unchanged source Material/meta bytes. Source tests and real Blender save/reopen,
+repeat export and package readback passed; named-path Unity return is pending a
+shared frame. Other model/Prefab Skin routes remain outside this extension. Fresh Unity
 2022.3.22f1 verifies identity/bytes/m_Name/references and repeated Finalizer plus
 save/reimport for the supported static route; see Current State for the existing
 unused-slot limitation. No m_Name synchronization.

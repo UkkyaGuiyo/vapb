@@ -297,3 +297,25 @@ local; the public summary contains only stage results, counts and code provenanc
 This completes one representative installed-addon Package-to-Blender-to-Unity return.
 It does not accept old override correspondence gaps, arbitrary Skin/bone/Texture
 changes, whole Avatars or VRChat upload. Existing broader product campaign remains.
+
+### Source-model Skin Material organization: source acceptance (2026-10-09)
+
+The single no-Prefab source-model Skin export now passes retained exact usage to
+the existing Material path allocator. Missing proof remains Unassigned. The model
+package materializer records existing MOVE/Material fields and keeps source GUID,
+Material bytes including m_Name, meta and original archive unchanged. Other Skin
+and static/direct routes do not opt into this source-model extension.
+
+The same existing owned representative input first reproduced original-path output.
+The initial integration targeted a similar legacy call site by mistake; the actual
+operator check caught it, the legacy edit was removed, and the intended source-model
+call was connected. Real Blender save/reopen/export then passed with all three
+Materials organized and all source Asset/meta bytes unchanged. A fresh process
+opened the saved scene and repeated normal export with identical Material paths,
+GUIDs, bytes and meta and unchanged working Mesh/Material state. Existing model
+package tests cover symmetric portable collisions, reversed input order, byte/GUID
+preservation, package readback and unknown/non-Material destination rejection.
+The focused existing suites ran 33 tests: 32 passed and one Blender-only test skipped.
+Named-path Unity return is NOT_RUN; earlier unchanged-path return does not close it.
+No new schema, identity family, fixture matrix or runner was introduced. Commercial
+input bodies, derivatives, identifiers, paths and detailed contents are excluded.

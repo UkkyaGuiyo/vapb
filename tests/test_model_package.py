@@ -49,6 +49,45 @@ def replacement(source: SourcePackage, guid: str = A, **changes) -> ModelReplace
 
 
 class ModelPackageTests(unittest.TestCase):
+    def test_material_path_moves_preserve_bytes_identity_repeat_and_package_readback(self):
+        from unitypackage_blender_importer.export.material_naming import allocate_material_paths
+        from unitypackage_blender_importer.export.raw_assets import RawAssetRepository
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            payloads = {B: b"Material:\n  m_Name: Body\n", C: b"Material:\n  m_Name: body\n"}
+            source = make_archive(root / "source.unitypackage", fields(A, "Assets/Model.fbx", b"source-model")
+                                  + fields(B, "Assets/First.mat", payloads[B])
+                                  + fields(C, "Assets/Second.mat", payloads[C]))
+            original = source.path.read_bytes()
+            rows = [{'guid': guid, 'name': name, 'owners': {}} for guid, name in ((B, 'Body'), (C, 'body'))]
+            destinations = allocate_material_paths(rows)
+            self.assertTrue(all('/Unassigned/Materials/' in path and '__' in path for path in destinations.values()))
+            for order in (rows, list(reversed(rows))):
+                tree, manifest = materialize_model_package([source], [], generator_version='test', blender_version='test',
+                    material_paths=allocate_material_paths(order))
+                self.assertEqual(tree.get(A).pathname, 'Assets/Model.fbx')
+                for guid, payload in payloads.items():
+                    self.assertEqual((tree.get(guid).pathname, tree.get(guid).asset_bytes, tree.get(guid).meta_bytes),
+                                     (destinations[guid], payload, f'guid: {guid}\n'.encode()))
+                self.assertEqual({item['desired_export_path'] for item in manifest.material_mappings}, set(destinations.values()))
+                self.assertTrue(all(item['operation'] == 'MOVE' and item['path_status'] == 'MOVE'
+                                    and item['guid_decision'] == 'PRESERVE_SOURCE_GUID' for item in manifest.material_mappings))
+                output = root / ('output-' + str(len(list(root.glob('output-*')))) + '.unitypackage')
+                UnityPackageWriter().write(tree, output)
+                readback = {asset.guid: asset for asset in RawAssetRepository(output).read_all()}
+                for guid in payloads:
+                    self.assertEqual((readback[guid].pathname, readback[guid].asset_bytes, readback[guid].meta_bytes),
+                                     (destinations[guid], payloads[guid], f'guid: {guid}\n'.encode()))
+            self.assertEqual(source.path.read_bytes(), original)
+
+    def test_material_destinations_reject_unknown_or_non_material_assets(self):
+        with tempfile.TemporaryDirectory() as temp:
+            source = make_archive(Path(temp) / 'source.unitypackage', fields(A, 'Assets/Model.fbx', b'source-model'))
+            for guid in (A, B):
+                with self.subTest(guid=guid), self.assertRaises(ValueError):
+                    materialize_model_package([source], [], generator_version='test', blender_version='test',
+                        material_paths={guid: 'Assets/VAPBExport/Unassigned/Materials/Body.mat'})
+
     def test_working_texture_preserves_identity_meta_and_other_source_assets(self):
         from unitypackage_blender_importer.export.model_package import TextureReplacement
         with tempfile.TemporaryDirectory() as temp:

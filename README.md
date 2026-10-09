@@ -33,6 +33,8 @@ VAPBは、たとえば次のような用途を対象にしています。
 4. Unityの作業用Projectへ出力PackageをImportし、Editor scriptsのコンパイル完了を待ちます。自動表示される **VAPB：編集内容を確認** で結果を確認し、**適用** を押します。確認だけで閉じたい場合は **キャンセル** です。自動適用はしません。
 5. 作成・選択された別Prefab Variantで、形状、面の素材割当、TextureとBone／ポーズを確認します。元モデル／Prefabは残ります。
 
+Prefabなしの単一元モデルSkinでは、出力Materialのフォルダー・filenameを整理します。元Materialの中身・名前・GUID・metaは保持し、所属根拠がないものは **Unassigned** です。この命名拡張のUnity復帰は現在未検証です。
+
 確認画面を開き直す場合は **Tools → VAPB → 編集内容を確認** を使用します。
 表示された未対応理由をGUID／fileIDの手編集や素材の推測割当で回避しないでください。
 

@@ -14,6 +14,14 @@ User-approved overengineering correction. The current priority is the earliest f
 
 Existing Phase 0–3 contract/parser/binding checkpoints are historical completed or partial work, not instructions to recreate them. Current user/AGENTS routing governs the primary engineer and review; this revision supersedes fixed LUNA staffing and automatic per-stage review in the linked older plans without removing required safety/semantic review.
 
+## Current dependency sequence — 2026-10-09
+
+- The installed-distribution representative native Skin/nonnull Texture return is complete; reuse its bounded result, not whole-product acceptance.
+- Source implementation and nearest checks now pass for human-readable Material paths on the single no-Prefab source-model Skin route only. In `operators/export_unitypackage.py`, reuse `proven_owners`, the existing raw Material reader and `allocate_material_paths`; absent proof remains Unassigned. Pass the resulting path map into `export/model_package.py` and represent it with existing MOVE/Material plan fields. Do not change Material bytes, m_Name, GUID or meta, or other export routes.
+- Extend `tests/test_model_package.py` only for path-only identity/byte preservation, allocator collisions/repeat/package readback and rejection of non-Material/unknown destinations. Reuse the existing native Blender edit/save-reopen/export observation with one owned input. Run nearest naming/model tests, then inspect the diff and normally save source plus safe status.
+- Named-path Unity acceptance requires a separately assigned shared frame; earlier unchanged-path acceptance is insufficient. Reuse normal import/Assistant/Variant/original-byte checks. The existing 2026-09-30 Hierarchy Parity closure already verifies its measured supported scope and must not be reimplemented. Its separate real-input Geometry aggregate remains RED (14 EXACT / 20 GEOMETRY_MISMATCH); select a concrete outstanding geometry boundary from existing evidence before further source work, without adding a broad fixture matrix.
+- Real downloaded packages stay local and are not an implementation prerequisite. Before one real representative return, inspect its bundled terms, exact selected Skin and dependencies; defer only that material-use gate if conditions remain unknown. Do not publish commercial assets, extracted/edited derivatives, identities, private paths or detailed contents.
+
 ## 1. Product constraints retained
 
 - Normal input is UnityPackage(s) directly into Blender. A Unity input project or manual FBX export is not a user prerequisite. Development-only Unity observations/witnesses may diagnose a seam but cannot become a mandatory product workflow.

@@ -72,9 +72,11 @@ def materialize_model_package(
     texture_replacements: tuple[TextureReplacement, ...] | list[TextureReplacement] = (),
     generator_version: str,
     blender_version: str,
+    material_paths: dict[str, str] | None = None,
 ) -> tuple[StagingTree, ExportManifest]:
     """Build a validated whole-source closure and manifest; caller writes it atomically.
 
+    Optional Material destinations change only exported paths, retaining source bytes/meta/GUID.
     An empty replacement list preserves the complete source closure so callers
     can add a new edited asset without replacing the original skeleton model.
     A replacement continues the source FBX asset with its original GUID, path,
@@ -103,6 +105,11 @@ def materialize_model_package(
             seen_guids.add(asset.guid)
             seen_paths.add(asset.pathname)
             source_assets[(package_id, asset.guid)] = asset
+
+    destinations = dict(material_paths or {})
+    material_guids = {guid for (_, guid), asset in source_assets.items() if asset.pathname.lower().endswith('.mat')}
+    if destinations.keys() - material_guids:
+        raise ValueError('Material destination does not identify an available source Material')
 
     by_identity: dict[tuple[str, str], ModelReplacement] = {}
     renderer_mappings: list[dict[str, Any]] = []
@@ -154,7 +161,11 @@ def materialize_model_package(
         node_type = NodeType.MESH_ASSET if asset.pathname.lower().endswith(".fbx") else NodeType.PRESERVED_UNKNOWN_ASSET
         if (package_id, guid) in textures:
             node_type = NodeType.TEXTURE_ASSET
-        graph.add_node(GraphNode(node_id, node_type, Provenance("EXACT", package_id, guid, None, asset.pathname), {"operation": "PRESERVE"}))
+        attributes = {"operation": "PRESERVE"}
+        if guid in destinations:
+            node_type = NodeType.MATERIAL_ASSET
+            attributes = {"operation": "MOVE", "desired_export_path": destinations[guid]}
+        graph.add_node(GraphNode(node_id, node_type, Provenance("EXACT", package_id, guid, None, asset.pathname), attributes))
         graph.add_edge("source-closure", node_id, EdgeType.RAW_SERIALIZED_REFERENCE)
     base_plan = plan_assets(graph, ["source-closure"])
     if base_plan.errors or base_plan.collisions:
@@ -179,7 +190,8 @@ def materialize_model_package(
             ))
             continue
         if replacement is None:
-            planned.append(replace(item, source_identity=source_identity))
+            planned.append(replace(item, source_identity=source_identity,
+                reference_stability=ReferenceStability.EXPECTED_STABLE if item.operation == AssetOperation.MOVE else item.reference_stability))
             continue
         planned.append(replace(
             item, source_identity=source_identity,
@@ -201,7 +213,7 @@ def materialize_model_package(
         replacement = by_identity.get(key)
         texture = textures.get(key)
         return StagedUnityAsset(
-            asset.guid, asset.pathname,
+            asset.guid, item.desired_export_path or asset.pathname,
             replacement.fbx_bytes if replacement else texture.encoded_bytes if texture else asset.asset_bytes,
             asset.meta_bytes, asset.preview_bytes,
             asset_type=item.node_type,
