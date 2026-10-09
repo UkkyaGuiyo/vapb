@@ -76,6 +76,22 @@ class SkinMembershipTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ordered_skin_cluster_connections(objects, rows, mappings, ['50','51'])
 
+    def test_exported_weight_bits_keep_tiny_influences_and_refuse_unproven_scope(self):
+        import struct
+        from unitypackage_blender_importer.blender.fbx_witness import unity_skin_expected_bits
+        f32 = lambda value: struct.unpack('<f', struct.pack('<f', value))[0]
+        values = [f32(1e-9), 1.0]
+        original = list(values)
+        self.assertEqual(unity_skin_expected_bits(values, '2022.3.22f1'), (0x3089705f, 0x3f800000))
+        self.assertEqual(values, original)
+        self.assertEqual(unity_skin_expected_bits([.5, .5], '2022.3.22f1'), (0x3f000000, 0x3f000000))
+        for bad in ([], [1.0]*5, [0.0], [-1.0], [float('nan')], [float('inf')],
+                    [1e-9], [f32(2**-149)], [f32(2**-126), f32(1e38)]):
+            with self.subTest(weights=bad), self.assertRaises(ValueError):
+                unity_skin_expected_bits(bad, '2022.3.22f1')
+        with self.assertRaises(ValueError):
+            unity_skin_expected_bits(values, '2022.3.23f1')
+
     def test_membership_comes_from_clusters_including_empty_clusters(self):
         self.assertEqual(self.read(), frozenset({'50', '51'}))
         ordered = lambda *args: source_skin_bone_uids(*args, ordered=True)

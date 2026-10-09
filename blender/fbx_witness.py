@@ -83,6 +83,159 @@ def source_export_scale_options(source, scene_unit_scale):
     raise ValueError('Source FBX unit convention is not yet supported for skin restoration')
 
 
+def unity_skin_expected_bits(values, unity_version):
+    """Existing M5 representation, only in its proven positive float32 scope."""
+    values = tuple(values)
+    if (unity_version != '2022.3.22f1' or not 1 <= len(values) <= 4 or
+            any(type(v) is not float or not math.isfinite(v) or v < 2**-126 for v in values)):
+        raise ValueError('UNPROVEN_SKIN_NUMERIC_SCOPE')
+    f32 = lambda value: struct.unpack('<f', struct.pack('<f', value))[0]
+    try:
+        if any(f32(value) != value for value in values):
+            raise ValueError('UNPROVEN_SKIN_NUMERIC_SCOPE')
+        total = 0.0
+        for value in sorted(values, reverse=True):
+            total = f32(total + value)
+        first = tuple(f32(value / total) for value in values)
+        second_total = 0.0
+        for value in sorted(first, reverse=True):
+            second_total = f32(second_total + value)
+        reciprocal = f32(1.0 / second_total)
+        expected = tuple(f32(value * reciprocal) for value in first)
+    except (OverflowError, ZeroDivisionError, struct.error) as error:
+        raise ValueError('UNPROVEN_SKIN_NUMERIC_SCOPE') from error
+    if any(not math.isfinite(value) or value < 2**-126 for value in expected):
+        raise ValueError('UNPROVEN_SKIN_NUMERIC_SCOPE')
+    return tuple(struct.unpack('<I', struct.pack('<f', value))[0] for value in expected)
+
+
+def prepare_export_weight_witness(source, noop, stamped, realization_id, bone_mappings):
+    """Read canonical exported weights and stamp a spare UV only in private copies."""
+    from io_scene_fbx import encode_bin, parse_fbx
+    source, noop, stamped = map(Path, (source, noop, stamped))
+    if len({p.resolve() for p in (source, noop, stamped)}) != 3 or noop.exists() or stamped.exists():
+        raise ValueError('WEIGHT_WITNESS_OUTPUT_OCCUPIED')
+    before = source.read_bytes()
+    root, version = parse_fbx.parse(str(source), use_namedtuple=True)
+    objects, = [n for n in root.elems if n.id == b'Objects']
+    connections, = [n for n in root.elems if n.id == b'Connections']
+    nodes = {n.props[0]: n for n in objects.elems}
+    if len(nodes) != len(objects.elems):
+        raise ValueError('WEIGHT_FBX_IDENTITY_DUPLICATED')
+    def marker(node, name):
+        values = [p.props[-1] for container in node.elems if container.id == b'Properties70'
+                  for p in container.elems if p.id == b'P' and p.props and p.props[0] == name]
+        if len(values) > 1:
+            raise ValueError('WEIGHT_RECEIPT_DUPLICATED')
+        return values[0].decode('utf8') if values else None
+    model, = [n for n in objects.elems if n.id == b'Model' and n.props[2] == b'Mesh'
+              and marker(n, b'_vapb_fbx_realization_id') == realization_id]
+    edges = [row.props[1:3] for row in connections.elems
+             if row.id == b'C' and row.props[0] == b'OO' and len(row.props) == 3]
+    incoming = {}
+    for child, parent in edges:
+        incoming.setdefault(parent, []).append(child)
+    geometry, = [nodes[uid] for uid in incoming.get(model.props[0], [])
+                 if nodes[uid].id == b'Geometry' and nodes[uid].props[2] == b'Mesh']
+    if [parent for child, parent in edges if child == geometry.props[0]] != [model.props[0]]:
+        raise ValueError('SHARED_GEOMETRY_WEIGHT_WITNESS_UNSUPPORTED')
+    vertices, = [n.props[0] for n in geometry.elems if n.id == b'Vertices']
+    count = len(vertices) // 3
+    existing = [n for n in geometry.elems if n.id == b'LayerElementUV']
+    channel = len(existing)
+    if len(vertices) % 3 or not 0 < count < 2**24:
+        raise ValueError('CONTROL_POINT_RANGE_UNSUPPORTED')
+    if channel >= 8 or [n.props[0] for n in existing] != list(range(channel)):
+        raise ValueError('NO_SPARE_WEIGHT_UV_CHANNEL')
+    skin, = [uid for uid in incoming.get(geometry.props[0], [])
+             if nodes[uid].id == b'Deformer' and nodes[uid].props[2] == b'Skin']
+    receipts = {row['edited_bone_realization_id'] for row in bone_mappings}
+    if not receipts or len(receipts) != len(bone_mappings):
+        raise ValueError('WEIGHT_BONE_RECEIPTS_INVALID')
+    points = [{} for _ in range(count)]
+    seen = set()
+    for cluster_uid in incoming.get(skin, []):
+        cluster = nodes[cluster_uid]
+        if cluster.id != b'Deformer' or cluster.props[2] != b'Cluster':
+            raise ValueError('WEIGHT_CLUSTER_INVALID')
+        bone_uid, = incoming.get(cluster_uid, [])
+        bone = nodes[bone_uid]
+        receipt = marker(bone, b'_vapb_fbx_bone_realization_id')
+        if bone.id != b'Model' or bone.props[2] != b'LimbNode' or receipt not in receipts or receipt in seen:
+            raise ValueError('WEIGHT_BONE_RECEIPT_INVALID')
+        seen.add(receipt)
+        indices = [n.props[0] for n in cluster.elems if n.id == b'Indexes']
+        weights = [n.props[0] for n in cluster.elems if n.id == b'Weights']
+        if not indices and not weights:
+            continue
+        if len(indices) != 1 or len(weights) != 1 or len(indices[0]) != len(weights[0]):
+            raise ValueError('WEIGHT_CLUSTER_ARRAYS_INVALID')
+        if len(set(indices[0])) != len(indices[0]):
+            raise ValueError('WEIGHT_CP_DUPLICATED')
+        for cp, weight in zip(indices[0], weights[0]):
+            if type(cp) is not int or not 0 <= cp < count or not math.isfinite(weight) or weight < 0:
+                raise ValueError('WEIGHT_CP_OR_VALUE_INVALID')
+            if weight > 0:
+                points[cp][receipt] = weight
+    if seen != receipts:
+        raise ValueError('WEIGHT_BONE_MEMBERSHIP_CHANGED')
+    rows = []
+    for cp, values in enumerate(points):
+        bits = unity_skin_expected_bits(tuple(values.values()), '2022.3.22f1')
+        rows.append(dict(cp=cp, bone_realization_ids=list(values),
+            raw_bits=[struct.unpack('<I', struct.pack('<f', v))[0] for v in values.values()],
+            expected_bits=list(bits)))
+    baseline = canonical(root)
+    def element(parent, name, method=None, value=None):
+        node = encode_bin.FBXElem(name); parent.elems.append(node)
+        if method:
+            getattr(node, method)(value)
+        return node
+    for destination, add_marker in ((noop, False), (stamped, True)):
+        encoded = encode_node(root, False)
+        if add_marker:
+            encoded_objects = next(n for n in encoded.elems if n.id == b'Objects')
+            position, = [i for i,n in enumerate(objects.elems) if n.props[0] == geometry.props[0]]
+            target = encoded_objects.elems[position]
+            uv = element(target, b'LayerElementUV', 'add_int32', channel)
+            element(uv, b'Version', 'add_int32', 101)
+            element(uv, b'Name', 'add_string', b'VAPB_CONTROL_POINT_INDEX')
+            element(uv, b'MappingInformationType', 'add_string', b'ByVertice')
+            element(uv, b'ReferenceInformationType', 'add_string', b'Direct')
+            element(uv, b'UV', 'add_float64_array', [v for i in range(count) for v in (float(i+1), .375)])
+            layer_positions = [i for i,n in enumerate(geometry.elems) if n.id == b'Layer' and n.props[0] == channel]
+            if len(layer_positions) > 1:
+                raise ValueError('WEIGHT_UV_LAYER_DUPLICATED')
+            layer = target.elems[layer_positions[0]] if layer_positions else element(target, b'Layer', 'add_int32', channel)
+            if not layer_positions:
+                element(layer, b'Version', 'add_int32', 100)
+            reference = element(layer, b'LayerElement')
+            element(reference, b'Type', 'add_string', b'LayerElementUV')
+            element(reference, b'TypedIndex', 'add_int32', channel)
+        encode_bin.write(str(destination), encoded, version)
+        decoded, after_version = parse_fbx.parse(str(destination), use_namedtuple=True)
+        if add_marker:
+            target = next(n for n in next(n for n in decoded.elems if n.id == b'Objects').elems
+                          if n.props[0] == geometry.props[0])
+            uv, = [n for n in target.elems if n.id == b'LayerElementUV' and n.props[0] == channel]
+            values, = [n.props[0] for n in uv.elems if n.id == b'UV']
+            if list(values) != [v for i in range(count) for v in (float(i+1), .375)]:
+                raise ValueError('WEIGHT_CP_MARKER_CHANGED')
+            target.elems.remove(uv)
+            layer, = [n for n in target.elems if n.id == b'Layer' and n.props[0] == channel]
+            reference, = [n for n in layer.elems if n.id == b'LayerElement' and
+                any(child.id == b'Type' and child.props == [b'LayerElementUV'] for child in n.elems)]
+            layer.elems.remove(reference)
+            if not any(n.id == b'Layer' and n.props[0] == channel for n in geometry.elems):
+                target.elems.remove(layer)
+        if version != after_version or canonical(decoded) != baseline:
+            raise ValueError('WEIGHT_WITNESS_NON_MARKER_DATA_CHANGED')
+    if source.read_bytes() != before:
+        raise ValueError('WEIGHT_WITNESS_SOURCE_CHANGED')
+    return dict(version=1, unity_version='2022.3.22f1', control_point_count=count,
+                uv_channel=channel, points=rows)
+
+
 def source_skin_bone_uids(source, model_uid, geometry_uid, *, ordered=False):
     """Read one original Skin's explicit bone membership, including empty clusters."""
     from io_scene_fbx import parse_fbx

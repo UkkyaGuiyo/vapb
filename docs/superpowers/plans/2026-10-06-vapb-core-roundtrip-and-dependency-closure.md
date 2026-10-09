@@ -282,3 +282,36 @@ children/lock absent, pool/mutex released. Client validation is NOT_RUN. Further
 Unity launches await the newly prioritized shared slot.
 
 [Exact grouped values and scope](../../../tests/evidence/remapped_model_replacement_export_20261008/transferred-weight-authority-boundary.json).
+
+### Exported-weight authority connected — bounded product PASS
+
+The shared-parent SourceKind producer now carries exported canonical CP/Bone
+receipts, raw/expected float32 bits and hash-bound noop/stamped validation copies
+through the existing task. Internal spare-UV CP labels require no user fixture
+labels or Unity preparation. The Finalizer requires this evidence here, checks
+the selected raw FBX Mesh/Geometry/Skin/Cluster/Bone graph and arrays directly,
+proves canonical CP labels and validates exact native positive retention and
+representation in an owned copy under the existing revision-bound policy.
+Original/noop/stamped/restored copy snapshots retain Mesh identity, geometry,
+bindposes, weights, existing UV and Shape data. Root, hierarchy, rest, layout and
+Variant separation guards remain; other SourceKind routes keep existing checks.
+
+Normal import, save/reopen, 1.25 edit and export complete through ordinary Unity
+import and ModelSkin Finalizer Apply, including repeat Apply with identical
+Variant bytes. All 87 positives match exported expected bits on 45 CP; original
+normal native import still reports 60 separately. Root UID remains 251529238.
+One-ULP, missing evidence and normalized-equivalent raw factor-two changes
+refuse and preserve Variant/manifest. Canonical CP-label mutation and exhausted
+decoding budget refuse in focused production-reader calls. Reference compile
+and 23 focused Python tests pass. Two independent SOL/medium review passes
+produced four findings, all implemented and exercised; no third review was run.
+
+Owned Unity exits with code zero; 2,879 pre-existing protected files are
+unchanged, input preserved, owned children/lock absent, pool/mutex released.
+This input has no real Material slots or Texture assets; Unity built-in default
+Material is preserved. Client validation is NOT_RUN. This is bounded Skin
+success, not complete product/Avatar coverage. ThreeMaterial replacement and
+old override/winding remain separate. No SDK, purchased asset or private log
+is published.
+
+[Public result and precise limits](../../../tests/evidence/remapped_model_replacement_export_20261008/exported-weight-product-roundtrip.json).

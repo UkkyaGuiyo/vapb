@@ -125,7 +125,21 @@ public static class VapbModelSkinFinalizer
         public string witness_path;
         public string witness_sha256;
         public string[] source_model_uids;
+        public WeightTransport weight_transport;
     }
+    [Serializable] private sealed class WeightTransport {
+        public int version, control_point_count, uv_channel;
+        public string unity_version, noop_path, noop_sha256, stamped_path, stamped_sha256;
+        public WeightPoint[] points;
+    }
+    [Serializable] private sealed class WeightPoint {
+        public int cp; public string[] bone_realization_ids; public int[] raw_bits, expected_bits;
+    }
+    [Serializable] private sealed class WeightPolicy {
+        public int version; public string model_guid, model_sha256;
+    }
+    private static string weightCopyPath;
+    private static Task weightCopyTask;
     [Serializable] private sealed class MaterialBinding { public string transport_id, guid, file_id; }
     [Serializable] private sealed class InstanceEdge
     {
@@ -321,6 +335,7 @@ public static class VapbModelSkinFinalizer
     }
     internal static bool IsAuthorizedEditedModel(string path)
     {
+        if (weightCopyTask != null && path == weightCopyPath) return true;
         string guid = AssetDatabase.AssetPathToGUID(path);
         if (!ValidGuid(guid) || !path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)) return false;
         foreach (Task task in AuthorizedTasks()) if (task.model_guid == guid) return true;
@@ -328,6 +343,9 @@ public static class VapbModelSkinFinalizer
     }
     internal static bool IsAuthorizedRealization(string path, string id)
     {
+        if (weightCopyTask != null && path == weightCopyPath)
+            return id == weightCopyTask.realization_id ||
+                id == weightCopyTask.parent_transform_mapping?.edited_transform_realization_id;
         string guid = AssetDatabase.AssetPathToGUID(path);
         foreach (Task task in AuthorizedTasks())
             if (task.model_guid == guid && (task.realization_id == id ||
@@ -337,6 +355,8 @@ public static class VapbModelSkinFinalizer
     }
     internal static bool IsAuthorizedBone(string path, string id)
     {
+        if (weightCopyTask != null && path == weightCopyPath)
+            return Array.Exists(weightCopyTask.bone_mappings, bone => bone.edited_bone_realization_id == id);
         string guid = AssetDatabase.AssetPathToGUID(path);
         foreach (Task task in AuthorizedTasks())
             if (task.model_guid == guid)
@@ -634,7 +654,8 @@ public static class VapbModelSkinFinalizer
             for (int i = 0; i < source.sourceBoneUids.Length; i++)
                 if (source.sourceBoneUids[i] != edited.editedBoneUids[i])
                     Reject("SOURCE_MODEL_BONE_ORDER_CHANGED");
-            if (!SameSkinInfluences(target.sharedMesh, edited.mesh))
+            if (task.weight_transport != null) ValidateExportedWeightTransport(task, editedPath, edited);
+            else if (!SameSkinInfluences(target.sharedMesh, edited.mesh))
                 Reject("SOURCE_MODEL_WEIGHTS_CHANGED");
         }
         CheckSkinCompatibility(mapping, target, edited, source, direct);
@@ -649,6 +670,8 @@ public static class VapbModelSkinFinalizer
     {
         bool direct = task.kind == DirectKind;
         bool sourceModel = task.kind == SourceKind;
+        if (task.weight_transport != null && (!sourceModel || task.parent_transform_mapping == null)) Reject("WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED");
+        if (sourceModel && task.parent_transform_mapping != null && task.weight_transport == null) Reject("EXPORTED_WEIGHT_DATA_MISSING");
         if (task.parent_transform_mapping != null)
         {
             ParentTransformMapping parent = task.parent_transform_mapping;
@@ -1278,6 +1301,302 @@ public static class VapbModelSkinFinalizer
                 !SameMatrix(mesh.bindposes[i], expected, 0.001f)) Reject("EDITED_REST_MISMATCH");
         }
         ValidateWeights(mesh, edited.editedBoneUids.Length);
+    }
+
+    private static int WeightBits(float value) { return BitConverter.ToInt32(BitConverter.GetBytes(value), 0); }
+    private static float WeightFloat(int value) { return BitConverter.ToSingle(BitConverter.GetBytes(value), 0); }
+    private static float RoundWeight(float value) { return WeightFloat(WeightBits(value)); }
+    private static int[] ExpectedWeightBits(int[] bits)
+    {
+        if (bits == null || bits.Length < 1 || bits.Length > 4) Reject("EXPORTED_WEIGHT_NUMERIC_SCOPE_UNSUPPORTED");
+        var values = new float[bits.Length];
+        for (int i=0; i<bits.Length; i++) {
+            if (bits[i] < 0x00800000 || bits[i] >= 0x7f800000) Reject("EXPORTED_WEIGHT_NUMERIC_SCOPE_UNSUPPORTED");
+            values[i] = WeightFloat(bits[i]);
+        }
+        var sorted = (float[])values.Clone(); Array.Sort(sorted); Array.Reverse(sorted);
+        float total=0; foreach (float value in sorted) total=RoundWeight(total+value);
+        for (int i=0;i<values.Length;i++) values[i]=RoundWeight(values[i]/total);
+        sorted=(float[])values.Clone(); Array.Sort(sorted); Array.Reverse(sorted);
+        total=0; foreach (float value in sorted) total=RoundWeight(total+value);
+        float reciprocal=RoundWeight(1f/total); var result=new int[values.Length];
+        for (int i=0;i<values.Length;i++) {
+            result[i]=WeightBits(RoundWeight(values[i]*reciprocal));
+            if (result[i]<0x00800000 || result[i]>=0x7f800000) Reject("EXPORTED_WEIGHT_NUMERIC_SCOPE_UNSUPPORTED");
+        }
+        return result;
+    }
+    private static Dictionary<int, WeightPoint> ValidateWeightData(Task task)
+    {
+        WeightTransport data=task.weight_transport;
+        if (task.kind!=SourceKind || task.parent_transform_mapping==null || data==null || data.version!=1 ||
+            data.unity_version!="2022.3.22f1" || Application.unityVersion!=data.unity_version ||
+            data.control_point_count<=0 || data.control_point_count>=1<<24 || data.uv_channel<0 || data.uv_channel>=8 ||
+            data.points==null || data.points.Length!=data.control_point_count)
+            Reject("EXPORTED_WEIGHT_CONTEXT_UNSUPPORTED");
+        var allowed=new HashSet<string>(); foreach(var bone in task.bone_mappings) allowed.Add(bone.edited_bone_realization_id);
+        var rows=new Dictionary<int,WeightPoint>();
+        foreach(WeightPoint point in data.points) {
+            if(point==null || point.cp<0 || point.cp>=data.control_point_count || rows.ContainsKey(point.cp) ||
+               point.bone_realization_ids==null || point.raw_bits==null || point.expected_bits==null ||
+               point.bone_realization_ids.Length!=point.raw_bits.Length || point.raw_bits.Length!=point.expected_bits.Length)
+                Reject("EXPORTED_WEIGHT_DATA_INVALID");
+            int[] expected=ExpectedWeightBits(point.raw_bits); var unique=new HashSet<string>();
+            for(int i=0;i<expected.Length;i++)
+                if(!allowed.Contains(point.bone_realization_ids[i]) || !unique.Add(point.bone_realization_ids[i]) ||
+                   point.expected_bits[i]!=expected[i]) Reject("EXPORTED_WEIGHT_DATA_INVALID");
+            rows.Add(point.cp,point);
+        }
+        return rows;
+    }
+    private static SkinnedMeshRenderer WeightCopyRenderer(Task task)
+    {
+        GameObject root=AssetDatabase.LoadAssetAtPath<GameObject>(weightCopyPath);
+        if(root==null) Reject("WEIGHT_COPY_IMPORT_FAILED");
+        SkinnedMeshRenderer found=null;
+        foreach(var marker in root.GetComponentsInChildren<VapbRealizationMarker>(true))
+            if(marker.realizationId==task.realization_id) {
+                var skin=marker.GetComponent<SkinnedMeshRenderer>();
+                if(found!=null || skin==null || marker.GetComponents<Renderer>().Length!=1) Reject("WEIGHT_COPY_RECEIPT_AMBIGUOUS");
+                found=skin;
+            }
+        if(found==null) Reject("WEIGHT_COPY_RECEIPT_MISSING");
+        return found;
+    }
+    private static void CheckWeightRepresentation(Task task, SkinnedMeshRenderer skin)
+    {
+        var rows=ValidateWeightData(task); var data=task.weight_transport;
+        var uv=new List<Vector2>(); skin.sharedMesh.GetUVs(data.uv_channel,uv);
+        if(uv.Count!=skin.sharedMesh.vertexCount) Reject("EXPORTED_CP_MARKER_MISSING");
+        var boneIds=new string[skin.bones.Length]; var uniqueBones=new HashSet<string>();
+        for(int i=0;i<boneIds.Length;i++) {
+            boneIds[i]=skin.bones[i].GetComponent<VapbRealizationMarker>()?.boneRealizationId;
+            if(String.IsNullOrEmpty(boneIds[i]) || !uniqueBones.Add(boneIds[i])) Reject("EXPORTED_WEIGHT_BONE_AMBIGUOUS");
+        }
+        var observed=new HashSet<int>(); int offset=0;
+        using(var counts=skin.sharedMesh.GetBonesPerVertex())
+        using(var weights=skin.sharedMesh.GetAllBoneWeights()) {
+            if(counts.Length!=uv.Count) Reject("EXPORTED_WEIGHT_COUNT_INVALID");
+            for(int vertex=0;vertex<uv.Count;vertex++) {
+                Vector2 marker=uv[vertex];
+                if(!Finite(marker.x) || !Finite(marker.y) || marker.x!=Mathf.Round(marker.x) || marker.y!=.375f ||
+                    marker.x<1 || marker.x>data.control_point_count) Reject("EXPORTED_CP_MARKER_INVALID");
+                int cp=(int)marker.x-1; observed.Add(cp); WeightPoint point=rows[cp];
+                if(counts[vertex]!=point.expected_bits.Length) Reject("EXPORTED_POSITIVE_INFLUENCE_CHANGED");
+                var expected=new Dictionary<string,int>();
+                for(int i=0;i<point.expected_bits.Length;i++) expected.Add(point.bone_realization_ids[i],point.expected_bits[i]);
+                for(int i=0;i<counts[vertex];i++) {
+                    if(offset>=weights.Length) Reject("EXPORTED_WEIGHT_COUNT_INVALID");
+                    BoneWeight1 value=weights[offset++];
+                    if(value.boneIndex<0 || value.boneIndex>=boneIds.Length ||
+                       !expected.TryGetValue(boneIds[value.boneIndex],out int bits) || WeightBits(value.weight)!=bits)
+                        Reject("EXPORTED_WEIGHT_REPRESENTATION_CHANGED");
+                    expected.Remove(boneIds[value.boneIndex]);
+                }
+                if(expected.Count!=0) Reject("EXPORTED_POSITIVE_INFLUENCE_CHANGED");
+            }
+            if(offset!=weights.Length || observed.Count!=data.control_point_count) Reject("EXPORTED_CP_COVERAGE_CHANGED");
+        }
+    }
+    private static void ImportWeightCopy(byte[] bytes, byte[] meta, string guid)
+    {
+        string policyPath="Assets/VAPBExport/SkinWeightPolicy_"+guid+".json";
+        File.WriteAllText(Disk(policyPath),JsonUtility.ToJson(new WeightPolicy {version=1,model_guid=guid,model_sha256=HashBytes(bytes)}));
+        AssetDatabase.ImportAsset(policyPath,ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+        File.WriteAllBytes(Disk(weightCopyPath),bytes); File.WriteAllBytes(Disk(weightCopyPath)+".meta",meta);
+        AssetDatabase.ImportAsset(weightCopyPath,ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+    }
+    // Bounded binary-FBX reader for the exported raw weight authority only.
+    private sealed class WeightFbxNode {
+        public string name; public object[] properties; public List<WeightFbxNode> children=new List<WeightFbxNode>();
+    }
+    private static WeightFbxNode ReadWeightNode(BinaryReader reader, bool wide, int depth, ref int nodes, ref long budget)
+    {
+        if(depth>64 || ++nodes>200000) Reject("EXPORTED_WEIGHT_FBX_LIMIT");
+        long end=wide?checked((long)reader.ReadUInt64()):reader.ReadUInt32();
+        long count=wide?checked((long)reader.ReadUInt64()):reader.ReadUInt32();
+        long size=wide?checked((long)reader.ReadUInt64()):reader.ReadUInt32(); int nameSize=reader.ReadByte();
+        if(end==0 && count==0 && size==0 && nameSize==0) return null;
+        if(end<=reader.BaseStream.Position || end>reader.BaseStream.Length || count<0 || count>100000 || size<0 || size>end-reader.BaseStream.Position-nameSize) Reject("EXPORTED_WEIGHT_FBX_INVALID");
+        budget-=count*8+256; if(budget<0) Reject("EXPORTED_WEIGHT_FBX_LIMIT");
+        var node=new WeightFbxNode {name=Encoding.UTF8.GetString(reader.ReadBytes(nameSize)),properties=new object[(int)count]};
+        long propertyEnd=reader.BaseStream.Position+size;
+        for(int i=0;i<count;i++) {
+            char kind=(char)reader.ReadByte(); object value=null;
+            switch(kind) {
+                case 'Y': value=reader.ReadInt16(); break; case 'C': case 'B': case 'Z': value=reader.ReadByte(); break;
+                case 'I': value=reader.ReadInt32(); break; case 'L': value=reader.ReadInt64(); break;
+                case 'F': value=reader.ReadSingle(); break; case 'D': value=reader.ReadDouble(); break;
+                case 'S': case 'R': {
+                    int length=reader.ReadInt32(); if(length<0 || length>propertyEnd-reader.BaseStream.Position) Reject("EXPORTED_WEIGHT_FBX_INVALID");
+                    budget-=length; if(budget<0) Reject("EXPORTED_WEIGHT_FBX_LIMIT");
+                    byte[] bytes=reader.ReadBytes(length); value=kind=='S'?(object)Encoding.UTF8.GetString(bytes):bytes; break;
+                }
+                case 'i': case 'l': case 'f': case 'd': case 'b': case 'c': {
+                    int length=reader.ReadInt32(),encoding=reader.ReadInt32(),compressed=reader.ReadInt32();
+                    int width=kind=='d'||kind=='l'?8:kind=='i'||kind=='f'?4:1;
+                    if(length<0 || length>10000000 || compressed<0 || compressed>propertyEnd-reader.BaseStream.Position || (encoding!=0 && encoding!=1)) Reject("EXPORTED_WEIGHT_FBX_INVALID");
+                    int expected=checked(length*width); budget-=compressed+(long)expected*2; if(budget<0) Reject("EXPORTED_WEIGHT_FBX_LIMIT");
+                    byte[] bytes=reader.ReadBytes(compressed);
+                    if(encoding==1) {
+                        if(bytes.Length<6 || (bytes[0]&15)!=8 || ((bytes[0]<<8)+bytes[1])%31!=0 || (bytes[1]&32)!=0) Reject("EXPORTED_WEIGHT_FBX_INVALID");
+                        using(var input=new MemoryStream(bytes,2,bytes.Length-6))
+                        using(var inflater=new System.IO.Compression.DeflateStream(input,System.IO.Compression.CompressionMode.Decompress)) {
+                            var decoded=new byte[expected]; int offset=0,read;
+                            while(offset<decoded.Length && (read=inflater.Read(decoded,offset,decoded.Length-offset))>0) offset+=read;
+                            if(offset!=decoded.Length || inflater.ReadByte()!=-1) Reject("EXPORTED_WEIGHT_FBX_INVALID"); bytes=decoded;
+                        }
+                    }
+                    if(bytes.Length!=expected) Reject("EXPORTED_WEIGHT_FBX_INVALID");
+                    if(kind=='i') {var array=new int[length]; Buffer.BlockCopy(bytes,0,array,0,expected);value=array;}
+                    else if(kind=='d') {var array=new double[length]; Buffer.BlockCopy(bytes,0,array,0,expected);value=array;}
+                    else value=bytes; break;
+                }
+                default: Reject("EXPORTED_WEIGHT_FBX_TYPE_UNSUPPORTED"); break;
+            }
+            node.properties[i]=value;
+            if(reader.BaseStream.Position>propertyEnd) Reject("EXPORTED_WEIGHT_FBX_INVALID");
+        }
+        if(reader.BaseStream.Position!=propertyEnd) Reject("EXPORTED_WEIGHT_FBX_INVALID");
+        while(reader.BaseStream.Position<end) {var child=ReadWeightNode(reader,wide,depth+1,ref nodes,ref budget); if(child==null) break; node.children.Add(child);}
+        if(reader.BaseStream.Position!=end) Reject("EXPORTED_WEIGHT_FBX_INVALID"); return node;
+    }
+    private static WeightFbxNode WeightChild(WeightFbxNode parent,string name)
+    {
+        var matches=parent.children.FindAll(n=>n.name==name); if(matches.Count!=1) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID"); return matches[0];
+    }
+    private static string WeightReceipt(WeightFbxNode node,string name)
+    {
+        var containers=node.children.FindAll(n=>n.name=="Properties70"); if(containers.Count==0) return null;
+        if(containers.Count!=1) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+        var values=containers[0].children.FindAll(n=>n.name=="P" && n.properties.Length>0 && n.properties[0] as string==name);
+        if(values.Count>1) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID"); return values.Count==0?null:values[0].properties[values[0].properties.Length-1] as string;
+    }
+    private static object WeightProperty(WeightFbxNode parent,string name)
+    {
+        var node=WeightChild(parent,name); if(node.properties.Length!=1) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID"); return node.properties[0];
+    }
+    private static void ValidateWeightUv(WeightFbxNode geometry,WeightTransport data,bool stamped)
+    {
+        var uv=geometry.children.FindAll(n=>n.name=="LayerElementUV" && n.properties.Length==1 && n.properties[0] is int && (int)n.properties[0]==data.uv_channel);
+        int references=0;
+        foreach(var layer in geometry.children.FindAll(n=>n.name=="Layer"))
+            foreach(var reference in layer.children.FindAll(n=>n.name=="LayerElement"))
+                if(WeightProperty(reference,"Type") as string=="LayerElementUV" && WeightProperty(reference,"TypedIndex") is int && (int)WeightProperty(reference,"TypedIndex")==data.uv_channel) {
+                    references++;
+                    if(layer.properties.Length!=1 || !(layer.properties[0] is int) || (int)layer.properties[0]!=data.uv_channel) Reject("EXPORTED_CP_MARKER_INVALID");
+                }
+        if(!stamped) {if(uv.Count!=0 || references!=0) Reject("EXPORTED_WEIGHT_UV_OCCUPIED"); return;}
+        if(uv.Count!=1 || references!=1 || WeightProperty(uv[0],"MappingInformationType") as string!="ByVertice" ||
+            WeightProperty(uv[0],"ReferenceInformationType") as string!="Direct" || uv[0].children.Exists(n=>n.name=="UVIndex")) Reject("EXPORTED_CP_MARKER_INVALID");
+        var values=WeightProperty(uv[0],"UV") as double[];
+        if(values==null || values.Length!=data.control_point_count*2) Reject("EXPORTED_CP_MARKER_INVALID");
+        for(int cp=0;cp<data.control_point_count;cp++) if(values[cp*2]!=cp+1 || values[cp*2+1]!=.375) Reject("EXPORTED_CP_MARKER_INVALID");
+    }
+
+    private static void ValidateRawWeightAuthority(Task task,byte[] bytes,bool stamped=false)
+    {
+        if(bytes.Length<27 || bytes.Length>100000000 || Encoding.ASCII.GetString(bytes,0,23)!="Kaydara FBX Binary  \0\x1a\0") Reject("EXPORTED_WEIGHT_FBX_INVALID");
+        var roots=new List<WeightFbxNode>(); int visited=0; long budget=128L*1024*1024;
+        using(var reader=new BinaryReader(new MemoryStream(bytes))) {
+            reader.BaseStream.Position=23; int version=reader.ReadInt32();
+            if(version!=7400 && version!=7500) Reject("EXPORTED_WEIGHT_FBX_VERSION_UNSUPPORTED");
+            while(reader.BaseStream.Position<reader.BaseStream.Length) {var node=ReadWeightNode(reader,version>=7500,0,ref visited,ref budget); if(node==null) break; roots.Add(node);}
+        }
+        var objects=roots.FindAll(n=>n.name=="Objects"); var connections=roots.FindAll(n=>n.name=="Connections");
+        if(objects.Count!=1 || connections.Count!=1) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+        var byId=new Dictionary<long,WeightFbxNode>(); foreach(var node in objects[0].children) {
+            if(node.properties.Length<1 || !(node.properties[0] is long) || byId.ContainsKey((long)node.properties[0])) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID"); byId.Add((long)node.properties[0],node);
+        }
+        var incoming=new Dictionary<long,List<long>>(); var outgoing=new Dictionary<long,List<long>>();
+        foreach(var node in connections[0].children) if(node.name=="C" && node.properties.Length>0 && node.properties[0] as string=="OO") {
+            if(node.properties.Length!=3 || !(node.properties[1] is long) || !(node.properties[2] is long)) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+            long child=(long)node.properties[1],parent=(long)node.properties[2];
+            if(!incoming.ContainsKey(parent)) incoming[parent]=new List<long>(); incoming[parent].Add(child);
+            if(!outgoing.ContainsKey(child)) outgoing[child]=new List<long>(); outgoing[child].Add(parent);
+        }
+        Func<WeightFbxNode,string,string,bool> kind=(n,name,type)=>n.name==name && n.properties.Length==3 && n.properties[2] as string==type;
+        var models=objects[0].children.FindAll(n=>kind(n,"Model","Mesh") && WeightReceipt(n,"_vapb_fbx_realization_id")==task.realization_id);
+        if(models.Count!=1) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID"); long model=(long)models[0].properties[0];
+        Func<long,string,string,List<long>> linked=(id,name,type)=>incoming.ContainsKey(id)?incoming[id].FindAll(uid=>byId.ContainsKey(uid) && kind(byId[uid],name,type)):new List<long>();
+        var geometries=linked(model,"Geometry","Mesh"); if(geometries.Count!=1) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID"); long geometry=geometries[0];
+        if(!outgoing.ContainsKey(geometry) || outgoing[geometry].Count!=1 || outgoing[geometry][0]!=model) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+        ValidateWeightUv(byId[geometry],task.weight_transport,stamped);
+        var coordinates=WeightChild(byId[geometry],"Vertices").properties;
+        if(coordinates.Length!=1 || !(coordinates[0] is double[]) || ((double[])coordinates[0]).Length!=task.weight_transport.control_point_count*3) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+        var skins=linked(geometry,"Deformer","Skin"); if(skins.Count!=1 || !incoming.ContainsKey(skins[0])) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+        var actual=new Dictionary<int,Dictionary<string,int>>(); for(int cp=0;cp<task.weight_transport.control_point_count;cp++) actual.Add(cp,new Dictionary<string,int>());
+        var bones=new HashSet<string>();
+        foreach(long clusterId in incoming[skins[0]]) {
+            if(!byId.ContainsKey(clusterId) || !kind(byId[clusterId],"Deformer","Cluster") || !incoming.ContainsKey(clusterId) || incoming[clusterId].Count!=1) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+            long boneId=incoming[clusterId][0]; if(!byId.ContainsKey(boneId) || !kind(byId[boneId],"Model","LimbNode")) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+            string bone=WeightReceipt(byId[boneId],"_vapb_fbx_bone_realization_id"); if(String.IsNullOrEmpty(bone) || !bones.Add(bone)) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+            var cluster=byId[clusterId]; var indices=cluster.children.FindAll(n=>n.name=="Indexes");var values=cluster.children.FindAll(n=>n.name=="Weights");
+            if(indices.Count==0 && values.Count==0) continue;
+            if(indices.Count!=1 || values.Count!=1 || indices[0].properties.Length!=1 || values[0].properties.Length!=1 || !(indices[0].properties[0] is int[]) || !(values[0].properties[0] is double[])) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+            var cps=(int[])indices[0].properties[0]; var raw=(double[])values[0].properties[0]; if(cps.Length!=raw.Length) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+            var seen=new HashSet<int>(); for(int i=0;i<cps.Length;i++) {
+                if(!actual.ContainsKey(cps[i]) || !seen.Add(cps[i]) || Double.IsNaN(raw[i]) || Double.IsInfinity(raw[i]) || raw[i]<0 || (double)(float)raw[i]!=raw[i]) Reject("EXPORTED_RAW_WEIGHT_CHANGED");
+                if(raw[i]>0) actual[cps[i]].Add(bone,WeightBits((float)raw[i]));
+            }
+        }
+        if(bones.Count!=task.bone_mappings.Length) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+        foreach(var mapping in task.bone_mappings) if(!bones.Contains(mapping.edited_bone_realization_id)) Reject("EXPORTED_WEIGHT_FBX_GRAPH_INVALID");
+        foreach(var point in task.weight_transport.points) {
+            var row=actual[point.cp]; if(row.Count!=point.raw_bits.Length) Reject("EXPORTED_RAW_WEIGHT_CHANGED");
+            for(int i=0;i<point.raw_bits.Length;i++) if(!row.TryGetValue(point.bone_realization_ids[i],out int bits) || bits!=point.raw_bits[i]) Reject("EXPORTED_RAW_WEIGHT_CHANGED");
+        }
+    }
+
+    private static void ValidateExportedWeightTransport(Task task, string editedPath, EditedIdentity edited)
+    {
+        ValidateWeightData(task); var data=task.weight_transport;
+        string policyPath="Assets/VAPBExport/SkinWeightPolicy_"+task.model_guid+".json";
+        if(!File.Exists(Disk(policyPath))) Reject("EXPORTED_WEIGHT_POLICY_MISSING");
+        var policy=JsonUtility.FromJson<WeightPolicy>(File.ReadAllText(Disk(policyPath)));
+        if(policy==null || policy.version!=1 || policy.model_guid!=task.model_guid || policy.model_sha256!=task.model_sha256)
+            Reject("EXPORTED_WEIGHT_POLICY_CHANGED");
+        var spare=new List<Vector4>(); edited.mesh.GetUVs(data.uv_channel,spare);
+        if(spare.Count!=0) Reject("EXPORTED_WEIGHT_UV_OCCUPIED");
+        byte[] original=File.ReadAllBytes(Disk(editedPath)), originalMeta=File.ReadAllBytes(Disk(editedPath)+".meta");
+        ValidateRawWeightAuthority(task,original);
+        byte[] noop=Payload(data.noop_path,data.noop_sha256), stamped=Payload(data.stamped_path,data.stamped_sha256);
+        ValidateRawWeightAuthority(task,noop); ValidateRawWeightAuthority(task,stamped,true);
+        string copyGuid=HashBytes(Encoding.UTF8.GetBytes("VAPB_WEIGHT_CHECK:"+task.model_guid)).Substring(0,32);
+        string folder="Assets/VAPBExport/WeightCheck_"+copyGuid;
+        string copyPolicy="Assets/VAPBExport/SkinWeightPolicy_"+copyGuid+".json";
+        if(weightCopyTask!=null || Directory.Exists(Disk(folder)) || File.Exists(Disk(folder)+".meta") ||
+            File.Exists(Disk(copyPolicy)) || File.Exists(Disk(copyPolicy)+".meta")) Reject("WEIGHT_COPY_PATH_OCCUPIED");
+        string metaText=Encoding.UTF8.GetString(originalMeta);
+        if(Regex.Matches(metaText,@"(?m)^guid: [0-9a-fA-F]{32}\r?$").Count!=1) Reject("WEIGHT_COPY_META_INVALID");
+        byte[] meta=Encoding.UTF8.GetBytes(Regex.Replace(metaText,@"(?m)^guid: [0-9a-fA-F]{32}\r?$","guid: "+copyGuid));
+        Directory.CreateDirectory(Disk(folder)); weightCopyPath=folder+"/Model.fbx"; weightCopyTask=task;
+        Snapshot baseline=null; bool restored=false;
+        try {
+            ImportWeightCopy(original,meta,copyGuid);
+            SkinnedMeshRenderer copy=WeightCopyRenderer(task);
+            if(MeshSignature(copy.sharedMesh)!=MeshSignature(edited.mesh)) Reject("WEIGHT_COPY_BASELINE_CHANGED");
+            baseline=Capture(weightCopyPath,copyGuid,data.uv_channel);
+            ImportWeightCopy(noop,meta,copyGuid);
+            if(!baseline.Same(Capture(weightCopyPath,copyGuid,data.uv_channel))) Reject("WEIGHT_NOOP_CHANGED");
+            ImportWeightCopy(stamped,meta,copyGuid);
+            if(!baseline.Same(Capture(weightCopyPath,copyGuid,data.uv_channel))) Reject("WEIGHT_STAMP_CHANGED");
+            CheckWeightRepresentation(task,WeightCopyRenderer(task));
+        }
+        finally {
+            try {
+                ImportWeightCopy(original,meta,copyGuid);
+                restored=baseline!=null && baseline.Same(Capture(weightCopyPath,copyGuid,data.uv_channel)) &&
+                    EqualBytes(original,File.ReadAllBytes(Disk(weightCopyPath))) &&
+                    EqualBytes(meta,File.ReadAllBytes(Disk(weightCopyPath)+".meta")) &&
+                    EqualBytes(original,File.ReadAllBytes(Disk(editedPath))) && EqualBytes(originalMeta,File.ReadAllBytes(Disk(editedPath)+".meta"));
+            } finally {
+                weightCopyTask=null; weightCopyPath=null;
+                bool removed=AssetDatabase.DeleteAsset(folder); bool policyRemoved=AssetDatabase.DeleteAsset(copyPolicy);
+                if(!removed || !policyRemoved) restored=false;
+            }
+            if(!restored) Reject("WEIGHT_COPY_RESTORE_FAILED");
+        }
     }
 
     private static bool SameSkinInfluences(Mesh source, Mesh edited)
@@ -1947,7 +2266,7 @@ public static class VapbModelSkinFinalizer
         catch { Reject("WEIGHTS_INVALID"); }
     }
 
-    private static Snapshot Capture(string path, string guid)
+    private static Snapshot Capture(string path, string guid, int excludedUv = -1)
     {
         GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(path);
         if (root == null) Reject("SOURCE_IMPORT_FAILED");
@@ -1971,7 +2290,7 @@ public static class VapbModelSkinFinalizer
             if (!(asset is Mesh mesh)) continue;
             long id = LocalId(mesh, guid);
             if (snapshot.meshes.ContainsKey(id)) Reject("DUPLICATE_SOURCE_ID");
-            snapshot.meshes.Add(id, MeshSignature(mesh));
+            snapshot.meshes.Add(id, MeshSignature(mesh, excludedUv));
         }
         foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(true))
         {
@@ -1986,7 +2305,7 @@ public static class VapbModelSkinFinalizer
         return snapshot;
     }
 
-    private static string MeshSignature(Mesh mesh)
+    private static string MeshSignature(Mesh mesh, int excludedUv = -1)
     {
         return Hash(writer =>
         {
@@ -2010,7 +2329,7 @@ public static class VapbModelSkinFinalizer
             for (int channel = 0; channel < 8; channel++)
             {
                 var uv = new List<Vector4>();
-                mesh.GetUVs(channel, uv);
+                if (channel != excludedUv) mesh.GetUVs(channel, uv);
                 writer.Write(uv.Count);
                 foreach (Vector4 value in uv) Write(writer, value);
             }

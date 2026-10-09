@@ -28,7 +28,10 @@ public static class VapbModelSkinRoundtripProbe
         public ParentTransformMapping parent_transform_mapping;
         public BoneMapping[] bone_mappings;
         public MaterialBinding[] material_bindings;
+        public WeightTransport weight_transport;
     }
+    [Serializable] private sealed class WeightTransport { public WeightPoint[] points; }
+    [Serializable] private sealed class WeightPoint { public int cp; public int[] expected_bits; }
     [Serializable] private sealed class ParentTransformMapping { public string source_model_uid, edited_transform_realization_id; }
     [Serializable] private sealed class BoneMapping { public string source_model_uid, edited_bone_realization_id; }
     [Serializable] private sealed class MaterialBinding { public string guid, file_id; }
@@ -72,6 +75,7 @@ public static class VapbModelSkinRoundtripProbe
         public float edited_bounds_extent;
         public float vertex_change_threshold;
         public bool native_geometry_125, native_weights_equal, native_bounds_contain_rest;
+        public bool exported_weights_validated, weight_ulp_rejected, weight_data_rejected, weight_raw_rejected, weight_controls_preserved, cp_label_rejected, decode_budget_rejected;
         public bool native_geometry_expected_scale;
         public float expected_native_scale;
         public string edited_mesh_guid, edited_mesh_file_id;
@@ -457,6 +461,8 @@ public static class VapbModelSkinRoundtripProbe
                 report.native_geometry_125 = report.expected_native_scale == 1.25f && report.native_geometry_expected_scale;
                 var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
                 report.native_weights_equal = (bool)typeof(VapbModelSkinFinalizer).GetMethod("SameSkinInfluences", flags).Invoke(null, new object[] { originalSkin.sharedMesh, editedMesh });
+                report.exported_weights_validated = task.weight_transport != null && report.first_apply && report.second_apply && ModelContainsMesh(editedModel, editedMesh);
+                if(task.weight_transport != null) { NegativeWeightTransport(task, firstHash, report); WeightReaderControls(report); }
                 report.native_material_identity = task.material_bindings != null && task.material_bindings.Length == selected.sharedMaterials.Length;
                 var expectedMaterials = new List<string>();
                 if(task.material_bindings!=null) foreach(var binding in task.material_bindings) expectedMaterials.Add(binding.guid+":"+binding.file_id);
@@ -497,6 +503,8 @@ public static class VapbModelSkinRoundtripProbe
                     report.native_texture_identity &= textureIdentities.Count==expectedCount && textureIdentities.TrueForAll(value => value==expectedTexture);
                 }
                 report.native_material_identity &= expectedMaterials.Count==0;
+                if(task.material_bindings != null && task.material_bindings.Length==0 && selected.sharedMaterials.Length==1)
+                    report.native_material_identity = selected.sharedMaterials[0] == originalSkin.sharedMaterials[0] && report.material_guid_file_ids[0] == "0000000000000000f000000000000000:10303";
                 report.native_face_membership=sourceIndices!=null && sourceIndices.Length==editedMesh.subMeshCount && report.materials_preserved;
                 for(int sub=0; sub<editedMesh.subMeshCount; sub++)
                 {
@@ -511,7 +519,7 @@ public static class VapbModelSkinRoundtripProbe
                     report.edited_mesh_bound && report.originals_unchanged && report.second_apply_unchanged &&
                     report.geometry_matches_edited_model && report.topology_and_weights_valid && report.target_bones_and_root_preserved &&
                     report.materials_preserved && report.siblings_preserved && report.native_geometry_expected_scale &&
-                    report.native_weights_equal && report.native_bounds_contain_rest && report.native_material_identity && report.native_texture_identity && report.native_face_membership && identity && editedGuid==task.model_guid && editedGuid!=task.source_model_guid && editedId!=0;
+                    (task.weight_transport == null ? report.native_weights_equal : report.exported_weights_validated && report.weight_ulp_rejected && report.weight_data_rejected && report.weight_raw_rejected && report.weight_controls_preserved && report.cp_label_rejected && report.decode_budget_rejected) && report.native_bounds_contain_rest && report.native_material_identity && report.native_texture_identity && report.native_face_membership && identity && editedGuid==task.model_guid && editedGuid!=task.source_model_guid && editedId!=0;
                 report.error=report.pass ? "NONE" : "ASSERTION_FAILED";
                 Finish(report); return;
             }
@@ -744,6 +752,74 @@ public static class VapbModelSkinRoundtripProbe
             else return false;
         }
         return true;
+    }
+
+    private static void WeightReaderControls(Report report)
+    {
+        var flags=System.Reflection.BindingFlags.NonPublic|System.Reflection.BindingFlags.Static;
+        Type finalizer=typeof(VapbModelSkinFinalizer), taskType=finalizer.GetNestedType("Task",System.Reflection.BindingFlags.NonPublic);
+        object manifest=JsonUtility.FromJson(File.ReadAllText(Disk(ManifestPath)),finalizer.GetNestedType("Manifest",System.Reflection.BindingFlags.NonPublic));
+        Array tasks=(Array)manifest.GetType().GetField("reference_rebind_tasks").GetValue(manifest); object task=tasks.GetValue(0);
+        object data=taskType.GetField("weight_transport").GetValue(task);
+        string path=(string)data.GetType().GetField("stamped_path").GetValue(data); byte[] bytes=File.ReadAllBytes(Disk(path));
+        var read=finalizer.GetMethod("ReadWeightNode",flags); var uvCheck=finalizer.GetMethod("ValidateWeightUv",flags);
+        object geometry=null;
+        using(var reader=new BinaryReader(new MemoryStream(bytes))) {
+            reader.BaseStream.Position=23; bool wide=reader.ReadInt32()>=7500; int count=0; long budget=128L*1024*1024;
+            while(reader.BaseStream.Position<reader.BaseStream.Length) {
+                object[] args={reader,wide,0,count,budget}; object node=read.Invoke(null,args); count=(int)args[3]; budget=(long)args[4]; if(node==null) break;
+                if((string)node.GetType().GetField("name").GetValue(node)!="Objects") continue;
+                foreach(object child in (System.Collections.IEnumerable)node.GetType().GetField("children").GetValue(node))
+                    if((string)child.GetType().GetField("name").GetValue(child)=="Geometry")
+                        foreach(object element in (System.Collections.IEnumerable)child.GetType().GetField("children").GetValue(child))
+                            if((string)element.GetType().GetField("name").GetValue(element)=="LayerElementUV") {
+                                object[] properties=(object[])element.GetType().GetField("properties").GetValue(element);
+                                if(properties.Length==1 && properties[0] is int && (int)properties[0]==(int)data.GetType().GetField("uv_channel").GetValue(data)) geometry=child;
+                            }
+            }
+        }
+        if(geometry==null) throw new InvalidOperationException("WEIGHT_CONTROL_INVALID");
+        uvCheck.Invoke(null,new object[]{geometry,data,true});
+        foreach(object element in (System.Collections.IEnumerable)geometry.GetType().GetField("children").GetValue(geometry))
+            if((string)element.GetType().GetField("name").GetValue(element)=="LayerElementUV")
+                foreach(object values in (System.Collections.IEnumerable)element.GetType().GetField("children").GetValue(element))
+                    if((string)values.GetType().GetField("name").GetValue(values)=="UV") {
+                        var properties=(object[])values.GetType().GetField("properties").GetValue(values); var uv=(double[])properties[0];
+                        double first=uv[0]; uv[0]=uv[2]; uv[2]=first;
+                    }
+        try {uvCheck.Invoke(null,new object[]{geometry,data,true});}
+        catch(System.Reflection.TargetInvocationException error) {report.cp_label_rejected=error.InnerException.Message=="EXPORTED_CP_MARKER_INVALID";}
+        using(var reader=new BinaryReader(new MemoryStream(bytes))) {
+            reader.BaseStream.Position=23; bool wide=reader.ReadInt32()>=7500;
+            try {read.Invoke(null,new object[]{reader,wide,0,0,0L});}
+            catch(System.Reflection.TargetInvocationException error) {report.decode_budget_rejected=error.InnerException.Message=="EXPORTED_WEIGHT_FBX_LIMIT";}
+        }
+    }
+
+    private static void NegativeWeightTransport(Task task, string variantHash, Report report)
+    {
+        string file=Disk(ManifestPath); byte[] original=File.ReadAllBytes(file), meta=File.ReadAllBytes(file+".meta");
+        bool unchanged=true;
+        try {
+            string json=File.ReadAllText(file);
+            var pattern=new Regex(@"(""expected_bits""\s*:\s*\[\s*)(\d+)");
+            if(!pattern.IsMatch(json)) throw new InvalidOperationException("WEIGHT_CONTROL_INVALID");
+            string altered=pattern.Replace(json,m=>m.Groups[1].Value+(Int32.Parse(m.Groups[2].Value)+1).ToString(),1);
+            File.WriteAllText(file,altered); AssetDatabase.ImportAsset(ManifestPath,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);
+            report.weight_ulp_rejected=!VapbModelSkinFinalizer.Apply(ManifestPath); unchanged &= variantHash==Hash(Disk(task.variant_path));
+            string rawChanged=Regex.Replace(json,@"(""raw_bits""\s*:\s*\[)([^\]]+)",m=>m.Groups[1].Value+Regex.Replace(m.Groups[2].Value,@"\d+",v=> {
+                int bits=Int32.Parse(v.Value); float raw=BitConverter.ToSingle(BitConverter.GetBytes(bits),0);
+                return BitConverter.ToInt32(BitConverter.GetBytes(raw*2f),0).ToString(); }));
+            File.WriteAllText(file,rawChanged); AssetDatabase.ImportAsset(ManifestPath,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);
+            report.weight_raw_rejected=!VapbModelSkinFinalizer.Apply(ManifestPath); unchanged &= variantHash==Hash(Disk(task.variant_path));
+            string missing=Regex.Replace(json,@"""weight_transport""\s*:","\"unsupported_weight_transport\":");
+            File.WriteAllText(file,missing); AssetDatabase.ImportAsset(ManifestPath,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);
+            report.weight_data_rejected=!VapbModelSkinFinalizer.Apply(ManifestPath); unchanged &= variantHash==Hash(Disk(task.variant_path));
+        } finally {
+            File.WriteAllBytes(file,original); File.WriteAllBytes(file+".meta",meta);
+            AssetDatabase.ImportAsset(ManifestPath,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);
+            report.weight_controls_preserved=unchanged && EqualBytes(original,File.ReadAllBytes(file)) && EqualBytes(meta,File.ReadAllBytes(file+".meta"));
+        }
     }
 
     private static void NegativeBadCandidate(Task task, long sourceMeshId,

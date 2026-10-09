@@ -461,6 +461,17 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
                             'source_skin_cluster_order': source_bone_order},
                             scale_options=scale_options, source_skin_only=True,
                             material_bindings=task['material_bindings'])
+        weight_payloads = []
+        if source_model and task.get('parent_transform_mapping'):
+            from ..blender.fbx_witness import prepare_export_weight_witness
+            weight_noop, weight_stamp = folder / 'weight-noop.fbx', folder / 'weight-stamped.fbx'
+            task['weight_transport'] = prepare_export_weight_witness(
+                edited, weight_noop, weight_stamp, task['realization_id'], bones)
+            for name, data in (('noop', weight_noop.read_bytes()), ('stamped', weight_stamp.read_bytes())):
+                destination = witness_base + '_Weight_' + name + '.bytes'
+                task['weight_transport'][name + '_path'] = destination
+                task['weight_transport'][name + '_sha256'] = hashlib.sha256(data).hexdigest()
+                weight_payloads.append((destination, data))
         payload, noop_bytes, witness_bytes = edited.read_bytes(), noop.read_bytes(), witness.read_bytes()
     task.update(model_guid=guid, model_sha256=hashlib.sha256(payload).hexdigest(),
                 witness_noop_path=witness_base + '_Noop.bytes',
@@ -475,6 +486,11 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
                                  operation='CREATE', strategy='REGENERATE_FROM_BLENDER')]
     for field, data in (('witness_noop_path', noop_bytes), ('witness_path', witness_bytes)):
         destination = task[field]
+        asset_guid = hashlib.sha256(('VAPB_WITNESS_V1:' + destination).encode()).hexdigest()[:32]
+        generated.append(StagedUnityAsset(asset_guid, destination, data,
+            f'fileFormatVersion: 2\nguid: {asset_guid}\n'.encode(), operation='CREATE',
+            asset_type='GENERATED_EXPORT_SUPPORT'))
+    for destination, data in weight_payloads:
         asset_guid = hashlib.sha256(('VAPB_WITNESS_V1:' + destination).encode()).hexdigest()[:32]
         generated.append(StagedUnityAsset(asset_guid, destination, data,
             f'fileFormatVersion: 2\nguid: {asset_guid}\n'.encode(), operation='CREATE',
