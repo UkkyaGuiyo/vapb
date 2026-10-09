@@ -249,3 +249,28 @@ This closes the bounded nonnull reference preservation gate. It does not accept
 old override/winding boundaries, arbitrary Texture types/fileIDs, pixel edits,
 new Textures, or whole-product coverage. Generic negative-test booleans in the
 reused native Skin report are NOT_RUN, rather than negative-test acceptance.
+
+### Installed distribution: representative native Skin export (2026-10-09)
+
+The previous distribution installed successfully but actual normal Skin export
+failed because the addon ZIP omitted the required VapbSkinWeightImporter.cs.
+No output was produced by that attempt. The existing distribution test reproduced
+the omission. A one-file inventory addition and matching existing test assertion
+fixed it in ff968e46, with all five distribution tests passing.
+
+The repaired ZIP was installed into an isolated Blender user environment and
+used with the same existing representative input. Normal package import, Edit
+Mode 1.25 vertex scaling, .blend save/reopen and normal source-model Skin export
+passed. Source Asset/meta bytes were preserved, and export left edited Mesh and
+Bones unchanged. The emitted Assistant matched the installed ZIP helper bytes.
+No source-checkout runtime, manual GUID/fileID assignment or manifest edit was
+used in this run. Input/output hashes, GUIDs, asset identifiers, task records,
+private filesystem paths and raw logs are deliberately omitted from this public
+summary; exact execution information remains in local evidence.
+
+Unity return of this distribution-produced output is NOT_RUN until the parent
+assigns the shared frame. Earlier checkout return evidence does not establish
+this distribution gate. Reuse normal import, Assistant explicit Apply, separate
+Variant and original-file protection checks, including both declared nonnull
+Texture roles. Missing old override correspondence remains unsupported and is
+not inferred from names or slot order. This is not whole-product acceptance.
