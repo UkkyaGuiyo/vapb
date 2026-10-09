@@ -78,7 +78,8 @@ def _unsupported_reference(owner, *, allowed_constraints=(), allowed_animation=F
         lowered = key.lower()
         if (lowered.startswith('_vapb_') and not lowered.startswith(('_vapb_fbx_', '_vapb_bone_merge_'))
                 or lowered.startswith('unity_') and lowered not in {
-                    'unity_source_fbx', 'unity_source_package_id'}
+                    'unity_source_fbx', 'unity_source_package_id',
+                    'unity_asset_path', 'unity_source_fbx_guid'}
                 or any(token in lowered for token in ('physbone', 'contact', 'vrc', 'rootbone'))):
             return True
     return False

@@ -428,3 +428,6 @@ The next actual section 6/11 unsupported edit was ordinary Euler rotation, not a
 ### B_ONLY animated transplant closure
 
 Implemented the next concrete section 11 gap: animation through B_ONLY Bone creation. Preserve source Pose rotation mode, then validate copied Action destinations against observed post-transplant native RNA paths. Existing quoted-name Euler/Scale three-frame deformation, original Action conservation, injected new-resource rollback and full Bone Merge suite pass. Native pointer identity fixed an observer's unstable RNA wrapper `is` assertion; no semantic guard was relaxed. [Result](../../../TEST_RESULTS.md#bone-merge-b-only-action-transplant-2026-10-09). No Unity/ZIP/new runner. Next connect these edits to the actual ordinary import/export boundary using an existing owned input; investigate a real adapter refusal or lost edit rather than more component-name coverage.
+
+
+2026-10-09 source checkpoint: normal import source asset path/GUID no longer block confirmed Bone Merge. Five nearest policy tests and existing native Bone Merge runtime pass. Ordinary owned imported merge reaches the existing exporter, which refuses a copied Armature's duplicated parent realization ID. Continue at this concrete copy/merge identity boundary; do not weaken unknown runtime-reference guards, rebuild ZIP per checkpoint, or claim Unity return.

@@ -1,7 +1,7 @@
 import unittest
 
 from unitypackage_blender_importer.blender.bone_merge import (
-    candidate_mappings, confirmed_remap,
+    candidate_mappings, confirmed_remap, _unsupported_reference,
 )
 
 
@@ -23,6 +23,16 @@ class Choice:
 
 
 class BoneMergePolicyTests(unittest.TestCase):
+    def test_imported_source_identity_is_not_a_runtime_reference(self):
+        owner = {"unity_asset_path": "Assets/Owned/Model.fbx",
+                 "unity_source_fbx_guid": "a" * 32,
+                 "unity_source_fbx": "source.fbx", "unity_source_package_id": "owned"}
+        self.assertFalse(_unsupported_reference(owner))
+        for key in ("unity_rootBone", "unity_component_snapshot", "_vapb_weight_mesh_id",
+                    "unity_asset_path_extra", "_vapb_contact_state"):
+            with self.subTest(key=key):
+                self.assertTrue(_unsupported_reference({**owner, key: "opaque"}))
+
     def test_provenance_is_candidate_only(self):
         identity = ("a" * 32, "b" * 64, "-10")
         rows = candidate_mappings([Bone("A", identity)], [Bone("B", identity)])
