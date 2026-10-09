@@ -26,6 +26,7 @@ class DistributionZipTests(unittest.TestCase):
         helpers = {
             'unity_editor/VapbRealizationMarker.cs',
             'unity_editor/VapbExportObjectMarker.cs',
+            'unity_editor/Editor/VapbImportAssistant.cs',
             'unity_editor/Editor/VapbReferenceFinalizer.cs',
             'unity_editor/Editor/VapbModelSkinFinalizer.cs',
             'unity_editor/Editor/VapbFinalStateFinalizer.cs',

@@ -27,6 +27,7 @@ EXCLUDED_RUNTIME_PREFIXES = ("tests/", "tools/", "experiment_logs/")
 UNITY_EXPORT_SUPPORT = (
     "unity_editor/VapbRealizationMarker.cs",
     "unity_editor/VapbExportObjectMarker.cs",
+    "unity_editor/Editor/VapbImportAssistant.cs",
     "unity_editor/Editor/VapbReferenceFinalizer.cs",
     "unity_editor/Editor/VapbModelSkinFinalizer.cs",
     "unity_editor/Editor/VapbFinalStateFinalizer.cs",
