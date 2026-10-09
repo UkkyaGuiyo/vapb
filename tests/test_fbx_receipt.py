@@ -34,6 +34,19 @@ class FbxReceiptTests(unittest.TestCase):
         persist_receipt(obj, make_receipt(-10, 20, "a" * 32, "b" * 64))
         return obj
 
+    def test_nonmesh_parent_object_receipt_does_not_claim_mesh_identity(self):
+        from unitypackage_blender_importer.blender.fbx_receipt import (
+            make_transform_receipt, validate_persistent_transform_receipt)
+        obj = self._native_object()
+        obj.clear(); obj.data.clear(); obj.type = 'ARMATURE'
+        persist_receipt(obj, make_transform_receipt(91, 'a' * 32, 'b' * 64))
+        self.assertTrue(validate_persistent_transform_receipt(obj))
+        self.assertNotIn('_vapb_fbx_geometry_uid', obj)
+        self.assertNotIn('_vapb_fbx_mesh_receipt_id', obj)
+        self.assertEqual(dict(obj.data), {})
+        obj['_vapb_fbx_model_uid'] = '92'
+        self.assertFalse(validate_persistent_transform_receipt(obj))
+
     def test_explicit_copy_carries_source_receipt_and_distinct_realization(self):
         source = self._native_object()
         member = copy_with_receipt(source)

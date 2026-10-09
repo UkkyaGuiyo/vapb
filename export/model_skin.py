@@ -266,8 +266,21 @@ def source_model_skin_task(metadata, bone_mappings, assets):
     _asset(by_guid, model_guid, '.fbx', model_sha)
     identity = f'SOURCE_MODEL_SKIN_V1:{model_guid}:{model_sha}:{realization}'
     suffix = hashlib.sha256(identity.encode()).hexdigest()
-    return dict(kind='RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1', source_model_guid=model_guid,
+    task = dict(kind='RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1', source_model_guid=model_guid,
                 source_model_sha256=model_sha, source_model_uid=model_uid,
                 source_geometry_uid=geometry_uid, realization_id=realization,
                 instance_edges=[], bone_mappings=_bone_rows(bone_mappings),
                 variant_path=f'Assets/VAPBExport/EditedVariant_{suffix}.prefab')
+
+    if 'parent_transform_mapping' in metadata:
+        row = metadata['parent_transform_mapping']
+        if not isinstance(row, dict) or set(row) != {'source_model_uid', 'edited_transform_realization_id'}:
+            raise ValueError('Parent Transform receipt is incomplete')
+        uid = _id(row['source_model_uid'])
+        receipt = row['edited_transform_realization_id']
+        if (uid == model_uid or uid in {b['source_model_uid'] for b in task['bone_mappings']}
+                or not isinstance(receipt, str) or not receipt or receipt == realization
+                or receipt in {b['edited_bone_realization_id'] for b in task['bone_mappings']}):
+            raise ValueError('Parent Transform receipt has a conflicting role')
+        task['parent_transform_mapping'] = dict(source_model_uid=uid, edited_transform_realization_id=receipt)
+    return task

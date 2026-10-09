@@ -151,7 +151,7 @@ def _export_staged_mesh(context, source, output):
         bpy.data.scenes.remove(scene)
 
 
-def _validate_skin_subset(mesh, armature, allowed):
+def _validate_skin_subset(mesh, armature, allowed, parent_mapping=None):
     selected = {bone.name for bone in armature.data.bones
                 if armature.pose.bones[bone.name].get('_vapb_fbx_bone_realization_id') in allowed}
     if len(selected) != len(allowed) or not selected:
@@ -168,7 +168,7 @@ def _validate_skin_subset(mesh, armature, allowed):
                 raise ValueError('元Skin外の親Boneを必要とする構造は未対応です')
         elif (group := mesh.vertex_groups.get(bone.name)) is not None:
             excluded_groups.add(group.index)
-    if roots != 1:
+    if roots != 1 and not (roots >= 2 and parent_mapping):
         raise ValueError('元SkinのルートBoneを一意に取得できません')
     if any(group.group in excluded_groups and group.weight != 0
            for vertex in mesh.data.vertices for group in vertex.groups):
@@ -180,7 +180,7 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *,
     """Export a private rest-pose rig/mesh copy carrying only allowed identity markers."""
     allowed = {row['edited_bone_realization_id'] for row in skin_binding['mappings']}
     if source_skin_only:
-        _validate_skin_subset(source, armature, allowed)
+        _validate_skin_subset(source, armature, allowed, skin_binding.get('parent_transform_mapping'))
     scene = bpy.data.scenes.new('VAPB Skin Export')
     scene.unit_settings.scale_length = context.scene.unit_settings.scale_length
     copies, data_blocks, material_copies = [], [], []
@@ -224,6 +224,8 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *,
             for key in list(block.keys()):
                 del block[key]
         mesh['_vapb_fbx_realization_id'] = source['_vapb_fbx_realization_id']
+        if parent := skin_binding.get('parent_transform_mapping'):
+            rig['_vapb_fbx_realization_id'] = parent['edited_transform_realization_id']
         for bone in rig.data.bones:
             if source_skin_only:
                 bone.use_deform = rig.pose.bones[bone.name].get('_vapb_fbx_bone_realization_id') in allowed
@@ -326,7 +328,7 @@ def export_skin_package(context, mesh, output):
 
 def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=False):
     """Defer model Renderer identity to Unity while preserving source assets."""
-    from ..blender.fbx_witness import prepare_witness, source_export_scale_options, source_skin_bone_uids
+    from ..blender.fbx_witness import prepare_witness, source_export_scale_options, source_skin_bone_uids, source_skin_shared_parent
     from ..blender.fbx_receipt import RECEIPT_VERSION
     from ..export.model_skin import model_skin_task, direct_skin_task, source_model_skin_task, model_skin_material_bindings
     if context.mode != 'OBJECT' or mesh is None or mesh.type != 'MESH':
@@ -423,12 +425,33 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
         if {row['source_model_uid'] for row in bones} != selected_uids:
             raise ValueError('元SkinのBoneをすべて出所記録から取得できません')
         task['bone_mappings'] = bones
+        selected_bones = [b for b in rig.data.bones if str(b.get('_vapb_fbx_model_uid')) in selected_uids]
+        parent_proof = source_skin_shared_parent(raw, task['source_model_uid'], task['source_geometry_uid'],
+                                                allow_single=True) if source_model else None
+        if parent_proof is not None:
+            from ..blender.fbx_receipt import validate_persistent_transform_receipt
+            parent_uid, source_parents = parent_proof
+            if (not validate_persistent_transform_receipt(rig)
+                    or rig.get('_vapb_fbx_model_uid') != parent_uid
+                    or rig.get('_vapb_fbx_source_asset_guid') != source_guid
+                    or rig.get('_vapb_fbx_source_asset_sha256') != source_sha
+                    or sum(o.get('_vapb_fbx_realization_id') == rig.get('_vapb_fbx_realization_id')
+                           for o in bpy.data.objects) != 1):
+                raise ValueError('Source Skin parent Transform receipt is missing or ambiguous')
+            for bone in selected_bones:
+                current_parent = str(bone.parent.get('_vapb_fbx_model_uid')) if bone.parent else parent_uid
+                if current_parent != source_parents[str(bone.get('_vapb_fbx_model_uid'))]:
+                    raise ValueError('Source Skin bone hierarchy changed')
+            metadata['parent_transform_mapping'] = dict(source_model_uid=parent_uid,
+                edited_transform_realization_id=rig['_vapb_fbx_realization_id'])
+            task['parent_transform_mapping'] = source_model_skin_task(metadata, bones, assets)['parent_transform_mapping']
         noop, witness = folder / 'noop.fbx', folder / 'witness.fbx'
         task['source_model_uids'] = prepare_witness(raw, noop, witness)
         if not {b['source_model_uid'] for b in bones} <= set(task['source_model_uids']):
             raise ValueError('BoneのModel UIDが元FBXにありません')
         edited = folder / 'edited.fbx'
-        _export_staged_skin(context, mesh, rig, edited, {'mappings': bones},
+        _export_staged_skin(context, mesh, rig, edited, {'mappings': bones,
+                            'parent_transform_mapping': task.get('parent_transform_mapping')},
                             scale_options=scale_options, source_skin_only=True,
                             material_bindings=task['material_bindings'])
         payload, noop_bytes, witness_bytes = edited.read_bytes(), noop.read_bytes(), witness.read_bytes()

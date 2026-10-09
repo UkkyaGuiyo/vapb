@@ -203,6 +203,32 @@ def make_receipt(model_uid: int, geometry_uid: int, source_asset_guid: str, sha2
     )
 
 
+def make_transform_receipt(model_uid: int, source_asset_guid: str, sha256: str) -> FbxImportReceipt:
+    """An Object-only receipt; zero denotes absence of Geometry, never a mesh UID."""
+    receipt = make_receipt(model_uid, 0, source_asset_guid, sha256)
+    return FbxImportReceipt(receipt.source_asset_guid, sha256, model_uid, 0,
+                            receipt.blender_object_receipt_id, '')
+
+
+def validate_persistent_transform_receipt(obj: Any) -> bool:
+    try:
+        if obj.type != 'ARMATURE' or obj.get('_vapb_fbx_receipt_version') != RECEIPT_VERSION:
+            return False
+        guid = obj.get('_vapb_fbx_source_asset_guid', '')
+        sha = obj.get('_vapb_fbx_source_asset_sha256', '')
+        uid = int(obj.get('_vapb_fbx_model_uid', ''))
+        import re
+        if (not re.fullmatch('[0-9a-f]{32}', guid) or not re.fullmatch('[0-9a-f]{64}', sha)
+                or not uid or not -(2**63) <= uid < 2**63
+                or str(uid) != obj.get('_vapb_fbx_model_uid')
+                or not obj.get('_vapb_fbx_realization_id')
+                or '_vapb_fbx_geometry_uid' in obj or '_vapb_fbx_mesh_receipt_id' in obj):
+            return False
+        return obj.get('_vapb_fbx_object_receipt_id') == make_transform_receipt(uid, guid, sha).blender_object_receipt_id
+    except (TypeError, ValueError, AttributeError):
+        return False
+
+
 def persist_receipt(obj: Any, receipt: FbxImportReceipt) -> None:
     """Persist only semantic, hash-bound values; never a runtime pointer."""
     values = {
@@ -216,9 +242,12 @@ def persist_receipt(obj: Any, receipt: FbxImportReceipt) -> None:
         "_vapb_fbx_receipt_evidence": receipt.evidence,
         "_vapb_fbx_realization_id": str(uuid.uuid4()),
     }
+    if receipt.fbx_geometry_uid == 0:
+        values.pop('_vapb_fbx_geometry_uid')
+        values.pop('_vapb_fbx_mesh_receipt_id')
     for key, value in values.items():
         obj[key] = value
-    data = getattr(obj, "data", None)
+    data = getattr(obj, "data", None) if receipt.fbx_geometry_uid else None
     object_session_uid = getattr(obj, "session_uid", None)
     if object_session_uid is not None:
         obj["_vapb_fbx_object_session_uid"] = str(object_session_uid)
@@ -360,6 +389,9 @@ def import_with_receipts(
     except (AttributeError, TypeError, ValueError):
         bone_supported = False
 
+    original_hierarchy = helper_type.build_hierarchy
+    hierarchy_supported = tuple(inspect.signature(original_hierarchy).parameters) == (
+        'self', 'fbx_tmpl', 'settings', 'scene', 'view_layer')
     sha256 = source_sha256(path)
     captures: list[tuple[int, Any]] = []
     bone_captures: dict[int, dict[str, str]] = {}
@@ -387,6 +419,16 @@ def import_with_receipts(
             captures.append((model_uid, result))
         return result
 
+    def hierarchy_hook(self, fbx_tmpl, settings, scene, view_layer):
+        result = original_hierarchy(self, fbx_tmpl, settings, scene, view_layer)
+        elem = getattr(self, 'fbx_elem', None)
+        if (getattr(self, 'is_armature', False) and elem is not None and elem.props
+                and result is getattr(self, 'bl_obj', None) and getattr(result, 'type', None) == 'ARMATURE'):
+            uid = _uid(elem.props[0])
+            if uid is not None and semantic.unique_source_model(uid):
+                persist_receipt(result, make_transform_receipt(uid, source_asset_guid, sha256))
+        return result
+
     def bone_hook(self: Any, arm: Any, parent_matrix: Any, settings: Any, parent_bone_size: float = 1) -> Any:
         bone = original_bone(self, arm, parent_matrix, settings, parent_bone_size)
         elem = getattr(self, "fbx_elem", None)
@@ -410,6 +452,8 @@ def import_with_receipts(
 
     try:
         helper_type.build_node_obj = hook
+        if hierarchy_supported:
+            helper_type.build_hierarchy = hierarchy_hook
         if shape_supported:
             native_importer.blen_read_shapes = shape_hook
         if bone_supported:
@@ -418,6 +462,8 @@ def import_with_receipts(
         import_call()
     finally:
         helper_type.build_node_obj = original
+        if hierarchy_supported:
+            helper_type.build_hierarchy = original_hierarchy
         if shape_supported:
             native_importer.blen_read_shapes = original_shapes
         if bone_supported:

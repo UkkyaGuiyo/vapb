@@ -16,13 +16,37 @@ class SkinMembershipTests(unittest.TestCase):
                             (51, b'Model', b'LimbNode'), (52, b'Model', b'LimbNode'))]
         self.links = [(20, 10), (30, 20), (40, 30), (41, 30), (50, 40), (51, 41)]
 
-    def read(self):
+    def read(self, reader=source_skin_bone_uids):
         root = Node(elems=[Node(id=b'Objects', elems=self.objects),
                           Node(id=b'Connections', elems=[Node(id=b'C', props=[b'OO', a, b])
                                                         for a, b in self.links])])
         parser = Node(parse=lambda *args, **kwargs: (root, 7400))
         with patch.dict('sys.modules', {'io_scene_fbx': Node(parse_fbx=parser)}):
-            return source_skin_bone_uids('source.fbx', '10', '20')
+            return reader('source.fbx', '10', '20')
+
+    def test_shared_nonbone_parent_requires_exact_unique_source_edges(self):
+        from unitypackage_blender_importer.blender.fbx_witness import source_skin_shared_parent
+        self.objects.append(Node(id=b'Model', props=[90, b'', b'Null'], elems=[]))
+        self.links += [(50, 90), (51, 90)]
+        self.assertEqual(self.read(source_skin_shared_parent), ('90', {'50': '90', '51': '90'}))
+        original = list(self.links)
+        for links in (original[:-1], original + [(50, 90)], original + [(51, 52)]):
+            self.links = links
+            with self.subTest(links=links), self.assertRaises(ValueError):
+                self.read(source_skin_shared_parent)
+        self.links = original
+        self.objects[-1].props[2] = b'LimbNode'
+        with self.assertRaises(ValueError): self.read(source_skin_shared_parent)
+
+    def test_single_root_world_parent_preserves_established_route(self):
+        from unitypackage_blender_importer.blender.fbx_witness import source_skin_shared_parent
+        reader = lambda *args: source_skin_shared_parent(*args, allow_single=True)
+        self.links += [(51, 50)]
+        self.assertIsNone(self.read(reader))
+        self.links += [(50, 0)]
+        self.assertIsNone(self.read(reader))
+        self.links += [(51, 50)]
+        with self.assertRaises(ValueError): self.read(reader)
 
     def test_membership_comes_from_clusters_including_empty_clusters(self):
         self.assertEqual(self.read(), frozenset({'50', '51'}))

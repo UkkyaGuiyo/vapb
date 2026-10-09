@@ -113,3 +113,48 @@ Keep original T0/T1/T2/T3/T4/U0/U1 IDs and historical results. This revision reo
 If tooling work keeps expanding without a new semantic observation, compare standard APIs, current probes and the smallest bounded control before more infrastructure. A missing permission/resource is a blocker, not a product defect or permission to bypass a guard. Do not automatically resume an explicitly stopped project or knowledge collection.
 
 Planning completion means these instructions are saved and readable. No code, fixture, oracle, threshold, dependency, runtime result or product acceptance was changed by this revision.
+
+
+## Shared-parent Skin evidence transport checkpoint (2026-10-09)
+
+Missing information was the official importer's actual Armature Object handle for
+the source non-cluster Null Model, and that same parent's receipt on the edited
+FBX. The source witness already proved the actual rootBone is cluster Bone UID
+251529238; its sibling and it share Null Model UID 51419677. A single Bone root
+is not a permanent product requirement.
+
+The chosen minimum is the existing Object receipt family plus one optional
+`parent_transform_mapping` row (source Model UID and edited Object realization).
+It applies only to the single source-model Skin task. Parent role is separate
+from cluster Bone mappings. Adding a new task/schema/runner, treating the Null as
+a Bone/rootBone, reparenting siblings, or removing the hierarchy guard globally
+were rejected: each loses proven native identity or expands unrelated scope.
+
+Producer captures the Armature returned by the official `build_hierarchy`, checks
+source GUID/hash and exact raw shared-parent edges, and rejects tampered receipts,
+duplicate realizations and changed Bone parents. Staging carries the parent
+Object marker without changing Bone hierarchy. Consumer resolves the original
+parent through witnessed UID/fileID, compares exact parent handles and the
+parent Transform in the Unity renderer frame, and keeps the actual rootBone,
+index layout, Bone order and strict influence comparisons. Original FBX/meta,
+original bones/root and separate Variant behavior remain protected.
+
+Observed: 21 focused Python tests PASS; product and adjacent C# tests reference
+compile PASS. Normal Blender import/save/reopen/edit 1.25/export passes for the
+same 45-control-point/15-face input. Raw edited FBX has one parent marker, both
+Bone Models under it, and all 87 positive Cluster associations numerically equal
+to the source. Three real Blender negative controls reject parent UID tampering,
+duplicated realization and Bone reparenting. Original bytes and edited scene,
+Bone rest matrices/parents/deform flags remain unchanged by export.
+
+One independent GPT-6.1 SOL/medium review found a single-root world-parent
+compatibility regression. It was fixed and focused tests cover it; no further
+actionable finding. Editor/NUnit runtime is NOT_RUN, as Unity is allocated to
+another owner. No root substitution or weight epsilon change was introduced.
+
+Next concrete gate: use the exact locally prepared output after the parent
+assigns a Unity slot; run the existing ordinary import/Finalizer and adjacent
+tests, observe root/parent transport separately from strict influence equality,
+and preserve source, project and lease. A SOURCE_MODEL_WEIGHTS_CHANGED refusal
+would be a separate source-default/edited-weight boundary, not success or an
+authorization to weaken equality. See transferred-parent-transform-export.json.

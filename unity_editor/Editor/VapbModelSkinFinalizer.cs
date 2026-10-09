@@ -97,6 +97,11 @@ public static class VapbModelSkinFinalizer
         public string asset_sha256;
         public string component_file_id;
     }
+    [Serializable] private sealed class ParentTransformMapping
+    {
+        public string source_model_uid;
+        public string edited_transform_realization_id;
+    }
     [Serializable] private sealed class Task
     {
         public string kind;
@@ -108,6 +113,7 @@ public static class VapbModelSkinFinalizer
         public string source_geometry_uid;
         public InstanceEdge[] instance_edges;
         public RendererCandidate[] renderer_candidates;
+        public ParentTransformMapping parent_transform_mapping;
         public string model_guid;
         public string model_sha256;
         public string realization_id;
@@ -144,6 +150,7 @@ public static class VapbModelSkinFinalizer
     {
         public SkinnedMeshRenderer renderer;
         public readonly Dictionary<string, Transform> bonesByUid = new Dictionary<string, Transform>(StringComparer.Ordinal);
+        public Transform parentTransform;
         public string[] sourceBoneUids;
         public string rootUid;
     }
@@ -323,7 +330,9 @@ public static class VapbModelSkinFinalizer
     {
         string guid = AssetDatabase.AssetPathToGUID(path);
         foreach (Task task in AuthorizedTasks())
-            if (task.model_guid == guid && task.realization_id == id) return true;
+            if (task.model_guid == guid && (task.realization_id == id ||
+                task.kind == SourceKind && task.parent_transform_mapping != null &&
+                task.parent_transform_mapping.edited_transform_realization_id == id)) return true;
         return false;
     }
     internal static bool IsAuthorizedBone(string path, string id)
@@ -597,6 +606,19 @@ public static class VapbModelSkinFinalizer
         if (!uidByTransform.TryGetValue(ParseId(source.rootUid), out string rootUid))
             Reject("WITNESS_BONE_MISSING");
         source.rootUid = rootUid;
+        if (task.parent_transform_mapping != null)
+        {
+            if (!mapping.transformIds.TryGetValue(task.parent_transform_mapping.source_model_uid, out long parentId))
+                Reject("WITNESS_PARENT_MISSING");
+            foreach (Transform transform in prefab.GetComponentsInChildren<Transform>(true))
+                if (LocalId(transform, sourceGuid) == parentId)
+                {
+                    if (source.parentTransform != null) Reject("WITNESS_PARENT_AMBIGUOUS");
+                    source.parentTransform = transform;
+                }
+            if (source.parentTransform == null) Reject("WITNESS_PARENT_MISSING");
+        }
+
         source.bonesByUid.Clear();
         for (int i = 0; i < source.sourceBoneUids.Length; i++)
             source.bonesByUid.Add(source.sourceBoneUids[i], target.bones[i]);
@@ -627,6 +649,19 @@ public static class VapbModelSkinFinalizer
     {
         bool direct = task.kind == DirectKind;
         bool sourceModel = task.kind == SourceKind;
+        if (task.parent_transform_mapping != null)
+        {
+            ParentTransformMapping parent = task.parent_transform_mapping;
+            if (!sourceModel || !ValidUid(parent.source_model_uid) ||
+                String.IsNullOrEmpty(parent.edited_transform_realization_id) ||
+                parent.source_model_uid == task.source_model_uid ||
+                parent.edited_transform_realization_id == task.realization_id ||
+                task.source_model_uids == null || !Array.Exists(task.source_model_uids, uid => uid == parent.source_model_uid) ||
+                task.bone_mappings == null || Array.Exists(task.bone_mappings, bone => bone == null ||
+                    bone.source_model_uid == parent.source_model_uid ||
+                    bone.edited_bone_realization_id == parent.edited_transform_realization_id))
+                Reject("PARENT_TRANSFORM_MAPPING_INVALID");
+        }
         if (sourceModel)
         {
             if (!String.IsNullOrEmpty(task.prefab_guid) || !String.IsNullOrEmpty(task.prefab_source_sha256) ||
@@ -1047,9 +1082,17 @@ public static class VapbModelSkinFinalizer
         GameObject root = AssetDatabase.LoadAssetAtPath<GameObject>(editedPath);
         if (root == null) Reject("EDITED_MODEL_UNAVAILABLE");
         SkinnedMeshRenderer found = null;
+        Transform editedParent = null;
         var markerCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         foreach (VapbRealizationMarker marker in root.GetComponentsInChildren<VapbRealizationMarker>(true))
         {
+            if (task.parent_transform_mapping != null &&
+                marker.realizationId == task.parent_transform_mapping.edited_transform_realization_id)
+            {
+                if (editedParent != null || !String.IsNullOrEmpty(marker.boneRealizationId) ||
+                    marker.GetComponents<Renderer>().Length != 0) Reject("EDITED_PARENT_INVALID");
+                editedParent = marker.transform;
+            }
             if (!String.IsNullOrEmpty(marker.boneRealizationId))
                 markerCounts[marker.boneRealizationId] = markerCounts.TryGetValue(marker.boneRealizationId,
                     out int count) ? count + 1 : 1;
@@ -1085,6 +1128,9 @@ public static class VapbModelSkinFinalizer
         edited.rootUid = rootUid;
         seen.Add(rootUid);
         if (seen.Count != receiptToUid.Count) Reject("BONE_MAPPING_INVALID");
+        if (task.parent_transform_mapping != null && (editedParent == null || source.parentTransform == null))
+            Reject("EDITED_PARENT_INVALID");
+        int sharedRoots = 0;
         for (int i = 0; i < found.bones.Length; i++)
         {
             Transform sourceBone = source.bonesByUid[edited.editedBoneUids[i]];
@@ -1095,10 +1141,25 @@ public static class VapbModelSkinFinalizer
                 found.bones[i].parent.GetComponent<VapbRealizationMarker>()?.boneRealizationId;
             string editedParentUid = editedParentReceipt != null &&
                 receiptToUid.TryGetValue(editedParentReceipt, out string parentUid) ? parentUid : null;
+            if (task.parent_transform_mapping != null && sourceParentUid == null)
+            {
+                if (sourceBone.parent != source.parentTransform || found.bones[i].parent != editedParent)
+                    Reject("BONE_HIERARCHY_CHANGED");
+                sourceParentUid = editedParentUid = task.parent_transform_mapping.source_model_uid;
+                sharedRoots++;
+            }
             if (sourceParentUid != editedParentUid) Reject("BONE_HIERARCHY_CHANGED");
             if (sourceParentUid == null &&
                 (edited.editedBoneUids[i] != source.rootUid || found.bones[i] != found.rootBone))
                 Reject("BONE_HIERARCHY_UNSUPPORTED");
+        }
+        if (task.parent_transform_mapping != null)
+        {
+            if (sharedRoots < 2) Reject("PARENT_TRANSFORM_MAPPING_INVALID");
+            // Compare in the renderer frame: raw FBX units are not Unity units.
+            Matrix4x4 sourceParentFrame = source.renderer.transform.worldToLocalMatrix * source.parentTransform.localToWorldMatrix;
+            Matrix4x4 editedParentFrame = found.transform.worldToLocalMatrix * editedParent.localToWorldMatrix;
+            if (!SameMatrix(sourceParentFrame, editedParentFrame, 0.001f)) Reject("PARENT_TRANSFORM_CHANGED");
         }
         edited.materials = ResolveMaterialTransport(task, found);
         return edited;

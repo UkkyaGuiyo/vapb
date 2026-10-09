@@ -237,6 +237,34 @@ public sealed class ModelSkinRouteCompatibilityTests
         set("variant_path", "Assets/VAPBExport/EditedVariant_" + hash + ".prefab");
         Invoke(finalizer, "ValidateTask", task);
         Assert.AreEqual(new string('a', 32), Invoke(finalizer, "SourceRootGuid", task));
+        // Parent Object receipt is additive and must not impersonate mesh or Bone roles.
+        Type parentType = finalizer.GetNestedType("ParentTransformMapping", BindingFlags.NonPublic);
+        object parent = Activator.CreateInstance(parentType, true);
+        Action<string, string> setParent = (key, value) => parentType.GetField(key).SetValue(parent, value);
+        set("source_model_uids", new[] { "101", "303", "404" });
+        setParent("source_model_uid", "404"); setParent("edited_transform_realization_id", "parent-object");
+        set("parent_transform_mapping", parent);
+        Invoke(finalizer, "ValidateTask", task);
+        foreach (string uid in new[] { "101", "303", "405", "0404", "0" })
+        {
+            setParent("source_model_uid", uid);
+            var rejected = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", task));
+            Assert.AreEqual("PARENT_TRANSFORM_MAPPING_INVALID", rejected.InnerException.Message);
+        }
+        setParent("source_model_uid", "404");
+        foreach (string receipt in new[] { "single-skin", "edited-bone", "" })
+        {
+            setParent("edited_transform_realization_id", receipt);
+            var rejected = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", task));
+            Assert.AreEqual("PARENT_TRANSFORM_MAPPING_INVALID", rejected.InnerException.Message);
+        }
+        setParent("edited_transform_realization_id", "parent-object");
+        set("kind", NormalKind);
+        var wrongRoute = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", task));
+        Assert.AreEqual("PARENT_TRANSFORM_MAPPING_INVALID", wrongRoute.InnerException.Message);
+        set("kind", "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1");
+        set("parent_transform_mapping", null);
+
         set("prefab_guid", new string('c', 32));
         var error = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", task));
         Assert.AreEqual("SOURCE_MODEL_CONTEXT_INVALID", error.InnerException.Message);

@@ -129,6 +129,21 @@ class SourceModelSkinTaskTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             group_model_skin_tasks([task, task])
 
+    def test_source_parent_transform_mapping_has_a_distinct_role(self):
+        from unitypackage_blender_importer.export.model_skin import source_model_skin_task
+        row = dict(source_model_uid='91', edited_transform_realization_id='parent-object')
+        task = source_model_skin_task({**self.source_metadata(), 'parent_transform_mapping': row},
+                                     self.bones, [self.assets[-1]])
+        self.assertEqual(task['parent_transform_mapping'], row)
+        self.assertEqual(task['bone_mappings'], self.bones)
+        for bad in ({**row, 'source_model_uid': self.bones[0]['source_model_uid']},
+                    {**row, 'source_model_uid': self.metadata['source_model_uid']},
+                    {**row, 'edited_transform_realization_id': 'edit-a'},
+                    {**row, 'edited_transform_realization_id': ''}, []):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                source_model_skin_task({**self.source_metadata(), 'parent_transform_mapping': bad},
+                                       self.bones, [self.assets[-1]])
+
     def test_source_model_rejects_false_revision_prefab_and_duplicate_source(self):
         from unitypackage_blender_importer.export.model_skin import source_model_skin_task
         metadata = self.source_metadata()

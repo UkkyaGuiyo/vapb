@@ -131,6 +131,48 @@ def source_skin_bone_uids(source, model_uid, geometry_uid):
     return frozenset(bones)
 
 
+def source_skin_shared_parent(source, model_uid, geometry_uid, *, allow_single=False):
+    """Prove selected Skin roots are siblings under one actual source Null Model."""
+    bones = source_skin_bone_uids(source, model_uid, geometry_uid)
+    from io_scene_fbx import parse_fbx
+    decoded, _ = parse_fbx.parse(str(source), use_namedtuple=True)
+    objects = next(n for n in decoded.elems if n.id == b'Objects')
+    nodes = {str(n.props[0]): n for n in objects.elems}
+    models = {uid for uid, n in nodes.items() if n.id == b'Model'}
+    parents = {uid: [] for uid in bones}
+    connections = next(n for n in decoded.elems if n.id == b'Connections')
+    for row in connections.elems:
+        if row.id == b'C' and row.props[0] == b'OO':
+            child, parent = map(str, row.props[1:3])
+            if child in parents and parent in models:
+                parents[child].append(parent)
+    if any(len(rows) > 1 for rows in parents.values()):
+        raise ValueError('Source Skin parent connection is ambiguous')
+    parents = {uid: rows[0] if rows else None for uid, rows in parents.items()}
+    roots = [uid for uid in bones if parents[uid] not in bones]
+    if allow_single and len(roots) == 1:
+        # Preserve the established single-root route, including FBX world UID 0.
+        return None
+    if any(parent is None for parent in parents.values()):
+        raise ValueError('Source Skin parent connection is missing')
+    external = {parents[uid] for uid in roots}
+    if len(roots) < 2 or len(external) != 1:
+        raise ValueError('Source Skin does not have a unique shared nonbone parent')
+    parent, = external
+    if len(nodes[parent].props) < 3 or nodes[parent].props[2] != b'Null':
+        raise ValueError('Source Skin shared parent is not a Null Model')
+    for uid in bones:
+        seen = set()
+        while uid in bones:
+            if uid in seen:
+                raise ValueError('Source Skin bone hierarchy is cyclic')
+            seen.add(uid)
+            uid = parents[uid]
+        if uid != parent:
+            raise ValueError('Source Skin bone hierarchy is disconnected')
+    return parent, parents
+
+
 def encode_node(node, witness):
     from io_scene_fbx import encode_bin
     from io_scene_fbx.fbx_utils import elem_props_set

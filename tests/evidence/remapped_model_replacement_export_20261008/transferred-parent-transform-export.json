@@ -1,0 +1,91 @@
+{
+  "input_sha256": "55ebf30c4484fc03415b8b7f843fc760bf443a5298d33db56196b90245863c04",
+  "source_fbx_sha256": "4d16ca1b16521f2cafbddb5eba94c732e33aa4c1c937c4a83f582a11829fee23",
+  "source_guid": "93abeaa4aa085ea4c0473b03f94eb0e4",
+  "vertices": 45,
+  "faces": 15,
+  "material_slots": 0,
+  "tiny_imported_weights": [
+    9.999999717180685e-10,
+    9.999999717180685e-10,
+    9.999999717180685e-10
+  ],
+  "scale": 1.25,
+  "new_input_wrapper_only": true,
+  "input_fbx_bytes_unchanged": true,
+  "negative_controls": [
+    "tampered_parent_uid",
+    "duplicate_parent_realization",
+    "reparented_bone"
+  ],
+  "bone_hierarchy_rest_and_deform_preserved": true,
+  "parent_object_receipt_after_reopen": true,
+  "exported": true,
+  "output_sha256": "bb0cf936a78bfff987cdc8f5f187134c298197c36731dd7ad17680b1ae3abb14",
+  "source_asset_and_meta_preserved": true,
+  "edited_scene_unchanged": true,
+  "task": {
+    "bone_mappings": [
+      {
+        "edited_bone_realization_id": "743b140b-0b6a-4421-ad18-c32b4a266609",
+        "source_model_uid": "251529238"
+      },
+      {
+        "edited_bone_realization_id": "29eefd9a-a7e0-404b-ab77-cd60a8992c34",
+        "source_model_uid": "763348336"
+      }
+    ],
+    "instance_edges": [],
+    "kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "material_bindings": [],
+    "model_guid": "d1ef5d909dd22561af0d1d6cbd0bd59e",
+    "model_sha256": "1c767eb4d717182ead7e51df4f73c468e3c3c712df77c5fe8b77c844b3f178ce",
+    "parent_transform_mapping": {
+      "edited_transform_realization_id": "4bfd644f-dfd3-4b36-ae36-52c33b36a585",
+      "source_model_uid": "51419677"
+    },
+    "realization_id": "e7714da4-cca9-4cce-8757-082408a50699",
+    "source_geometry_uid": "708164851",
+    "source_model_guid": "93abeaa4aa085ea4c0473b03f94eb0e4",
+    "source_model_sha256": "4d16ca1b16521f2cafbddb5eba94c732e33aa4c1c937c4a83f582a11829fee23",
+    "source_model_uid": "620743515",
+    "source_model_uids": [
+      "620743515",
+      "51419677",
+      "763348336",
+      "251529238"
+    ],
+    "variant_path": "Assets/VAPBExport/EditedVariant_486bc40c088c1716e71fabb79b51af5518e43924df69ae490a894f60e8bd9e42.prefab",
+    "witness_noop_path": "Assets/VAPBExport/Witness_d1ef5d909dd22561af0d1d6cbd0bd59e_Noop.bytes",
+    "witness_noop_sha256": "4d16ca1b16521f2cafbddb5eba94c732e33aa4c1c937c4a83f582a11829fee23",
+    "witness_path": "Assets/VAPBExport/Witness_d1ef5d909dd22561af0d1d6cbd0bd59e_Source.bytes",
+    "witness_sha256": "77d21b65e742c53c9f543e7ca1368bd61b3bb6875dcb1e0362496778c4cbecef"
+  },
+  "output_asset_count": 11,
+  "raw_export_shared_parent_marker_unique": true,
+  "raw_export_bones_have_same_parent": true,
+  "raw_cluster_weights_exact_source": true,
+  "raw_positive_associations": 87,
+  "edited_fbx_sha256": "1c767eb4d717182ead7e51df4f73c468e3c3c712df77c5fe8b77c844b3f178ce",
+  "start_commit": "cac1825560eff50e33bf181a23e6599e2035548e",
+  "status": "BLENDER_EXPORT_ONLY_UNITY_NOT_RUN",
+  "source_root_bone_uid_from_previous_unity_witness": "251529238",
+  "focused_python_tests_pass": 21,
+  "product_and_csharp_test_reference_compile": "PASS",
+  "csharp_nunit_runtime": "NOT_RUN",
+  "unity_import_finalizer_variant_reload": "NOT_RUN",
+  "independent_review": {
+    "model": "gpt-6.1-sol",
+    "reasoning": "medium",
+    "runs": 1,
+    "finding": "Single-root source connected to world UID0 rejected before compatibility escape",
+    "resolution": "Preserve old single-root route; focused missing/world-parent compatibility and duplicate-edge negative tests PASS",
+    "remaining_actionable_findings": 0
+  },
+  "limitations": [
+    "This first-party input has no Material or Texture slots",
+    "Actual Unity rootBone identity remains strict and unmodified",
+    "Source-default versus edited tiny-weight equality is unresolved separately; comparison was not relaxed",
+    "Full product completion, GUI flow and general Skin acceptance are not established"
+  ]
+}
