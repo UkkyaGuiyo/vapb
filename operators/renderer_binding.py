@@ -17,6 +17,8 @@ def _display_error(error):
         return message
     if message.startswith("Material slot "):
         return "対象スロットの素材を一意に特定できません。素材の出所とローカルIDを確認してください"
+    if "face correspondence" in message:
+        return "面と素材の対応を確認できません。元の素材割当は変更されません"
     if "Material" in message or "material" in message:
         return "素材情報が未確定または不完全です。バインドは実行されませんでした"
     if "Root" in message or "root" in message or "projection" in message:
@@ -187,6 +189,12 @@ def _material_plan(record, mesh_obj):
     # a proven face correspondence, which this confirmation route lacks.
     if plan and any(material is not plan[0] for material in plan):
         raise BindingError('Material face correspondence is unresolved')
+    # Uniform nonnull references are permutation-independent only when every
+    # actually used face slot is covered. Otherwise confirmation clears used
+    # slots to None without proving which source faces had the reference.
+    if plan and plan[0] is not None and any(
+            face.material_index >= count for face in mesh_obj.data.polygons):
+        raise BindingError('Material face correspondence is unresolved: used face slot is uncovered')
     return plan
 
 

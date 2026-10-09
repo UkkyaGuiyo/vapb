@@ -94,3 +94,27 @@ The offline fixture diagnostic exited 0 and retained status UNPROVEN_FRAME_CANDI
 | [Ownership and source pin result](frame-diagnostic-ownership.json) | 52c15704c9adb65691489712cb1360f89877505ac3cc124e26fd1bf8b97623c9 |
 
 LUNA low implemented and ran the change. SOL medium reviewed the final code/result and accepted the bounded ownership check, with the residual race above.
+
+## Current Confirm source: uncovered uniform face slots refused (2026-10-09)
+
+`uniform-used-face-coverage-source-fix.json` records a narrow product defect found
+while tracing the old override seam. The existing distinct-Material guard already
+refuses unproven correspondence, but a shortened uniform nonnull Material plan
+could pass. Confirm then cleared uncovered used slots to None and persisted
+USER_CONFIRMED. Actual import/Confirm on one author-owned copy reproduced this:
+the Prefab array alone was shortened to its first reference, while FBX, metadata
+and all other package entries stayed unchanged. Ten of twelve triangles then
+lost their assigned Material. This copied input is separate from the old fixture.
+
+Read-only Material planning now rejects uncovered used face slots before mutation.
+The same actual operator input rejects with no slot/count or binding changes.
+Actual Blender regression changed from one failure to 12 passing tests; fully
+covered uniform references and an extra unused slot remain accepted. The user
+gets an explicit unproven face/Material explanation. No map is inferred from
+slot counts, names, triangle counts or the old numeric frame candidate.
+
+This fix does not prove old override reconstruction or winding. The old frame
+candidate remains unproven; current triangle staging already preserves ordered
+triangles and original corner normals. [Unity's documented front-face rule](https://docs.unity3d.com/2022.3/Documentation/Manual/AnatomyofaMesh.html) alone does
+not justify a particular importer reflection. No new runner, manifest schema,
+generic parser, Unity launch or original Asset/meta modification was introduced.

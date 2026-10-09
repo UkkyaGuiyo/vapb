@@ -1,0 +1,74 @@
+{
+  "status": "CONFIRM_UNPROVEN_USED_FACE_COVERAGE_SOURCE_FIX_VERIFIED",
+  "baseline_commit": "608a67fc14580c54f2742f306fd7233b90841d03",
+  "scope": "existing Renderer confirmation route; shortened nonnull uniform Material references and used native face slots",
+  "original_fixture_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "owned_one_factor_input_sha256": "839503b9a7d724bf7f481027038c2bb328ba9ac53401059f73ddfd1b5ed058f3",
+  "input_change": "only author-owned copied Prefab Material array shortened from three references to the first reference; no GUID/fileID repair",
+  "source_fbx_and_all_meta_bytes_unchanged": true,
+  "before_fix": {
+    "operator_result": [
+      "FINISHED"
+    ],
+    "binding_evidence": "USER_CONFIRMED",
+    "ownership_preflight": "VALID",
+    "used_face_triangle_counts": [
+      2,
+      4,
+      6
+    ],
+    "unreferenced_used_slot_triangle_count": 10,
+    "material_references_after": [
+      {
+        "file_id": "2100000",
+        "guid": "eb805efb35118044db5e74adc652673a"
+      },
+      {
+        "file_id": "",
+        "guid": ""
+      },
+      {
+        "file_id": "",
+        "guid": ""
+      }
+    ],
+    "conclusion": "unsafe partial confirmation; a single uniform source reference did not cover all used face slots"
+  },
+  "root_cause": "uniform nonnull identity avoided the distinct-Material ambiguity guard, but uncovered used slots were cleared to None before persisting USER_CONFIRMED",
+  "source_fix": "reject uncovered used face slots in read-only Material planning before any slot/binding mutation; preserve fully covered uniform and extra unused slots",
+  "after_fix": {
+    "operator_result": [
+      "CANCELLED"
+    ],
+    "ownership_preflight": "VALID",
+    "material_slots_unchanged": true,
+    "face_slot_counts_unchanged": true,
+    "no_binding_written": true,
+    "user_message": "面と素材の対応を確認できません。元の素材割当は変更されません"
+  },
+  "regression": {
+    "runtime": "Blender 5.2.1",
+    "tests": 12,
+    "before": "one expected failure: BindingError not raised",
+    "after": "PASS",
+    "controls": [
+      "full uniform coverage accepted",
+      "extra unused slot accepted",
+      "rejected planning leaves Material/face slots unchanged"
+    ]
+  },
+  "old_override_and_winding": {
+    "distinct_Material_Confirm": "existing unresolved refusal retained",
+    "numeric_frame_candidate": "still UNPROVEN_FRAME_CANDIDATE_ONLY; no reflection or ordinal fallback",
+    "triangle_staging_source": "already copies original triangle order and corner normals; no diagnosed staging defect",
+    "reference": "https://docs.unity3d.com/2022.3/Documentation/Manual/AnatomyofaMesh.html",
+    "reference_scope": "Unity front-face winding convention alone does not certify a particular importer frame conversion"
+  },
+  "unity": "NOT_RUN; no Unity asset/importer/settings changes needed for this preflight defect",
+  "publication": "self-authored source/test and sanitized observations only; copied packages, private probe copies and raw logs stay local",
+  "limitations": [
+    "does not establish missing source Unity submesh correspondence",
+    "no new override reconstruction policy",
+    "no general winding/normals acceptance"
+  ]
+}

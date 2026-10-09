@@ -133,5 +133,48 @@ class RendererBindingTests(unittest.TestCase):
             validate_binding(other, root, mesh, [root, owner, mesh])
 
 
+try:
+    import bpy
+except ImportError:
+    bpy = None
+
+
+@unittest.skipIf(bpy is None, "Material face coverage requires actual Blender Mesh")
+class UniformMaterialFaceCoverageTests(unittest.TestCase):
+    def test_uniform_reference_cannot_confirm_an_uncovered_used_face_slot(self):
+        from unitypackage_blender_importer.operators.renderer_binding import _material_plan
+        material = bpy.data.materials.new('UniformFaceCoverage')
+        mesh = bpy.data.meshes.new('UniformFaceCoverage')
+        obj = bpy.data.objects.new('UniformFaceCoverage', mesh)
+        try:
+            material['unity_source_package_id'] = 'source-package'
+            material['unity_material_guid'] = 'a' * 32
+            material['unity_material_file_id'] = '2100000'
+            mesh.from_pydata([(0,0,0), (1,0,0), (1,1,0), (0,1,0)], [], [(0,1,2), (0,2,3)])
+            mesh.materials.append(material)
+            mesh.materials.append(material)
+            mesh.polygons[1].material_index = 1
+            ref = {'source_package_id': 'source-package', 'guid': 'a' * 32, 'file_id': '2100000'}
+            record = {'material_status': 'EXACT', 'material_slot_count': 1, 'materials': {'0': ref}}
+            before = [(slot.link, slot.material) for slot in obj.material_slots]
+            with self.assertRaisesRegex(BindingError, 'face correspondence'):
+                _material_plan(record, obj)
+            self.assertEqual(before, [(slot.link, slot.material) for slot in obj.material_slots])
+            self.assertEqual([0,1], [face.material_index for face in mesh.polygons])
+            # Full uniform coverage is still permutation-independent.
+            record['material_slot_count'] = 2
+            record['materials']['1'] = ref
+            self.assertEqual([material, material], _material_plan(record, obj))
+            # An extra unused slot alone does not require a correspondence.
+            mesh.polygons[1].material_index = 0
+            record['material_slot_count'] = 1
+            del record['materials']['1']
+            self.assertEqual([material], _material_plan(record, obj))
+        finally:
+            bpy.data.objects.remove(obj)
+            bpy.data.meshes.remove(mesh)
+            bpy.data.materials.remove(material)
+
+
 if __name__ == "__main__":
     unittest.main()
