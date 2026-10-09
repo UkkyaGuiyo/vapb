@@ -39,7 +39,7 @@ public static class SmallWeightProbe
     [Serializable] public class Vertex { public int vertex,cp; public Influence[] influences; public float sum; public Vector3 position,baked,raw_cpu; }
     [Serializable] public class RawWeight { public int cp; public float weight; }
     [Serializable] public class Cluster { public string bone_label; public RawWeight[] weights; }
-    [Serializable] public class Source { public string fbx_sha256; public Cluster[] clusters; }
+    [Serializable] public class Source { public int cp_count; public string fbx_sha256; public Cluster[] clusters; }
     [Serializable] public class Capture { public string name,mode,hash,mesh_guid,mesh_id,mesh_label; public float requested,assigned,getter,preprocess; public string stored; public Vertex[] vertices; public string[] bones; public int bindposes,shapes,submeshes; }
     [Serializable] public class Report { public string version,status; public Capture[] cases; public int errors,warnings; public bool source_unchanged; }
     static string Project=>Path.GetDirectoryName(Application.dataPath);
@@ -52,17 +52,18 @@ public static class SmallWeightProbe
         var mesh=s.sharedMesh;
         var labels=s.bones.Select(b=>b.GetComponent<WeightMarker>()?.boneLabel).ToArray();
         if(labels.Length!=2 || labels.Distinct().Count()!=2 || labels.Any(b=>b==null)) throw new Exception("BONE_LABEL_UNPROVEN");
+        var raw=JsonUtility.FromJson<Source>(File.ReadAllText(Path.Combine(Project,"Source.json")));
+        if(raw.fbx_sha256!=Hash(Path.Combine(Project,path))) throw new Exception("STALE_FBX_HASH");
+        if(raw.cp_count<=0) throw new Exception("CP_COUNT_UNPROVEN");
         var counts=mesh.GetBonesPerVertex(); var weights=mesh.GetAllBoneWeights(); var uv=mesh.uv; var positions=mesh.vertices;
         var vertices=new List<Vertex>(); int offset=0;
         for(int v=0;v<mesh.vertexCount;v++) {
             int cp=(int)Math.Round(uv[v].x)-1;
-            if(cp<0||cp>=42||Math.Abs(uv[v].x-(cp+1))>1e-5||Math.Abs(uv[v].y-.375)>1e-5) throw new Exception("CP_MAPPING_UNPROVEN");
+            if(cp<0||cp>=raw.cp_count||Math.Abs(uv[v].x-(cp+1))>1e-5||Math.Abs(uv[v].y-.375)>1e-5) throw new Exception("CP_MAPPING_UNPROVEN");
             var list=new List<Influence>(); for(int n=0;n<counts[v];n++) {var w=weights[offset++];list.Add(new Influence {bone=w.boneIndex,label=labels[w.boneIndex],weight=w.weight});}
             vertices.Add(new Vertex {vertex=v,cp=cp,influences=list.ToArray(),sum=list.Sum(w=>w.weight),position=positions[v]});
         }
         counts.Dispose(); weights.Dispose();
-        var raw=JsonUtility.FromJson<Source>(File.ReadAllText(Path.Combine(Project,"Source.json")));
-        if(raw.fbx_sha256!=Hash(Path.Combine(Project,path))) throw new Exception("STALE_FBX_HASH");
         var instance=UnityEngine.Object.Instantiate(asset); var live=instance.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
         var low=live.bones.Single(b=>b.GetComponent<WeightMarker>()?.boneLabel=="WEIGHT-BONE-0");
         low.position+=new Vector3(.5f,0,0);

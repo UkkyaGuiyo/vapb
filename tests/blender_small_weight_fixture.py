@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from unitypackage_blender_importer.export.fbx_export import export_fbx
 
-LADDER = [0, 1e-8, 1e-6, 1e-5, 1e-4, .00025, .0005, .0009,
+LADDER = [0, 1e-9, 1e-8, 1e-6, 1e-5, 1e-4, .00025, .0005, .0009,
           .000999, .001, .001001, .0015, .005, .01]
 
 
@@ -62,7 +62,7 @@ def main():
     assert len(clusters)==2
     raw={(row['cp'],c['bone_label']):row['weight'] for c in clusters for row in c['weights']}
     for cp in range(len(mesh.vertices)):
-        actual={rig.pose.bones[g.group]['_vapb_weight_bone_id']:g.weight for g in mesh.vertices[cp].groups}
+        actual={rig.pose.bones[obj.vertex_groups[g.group].name]['_vapb_weight_bone_id']:g.weight for g in mesh.vertices[cp].groups}
         for label in ('WEIGHT-BONE-0','WEIGHT-BONE-1'):
             assert raw.get((cp,label),0)==actual.get(label,0), 'BLENDER_TO_FBX_WEIGHT_LOSS'
     report=dict(schema='vapb-small-weight-source-1',fbx_sha256=hashlib.sha256((out/'Ladder.fbx').read_bytes()).hexdigest(),
