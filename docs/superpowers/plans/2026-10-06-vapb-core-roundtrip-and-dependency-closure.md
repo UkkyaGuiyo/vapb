@@ -437,3 +437,6 @@ Implemented the next concrete section 11 gap: animation through B_ONLY Bone crea
 
 
 Next leased Unity action is concretely prepared, not a request to repeat preparation: existing source-model Skin probe on the newly merged and 1.25-edited non-animated package, SHA a193572f59810cabbf1e9e4815a6f1db8e8432ea1856735cb14b2e9f0b148b39. Parent frame assignment remains required; fresh Project/PID/start/lease/lock/resource validation occurs at execution, never from old PIDs. Compare geometry in original/final Unity spaces and restore/check Material/Texture/Bone references. Authored Action transport remains separately unimplemented.
+
+
+2026-10-09 UTC assigned Unity frame executed once from existing preparation. Explicit two-Bone equivalent merge plus 1.25 edit has a native normal Unity return PASS for geometry/face/Material/Texture/Bone/root/re-Apply/original preservation. Original native weights 60 versus authored final 87 remain distinct; exported final weights validate. Normal owned exit, protected3027 unchanged and lease/mutex free. No new runner/schema/ZIP. Authored Animation-to-Unity remains an unimplemented return consumer, safely refused rather than silently discarded; do not claim general Avatar or all Material/Gimmick completion.

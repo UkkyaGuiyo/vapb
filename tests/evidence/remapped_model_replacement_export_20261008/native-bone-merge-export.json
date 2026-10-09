@@ -12,7 +12,7 @@
   "authored_action_export_after_fix": "REFUSED; no package; source Action retained",
   "native_bone_merge_action_undo_rollback": "PASS",
   "nonanimated_normal_export_after_fix": "PASS",
-  "unity_return": "NOT_RUN",
+  "unity_return": "PASS",
   "edited_animation_unity_transport": "UNIMPLEMENTED",
   "distribution_zip_rebuilt": false,
   "prepared_edited_merge_package_sha256": "a193572f59810cabbf1e9e4815a6f1db8e8432ea1856735cb14b2e9f0b148b39",
@@ -22,5 +22,65 @@
     1.2499999781936015
   ],
   "prepared_unity_probe": "existing VapbModelSkinRoundtripProbe.Validate",
-  "unity_execution_state": "WAITING_SHARED_FRAME; launcher syntax checked only"
+  "unity_execution_state": "NORMAL_EXIT_0; protected unchanged; lease/mutex released",
+  "unity_observations": {
+    "package_imported": true,
+    "first_apply": true,
+    "variant_created": true,
+    "variant_linked": true,
+    "edited_mesh_bound": true,
+    "originals_unchanged": true,
+    "second_apply": true,
+    "second_apply_unchanged": true,
+    "geometry_matches_edited_model": true,
+    "topology_and_weights_valid": true,
+    "target_bones_and_root_preserved": true,
+    "native_triangle_indices_equal": true,
+    "native_geometry_125": true,
+    "native_geometry_expected_scale": true,
+    "expected_native_scale": 1.25,
+    "native_face_membership": true,
+    "native_material_identity": true,
+    "material_guid_file_ids": [
+      "2f15f557f8028a10fdd543dd1c55a61f:2100000"
+    ],
+    "triangle_count": 15,
+    "edited_vertex_count": 45,
+    "edited_bone_count": 2,
+    "native_texture_identity": true,
+    "nonnull_texture_reference_count": 2,
+    "nonnull_texture_guid_file_ids": [
+      "22222222222222222222222222222222:2800000",
+      "22222222222222222222222222222222:2800000"
+    ],
+    "nonnull_texture_properties": [
+      "0:_MainTex",
+      "0:FutureTexture"
+    ],
+    "source_positive_weights": 60,
+    "edited_positive_weights": 87,
+    "native_weights_equal": false,
+    "exported_weights_validated": true,
+    "source_fbx_meta_preserved_after_apply": true,
+    "source_bones_share_parent": true,
+    "edited_bones_share_marked_parent": true,
+    "marked_parent_unique": true,
+    "edited_root_source_uid": "251529238",
+    "apply_rejection": "",
+    "apply_exception": "",
+    "parent_observation_error": ""
+  },
+  "preservation": {
+    "protected_files": 3027,
+    "changed_files": 0,
+    "source_input_archive_unchanged": true,
+    "edited_package_unchanged": true,
+    "owned_exit_code": 0,
+    "active_owned_children": 0,
+    "project_lock_present": false,
+    "pool_released": true,
+    "mutex_free_verified": true
+  },
+  "packaged_consumer_matches_saved_source": true,
+  "extra_component_negative_controls": "NOT_RUN in source-model branch"
 }

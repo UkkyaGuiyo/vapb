@@ -289,3 +289,14 @@ Native GREEN: actual normal operator refuses the edited Action, writes no output
 
 
 Unity handoff preparation for this distinct merged Skin case: the saved non-animated merged Mesh was edited 1.25 about its Object origin and exported normally. Blender dimensions ratios are (1.25, 1.25, 1.2499999781936015). Edited package SHA-256 a193572f59810cabbf1e9e4815a6f1db8e8432ea1856735cb14b2e9f0b148b39. Existing leased launcher parameters were updated locally, with the same source-model Skin probe, expected Unity-native scale 1.25 and two Texture roles. Syntax checked only; shared frame has not been acquired and Unity is NOT_RUN. This Skin output is distinct from earlier T4 replacement Cube/override/winding cases.
+
+
+## Merged Skin real Unity return (2026-10-09 UTC)
+
+Existing prepared output a193572f59810cabbf1e9e4815a6f1db8e8432ea1856735cb14b2e9f0b148b39 was imported once into the existing leased Avatar Return Project using the existing VapbModelSkinRoundtripProbe.Validate. No package/PREPARED.json regeneration or new runner/schema. Packaged first-party model Skin consumer matches saved repository source.
+
+Native Unity 2022.3.22f1 result PASS: normal package import, first Apply, linked Variant, edited Mesh binding, repeat Apply unchanged, original Source FBX/meta unchanged. Within the same Unity basis, source/final geometry matches the expected 1.25 scale. All 15 triangle indices/face memberships, 45 vertices, two target Bones/root, Material GUID/fileID and both non-null Texture property references match the recorded identities. Root source UID remains 251529238, distinct from the marked shared parent.
+
+Edited positive weights 87 pass exported-weight validation; original native source has 60 because of the already established importer tiny-weight omission. native_weights_equal is false and is not advertised as original-weight equality. Source-model branch extra-component negative controls are NOT_RUN, not PASS. Runtime animation/VRC behavior is not asserted; authored native Animation return remains UNIMPLEMENTED.
+
+Owned Editor normal exit 0. All 3027 pre-existing Assets/Packages/ProjectSettings files unchanged after restoration, source input and prepared package unchanged, active owned children zero, project lock absent, exact pool lease released and shared mutex freshly verified free. Private raw log/result/assets remain local; only aggregate observations are saved publicly. Distribution ZIP remains unchanged.
