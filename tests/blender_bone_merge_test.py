@@ -452,6 +452,16 @@ def bone_transform_action_test():
     assert b.animation_data.action.name == source_name and signature(b) == source_signature
     bpy.context.scene.frame_set(5)
     assert all((x-y).length < 1e-5 for x,y in zip(expected[5],evaluated_world_vertices(obj)))
+    # Merged native animation must not disappear in the rest-pose Skin exporter.
+    from unitypackage_blender_importer.operators.export_unitypackage import _reject_untransported_skin_animation
+    try:
+        _reject_untransported_skin_animation(obj, a)
+    except ValueError as error:
+        assert 'Animation' in str(error), str(error)
+    else:
+        raise AssertionError('Animated Bone Merge reached a rest-pose-only exporter')
+    assert a.animation_data.action.name == copy_name
+    assert b.animation_data.action.name == source_name and signature(b) == source_signature
     print('BONE_MERGE_LOCATION_ACTION_PASS escaped_rna_path=1 frames_preserved=3 source_action_unchanged=1 unsupported_refused=6 rollback_no_action_leak=1 operator_undo_redo=1 active_rotation_and_scale_channels=4 b_only_action_pose_and_rollback=1')
 
 

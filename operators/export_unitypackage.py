@@ -279,6 +279,7 @@ def export_skin_package(context, mesh, output):
     if len(modifiers) != 1 or len(mesh.modifiers) != 1 or modifiers[0].object is None:
         raise ValueError('この経路では一つのArmature Modifierだけを使用できます')
     rig = modifiers[0].object
+    _reject_untransported_skin_animation(mesh, rig)
     if mesh.constraints or rig.constraints or any(pose.constraints for pose in rig.pose.bones):
         raise ValueError('Constraint付きSkinの出力変形は未確認です')
     if modifiers[0].use_bone_envelopes:
@@ -330,6 +331,15 @@ def export_skin_package(context, mesh, output):
     return _write_package(tree, manifest, output)
 
 
+def _reject_untransported_skin_animation(mesh, rig):
+    # Existing Skin routes emit rest-pose copies, with no authored clip/driver recipe.
+    animation_owners = (mesh, mesh.data, mesh.data.shape_keys, rig, rig.data)
+    if any((data := getattr(owner, 'animation_data', None)) is not None and
+           (data.action is not None or data.drivers or data.nla_tracks)
+           for owner in animation_owners):
+        raise ValueError('編集AnimationのUnity復帰は未対応です。ClipやDriverを破棄せず出力を停止しました')
+
+
 def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=False):
     """Defer model Renderer identity to Unity while preserving source assets."""
     from ..blender.fbx_witness import prepare_witness, source_export_scale_options, source_skin_bone_uids, source_skin_shared_parent
@@ -348,6 +358,7 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
     if len(modifiers) != 1 or modifiers[0].type != 'ARMATURE' or not modifiers[0].object:
         raise ValueError('このモデルSkin経路は一つのArmature Modifierが必要です')
     rig = modifiers[0].object
+    _reject_untransported_skin_animation(mesh, rig)
     if (rig.library or rig.data.library or mesh.constraints or rig.constraints or
             any(pose.constraints for pose in rig.pose.bones) or modifiers[0].use_bone_envelopes):
         raise ValueError('Constraint・リンク・Envelope付きSkinはこの復元経路では未対応です')
