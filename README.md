@@ -2,13 +2,13 @@
 
 ## Current handoff
 
-Current installable WIP snapshot: `vapb-faf4518.zip`, code commit `faf451816e2a8fd7a9783fb987e5a0fe38b69486`, SHA-256 `2c7fab1fed092329f21dc0570d7fc89fe769078dd50c1a1a358f3e3565960f50`. Rebuild from this checkout with:
+Current installable WIP snapshot: `vapb-c5585a6.zip`, code commit `c5585a669320faece2133cab80470ca65104fa09`, SHA-256 `9c71fb2dd8cff24615e15245efc7da7b6dd5deed4c411d353f786b53de30f04c`. Rebuild from this checkout with:
 
 ```powershell
-python tools/build_distribution_zip.py --repo . --revision faf451816e2a8fd7a9783fb987e5a0fe38b69486 --output vapb-faf4518.zip
+python tools/build_distribution_zip.py --repo . --revision c5585a669320faece2133cab80470ca65104fa09 --output vapb-c5585a6.zip
 ```
 
-Standard isolated Blender installation passed. Installed code produced a normal Skin/Material/Texture export that passed Unity 2022.3.22f1 import and Finalizer Apply/repeat Apply: geometry 1.25 in Unity units, 45 vertices, 15 triangles, exact exported positive weights, Material identity/face membership, two non-null Texture roles, Bone/root and original asset preservation. [Distribution observations and limits](tests/evidence/remapped_model_replacement_export_20261008/distribution-native-skin-return-summary.json) retain the corrected observer failure separately. This is a bounded WIP snapshot; actual human GUI clicks and representative Unity/VRC serialized state remain unverified. No release or binary Git commit is implied.
+Standard isolated Blender installation passed. The sole runtime change fixes Unity JSON reading of absent optional Skin receipts. Focused native JSON controls and normal Unity import/Finalizer Apply/repeat passed for one first-party PhysBone/Collider case using the existing SDK, preserving null roots, settings, real script identities and the native Collider reference. [Native component scope and retained failures](tests/evidence/remapped_model_replacement_export_20261008/native-physbone-collider-roundtrip.json) and [earlier distribution observations](tests/evidence/remapped_model_replacement_export_20261008/distribution-native-skin-return-summary.json) remain separate. GUI clicks, client simulation and full Avatar state remain unverified. This is an installable WIP snapshot. SDK and input assets are not included in the add-on ZIP.
 
 
 For the current branch, evidence status, and exact next action, start at [START_HERE.md](START_HERE.md). Specific remaining product requirements and evidence limits are recorded below; campaign coverage is not a substitute for completing those requirements.

@@ -51,5 +51,18 @@
     "whole_product": "NOT_COMPLETE",
     "full_same_case_geometry_material_weight_acceptance": "NOT_ASSERTED; component-specific native observer only"
   },
-  "publication": "first-party observer/source and aggregate result only; SDK, private assets, raw logs, exact SDK GUID/fileID tables, PIDs and private paths excluded"
+  "publication": "first-party observer/source and aggregate result only; SDK, private assets, raw logs, exact SDK GUID/fileID tables, PIDs and private paths excluded",
+  "updated_distribution": {
+    "code_commit": "c5585a669320faece2133cab80470ca65104fa09",
+    "filename": "vapb-c5585a6.zip",
+    "sha256": "9c71fb2dd8cff24615e15245efc7da7b6dd5deed4c411d353f786b53de30f04c",
+    "selected_source_members": 115,
+    "crc_pass": true,
+    "standard_isolated_install_enable_disable_exit_code": 0,
+    "runtime_change_only": "unity_editor/Editor/VapbModelSkinFinalizer.cs",
+    "archived_helper_sha256": "e51c50d3c4bd7c2499debc4a73bc6d8df9e53418b1b3809e5938e5d9c937509a",
+    "native_tested_source_equivalence": "exact after CRLF/LF normalization; raw bytes differ only by line endings",
+    "full_roundtrip_new_archive": "NOT_RERUN; unchanged Python/other helper bytes and native-tested consumer source verified",
+    "human_gui": "NOT_RUN"
+  }
 }
