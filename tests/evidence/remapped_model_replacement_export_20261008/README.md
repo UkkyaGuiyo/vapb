@@ -115,3 +115,28 @@ The first static invocation selected the historical native-refusal mode, whose
 assertion now contradicts the already implemented source-model Skin route.
 The original output was retained. The existing `--replacement-only` mode then
 passed without changing a product implementation or test assertion.
+
+
+### Normal Editor Assistant checkpoint: rejected (2026-10-09)
+
+The normal Editor exposed a reload defect: an existing utility Window had no
+transient Entry objects, while Library already recorded the manifest as prompted.
+`import-assistant-reload-red.json` preserves the observation. The implementation
+now rehydrates only an already displayed prompted Window after stable reload;
+cancelled/applied states are not automatically reopened. This fix reference-
+compiles but is **not runtime accepted** by this checkpoint.
+
+The later normal-menu API observation opened a Japanese Window and returned
+`TASK_UNSUPPORTED` during preflight. `import-assistant-api-rejected.json` records
+this rejection and the exact unexecuted actions. Provider/initialization timing
+needs diagnosis. No Apply or guessed reference binding followed. Cancel, Retry,
+explicit Apply and restart suppression remain NOT_RUN. This is not a GUI PASS.
+The probe invokes the same UI handlers through Unity Editor API; no human click
+or visual appearance acceptance is claimed.
+
+Combined CLI importPackage/executeMethod observations started before package
+import and cannot prove the normal post-import flow. No new runner/schema was
+introduced; the existing probe was extended. All 57 protected original FBX/meta,
+Material/meta, Scene and ProjectSettings files remained byte-identical. Owned
+Editors and children exited, target lock disappeared, and the shared frame was
+returned. Local raw logs, binary assets and process records remain unpublished.

@@ -54,6 +54,22 @@ public sealed class VapbImportAssistant : EditorWindow
         EditorApplication.projectChanged += Schedule;
         Schedule();
     }
+    private void OnEnable()
+    {
+        // Unity restores the utility Window across assembly reload but not its
+        // transient Entry/provider objects. Rehydrate only a displayed prompt.
+        EditorApplication.update -= RestoreDisplayedPrompt;
+        EditorApplication.update += RestoreDisplayedPrompt;
+    }
+    private void OnDisable() { EditorApplication.update -= RestoreDisplayedPrompt; }
+    private void RestoreDisplayedPrompt()
+    {
+        if (entries.Count != 0) { EditorApplication.update -= RestoreDisplayedPrompt; return; }
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating ||
+            EditorApplication.timeSinceStartup - stableSince < 1) return;
+        EditorApplication.update -= RestoreDisplayedPrompt;
+        Open(false, null, true);
+    }
     private static void Schedule()
     {
         if (Application.isBatchMode || AssetDatabase.IsAssetImportWorkerProcess()) return;
@@ -114,16 +130,19 @@ public sealed class VapbImportAssistant : EditorWindow
         Directory.CreateDirectory(Path.GetDirectoryName(StatePath));
         File.WriteAllLines(StatePath, lines.ToArray());
     }
-    private static void Open(bool manual, string selected)
+    private static void Open(bool manual, string selected, bool restoreDisplayed = false)
     {
         if (Application.isBatchMode || AssetDatabase.IsAssetImportWorkerProcess() ||
             EditorApplication.isCompiling || EditorApplication.isUpdating) return;
         var found = new List<Entry>();
-        var remembered = new HashSet<string>();
+        var remembered = new Dictionary<string, string>();
         try
         {
             if (File.Exists(StatePath)) foreach (string line in File.ReadAllLines(StatePath))
-                remembered.Add(line.Split(' ')[0]);
+            {
+                string[] fields = line.Split(' ');
+                if (fields.Length == 2) remembered[fields[0]] = fields[1];
+            }
             var paths = new List<string>();
             if (selected != null) paths.Add(selected);
             else if (AssetDatabase.IsValidFolder("Assets/VAPBExport"))
@@ -138,7 +157,8 @@ public sealed class VapbImportAssistant : EditorWindow
                 Entry entry = Inspect(path);
                 // Other JSON files aren't VAPB export manifests.
                 if (selected == null && !entry.recognized) continue;
-                if (!manual && remembered.Contains(entry.identity ?? "")) continue;
+                bool known = remembered.TryGetValue(entry.identity ?? "", out string state);
+                if (restoreDisplayed ? !known || state != "prompted" : !manual && known) continue;
                 Remember(entry, "prompted");
                 found.Add(entry);
             }
@@ -193,21 +213,29 @@ public sealed class VapbImportAssistant : EditorWindow
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("再確認"))
             {
-                Entry refreshed = Inspect(entry.path);
-                entry.identity = refreshed.identity; entry.provider = refreshed.provider;
-                entry.inspection = refreshed.inspection; entry.error = refreshed.error;
+                RefreshEntry(entry);
             }
             using (new EditorGUI.DisabledScope(entry.error != null || view == null || EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode))
                 if (GUILayout.Button("適用")) ApplyEntry(entry);
             if (GUILayout.Button("キャンセル"))
             {
-                try { Remember(entry, "cancelled"); } catch (Exception error) { Debug.LogWarning(error.GetType().Name); }
-                Close(); GUIUtility.ExitGUI();
+                CancelEntry(entry); GUIUtility.ExitGUI();
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.EndVertical();
         }
         EditorGUILayout.EndScrollView();
+    }
+    private void RefreshEntry(Entry entry)
+    {
+        Entry refreshed = Inspect(entry.path);
+        entry.identity = refreshed.identity; entry.provider = refreshed.provider;
+        entry.inspection = refreshed.inspection; entry.error = refreshed.error;
+    }
+    private void CancelEntry(Entry entry)
+    {
+        try { Remember(entry, "cancelled"); } catch (Exception error) { Debug.LogWarning(error.GetType().Name); }
+        Close();
     }
     private void ApplyEntry(Entry entry)
     {

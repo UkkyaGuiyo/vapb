@@ -1,0 +1,37 @@
+{
+  "status": "REJECTED_NATIVE_ASSISTANT_API_MENU_PREFLIGHT",
+  "observation": {
+    "pass": false,
+    "automatic_window_observed": false,
+    "manual_entry_requested": true,
+    "japanese_title": true,
+    "preflight_ready": false,
+    "preflight_assets_unchanged": false,
+    "cancel_assets_unchanged": false,
+    "cancel_recorded": false,
+    "manual_menu_reopened": false,
+    "retry_ready": false,
+    "output_created": false,
+    "output_selected": false,
+    "applied_recorded": false,
+    "restart_no_prompt": false,
+    "restart_assets_unchanged": false,
+    "error": "ASSISTANT_PREFLIGHT_REJECTED:TASK_UNSUPPORTED",
+    "action_transport": "Unity Editor API invokes the same UI handlers; no human clicks",
+    "identity": ""
+  },
+  "protected_file_count": 57,
+  "all_protected_bytes_unchanged": true,
+  "source_assets_preserved": true,
+  "human_clicks": "NOT_RUN",
+  "automatic_detection": "NOT_ACCEPTED",
+  "cancel_asset_preservation": "NOT_RUN",
+  "explicit_apply": "NOT_RUN",
+  "retry": "NOT_RUN",
+  "restart_prompt_suppression": "NOT_RUN",
+  "notes": [
+    "Initial reload left a live utility Window with no Entry data while Library recorded prompted. Product rehydration fix is implemented and reference-compiles, but this runtime checkpoint does not establish it as passing.",
+    "Normal menu opened a Japanese Window. Its preflight returned TASK_UNSUPPORTED. Provider/initialization timing remains the next diagnosis; no guessed binding or Apply followed.",
+    "Combined CLI importPackage and executeMethod runs invoked the observer before package import. Those observer failures are not product acceptance."
+  ]
+}

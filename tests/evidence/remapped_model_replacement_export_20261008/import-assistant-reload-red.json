@@ -1,0 +1,20 @@
+{
+  "pass": false,
+  "automatic_window_observed": false,
+  "japanese_title": false,
+  "preflight_ready": false,
+  "preflight_assets_unchanged": false,
+  "cancel_assets_unchanged": false,
+  "cancel_recorded": false,
+  "manual_menu_reopened": false,
+  "retry_ready": false,
+  "output_created": false,
+  "output_selected": false,
+  "applied_recorded": false,
+  "restart_no_prompt": false,
+  "restart_assets_unchanged": false,
+  "error": "ASSISTANT_ENTRY_MISSING",
+  "action_transport": "Unity Editor API invokes the same UI handlers; no human clicks",
+  "identity": "",
+  "observed_window_existed_but_entries_empty": true
+}

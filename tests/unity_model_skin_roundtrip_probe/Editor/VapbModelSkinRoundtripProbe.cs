@@ -84,7 +84,149 @@ public static class VapbModelSkinRoundtripProbe
         AssetDatabase.importPackageCancelled += OnCancelled;
         EditorApplication.update += Timeout;
         if (SessionState.GetString(Phase, "") == "completed") EditorApplication.delayCall += ValidateImported;
+        if (SessionState.GetString(Phase, "") == "assistant") EditorApplication.delayCall += RunAssistant;
+
     }
+    [Serializable] private sealed class AssistantReport
+    {
+        public bool pass, automatic_window_observed, manual_entry_requested, japanese_title, preflight_ready,
+            preflight_assets_unchanged, cancel_assets_unchanged, cancel_recorded,
+            manual_menu_reopened, retry_ready, output_created, output_selected,
+            applied_recorded, restart_no_prompt, restart_assets_unchanged;
+        public string error, action_transport = "Unity Editor API invokes the same UI handlers; no human clicks", identity;
+    }
+    private static AssistantReport assistantReport;
+    private static double assistantStarted;
+    private static int assistantStage;
+    private static Dictionary<string, string> assistantAssets;
+    private const System.Reflection.BindingFlags AssistantFlags =
+        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+    [MenuItem("Tools/VAPB/Observe Assistant (API probe)")]
+    public static void RunAssistant()
+    {
+        if (Application.isBatchMode) throw new InvalidOperationException("ASSISTANT_REQUIRES_NORMAL_EDITOR");
+        SessionState.SetBool("VAPB_ASSISTANT_OBSERVER_STARTED", true);
+        EditorApplication.update -= ObserveAssistant;
+        Debug.Log("VAPB_ASSISTANT_OBSERVER_START");
+        assistantReport = new AssistantReport(); assistantStarted = EditorApplication.timeSinceStartup;
+        assistantStage = Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbAssistantRestart") >= 0 ? 10 : 0;
+        assistantReport.manual_entry_requested = Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbAssistantManual") >= 0;
+        if (assistantReport.manual_entry_requested) EditorApplication.ExecuteMenuItem("Tools/VAPB/編集内容を確認");
+        SessionState.SetString(Phase, "assistant");
+        assistantAssets = AssistantAssetSnapshot();
+        EditorApplication.update += ObserveAssistant;
+    }
+    private static EditorWindow AssistantWindow()
+    {
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            Type type = assembly.GetType("VapbImportAssistant");
+            if (type == null) continue;
+            UnityEngine.Object[] windows = Resources.FindObjectsOfTypeAll(type);
+            if (windows.Length > 1) throw new InvalidOperationException("ASSISTANT_WINDOW_DUPLICATED");
+            return windows.Length == 0 ? null : windows[0] as EditorWindow;
+        }
+        return null;
+    }
+    private static object AssistantEntry(EditorWindow window)
+    {
+        var entries = window.GetType().GetField("entries", AssistantFlags).GetValue(window) as System.Collections.IList;
+        foreach (object entry in entries)
+            if ((string)entry.GetType().GetField("path").GetValue(entry) == ManifestPath) return entry;
+        throw new InvalidOperationException("ASSISTANT_ENTRY_MISSING");
+    }
+    private static bool AssistantReady(object entry)
+    { return entry.GetType().GetField("error").GetValue(entry) == null && entry.GetType().GetField("inspection").GetValue(entry) != null; }
+    private static Dictionary<string, string> AssistantAssetSnapshot()
+    {
+        var files = new Dictionary<string, string>();
+        foreach (string path in Directory.GetFiles(Application.dataPath, "*", SearchOption.AllDirectories)) files[path] = Hash(path);
+        return files;
+    }
+    private static bool AssistantAssetsSame(Dictionary<string, string> before)
+    {
+        var after = AssistantAssetSnapshot(); if (after.Count != before.Count) return false;
+        foreach (var pair in before) if (!after.TryGetValue(pair.Key, out string hash) || hash != pair.Value) return false;
+        return true;
+    }
+    private static bool AssistantState(string identity, string state)
+    {
+        string file = ProjectFile("Library/VapbApplyAssistant.state");
+        return File.Exists(file) && Array.IndexOf(File.ReadAllLines(file), identity + " " + state) >= 0;
+    }
+    private static void ObserveAssistant()
+    {
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating ||
+            EditorApplication.timeSinceStartup - assistantStarted < 2) return;
+        try
+        {
+            if (EditorApplication.timeSinceStartup - assistantStarted > 120) throw new InvalidOperationException("ASSISTANT_TIMEOUT");
+            EditorWindow window = AssistantWindow();
+            if (assistantStage == 10)
+            {
+                if (EditorApplication.timeSinceStartup - assistantStarted < 8) return;
+                assistantReport.restart_no_prompt = window == null;
+                assistantReport.restart_assets_unchanged = AssistantAssetsSame(assistantAssets);
+                assistantReport.pass = assistantReport.restart_no_prompt && assistantReport.restart_assets_unchanged;
+                FinishAssistant(true); return;
+            }
+            if (window == null)
+            {
+                if (EditorApplication.timeSinceStartup - assistantStarted > 8) throw new InvalidOperationException("ASSISTANT_AUTOMATIC_WINDOW_MISSING");
+                return;
+            }
+            object entry = AssistantEntry(window);
+            if (assistantStage == 0)
+            {
+                assistantReport.automatic_window_observed = !assistantReport.manual_entry_requested;
+                assistantReport.japanese_title = window.titleContent.text == "VAPB：編集内容を確認";
+                assistantReport.preflight_ready = AssistantReady(entry);
+                if (!assistantReport.preflight_ready) throw new InvalidOperationException("ASSISTANT_PREFLIGHT_REJECTED:" + entry.GetType().GetField("error").GetValue(entry));
+                var snapshot = AssistantAssetSnapshot();
+                window.GetType().GetMethod("RefreshEntry", AssistantFlags).Invoke(window, new[] { entry });
+                assistantReport.preflight_assets_unchanged = AssistantAssetsSame(snapshot);
+                assistantReport.identity = (string)entry.GetType().GetField("identity").GetValue(entry);
+                window.GetType().GetMethod("CancelEntry", AssistantFlags).Invoke(window, new[] { entry });
+                assistantReport.cancel_assets_unchanged = AssistantAssetsSame(snapshot);
+                assistantReport.cancel_recorded = AssistantState(assistantReport.identity, "cancelled");
+                Selection.activeObject = null;
+                assistantReport.manual_menu_reopened = EditorApplication.ExecuteMenuItem("Tools/VAPB/編集内容を確認");
+                assistantStage = 1; return;
+            }
+            if (assistantStage == 1)
+            {
+                window.GetType().GetMethod("RefreshEntry", AssistantFlags).Invoke(window, new[] { entry });
+                assistantReport.retry_ready = AssistantReady(entry);
+                if (!assistantReport.retry_ready) throw new InvalidOperationException("ASSISTANT_RETRY_REJECTED");
+                object view = entry.GetType().GetField("inspection").GetValue(entry);
+                string output = (string)view.GetType().GetField("output").GetValue(view);
+                window.GetType().GetMethod("ApplyEntry", AssistantFlags).Invoke(window, new[] { entry });
+                assistantReport.output_created = AssetDatabase.LoadAssetAtPath<GameObject>(output) != null;
+                assistantReport.output_selected = AssetDatabase.GetAssetPath(Selection.activeObject) == output;
+                assistantReport.applied_recorded = AssistantState(assistantReport.identity, "applied");
+                window.Close();
+                assistantReport.pass = (assistantReport.automatic_window_observed || assistantReport.manual_entry_requested) && assistantReport.japanese_title &&
+                    assistantReport.preflight_ready && assistantReport.preflight_assets_unchanged &&
+                    assistantReport.cancel_assets_unchanged && assistantReport.cancel_recorded && assistantReport.manual_menu_reopened &&
+                    assistantReport.retry_ready && assistantReport.output_created && assistantReport.output_selected && assistantReport.applied_recorded;
+                FinishAssistant(false);
+            }
+        }
+        catch (Exception error)
+        {
+            assistantReport.error = error.InnerException != null ? error.InnerException.Message : error.Message;
+            assistantReport.pass = false; FinishAssistant(true);
+        }
+    }
+    private static void FinishAssistant(bool exit)
+    {
+        EditorApplication.update -= ObserveAssistant;
+        File.WriteAllText(ProjectFile(assistantStage == 10 ? "VapbAssistantRestartResult.json" : "VapbAssistantResult.json"), JsonUtility.ToJson(assistantReport, true));
+        SessionState.SetString(Phase, "");
+        if (exit || !assistantReport.pass) EditorApplication.Exit(assistantReport.pass ? 0 : 1);
+        else RunImported(); // Existing geometry/reference acceptance; no parallel runner.
+    }
+
     public static void Validate()
     {
         try
