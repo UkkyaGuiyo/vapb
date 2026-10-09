@@ -372,3 +372,10 @@ Concrete remaining clauses, rather than a blanket campaign gate:
 - Sections 14/15 and core roundtrip priority: rights-qualified real-input verification is not supplied by this first-party fixture. Verify provider terms and use an existing owned copy locally; do not publish assets, SDK or private logs. Existing private evidence remains distinct from this checkpoint.
 
 No whole-product completion or all-Material/Avatar acceptance is asserted. The immediate GUI run and one representative component-state comparison are the next bounded evidence steps; do not expand them into every fixture combination or new verification infrastructure.
+
+
+### GUI/component follow-up boundary
+
+No desktop interaction tool is exposed for Blender. Unity MCP APIs do not supply a Blender GUI or qualify manual click acceptance, so no Editor was launched for this GUI step. Fresh pool/mutex and project-lock observations were read; the mutex check was immediately released. Existing first-party input and saved Blender scene, existing pool Project and protected baseline Scene were identified. Exact private paths and one-run instructions are retained locally; no existing Scene was changed.
+
+One existing PhysBone/collider parser fixture was checked against the current installed ZIP code: owner-root null semantics, collider fileID reference, parameters and unknown raw payload passed. Its placeholder MonoScript GUIDs do not qualify a native Unity SDK component roundtrip. No purchased assets or SDK samples were substituted. Native section 7 remains pending a confirmed existing author-owned SDK-bound representative input; actual section 12/21 GUI and client acceptance remain NOT_RUN. No product defect was reproduced in this limited follow-up, so no speculative source fix, new runner or ZIP rebuild is justified. This does not prove that all remaining independent product implementation is finished.
