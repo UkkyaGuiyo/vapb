@@ -23,7 +23,26 @@ VAPBは、たとえば次のような用途を対象にしています。
 
 ## What VAPB does
 
-For the generated static final-state return route: import the exported `.unitypackage` into Unity, wait until the imported Editor scripts finish compiling, select `Assets/VAPBExport/manifest.json`, then run **Tools > VAPB > Build Final State Prefab**. This explicit action applies the generated model unit policy and Material bindings; automatic application during package import is not required. Use **Apply Selected Export Manifest** only for the separate source-bound export route described below. The bounded three-Material T4 result and its remaining limits are recorded in [the return evidence](tests/evidence/remapped_replacement_return_preparation_20261008/README.md).
+### 対応範囲のPackage → Blender編集 → Unity復帰
+
+通常利用では、入力PackageをUnityで展開したり、FBX／GUIDを調べたりする必要はありません。
+
+1. Blenderの **File → Import → Unity Package / VRChat Avatar (.unitypackage)** で作者所有Packageを読み込みます。
+2. 編集するMeshを選び、Blenderの編集モードで頂点を編集します。通常の `.blend` 保存・再開を使えます。保持された元Package保管先も残してください。
+3. 元モデル由来Skinは **File → Export → VAPB UnityPackage（Mesh / Skin）** を選び、新しい出力名にします。PrefabなしSkinは **アクティブMeshのみ** で1 Meshずつ。同じPrefab個体の対応済みSkinは **選択Mesh** でまとめられます。
+4. Unityの作業用Projectへ出力PackageをImportし、Editor scriptsのコンパイル完了を待ちます。自動表示される **VAPB：編集内容を確認** で結果を確認し、**適用** を押します。確認だけで閉じたい場合は **キャンセル** です。自動適用はしません。
+5. 作成・選択された別Prefab Variantで、形状、面の素材割当、TextureとBone／ポーズを確認します。元モデル／Prefabは残ります。
+
+確認画面を開き直す場合は **Tools → VAPB → 編集内容を確認** を使用します。
+表示された未対応理由をGUID／fileIDの手編集や素材の推測割当で回避しないでください。
+
+Prefabなしの限定成功例は、標準ModelImporterに明示Material remapがある1 Skin、3Material、非null PNGの保持です。形状1.25倍・保存再開・通常Unity復帰を[実観測](tests/evidence/remapped_model_replacement_export_20261008/nonnull-texture-normal-unity-return.json)で確認しています。任意のSkin、骨階層変更、新規骨、Avatar全体やVRChat uploadの対応を意味しません。
+
+元Meshを削除して新しい静的Meshを作る場合は、Unity由来Materialを割り当てて **VAPB UnityPackage（Blender完成形）** を使います。この別routeは新規Prefabを作り、Skin／元Prefabの階層・VRC Component復元には対応しません。Unity復帰は同じ確認画面の **適用** です。[限定T4結果](tests/evidence/remapped_replacement_return_preparation_20261008/README.md)を参照してください。
+
+旧複数override入力で元のUnity submeshとBlender面の素材対応を証明できない場合、その入力は未対応／未解決です。名前・slot順・面数から補完しません。対応済みの別入力の往復は利用できます。
+
+本人の最小確認は、作者所有素材のコピーで **読み込み → 小さな頂点編集 → 出力 → 別Variant確認** を1回行うことです。元Assetが残ること、意図した形状と面の素材・Texture、対象のBone／ポーズを確認してください。Package内にあるShader等の必要frameworkは、Unity作業Project側で用意します。SDK・購入素材・元Packageをこちらへ公開する必要はありません。
 
 For the normal `.unitypackage`-to-Blender editing workflow, users do not need to import the input package into a Unity project or manually export an FBX first. Any temporary extraction and FBX interchange is handled internally by the add-on. A Unity Editor/project is a development verification oracle, not a prerequisite for starting the Blender import; importing the finished output package into Unity is a separate return step.
 
@@ -40,8 +59,8 @@ Blender 5.2.1 LTSでは、Blender OperatorをMRO先頭に置く公式形式と�
 新Product Modelの初期経路として、Blenderで元Meshを削除して作成した単一static
 UV Meshを、新しいFBX/GUIDと選択したUnity由来Material/TextureからPackage化できます。
 **File → Export → VAPB UnityPackage（Blender完成形）** を使い、fresh Unity
-2022.3.22f1へPackageをImportした後、`manifest.json`を選択して
-**Tools → VAPB → Build Final State Prefab** を実行します。公開syntheticの
+2022.3.22f1へPackageをImportし、コンパイル完了後に自動表示される
+**VAPB：編集内容を確認** から **適用** を押します。公開syntheticの
 UV CubeでMaterial slotとTextureの自動復元を検証済みです。元Meshの形状を
 変えずに出力した公開synthetic Case Aもfresh Unityで確認しました。現在この新経路は
 単一static UV Mesh、Unity built-in Standard Materialに限定され、Skinや
@@ -82,13 +101,13 @@ This README and the Git history intentionally disclose the use of AI in developm
 
 ### 既存骨Skinの限定往復
 
-直接PrefabのSkinnedMeshRendererを **VAPB → Renderer対応** で確認し、Skinの骨対応を読み込み、各Unity骨の対応先をArmatureのBone選択欄で明示確認します。対応を保存した後、Meshの頂点・面・ウェイトを編集し、上記UnityPackage出力とUnity側Manifest適用を使用します。対応は名前と独立した保存IDで保持され、改名と.blend保存・再読込を検証済みです。
+直接PrefabのSkinnedMeshRendererを **VAPB → Renderer対応** で確認し、Skinの骨対応を読み込み、各Unity骨の対応先をArmatureのBone選択欄で明示確認します。対応を保存した後、Meshの頂点・面・ウェイトを編集し、上記UnityPackage出力とUnity確認画面からの適用を使用します。対応は名前と独立した保存IDで保持され、改名と.blend保存・再読込を検証済みです。
 
 この経路は元Unity骨階層・rest・名前と元FBXを保持します。Blender側の骨改名は対応を壊しませんが、Unity骨の改名としては出力しません。新規骨、Nested、未対応Componentや外部依存は未対応として停止します。2骨のsyntheticで頂点構成・ウェイト変更とUnityでの変形を検証済みですが、実Avatarの全面対応はまだ主張しません。
 
 ### モデル由来Skinの複数選択出力
 
-同じPackage・同じPrefab個体に属するモデル由来Skinを複数選択し、**File → Export → VAPB UnityPackage（Mesh / Skin）** の「出力対象」を **選択Mesh** にします。出力Mesh数を確認し、新規Unity ProjectへImportした後、既存のManifest復元メニューを実行します。全対象の出所・骨対応を確認してから、一つのPrefab Variantへまとめて反映します。二件目が不正でも、一件目だけ反映されたVariantは作りません。
+同じPackage・同じPrefab個体に属するモデル由来Skinを複数選択し、**File → Export → VAPB UnityPackage（Mesh / Skin）** の「出力対象」を **選択Mesh** にします。出力Mesh数を確認し、Unityの作業用ProjectへImportし、コンパイル完了後にVAPB確認画面から適用します。全対象の出所・骨対応を確認してから、一つのPrefab Variantへまとめて反映します。二件目が不正でも、一件目だけ反映されたVariantは作りません。
 
 元Prefab・FBX・骨階層・素材と対象外の構造を保持します。複数Prefab個体の混在、静的Meshとの混在、手動Bone対応を確定した従来経路の複数Meshは現在停止します。一つだけ出力する場合は **アクティブMeshのみ** を選べます。
 
@@ -104,7 +123,7 @@ This README and the Git history intentionally disclose the use of AI in developm
 1. PackageをPrefab再構築モードで取り込み、**VAPB → Renderer対応** でRendererとnative Meshの対応を確定します。
 2. 対象Meshの頂点・面や素材割当を編集し、そのMeshをアクティブにします。
 3. **File → Export → VAPB UnityPackage（Mesh / Skin）** を選び、新しい出力名を指定します。
-4. 新規Unity Projectへ生成PackageをImportします。コンパイル完了後、`Assets/VAPBExport/manifest.json` を選択し、**Tools → VAPB → Apply Selected Export Manifest** を実行します。
+4. Unityの作業用Projectへ生成PackageをImportします。コンパイル完了後、VAPB確認画面で内容を確認し、**適用** を押します。
 
 この経路は、元FBXにMeshが一つあり、直接Prefabの一つのMeshRendererだけが参照する場合の形状・素材割当が対象です。元PrefabのTransformとUnity Material/Shader設定は保持します。Shape Key、Modifier、Skin、Nested Prefab、追加のモデル参照、欠落依存、未対応serialized stateがある場合は停止します。GUIで未対応と表示される範囲を、VRCアバター全体の往復対応と解釈しないでください。
 
@@ -165,7 +184,9 @@ ZIPは、アドオンフォルダ `unitypackage_blender_importer/` がZIP直下�
 
 未指定グループ、ロック済みウェイト、距離超過頂点は変更しません。BのMeshやObjectが他個体・他sceneと共有されている場合は処理を止め、明示的な独立化を求めます。ウェイト合計の自動正規化・影響数の切捨て、Bone統合、Armature付替えは行いません。転送後は実際のポーズで変形を確認してください。左右の注意領域を調べる場合は「宣言した左右境界で越境を保護」を有効にし、Aの参照ArmatureのローカルX=0を境界として指定します。反対側への近傍転送は保護され、距離超過と併せて選択表示できます。これはユーザーが宣言した平面の検査であり、解剖学的な左右の自動認識ではありません。
 
-### BlenderからUnityへ戻す
+### FBX + Material Mapの補助出力
+
+この出力は補助的なFBX連携です。上記のUnityPackage出力／確認画面／別Variant復帰の代わりにはなりません。
 
 1. Avatar、衣装、Armatureを必要な範囲で選択する。
 2. **File → Export → FBX + Unity Material Map (.fbx)** を選ぶ。

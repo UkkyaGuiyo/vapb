@@ -613,7 +613,13 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
             (mesh.type == 'MESH' and mesh.get('_vapb_fbx_realization_id') and
              not mesh.get('_vapb_skin_binding') and any(m.type == 'ARMATURE' for m in mesh.modifiers)))
         if model_skin:
-            self.layout.label(text='モデル由来Skinは同じPrefab個体の選択Meshをまとめて復元')
+            source_model = not mesh.get('_vapb_root_context_id') and not mesh.get('unity_composition_member_id')
+            if source_model:
+                self.layout.label(text='Prefabなしの元モデルSkinは1 Meshずつ出力')
+                self.layout.label(text='他のMeshを選択から外してください')
+                self.layout.label(text='「アクティブMeshのみ」でも出力できます')
+            else:
+                self.layout.label(text='同じPrefab個体のモデル由来Skinを選択してまとめて復元')
             self.layout.label(text='Unityで出所を確認し、新しいPrefab Variantへ復元します')
             self.layout.label(text='原本・骨階層・素材を保持。形状とウェイトの編集が対象です')
             self.layout.label(text='骨階層変更・複数Prefab個体の混在はこの経路では未対応')
