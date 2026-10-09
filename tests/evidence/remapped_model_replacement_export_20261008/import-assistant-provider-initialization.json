@@ -1,0 +1,49 @@
+{
+  "status": "SOURCE_FIX_COMPILED_RUNTIME_PENDING",
+  "observed_red": "import-assistant-api-rejected.json",
+  "diagnosis": {
+    "source_confirmed": "A preflight with an unregistered provider caches TASK_UNSUPPORTED. Register only scheduled detection, and remembered prompted identity suppressed reopening; the displayed rejection was never invalidated.",
+    "manifest_kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "manifest_task_count": 1,
+    "runtime_registration_order": "NOT_CAPTURED: original TASK_UNSUPPORTED merged missing kind, missing provider and mixed providers; registration timing is the source-supported hypothesis, not a runtime-proven ordering trace."
+  },
+  "fix": [
+    "Register existing providers from InitializeOnLoad class constructors; only delegate registration and scheduling run there, no Asset reads.",
+    "At stable editor update, re-inspect displayed TASK_UNSUPPORTED entries. Unknown/missing/mixed tasks still reject; no automatic Apply or cancelled/applied prompt reopening.",
+    "Keep distinct rejection suffixes for missing kind, unregistered provider and mixed providers.",
+    "Existing probe requests the manual menu once after stable editor update, instead of immediate executeMethod."
+  ],
+  "reference_compile": {
+    "unity": "2022.3.22f1",
+    "exit_code": 0,
+    "editor_launched": false
+  },
+  "prepared_package": {
+    "label": "import-assistant-native-20261009-06/NativeSkinOutput.unitypackage",
+    "sha256": "c9ebc297269d3a3d9a66656f940a2cfcdffa91f93fb3f58586b919c5c11c9930",
+    "helpers": {
+      "VapbModelSkinFinalizer.cs": {
+        "matches_current_source": true,
+        "sha256": "408df6d6ba189a614c734833765340adfdc494546fdc70a2ea248d6a1a8d285e"
+      },
+      "VapbImportAssistant.cs": {
+        "matches_current_source": true,
+        "sha256": "c996b4a84cb29a092923d250b393a2040e980bc068ff07025482fe007b7618a4"
+      }
+    }
+  },
+  "export": {
+    "status": "PASS_BOUNDED_NATIVE_SKIN_EXPORT_ONLY",
+    "input_sha256": "3f0612d120949d692883cd318b7d5f72a358b9105e77e54b5368dd9e3ffde65b",
+    "edit_scale": 1.25,
+    "source_assets_and_meta_byte_preserved": true,
+    "editing_mesh_and_bones_unchanged_by_export": true
+  },
+  "runtime": "NOT_RUN: shared Unity frame not owned; existing return project remains untouched.",
+  "next": [
+    "Use prepared package, not older native-05; verify source hash before import.",
+    "Import to existing dedicated return project in owned frame. Import completion/domain reload must precede separate existing RunAssistant observation.",
+    "Verify automatic detection/reload, read-only preflight, Cancel/Retry/explicit Apply/output selection/restart suppression; preserve strict geometry/reference acceptance and protected originals."
+  ],
+  "scope": "Bounded source-model Skin Assistant initialization only; no general Material, override or winding PASS."
+}

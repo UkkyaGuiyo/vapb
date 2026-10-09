@@ -67,6 +67,7 @@ public sealed class VapbModelSkinPostprocessor : AssetPostprocessor
     }
 }
 
+[InitializeOnLoad]
 public static class VapbModelSkinFinalizer
 {
     private const string Kind = "RESTORE_MODEL_SKIN_VARIANT_V1";
@@ -193,7 +194,8 @@ public static class VapbModelSkinFinalizer
         public bool requiresReplacementEligibility;
     }
 
-    [InitializeOnLoadMethod]
+    // Register delegates during class initialization; defer all Asset reads.
+    static VapbModelSkinFinalizer() { RegisterAssistant(); }
     private static void RegisterAssistant()
     {
         VapbImportAssistant.Register(Kind, InspectForAssistant, Apply);

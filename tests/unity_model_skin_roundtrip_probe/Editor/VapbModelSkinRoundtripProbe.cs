@@ -96,6 +96,7 @@ public static class VapbModelSkinRoundtripProbe
         public string error, action_transport = "Unity Editor API invokes the same UI handlers; no human clicks", identity;
     }
     private static AssistantReport assistantReport;
+    private static bool assistantManualOpened;
     private static double assistantStarted;
     private static int assistantStage;
     private static Dictionary<string, string> assistantAssets;
@@ -108,10 +109,11 @@ public static class VapbModelSkinRoundtripProbe
         SessionState.SetBool("VAPB_ASSISTANT_OBSERVER_STARTED", true);
         EditorApplication.update -= ObserveAssistant;
         Debug.Log("VAPB_ASSISTANT_OBSERVER_START");
+        assistantManualOpened = false;
         assistantReport = new AssistantReport(); assistantStarted = EditorApplication.timeSinceStartup;
         assistantStage = Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbAssistantRestart") >= 0 ? 10 : 0;
         assistantReport.manual_entry_requested = Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbAssistantManual") >= 0;
-        if (assistantReport.manual_entry_requested) EditorApplication.ExecuteMenuItem("Tools/VAPB/編集内容を確認");
+
         SessionState.SetString(Phase, "assistant");
         assistantAssets = AssistantAssetSnapshot();
         EditorApplication.update += ObserveAssistant;
@@ -161,6 +163,14 @@ public static class VapbModelSkinRoundtripProbe
         try
         {
             if (EditorApplication.timeSinceStartup - assistantStarted > 120) throw new InvalidOperationException("ASSISTANT_TIMEOUT");
+            // CLI executeMethod may precede editor initialization. Request the
+            // existing menu once, after the same stable update used for observation.
+            if (assistantStage == 0 && assistantReport.manual_entry_requested && !assistantManualOpened)
+            {
+                assistantManualOpened = true;
+                EditorApplication.ExecuteMenuItem("Tools/VAPB/編集内容を確認");
+                return;
+            }
             EditorWindow window = AssistantWindow();
             if (assistantStage == 10)
             {

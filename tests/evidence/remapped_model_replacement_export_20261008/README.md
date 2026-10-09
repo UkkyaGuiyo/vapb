@@ -140,3 +140,20 @@ introduced; the existing probe was extended. All 57 protected original FBX/meta,
 Material/meta, Scene and ProjectSettings files remained byte-identical. Owned
 Editors and children exited, target lock disappeared, and the shared frame was
 returned. Local raw logs, binary assets and process records remain unpublished.
+
+### Provider initialization correction: runtime pending (2026-10-09)
+
+`import-assistant-provider-initialization.json` records the bounded source diagnosis
+and compiled fix. A displayed preflight rejection could remain cached after late
+provider registration. Existing providers now register in Editor class static
+constructors and stable updates re-inspect displayed unsupported entries. Unknown
+tasks still reject; no Apply is automatic. Distinct rejection suffixes preserve
+the next runtime diagnosis. The exact registration order of the previous rejected
+run was not captured and is not claimed as proven.
+
+The existing probe now defers its manual menu request until a stable update.
+Unity 2022.3 reference compilation passed. A fresh bounded 1.25 Skin export also
+passed and its packaged Assistant/finalizer bytes match current source. The
+prepared package hash is in the JSON. This checkpoint did not start Unity or
+change the existing return project. UI reload, Cancel/Retry/Apply and restart
+acceptance remain pending the next owned frame.

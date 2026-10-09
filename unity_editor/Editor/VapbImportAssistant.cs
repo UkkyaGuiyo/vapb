@@ -85,6 +85,15 @@ public sealed class VapbImportAssistant : EditorWindow
         if (EditorApplication.timeSinceStartup - stableSince < 1) return;
         pending = false;
         EditorApplication.update -= WaitForStableEditor;
+        // A manual prompt can precede provider initialization. Registration must
+        // invalidate that cached rejection without reopening cancelled prompts.
+        foreach (var window in Resources.FindObjectsOfTypeAll<VapbImportAssistant>())
+        {
+            foreach (Entry entry in window.entries)
+                if (entry.error != null && entry.error.StartsWith("TASK_UNSUPPORTED", StringComparison.Ordinal))
+                    window.RefreshEntry(entry);
+            window.Repaint();
+        }
         Open(false, null);
     }
     [MenuItem("Tools/VAPB/編集内容を確認")]
@@ -110,9 +119,12 @@ public sealed class VapbImportAssistant : EditorWindow
             entry.recognized = true;
             foreach (Task task in manifest.reference_rebind_tasks)
             {
-                if (task == null || task.kind == null || !providers.TryGetValue(task.kind, out Provider provider) ||
-                    (entry.provider != null && entry.provider.inspect != provider.inspect))
-                    throw new InvalidOperationException("TASK_UNSUPPORTED");
+                if (task == null || String.IsNullOrEmpty(task.kind))
+                    throw new InvalidOperationException("TASK_UNSUPPORTED:KIND_MISSING");
+                if (!providers.TryGetValue(task.kind, out Provider provider))
+                    throw new InvalidOperationException("TASK_UNSUPPORTED:PROVIDER_NOT_REGISTERED:" + task.kind);
+                if (entry.provider != null && entry.provider.inspect != provider.inspect)
+                    throw new InvalidOperationException("TASK_UNSUPPORTED:MIXED_PROVIDERS");
                 entry.provider = provider;
             }
             entry.inspection = entry.provider.inspect(path);

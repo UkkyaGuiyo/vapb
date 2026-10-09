@@ -32,6 +32,7 @@ public sealed class VapbExportObjectPostprocessor : AssetPostprocessor
     }
 }
 
+[InitializeOnLoad]
 public static class VapbFinalStateFinalizer
 {
     public static string LastResult { get; private set; } = "NOT_RUN";
@@ -108,7 +109,8 @@ public static class VapbFinalStateFinalizer
             AssetDatabase.GetAssetPath(Selection.activeObject) == ManifestPath;
     }
 
-    [InitializeOnLoadMethod]
+    // Register delegates during class initialization; defer all Asset reads.
+    static VapbFinalStateFinalizer() { RegisterAssistant(); }
     private static void RegisterAssistant()
     {
         VapbImportAssistant.Register(TaskKind, InspectForAssistant, Apply, () => LastResult == "PARTIAL");
