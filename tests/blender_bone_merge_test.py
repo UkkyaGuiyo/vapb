@@ -275,8 +275,8 @@ def world_copy_location_reference_test():
     print('BONE_MERGE_COPY_LOCATION_PASS equivalent_and_b_only=2 unsupported_refused=4 future_pose_preserved=2 rollback=1')
 
 
-def bone_location_action_test():
-    """Copy one exact Bone location Action; preserve B and rollback new resources."""
+def bone_transform_action_test():
+    """Copy one exact Bone Transform Action; preserve B and rollback new resources."""
     from types import SimpleNamespace
     def fixture():
         reset()
@@ -315,11 +315,38 @@ def bone_location_action_test():
     for frame in (1,5,10):
         bpy.context.scene.frame_set(frame)
         assert all((x-y).length < 1e-5 for x,y in zip(expected[frame],evaluated_world_vertices(obj)))
-    for unsupported in ('OBJECT_PATH','DESTINATION_ACTION','DRIVER'):
+    for mode,channel,end in (
+            ('XYZ','rotation_euler',(0,0,.5)),
+            ('QUATERNION','rotation_quaternion',tuple(Quaternion((0,0,1),.5))),
+            ('AXIS_ANGLE','rotation_axis_angle',(.5,0,0,1)),
+            ('QUATERNION','scale',(1.25,1.25,1.25))):
+        a,b,obj,modifier,rows = fixture()
+        source,target = b.pose.bones['Source"Root'],a.pose.bones['Target"Root']
+        source.rotation_mode = target.rotation_mode = mode
+        source.keyframe_insert(data_path=channel,frame=1)
+        setattr(source,channel,end)
+        source.keyframe_insert(data_path=channel,frame=10)
+        source_action,source_signature = b.animation_data.action,signature(b)
+        samples = {}
+        for frame in (1,5,10):
+            bpy.context.scene.frame_set(frame)
+            samples[frame] = evaluated_world_vertices(obj)
+        bpy.context.scene.frame_set(1)
+        assert bone_merge_module.apply_merge(prepare_merge(a,b,rows,bpy.context.scene)) == (0,1)
+        assert b.animation_data.action is source_action and signature(b) == source_signature
+        wanted = target.path_from_id()+'.'+channel
+        assert any(c.data_path == wanted for c in curves(a))
+        for frame in (1,5,10):
+            bpy.context.scene.frame_set(frame)
+            assert all((x-y).length < 1e-5 for x,y in zip(samples[frame],evaluated_world_vertices(obj)))
+    for unsupported in ('OBJECT_PATH','DESTINATION_ACTION','DRIVER','INACTIVE_ROTATION','BAD_INDEX','MODE_MISMATCH'):
         a,b,obj,modifier,rows = fixture()
         if unsupported == 'OBJECT_PATH': b.keyframe_insert(data_path='location',frame=1)
         elif unsupported == 'DESTINATION_ACTION': a.keyframe_insert(data_path='location',frame=1)
-        else: b.driver_add('location',0)
+        elif unsupported == 'DRIVER': b.driver_add('location',0)
+        elif unsupported == 'INACTIVE_ROTATION': b.pose.bones['Source"Root'].keyframe_insert(data_path='rotation_euler',frame=1)
+        elif unsupported == 'BAD_INDEX': curves(b)[0].array_index = 3
+        else: a.pose.bones['Target"Root'].rotation_mode = 'XYZ'
         try: prepare_merge(a,b,rows,bpy.context.scene)
         except ValueError: pass
         else: raise AssertionError('Unsupported Action accepted: '+unsupported)
@@ -373,7 +400,7 @@ def bone_location_action_test():
     assert b.animation_data.action.name == source_name and signature(b) == source_signature
     bpy.context.scene.frame_set(5)
     assert all((x-y).length < 1e-5 for x,y in zip(expected[5],evaluated_world_vertices(obj)))
-    print('BONE_MERGE_LOCATION_ACTION_PASS escaped_rna_path=1 frames_preserved=3 source_action_unchanged=1 unsupported_refused=3 rollback_no_action_leak=1 operator_undo_redo=1')
+    print('BONE_MERGE_LOCATION_ACTION_PASS escaped_rna_path=1 frames_preserved=3 source_action_unchanged=1 unsupported_refused=6 rollback_no_action_leak=1 operator_undo_redo=1 active_rotation_and_scale_channels=4')
 
 
 def main():
@@ -384,7 +411,7 @@ def main():
         bpy.utils.register_class(cls)
     register_bone_merge_properties()
     try:
-        bone_location_action_test()
+        bone_transform_action_test()
         reset()
         a = rig('A collision', (0, 0, 0), (0, 0, 0), extra=True)
         b = rig('B collision', (0, 0, 0), (0, 0, 0), extra=True)

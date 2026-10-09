@@ -92,7 +92,7 @@ def _attached_objects(a, b):
                                     for mod in obj.modifiers))]
 
 
-def _bone_location_action(a, b, remap):
+def _bone_transform_action(a, b, remap):
     data = b.animation_data
     if data is None:
         return None
@@ -102,8 +102,8 @@ def _bone_location_action(a, b, remap):
             data.action_blend_type != 'REPLACE' or data.action_influence != 1 or
             not action.is_action_layered or len(action.slots) != 1 or len(action.layers) != 1 or
             len(action.layers[0].strips) != 1 or data.action_slot is None):
-        raise ValueError("Bone Action は A が未アニメーションで、単一 location Clip/slot のみ対応しています")
-    paths = {}
+        raise ValueError("Bone Action は A が未アニメーションで、単一 Bone Transform Clip/slot のみ対応しています")
+    paths, sizes = {}, {}
     for source in b.data.bones:
         target = a.data.bones.get(remap[source.name])
         if target is None or any(
@@ -114,15 +114,19 @@ def _bone_location_action(a, b, remap):
         source_pose, target_pose = b.pose.bones[source.name], a.pose.bones[target.name]
         if source_pose.rotation_mode != target_pose.rotation_mode:
             raise ValueError("Bone Action の回転モードが一致しません")
-        paths[source_pose.path_from_id()+'.location'] = target_pose.path_from_id()+'.location'
+        rotation = ('rotation_quaternion' if source_pose.rotation_mode == 'QUATERNION' else
+                    'rotation_axis_angle' if source_pose.rotation_mode == 'AXIS_ANGLE' else 'rotation_euler')
+        for channel, size in (('location',3), ('scale',3), (rotation,3 if rotation == 'rotation_euler' else 4)):
+            old, new = source_pose.path_from_id()+'.'+channel, target_pose.path_from_id()+'.'+channel
+            paths[old], sizes[old] = new, size
     strip = action.layers[0].strips[0]
     bag = strip.channelbag(data.action_slot) if strip.type == 'KEYFRAME' else None
     if bag is None or not bag.fcurves:
         raise ValueError("Bone Action の channel がありません")
     destinations = set()
     for curve in bag.fcurves:
-        if curve.data_path not in paths or curve.array_index not in (0,1,2):
-            raise ValueError("Bone Action の location 以外の binding は未対応です")
+        if curve.data_path not in paths or not 0 <= curve.array_index < sizes[curve.data_path]:
+            raise ValueError("Bone Action の有効な Transform channel 以外の binding は未対応です")
         address = (paths[curve.data_path], curve.array_index)
         if address in destinations:
             raise ValueError("Bone Action の付け替え先 binding が重複しています")
@@ -165,7 +169,7 @@ def prepare_merge(a, b, choices, scene):
             uuid.UUID(str(value))
     except (TypeError, ValueError):
         raise ValueError("Armature/Bone のローカル ID が無効です") from None
-    action_plan = _bone_location_action(a, b, remap)
+    action_plan = _bone_transform_action(a, b, remap)
     for owner in (a, b, a.data, b.data, *a.pose.bones, *b.pose.bones):
         if _unsupported_reference(owner, allowed_animation=owner is b and action_plan is not None):
             raise ValueError("Animation / Constraint / VRC 参照があり、付替えを証明できません")
