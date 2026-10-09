@@ -10,6 +10,8 @@ Remaining campaign: the approved plan retains constrained Material naming (stati
 
 This is a continuation handoff, not a product-completion statement. **STOPPED / INCOMPLETE** applies only to the earlier private-corpus compatibility campaign; it does not suspend public synthetic development. For the normal `.unitypackage`-to-Blender workflow, Unity project import and manual FBX export are not user prerequisites. The add-on handles temporary extraction/FBX interchange internally; Unity Editor/projects serve as development verification oracles, while importing the finished output package into Unity is a separate return step.
 
+Latest bounded section 7 evidence: [native ContactSender](tests/evidence/remapped_model_replacement_export_20261008/native-contact-sender-roundtrip.json) from the unchanged current ZIP preserves an explicit bone Transform reference, radius, collision tag and source component correspondence after normal Unity import/Apply/repeat. This adds to PhysBone/Collider preservation; Receiver/runtime Contact execution, AvatarDescriptor and animation remain unverified. GUI acceptance still needs desktop interaction. No new runtime implementation or ZIP rebuild was needed.
+
 ## Planning task record — 2026-10-06
 
 The linked design and implementation plan were saved as documentation only; no product code, test, Blender, or Unity run occurred in that task. This record does not grant, revoke, or narrow existing user authorization and creates no new per-step approval condition.

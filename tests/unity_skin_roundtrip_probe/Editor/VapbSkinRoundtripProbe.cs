@@ -12,7 +12,7 @@ using UnityEngine;
 public static class VapbSkinRoundtripProbe
 {
     public static Action BoundedCapture;
-    private static string Folder => SessionState.GetBool("VAPB_PHYSBONE_CASE", false) ? "Assets/VapbOwnedPhysBonePreservedSlots" : "Assets/VapbSkinRoundtrip";
+    private static string Folder => SessionState.GetBool("VAPB_PHYSBONE_CASE", false) ? (SessionState.GetBool("VAPB_CONTACT_CASE", false) ? "Assets/VapbOwnedContactSenderReady" : "Assets/VapbOwnedPhysBonePreservedSlots") : "Assets/VapbSkinRoundtrip";
     private static string Input => Folder + "/Input.fbx";
     private static string Prefab => Folder + "/Avatar.prefab";
     private static string MaterialPath => Folder + "/Original.mat";
@@ -84,6 +84,7 @@ public static class VapbSkinRoundtripProbe
         public bool sourceModelUnchanged;
         public bool unrelatedStatePreserved;
         public bool nativePhysBoneAndColliderPreserved;
+        public bool nativeContactSenderPreserved;
         public bool sdkScriptsResolved;
         public bool expectedDeformation;
         public float deformationMaxError;
@@ -147,6 +148,38 @@ public static class VapbSkinRoundtripProbe
         PrepareCore(false, true);
     }
 
+    public static void PrepareContactSender() { SessionState.SetBool("VAPB_CONTACT_CASE", true); PreparePhysBone(); }
+    public static void ValidateContactSender() { SessionState.SetBool("VAPB_CONTACT_CASE", true); ValidatePhysBone(); }
+    private static void AddContactSender(GameObject root, SkinnedMeshRenderer skin)
+    {
+        var owner = new GameObject("OwnedContactSender"); owner.transform.SetParent(root.transform, false);
+        var component = (MonoBehaviour)owner.AddComponent(SdkComponent("VRCContactSender"));
+        var state = new SerializedObject(component);
+        Property(state, "rootTransform").objectReferenceValue = skin.bones[1];
+        Property(state, "radius").floatValue = 0.075f;
+        var tags = Property(state, "collisionTags"); tags.arraySize = 1;
+        tags.GetArrayElementAtIndex(0).stringValue = "OwnedContact";
+        state.ApplyModifiedPropertiesWithoutUndo();
+    }
+    private static string ContactState(GameObject root)
+    {
+        var component = (MonoBehaviour)root.GetComponentsInChildren(SdkComponent("VRCContactSender"), true).Single();
+        var script = MonoScript.FromMonoBehaviour(component);
+        if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(script, out string guid, out long id) ||
+            string.IsNullOrEmpty(guid) || id == 0 || !AssetDatabase.GetAssetPath(script).StartsWith("Packages/com.vrchat."))
+            throw new InvalidOperationException("CONTACT_SCRIPT_ID_UNRESOLVED");
+        var state = new SerializedObject(component);
+        var target = Property(state, "rootTransform").objectReferenceValue;
+        if (!(target is Transform)) throw new InvalidOperationException("CONTACT_ROOT_REFERENCE_MISSING");
+        target = PrefabUtility.GetCorrespondingObjectFromSource(target) ?? target;
+        if (!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(target, out string targetGuid, out long targetId) ||
+            string.IsNullOrEmpty(targetGuid) || targetId == 0) throw new InvalidOperationException("CONTACT_ROOT_ID_UNRESOLVED");
+        var tags = Property(state, "collisionTags");
+        if (tags.arraySize != 1 || tags.GetArrayElementAtIndex(0).stringValue != "OwnedContact")
+            throw new InvalidOperationException("CONTACT_TAG_CHANGED");
+        return "ContactSender:" + guid + ":" + id + "|root=" + targetGuid + ":" + targetId +
+            "|radius=" + Property(state, "radius").floatValue.ToString("R", CultureInfo.InvariantCulture) + "|tag=OwnedContact\n";
+    }
     public static void PreparePhysBonePreservedSlots() { PreparePhysBone(); }
     public static void ValidatePhysBonePreservedSlots() { ValidatePhysBone(); }
     public static void PreparePhysBone()
@@ -187,7 +220,8 @@ public static class VapbSkinRoundtripProbe
         Property(bo, "stiffness").floatValue = 0.4f; Property(bo, "gravity").floatValue = 0.5f;
         var refs = Property(bo, "colliders"); refs.arraySize = 1;
         refs.GetArrayElementAtIndex(0).objectReferenceValue = collider; bo.ApplyModifiedPropertiesWithoutUndo();
-        ComponentState(root); // Resolve real MonoScript GUID/fileID now, never invent one.
+        if (!SessionState.GetBool("VAPB_CONTACT_CASE", false)) ComponentState(root);
+        // Contact bone identity is observed on the saved Prefab, after persistent IDs exist.
     }
     private static string ComponentState(GameObject root)
     {
@@ -217,11 +251,12 @@ public static class VapbSkinRoundtripProbe
             }
             result.AppendLine();
         }
+        if (SessionState.GetBool("VAPB_CONTACT_CASE", false)) result.Append(ContactState(root));
         return result.ToString();
     }
     private static void ValidatePhysBoneImported()
     {
-        var report = new Report { phase = "native_physbone", error = "UNEXPECTED_EXCEPTION" };
+        var report = new Report { phase = SessionState.GetBool("VAPB_CONTACT_CASE", false) ? "native_contact_sender" : "native_physbone", error = "UNEXPECTED_EXCEPTION" };
         try
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(Prefab);
@@ -231,6 +266,8 @@ public static class VapbSkinRoundtripProbe
             var output = JsonUtility.FromJson<OutputManifest>(File.ReadAllText(AssetFile(Manifest)));
             var task = output.reference_rebind_tasks.Single();
             report.packageImported = true;
+            if (!SessionState.GetBool("VAPB_CONTACT_CASE", false))
+            {
             var parse = typeof(VapbModelSkinFinalizer).GetMethod("ParseManifestJson", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             if (parse == null) throw new InvalidOperationException("OPTIONAL_JSON_READER_MISSING");
             foreach (string tail in new[] { "", ",\"weight_transport\":null,\"parent_transform_mapping\":null", ",\"unknown\":{\"weight_transport\":{}},\"label\":\"weight_transport\"" })
@@ -257,15 +294,17 @@ public static class VapbSkinRoundtripProbe
             var decodedTask = tasks.GetValue(0);
             Debug.Log("NATIVE_OPTIONAL_OBJECT_DIAGNOSIS weight_transport=" + (decodedTask.GetType().GetField("weight_transport").GetValue(decodedTask) != null)
                 + " parent_transform_mapping=" + (decodedTask.GetType().GetField("parent_transform_mapping").GetValue(decodedTask) != null));
+            }
             report.firstApply = VapbModelSkinFinalizer.Apply(Manifest);
             if (!report.firstApply) throw new InvalidOperationException("FIRST_APPLY_FAILED");
             var variant = AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path);
             if (variant == null || PrefabUtility.GetCorrespondingObjectFromSource(variant) != source)
                 throw new InvalidOperationException("VARIANT_SOURCE_MISMATCH");
             report.nativePhysBoneAndColliderPreserved = ComponentState(variant) == before;
-            foreach (var name in new[] { "VRCPhysBone", "VRCPhysBoneCollider" })
+            foreach (var name in SessionState.GetBool("VAPB_CONTACT_CASE", false) ? new[] { "VRCPhysBone", "VRCPhysBoneCollider", "VRCContactSender" } : new[] { "VRCPhysBone", "VRCPhysBoneCollider" })
                 if (PrefabUtility.GetCorrespondingObjectFromSource(variant.GetComponentsInChildren(SdkComponent(name), true).Single()) !=
                     source.GetComponentsInChildren(SdkComponent(name), true).Single()) throw new InvalidOperationException("COMPONENT_SOURCE_MISMATCH");
+            report.nativeContactSenderPreserved = SessionState.GetBool("VAPB_CONTACT_CASE", false) && ContactState(variant) == ContactState(source);
             report.sdkScriptsResolved = true;
             string first = FileHash(AssetFile(task.variant_path));
             report.secondApply = VapbModelSkinFinalizer.Apply(Manifest);
@@ -449,6 +488,7 @@ public static class VapbSkinRoundtripProbe
                     skin.rootBone = sentinel.transform;
                 }
                 if (SessionState.GetBool("VAPB_PHYSBONE_CASE", false)) AddPhysBone(instance, skin);
+                if (SessionState.GetBool("VAPB_CONTACT_CASE", false)) AddContactSender(instance, skin);
                 if (PrefabUtility.SaveAsPrefabAsset(instance, Prefab) == null)
                     throw new InvalidOperationException("PREFAB_SAVE_FAILED");
             }
@@ -758,6 +798,7 @@ public static class VapbSkinRoundtripProbe
     {
         SessionState.SetString(Phase, "");
         SessionState.SetBool("VAPB_PHYSBONE_CASE", false);
+        SessionState.SetBool("VAPB_CONTACT_CASE", false);
         if (report.pass && File.Exists(ProjectFile("BoundedBlender.json")))
         {
             try { if (BoundedCapture == null) throw new InvalidOperationException(); BoundedCapture(); }

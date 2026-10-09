@@ -1,0 +1,57 @@
+{
+  "status": "PASS_BOUNDED_NATIVE_CONTACT_SENDER_RETURN",
+  "requirement": "PRODUCT_SPEC section 7 serialized Contact state/reference preservation",
+  "scope": "one first-party three-Material Skin fixture; one new native ContactSender with explicit source bone reference; existing PhysBone/Collider retained as controls",
+  "unity": "2022.3.22f1",
+  "blender": "5.2.1 LTS",
+  "distribution": {
+    "filename": "vapb-c5585a6.zip",
+    "code_commit": "c5585a669320faece2133cab80470ca65104fa09",
+    "sha256": "9c71fb2dd8cff24615e15245efc7da7b6dd5deed4c411d353f786b53de30f04c",
+    "unchanged": true,
+    "runtime_loaded_from_archive": true,
+    "exported_modelskin_helper_exact_archive_bytes": true
+  },
+  "source": {
+    "contact_senders": 1,
+    "root_transform": "explicit authored bone Transform; native persistent GUID/fileID matched after source correspondence normalization",
+    "radius": 0.075,
+    "collision_tags": [
+      "OwnedContact"
+    ],
+    "script_identity": "real installed SDK TypeCache/MonoScript identity, never guessed"
+  },
+  "blender_result": {
+    "pass": true,
+    "source_unchanged": true,
+    "component_prefab_asset_meta_identical": true,
+    "no_sdk_payload": true,
+    "output_sha256": "c4528f8fb379481a02aa2dbf6480da3865263ca060f429a4c15db0697d4982e8",
+    "task_kind": "RESTORE_DIRECT_SKIN_VARIANT_V1"
+  },
+  "unity_result": {
+    "packageImported": true,
+    "firstApply": true,
+    "nativePhysBoneAndColliderPreserved": true,
+    "nativeContactSenderPreserved": true,
+    "sdkScriptsResolved": true,
+    "sourceModelUnchanged": true,
+    "secondApply": true,
+    "secondApplyUnchanged": true
+  },
+  "source_and_variant_component_correspondence": true,
+  "protected_files_unchanged": 3017,
+  "normal_exit_code": 0,
+  "owned_children_and_lock_absent": true,
+  "pool_and_mutex_released": true,
+  "probe_only_change": "existing native Skin observer extended; no product schema, runner or runtime code added",
+  "retained_prepare_failure": "Transient authoring instance was observed before Sender creation/persistent Prefab identity; probe ordering corrected and fresh owned input created. Not a product export failure.",
+  "limits": {
+    "gui_clicks": "NOT_RUN",
+    "contact_receiver_parameters_runtime_contact_simulation": "NOT_RUN",
+    "avatar_descriptor_animation": "NOT_RUN",
+    "full_same_case_geometry_material_weight_acceptance": "NOT_ASSERTED; component-specific native observer only",
+    "whole_product": "NOT_COMPLETE"
+  },
+  "publication": "first-party probe and aggregate only; SDK/private assets/raw logs/exact SDK identity tables/PIDs/private paths excluded"
+}
