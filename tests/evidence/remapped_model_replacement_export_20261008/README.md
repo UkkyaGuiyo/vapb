@@ -339,3 +339,25 @@ organized destination placement. No source change, hand move, overwrite, origina
 repair or purchase-material import followed. Reuse an existing isolated Project
 without those source GUIDs/destinations for the next separately allocated frame;
 preserve this Project and its occupants. Whole-product acceptance remains open.
+
+### Named source-model Skin: uncontaminated Unity placement accepted (2026-10-09)
+
+`named-material-placement-unity-summary.json` closes destination placement for one
+owned synthetic Skin in an existing isolated pool Project. Fresh preflight proved
+all output GUIDs and all 15 asset destinations absent; no occupant was deleted or
+overwritten. Normal package import, the existing Assistant API handlers and separate
+selected Variant passed. Three Materials appear at their organized Unassigned paths
+with exact GUID/fileIDs, face membership, original bytes/meta and serialized names.
+Both nonnull Texture roles and same-Unity-space 1.25 geometry passed. Ten source
+Asset/meta files match at their exported paths; all 2,784 preexisting Asset, Package
+and ProjectSettings files remain byte-identical. Normal exit is 0, owned process and
+children/lock are absent, and the exact pool owner/startId was released.
+
+An initial observer-before-package bootstrap caused unresolved helper types. That
+setup attempt was normally quit, retained separately and corrected by importing
+before installing the same observer. Its own empty unheld startup lock was archived
+only after normal exit, exact ownership, creation time and exclusive-open checks.
+A local short-path reader also falsely reported deep SDK files absent; extended-length
+reads proved their original hashes unchanged. No SDK/configuration/product source
+change or new runner was introduced. API handlers, not human visual clicks, were
+measured. Previous occupied-path results and broader product limitations remain.

@@ -1,0 +1,47 @@
+{
+  "status": "PASS_BOUNDED_NAMED_SOURCE_MODEL_SKIN_UNITY_RETURN",
+  "source_code_commit": "d56225f57cf53ddadcea11137b4088f7a18bc1e4",
+  "scope": "one owned synthetic single no-Prefab Skin; absent owner proof remains Unassigned",
+  "preflight": {
+    "existing_isolated_project_reused": true,
+    "source_and_output_guids_absent": true,
+    "all_15_output_asset_paths_absent": true,
+    "fresh_owner_pid_start_ram_pool_contract_checked": true
+  },
+  "unity": {
+    "normal_unitypackage_import": true,
+    "assistant_preflight_cancel_retry_apply": true,
+    "separate_selected_variant": true,
+    "source_variant_linked": true,
+    "organized_material_paths": 3,
+    "material_guid_file_id_and_face_membership": true,
+    "material_asset_meta_bytes_and_serialized_names_preserved": true,
+    "nonnull_texture_roles": 2,
+    "exact_texture_identity": true,
+    "same_unity_reference_space_scale": 1.25,
+    "scale_verified": true,
+    "vertices": 24,
+    "triangles": 12,
+    "bones": 2,
+    "source_asset_meta_files_byte_identical_at_export_paths": 10,
+    "preexisting_asset_package_settings_files_unchanged": 2784,
+    "normal_exit_code": 0,
+    "owned_editor_children_and_lock_absent": true,
+    "exact_pool_owner_start_id_released": true
+  },
+  "setup": {
+    "initial_probe_before_package_compile_failure_preserved": true,
+    "accepted_order": "normal package import, then existing observer probe, normal Assets Refresh, existing Assistant API handlers",
+    "stale_own_empty_startup_lock_archived_only_after_normal_quit_and_exclusive_owner_checks": true,
+    "long_sdk_paths_verified_with_extended_length_local_reads": true,
+    "new_runner_or_product_source_patch": false
+  },
+  "limitations": {
+    "previous_occupied_path_observation": "retained separately, not reclassified",
+    "human_visual_click_acceptance": "NOT_RUN; existing Editor API handler acceptance",
+    "whole_product": "NOT_COMPLETE",
+    "arbitrary_material_owner_organization_skin_bone_texture_types_and_vrchat_upload": "NOT_ACCEPTED"
+  },
+  "commercial_materials": "NOT_USED_OR_PUBLISHED",
+  "publication": "raw logs, private paths, pool/PID/run IDs, source asset identities and SDK contents excluded"
+}
