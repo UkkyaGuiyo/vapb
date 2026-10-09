@@ -136,7 +136,7 @@ This README and the Git history intentionally disclose the use of AI in developm
 
 Bone Merge は、親なし Empty の単一 Copy Location（World→World、head 指定）も確定 Bone mapping で付け替えます。プレビューと結果に Constraint 件数を表示し、位置が変わる場合は rollback します。Local 空間・tail・不明 Bone・他形式の Constraint、Animation、Unity/VRC 参照はこの限定経路の対象外です。
 
-Bone Merge は、A に既存 animation がなく、全 Bone が確定した同等対応で標準継承設定の場合、B の単一 slot/layer/strip の Transform Action（location・Scale・現在の回転モードに対応する回転） をコピーして A に付け替えます。原本 B の Action は保持します。現在 Pose/Rest の一致は従来どおり必要です。Object channel、Driver、NLA、非アクティブな回転 channel、B 固有 Bone の Action、Unity Animator/Expressions はこの経路では未対応です。プレビューと結果にコピー件数を表示し、Undo/Redo に対応します。
+Bone Merge は、A に既存 animation がなく、全 Bone の同等/B 固有対応が確定し、標準継承設定の場合、B の単一 slot/layer/strip の Transform Action（location・Scale・現在の回転モードに対応する回転） をコピーして A に付け替えます。B 固有 Bone の回転モードも移植し、移植後の実 RNA path を確認します。原本 B の Action は保持します。現在 Pose/Rest の一致は従来どおり必要です。Object channel、Driver、NLA、非アクティブな回転 channel、Unity Animator/Expressions はこの経路では未対応です。プレビューと結果にコピー件数を表示し、Undo/Redo に対応します。
 
 ### UnityPackage書き出し：直接Prefabの静的Mesh
 

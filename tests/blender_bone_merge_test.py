@@ -339,6 +339,58 @@ def bone_transform_action_test():
         for frame in (1,5,10):
             bpy.context.scene.frame_set(frame)
             assert all((x-y).length < 1e-5 for x,y in zip(samples[frame],evaluated_world_vertices(obj)))
+    def transplant_fixture():
+        reset()
+        a = rig('Action transplant reference',(0,0,0),(0,0,0))
+        b = rig('Action transplant source',(0,0,0),(0,0,0),extra=True)
+        a.data.bones['Root'].name = 'Target"Root'
+        b.data.bones['Root'].name = 'Source"Root'
+        b.data.bones['Extra'].name = 'Extra"Tip'
+        obj,modifier = mesh('Action transplant skin',b,root_name='Source"Root')
+        obj.vertex_groups['Extra'].name = 'Extra"Tip'
+        extra = b.pose.bones['Extra"Tip']; extra.rotation_mode = 'XYZ'
+        for frame,angle,scale in ((1,0,1),(10,.5,1.2)):
+            extra.rotation_euler.y = angle; extra.scale.x = scale
+            extra.keyframe_insert(data_path='rotation_euler',frame=frame)
+            extra.keyframe_insert(data_path='scale',frame=frame)
+        bpy.context.scene.frame_set(1)
+        rows = [SimpleNamespace(source_name='Source"Root',classification='EQUIVALENT',
+                                target_name='Target"Root',confirmed=True),
+                SimpleNamespace(source_name='Extra"Tip',classification='B_ONLY',
+                                target_name='',confirmed=True)]
+        return a,b,obj,modifier,rows
+    a,b,obj,modifier,rows = transplant_fixture()
+    source_action,source_signature = b.animation_data.action,signature(b)
+    samples = {}
+    for frame in (1,5,10):
+        bpy.context.scene.frame_set(frame); samples[frame] = evaluated_world_vertices(obj)
+    bpy.context.scene.frame_set(1)
+    assert bone_merge_module.apply_merge(prepare_merge(a,b,rows,bpy.context.scene)) == (1,1)
+    assert a.pose.bones['Extra"Tip'].rotation_mode == 'XYZ'
+    parent,expected_parent = a.data.bones['Extra"Tip'].parent,a.data.bones['Target"Root']
+    print('NATIVE_TRANSPLANTED_PARENT_PROXY',parent.as_pointer()==expected_parent.as_pointer(),parent is expected_parent)
+    assert parent.as_pointer() == expected_parent.as_pointer()
+    assert b.animation_data.action is source_action and signature(b) == source_signature
+    for curve in curves(a): assert a.path_resolve(curve.data_path) is not None
+    for frame in (1,5,10):
+        bpy.context.scene.frame_set(frame)
+        assert all((x-y).length < 1e-5 for x,y in zip(samples[frame],evaluated_world_vertices(obj)))
+    a,b,obj,modifier,rows = transplant_fixture()
+    actions_before = set(bpy.data.actions)
+    plan = prepare_merge(a,b,rows,bpy.context.scene)
+    original = bone_merge_module._evaluated_vertices
+    def fail_after_transplanted_action(mesh_object):
+        if a.animation_data: raise RuntimeError('injected after transplanted Action')
+        return original(mesh_object)
+    bone_merge_module._evaluated_vertices = fail_after_transplanted_action
+    try:
+        try: bone_merge_module.apply_merge(plan)
+        except RuntimeError as error: assert 'injected' in str(error)
+        else: raise AssertionError('Transplanted Action rollback injection did not run')
+    finally: bone_merge_module._evaluated_vertices = original
+    assert a.animation_data is None and 'Extra"Tip' not in a.data.bones
+    assert set(bpy.data.actions) == actions_before and modifier.object is b
+    assert REMAP_PROPERTY not in a and LOCAL_ID_PROPERTY not in a and LOCAL_ID_PROPERTY not in b
     for unsupported in ('OBJECT_PATH','DESTINATION_ACTION','DRIVER','INACTIVE_ROTATION','BAD_INDEX','MODE_MISMATCH'):
         a,b,obj,modifier,rows = fixture()
         if unsupported == 'OBJECT_PATH': b.keyframe_insert(data_path='location',frame=1)
@@ -400,7 +452,7 @@ def bone_transform_action_test():
     assert b.animation_data.action.name == source_name and signature(b) == source_signature
     bpy.context.scene.frame_set(5)
     assert all((x-y).length < 1e-5 for x,y in zip(expected[5],evaluated_world_vertices(obj)))
-    print('BONE_MERGE_LOCATION_ACTION_PASS escaped_rna_path=1 frames_preserved=3 source_action_unchanged=1 unsupported_refused=6 rollback_no_action_leak=1 operator_undo_redo=1 active_rotation_and_scale_channels=4')
+    print('BONE_MERGE_LOCATION_ACTION_PASS escaped_rna_path=1 frames_preserved=3 source_action_unchanged=1 unsupported_refused=6 rollback_no_action_leak=1 operator_undo_redo=1 active_rotation_and_scale_channels=4 b_only_action_pose_and_rollback=1')
 
 
 def main():

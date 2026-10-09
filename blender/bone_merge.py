@@ -103,22 +103,26 @@ def _bone_transform_action(a, b, remap):
             not action.is_action_layered or len(action.slots) != 1 or len(action.layers) != 1 or
             len(action.layers[0].strips) != 1 or data.action_slot is None):
         raise ValueError("Bone Action は A が未アニメーションで、単一 Bone Transform Clip/slot のみ対応しています")
-    paths, sizes = {}, {}
+    paths, sizes, targets = {}, {}, {}
     for source in b.data.bones:
         target = a.data.bones.get(remap[source.name])
-        if target is None or any(
-                bone.bbone_segments != 1 or bone.inherit_scale != 'FULL' or
+        checks = (source, target) if target is not None else (source,)
+        if any(bone.bbone_segments != 1 or bone.inherit_scale != 'FULL' or
                 not bone.use_inherit_rotation or not bone.use_local_location or
-                bone.use_relative_parent or bone.use_connect for bone in (source, target)):
-            raise ValueError("Bone Action は標準継承設定の同等 Bone のみ対応しています")
-        source_pose, target_pose = b.pose.bones[source.name], a.pose.bones[target.name]
-        if source_pose.rotation_mode != target_pose.rotation_mode:
+                bone.use_relative_parent or bone.use_connect for bone in checks):
+            raise ValueError("Bone Action は標準継承設定の Bone のみ対応しています")
+        source_pose = b.pose.bones[source.name]
+        target_pose = a.pose.bones[target.name] if target is not None else None
+        if target_pose is not None and source_pose.rotation_mode != target_pose.rotation_mode:
             raise ValueError("Bone Action の回転モードが一致しません")
         rotation = ('rotation_quaternion' if source_pose.rotation_mode == 'QUATERNION' else
                     'rotation_axis_angle' if source_pose.rotation_mode == 'AXIS_ANGLE' else 'rotation_euler')
         for channel, size in (('location',3), ('scale',3), (rotation,3 if rotation == 'rotation_euler' else 4)):
-            old, new = source_pose.path_from_id()+'.'+channel, target_pose.path_from_id()+'.'+channel
+            old = source_pose.path_from_id()+'.'+channel
+            # Confirmed B_ONLY retains its source name; observe again after creation.
+            new = target_pose.path_from_id()+'.'+channel if target_pose is not None else old
             paths[old], sizes[old] = new, size
+            targets[old] = (remap[source.name], channel)
     strip = action.layers[0].strips[0]
     bag = strip.channelbag(data.action_slot) if strip.type == 'KEYFRAME' else None
     if bag is None or not bag.fcurves:
@@ -131,7 +135,7 @@ def _bone_transform_action(a, b, remap):
         if address in destinations:
             raise ValueError("Bone Action の付け替え先 binding が重複しています")
         destinations.add(address)
-    return {'source': action, 'slot': data.action_slot.identifier, 'paths': paths,
+    return {'source': action, 'slot': data.action_slot.identifier, 'paths': paths, 'targets': targets,
             'extrapolation': data.action_extrapolation}
 
 
@@ -308,6 +312,7 @@ def _add_b_only_bones(plan):
             raise RuntimeError("移植 Bone の World Rest 検証に失敗しました")
     for name in plan['b_only']:
         target = a.pose.bones[name]
+        target.rotation_mode = b.pose.bones[name].rotation_mode
         for key in b.pose.bones[name].keys():
             target[key] = b.pose.bones[name][key]
         for key in a.data.bones[name].keys():
@@ -403,7 +408,13 @@ def apply_merge(plan):
             copied_action = capture['source'].copy()
             slot = copied_action.slots[capture['slot']]
             for curve in copied_action.layers[0].strips[0].channelbag(slot).fcurves:
-                curve.data_path = capture['paths'][curve.data_path]
+                old = curve.data_path
+                bone, channel = capture['targets'][old]
+                observed = a.pose.bones[bone].path_from_id()+'.'+channel
+                if observed != capture['paths'][old]:
+                    raise RuntimeError("移植後の Bone Action binding が一致しません")
+                a.path_resolve(observed)
+                curve.data_path = observed
             a.animation_data_create()
             action_data_created = True
             a.animation_data.action = copied_action
