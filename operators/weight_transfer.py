@@ -137,7 +137,7 @@ def calculate_transfer(state):
             sampled = sum(bary[j] * _group_weight(source_group, tri[j]) for j in range(3))
             old = _group_weight(target_group, vertex.index)
             new = combine_weight(old, sampled, state.mode, state.blend)
-            if abs(new - old) > 1e-8:
+            if new != old:
                 plan.append((target_name, vertex.index, new))
     return plan, {
         'matched': len(distances), 'unresolved': skipped_distance, 'locked': locked,
@@ -251,7 +251,7 @@ def apply_transfer_plan(target, plan):
             if group is None:
                 group = target.vertex_groups.new(name=name)
                 created.add(name)
-            if weight <= 1e-8:
+            if weight == 0.0:
                 group.remove([index])
             else:
                 group.add([index], weight, 'REPLACE')

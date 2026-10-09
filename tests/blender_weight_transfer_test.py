@@ -282,9 +282,40 @@ def main():
         b = next(obj for obj in bpy.data.objects if obj.get('_weight_test_target'))
         assert all(abs(weight(b.vertex_groups['Bone1'], i) - 0.17) < 1e-5 for i in range(3))
         state = bpy.context.scene.vapb_weight_transfer
+        # Zero-only fill and explicit transfer must preserve representable tiny weights.
+        tiny_source = make_mesh('TinySource', [(0, 0, 0), (1, 0, 0), (0, 1, 0)], [(0, 1, 2)])
+        tiny_target = make_mesh('TinyTarget', [(0, 0, 0), (1, 0, 0), (0, 1, 0)], [(0, 1, 2)])
+        tiny_source.modifiers.new('Reference rig', 'ARMATURE').object = state.armature
+        tiny_a = tiny_source.vertex_groups.new(name='Bone1')
+        tiny_b = tiny_target.vertex_groups.new(name='Bone1')
+        tiny_a.add([0, 1, 2], 1.0, 'REPLACE')
+        tiny_b.add([0, 1, 2], 1e-9, 'REPLACE')
+        original_tiny = tiny_b.weight(0)
+        state.source, state.target = tiny_source, tiny_target
+        state.scope, state.blend, state.max_distance = 'ALL', 1.0, 0.1
+        state.guard_declared_plane = False
+        assert bpy.ops.vapb.weight_mappings() == {'FINISHED'}
+        for mapping in state.mappings:
+            mapping.confirmed = True
+        state.mode = 'FILL_MISSING'
+        assert bpy.ops.vapb.weight_apply() == {'FINISHED'}
+        assert all(tiny_b.weight(i) == original_tiny for i in range(3)), 'FILL_OVERWROTE_POSITIVE_TINY_WEIGHT'
+        tiny_a.add([0, 1, 2], 1e-9, 'REPLACE')
+        source_tiny = tiny_a.weight(0)
+        tiny_b.remove([0, 1, 2])
+        state.mode = 'REPLACE'
+        assert bpy.ops.vapb.weight_apply() == {'FINISHED'}
+        assert all(tiny_b.weight(i) == source_tiny for i in range(3)), 'TINY_TRANSFER_DROPPED'
+        tiny_b.add([0, 1, 2], 1.0, 'REPLACE')
+        assert bpy.ops.vapb.weight_apply() == {'FINISHED'}
+        assert all(tiny_b.weight(i) == source_tiny for i in range(3)), 'TINY_REPLACEMENT_REMOVED'
+        assert all(tiny_a.weight(i) == source_tiny for i in range(3)), 'TRANSFER_MODIFIED_SOURCE'
+        tiny_a.add([0, 1, 2], 0.0, 'REPLACE')
+        assert bpy.ops.vapb.weight_apply() == {'FINISHED'}
+        assert all(weight(tiny_b, i) == 0.0 for i in range(3)), 'EXPLICIT_ZERO_NOT_REMOVED'
         state.target = None
         assert len(state.mappings) == 0
-        print('WEIGHT_TRANSFER_RUNTIME_PASS modes=3 selected_scope=1 unresolved_selection=1 declared_plane_crossings=2 guarded=1 unguarded=1 posed_deformation=1 rollback=1 undo=1 stale_mapping_cleared=1 source_unchanged=1 shared_rejected=1')
+        print('WEIGHT_TRANSFER_RUNTIME_PASS modes=3 selected_scope=1 unresolved_selection=1 declared_plane_crossings=2 guarded=1 unguarded=1 posed_deformation=1 rollback=1 undo=1 stale_mapping_cleared=1 source_unchanged=1 shared_rejected=1 positive_tiny_fill_preserved=1 tiny_add_replace=1 explicit_zero_removed=1')
     finally:
         unregister_weight_transfer_properties()
         for cls in reversed(WEIGHT_TRANSFER_CLASSES):

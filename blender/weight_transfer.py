@@ -79,7 +79,7 @@ def combine_weight(existing, sampled, mode, blend):
     elif mode == 'MERGE':
         proposed = max(existing, sampled)
     elif mode == 'FILL_MISSING':
-        proposed = sampled if existing <= 1e-8 else existing
+        proposed = sampled if existing == 0.0 else existing
     else:
         raise ValueError('Unknown weight transfer mode')
     return max(0.0, min(1.0, existing + (proposed - existing) * blend))

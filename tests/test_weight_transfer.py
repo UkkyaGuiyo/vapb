@@ -19,6 +19,12 @@ class WeightTransferPolicyTest(unittest.TestCase):
         self.assertAlmostEqual(sum(weights), 1.0)
         self.assertTrue(all(0 <= value <= 1 for value in weights))
 
+    def test_fill_missing_preserves_every_positive_existing_weight(self):
+        for value in (1e-9, 1e-8):
+            with self.subTest(existing=value):
+                self.assertEqual(combine_weight(value, 1.0, 'FILL_MISSING', 1.0), value)
+        self.assertEqual(combine_weight(0.0, 1e-9, 'FILL_MISSING', 1.0), 1e-9)
+
     def test_modes_and_blend(self):
         self.assertAlmostEqual(combine_weight(0.8, 0.2, 'REPLACE', 1), 0.2)
         self.assertEqual(combine_weight(0.8, 0.2, 'MERGE', 1), 0.8)
