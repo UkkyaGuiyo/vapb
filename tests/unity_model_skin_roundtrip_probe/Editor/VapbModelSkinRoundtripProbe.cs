@@ -74,6 +74,8 @@ public static class VapbModelSkinRoundtripProbe
         public float source_bounds_extent;
         public float edited_bounds_extent;
         public float vertex_change_threshold;
+        public string[] source_initial_material_ids, source_external_material_map, source_return_material_ids, source_return_texture_ids;
+        public bool native_triangle_indices_equal;
         public bool native_geometry_125, native_weights_equal, native_bounds_contain_rest;
         public bool exported_weights_validated, weight_ulp_rejected, weight_data_rejected, weight_raw_rejected, weight_controls_preserved, cp_label_rejected, decode_budget_rejected;
         public bool native_geometry_expected_scale;
@@ -371,6 +373,13 @@ public static class VapbModelSkinRoundtripProbe
             string prefabPath = AssetDatabase.GUIDToAssetPath(native ? task.source_model_guid : task.prefab_guid);
             string sourcePath = AssetDatabase.GUIDToAssetPath(task.source_model_guid);
             string editedPath = AssetDatabase.GUIDToAssetPath(task.model_guid);
+            if(native) {
+                var initial=AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath).GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                var ids=new List<string>(); foreach(var skin in initial) foreach(var material in skin.sharedMaterials) ids.Add(NativeIdentity(material));
+                report.source_initial_material_ids=ids.ToArray(); var remaps=new List<string>();
+                foreach(var entry in ((ModelImporter)AssetImporter.GetAtPath(sourcePath)).GetExternalObjectMap()) remaps.Add(entry.Key.name+"="+NativeIdentity(entry.Value));
+                report.source_external_material_map=remaps.ToArray();
+            }
             string beforeSource = Hash(Disk(sourcePath)), beforeSourceMeta = Hash(Disk(sourcePath)+".meta");
             Application.LogCallback gateLog = (message, trace, kind) => {
                 if (kind == LogType.Exception) report.apply_exception = message;
@@ -469,6 +478,8 @@ public static class VapbModelSkinRoundtripProbe
                 report.material_guid_file_ids = new string[selected.sharedMaterials.Length];
                 var textureIdentities = new List<string>();
                 var textureProperties = new List<string>();
+                var sourceMaterialIds=new List<string>(); foreach(var material in originalSkin.sharedMaterials) sourceMaterialIds.Add(NativeIdentity(material));
+                report.source_return_material_ids=sourceMaterialIds.ToArray(); var sourceTextureIds=new List<string>();
                 report.native_texture_identity = true;
                 string[] args = Environment.GetCommandLineArgs();
                 int expectedTextureIndex = Array.IndexOf(args, "-vapbExpectedTexture");
@@ -483,7 +494,9 @@ public static class VapbModelSkinRoundtripProbe
                     foreach(string name in material.GetTexturePropertyNames())
                     {
                         Texture texture = material.GetTexture(name);
-                        report.native_texture_identity &= texture == originalSkin.sharedMaterials[slot].GetTexture(name);
+                        Texture sourceTexture=originalSkin.sharedMaterials[slot].GetTexture(name);
+                        sourceTextureIds.Add(slot.ToString()+":"+name+"="+(NativeIdentity(sourceTexture)??"NULL"));
+                        report.native_texture_identity &= texture == sourceTexture;
                         if(texture==null) { report.null_texture_reference_count++; continue; }
                         string textureGuid; long textureId;
                         report.native_texture_identity &= AssetDatabase.TryGetGUIDAndLocalFileIdentifier(texture, out textureGuid, out textureId);
@@ -492,6 +505,7 @@ public static class VapbModelSkinRoundtripProbe
                         textureProperties.Add(slot.ToString()+":"+name);
                     }
                 }
+                report.source_return_texture_ids=sourceTextureIds.ToArray();
                 report.nonnull_texture_guid_file_ids = textureIdentities.ToArray();
                 report.nonnull_texture_properties = textureProperties.ToArray();
                 if(expectedTexture != null)
@@ -505,13 +519,14 @@ public static class VapbModelSkinRoundtripProbe
                 report.native_material_identity &= expectedMaterials.Count==0;
                 if(task.material_bindings != null && task.material_bindings.Length==0 && selected.sharedMaterials.Length==1)
                     report.native_material_identity = selected.sharedMaterials[0] == originalSkin.sharedMaterials[0] && report.material_guid_file_ids[0] == "0000000000000000f000000000000000:10303";
+                report.native_triangle_indices_equal=sourceIndices!=null && sourceIndices.Length==editedMesh.subMeshCount;
                 report.native_face_membership=sourceIndices!=null && sourceIndices.Length==editedMesh.subMeshCount && report.materials_preserved;
                 for(int sub=0; sub<editedMesh.subMeshCount; sub++)
                 {
                     int[] actualIndices=editedMesh.GetIndices(sub);
                     report.triangle_count+=actualIndices.Length/3;
-                    if(sourceIndices==null || sub>=sourceIndices.Length || sourceIndices[sub].Length!=actualIndices.Length) { report.native_face_membership=false; continue; }
-                    for(int i=0;i<actualIndices.Length;i++) if(actualIndices[i]!=sourceIndices[sub][i]) report.native_face_membership=false;
+                    if(sourceIndices==null || sub>=sourceIndices.Length || sourceIndices[sub].Length!=actualIndices.Length) { report.native_face_membership=false; report.native_triangle_indices_equal=false; continue; }
+                    for(int i=0;i<actualIndices.Length;i++) if(actualIndices[i]!=sourceIndices[sub][i]) { report.native_face_membership=false; report.native_triangle_indices_equal=false; }
                 }
                 report.returned_local_bounds=selected.localBounds;
                 report.native_bounds_contain_rest = (bool)typeof(VapbModelSkinFinalizer).GetMethod("BoundsContainsRestMesh", flags).Invoke(null, new object[] { selected, editedMesh, selected.bones, 0.001f });

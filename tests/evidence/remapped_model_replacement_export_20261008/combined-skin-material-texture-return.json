@@ -1,0 +1,123 @@
+{
+  "status": "PASS_BOUNDED_COMBINED_SKIN_MATERIAL_TEXTURE",
+  "source_baseline_commit": "04803b795910796f02be4a2027017fdcc35d14dc",
+  "unity_version": "2022.3.22f1",
+  "blender_version": "5.2.1 LTS",
+  "input_package_sha256": "410030686124607b001351f62818582df0e472d69edd5c05336897e34ac2bde9",
+  "output_package_sha256": "9f34641804d7dc7003758630bc0186359d0b7ec840c40f3d10738c6f0e2189ea",
+  "source_fbx_sha256": "9e7de6c7c9cb758b2aa963af522c259541a5f8c48dc31604174a591cfbf5dcbf",
+  "generated_fbx_sha256": "991a57253935aa26b136d3a7b3ac4a934dd09fe1369bc3ee0dad8a01575be5ed",
+  "case": "One existing first-party two-sibling-Bone Skin, 45 CP/15 triangles/87 positives, one existing first-party Material and one existing PNG in two serialized roles. Explicit ModelImporter remap, no Prefab input; normal Blender import/save/reopen/1.25 edit/export, ordinary Unity import and existing ModelSkin Finalizer Apply.",
+  "native": {
+    "pass": true,
+    "error": "NONE",
+    "package_imported": true,
+    "first_apply": true,
+    "variant_created": true,
+    "variant_linked": true,
+    "edited_mesh_bound": true,
+    "originals_unchanged": true,
+    "second_apply": true,
+    "second_apply_unchanged": true,
+    "geometry_matches_edited_model": true,
+    "topology_and_weights_valid": true,
+    "target_bones_and_root_preserved": true,
+    "materials_preserved": true,
+    "siblings_preserved": true,
+    "source_initial_material_ids": [
+      "2f15f557f8028a10fdd543dd1c55a61f:2100000"
+    ],
+    "source_external_material_map": [
+      "Public fixture material 0=2f15f557f8028a10fdd543dd1c55a61f:2100000"
+    ],
+    "source_return_material_ids": [
+      "2f15f557f8028a10fdd543dd1c55a61f:2100000"
+    ],
+    "source_return_texture_ids": [
+      "0:_MainTex=22222222222222222222222222222222:2800000",
+      "0:_BumpMap=NULL",
+      "0:_DetailNormalMap=NULL",
+      "0:_MetallicGlossMap=NULL",
+      "0:_ParallaxMap=NULL",
+      "0:_OcclusionMap=NULL",
+      "0:_EmissionMap=NULL",
+      "0:_DetailMask=NULL",
+      "0:_DetailAlbedoMap=NULL",
+      "0:FutureTexture=22222222222222222222222222222222:2800000"
+    ],
+    "native_triangle_indices_equal": true,
+    "native_geometry_expected_scale": true,
+    "expected_native_scale": 1.25,
+    "native_weights_equal": false,
+    "exported_weights_validated": true,
+    "weight_ulp_rejected": true,
+    "weight_data_rejected": true,
+    "weight_raw_rejected": true,
+    "weight_controls_preserved": true,
+    "cp_label_rejected": true,
+    "decode_budget_rejected": true,
+    "native_bounds_contain_rest": true,
+    "native_material_identity": true,
+    "native_texture_identity": true,
+    "native_face_membership": true,
+    "material_guid_file_ids": [
+      "2f15f557f8028a10fdd543dd1c55a61f:2100000"
+    ],
+    "nonnull_texture_reference_count": 2,
+    "nonnull_texture_guid_file_ids": [
+      "22222222222222222222222222222222:2800000",
+      "22222222222222222222222222222222:2800000"
+    ],
+    "nonnull_texture_properties": [
+      "0:_MainTex",
+      "0:FutureTexture"
+    ],
+    "edited_vertex_count": 45,
+    "edited_bone_count": 2,
+    "triangle_count": 15,
+    "source_bones_share_parent": true,
+    "edited_bones_share_marked_parent": true,
+    "marked_parent_unique": true,
+    "source_fbx_meta_preserved_after_apply": true,
+    "source_positive_weights": 60,
+    "edited_positive_weights": 87,
+    "edited_root_source_uid": "251529238"
+  },
+  "preservation": {
+    "protected_files": 2909,
+    "changed_count": 0,
+    "input_unchanged": true,
+    "source_material_texture_asset_meta_preserved": true,
+    "original_source_asset_meta_preserved": true,
+    "edited_geometry_weights_bones_and_scene_counts_unchanged_by_export": true,
+    "owned_exit_code": 0,
+    "owned_children_remaining": 0,
+    "project_lock_present": false,
+    "pool_and_mutex_released": true
+  },
+  "fixture_diagnosis": {
+    "initial_output_sha256": "b69327c2c528e54a094b83e55287045e3bef52ebea67be44b4525d98b3a9a330",
+    "initial_and_diagnostic_verdict": "FAIL; source native Renderer used built-in default Material despite explicit remap; returned exported Skin used intended Material/Texture. All Skin checks and native triangle indices matched.",
+    "cause": "The bounded synthetic input grafted an existing Material node/OO link/face layer onto a zero-Material FBX but omitted its Definitions/ObjectType Material and count.",
+    "correction": "Reuse existing authored FbxSurfacePhong Material type definition with count one and update total Definitions count. Original geometry/UV/weights/Skin/cluster/bone/rest/hierarchy data were canonical-exact after removing only newly added Material node/definition/link/face layer.",
+    "result": "Same strict assertions pass; no product acceptance assertion relaxed and no product source fix required.",
+    "preparation_observer_corrections": [
+      "Encoded FBX nodes carry packed properties, so select their corresponding decoded node position.",
+      "Existing material binding includes transport_id; compare required exact GUID/fileID and retain transport identity instead of an incomplete dictionary."
+    ]
+  },
+  "checks": {
+    "existing_probe_reference_compile": "PASS",
+    "normal_native_combined_case": "PASS",
+    "product_code_change": false,
+    "probe_change": "Observation fields only: initial/return Material and Texture identities, external remap and triangle-index equality. Acceptance assertions unchanged.",
+    "independent_review": "No repeated review: bounded observation-only change to already-reviewed implementation."
+  },
+  "limitations": [
+    "One selected shared-parent Skin/Material/Texture combination; not all combinations or full Avatar/product acceptance.",
+    "No client/PlayMode validation, purchased content, new Texture creation or pixel editing.",
+    "Previous override ambiguity, winding/normals, direct/replacement routes and broad component/hierarchy scopes remain separate.",
+    "Previously approved exact numeric scope and all product guards retained.",
+    "Binary fixtures, generated packages and private runtime logs stay local."
+  ]
+}

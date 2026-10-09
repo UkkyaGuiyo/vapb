@@ -315,3 +315,32 @@ old override/winding remain separate. No SDK, purchased asset or private log
 is published.
 
 [Public result and precise limits](../../../tests/evidence/remapped_model_replacement_export_20261008/exported-weight-product-roundtrip.json).
+
+### Shared-parent Skin and existing Material/Texture combined — one-case PASS
+
+The next unproved integration edge now has one bounded result. Reusing the
+existing first-party Skin and Material/PNG fixtures, one no-Prefab input with
+explicit remap completes normal Blender import, save/reopen, 1.25 geometry edit
+and export, then ordinary Unity import and existing ModelSkin Finalizer Apply.
+All 87 exported influences on 45 CP retain exact expected bits; all 15 native
+triangle indices and Material face association match, Material GUID/fileID and
+the same PNG GUID/fileID in `_MainTex`/`FutureTexture` are preserved. Original
+root, shared-parent hierarchy, bounds, source and separate edited Variant remain
+valid. Repeat Apply leaves Variant bytes unchanged. Existing negative controls
+also pass; numerical policy and product guards are unchanged.
+
+Initial synthetic construction omitted the Material ObjectType definition from
+the zero-Material FBX. Native source used Unity default Material despite explicit
+remap, while Blender/export selected the intended one. Additional observation
+fields isolated this before changing any assertion. Reusing the working authored
+Material definition/count fixed the input; the same strict assertions now pass.
+Skin geometry, UV, weights, cluster/bone/rest/hierarchy data remain canonical
+exact in the derived input. No product source correction was needed. This is
+one corrected combined case, not a new fixture matrix or general importer rule.
+
+Owned Unity exits zero; 2,909 pre-existing files and input package are unchanged,
+owned children/lock absent, pool/mutex released. Existing binary inputs/outputs
+and private logs remain local. Client validation and whole-product/Avatar
+acceptance are NOT_RUN; other historical limitations remain separate.
+
+[Combined public evidence and failure diagnosis](../../../tests/evidence/remapped_model_replacement_export_20261008/combined-skin-material-texture-return.json).
