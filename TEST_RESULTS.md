@@ -238,3 +238,12 @@ Verification on Blender 5.2.1 LTS:
 - Four nearest pure policy tests PASS; diff check PASS. Unrelated suites and Unity were not rerun.
 
 A first positive observer compared renamed post-merge groups against the old B Bone names; it was corrected to capture the original B deformation before merge. This observation failure was not another product defect. The initial defect remains distinct from the earlier Deform-flag fix. The existing c5585a6 ZIP remains unchanged and does not contain this source checkpoint. General Animation/Unity-VRC remapping, GUI and whole-product completion are not asserted.
+
+
+## Bone Merge World/head Copy Location remap (2026-10-09)
+
+PRODUCT_SPEC section 11 requires Constraint references to be updated through explicitly confirmed Bone mapping. Existing product preflight refused even an independent parentless Empty with one World-to-World Copy Location aimed at a confirmed B Bone. The supported bounded route now retargets target/subtarget to A, verifies unchanged World placement, and journals executed reference writes for rollback. Owners in other/shared scenes, linked/overridden or parented owners, ancestry cycles, local spaces, tail/B-Bone sampling, missing Bone references and other Constraint types remain refused. Japanese preview/result includes the Constraint count. No mapping is inferred, no Constraint kind is converted, and no Unity Constraint/VRC runtime reconstruction is asserted.
+
+Actual Blender 5.2.1 LTS RED: native existing suite stops with `B を参照する Constraint があり、付替えを証明できません`. GREEN: explicit renamed EQUIVALENT and transplanted B_ONLY target references both preserve placement and follow the same future parent translation; Local, tail, unresolved Bone and Copy Rotation controls are refused. Injected failure after retarget restores Constraint target/subtarget, Mesh modifier/groups, transplanted Bones and UUID/remap state. Existing full Bone Merge runtime and four nearest policy tests pass; diff check passes. No unrelated suite or Unity run, no ZIP rebuild.
+
+First implementation referenced unavailable `Object.parent_recursive`; corrected to actual `children_recursive` and rerun successfully. Blender emits its own dependency-graph warning for the deliberately unresolved Bone control; this is not a warning-free claim. The prior ZIP is unchanged and excludes this source checkpoint. General Animation, pose-Bone Constraints, Unity/VRC reference remap and full product completion remain open.

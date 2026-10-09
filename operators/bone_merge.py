@@ -82,7 +82,7 @@ class VAPB_OT_bone_merge_preview(bpy.types.Operator):
             self.report({'ERROR'}, str(exc))
             return {'CANCELLED'}
         self.report({'INFO'}, f"確認済み {len(plan['remap'])} Bone / B 固有移植 {len(plan['b_only'])} / "
-                              f"付替え Mesh {len(plan['attached'])}。B は保持します")
+                              f"付替え Mesh {len(plan['attached'])} / Constraint {len(plan['constraints'])}。B は保持します")
         return {'FINISHED'}
 
 
@@ -106,7 +106,7 @@ class VAPB_OT_bone_merge_apply(bpy.types.Operator):
         except Exception as exc:
             self.report({'ERROR'}, f'実行に失敗しました: {type(exc).__name__}。参照を確認してください')
             return {'CANCELLED'}
-        self.report({'INFO'}, f'B 固有 Bone {added} 件移植、Mesh {updated} 件付替え。B は保持しました')
+        self.report({'INFO'}, f"B 固有 Bone {added} 件移植、Mesh {updated} / Constraint {len(plan['constraints'])} 件付替え。B は保持しました")
         return {'FINISHED'}
 
 

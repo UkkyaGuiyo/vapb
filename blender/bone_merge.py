@@ -65,10 +65,10 @@ def _rigid_world(matrix):
                     for i in range(3) for j in range(i + 1, 3)))
 
 
-def _unsupported_reference(owner):
+def _unsupported_reference(owner, *, allowed_constraints=()):
     if getattr(owner, "animation_data", None):
         return True
-    if len(getattr(owner, "constraints", ())) > 0:
+    if any(c not in allowed_constraints for c in getattr(owner, "constraints", ())):
         return True
     try:
         keys = owner.keys()
@@ -155,14 +155,23 @@ def prepare_merge(a, b, choices, scene):
                 raise ValueError("B 固有 Bone の特殊な変形/継承設定は未対応です")
     attached = _attached_objects(a, b)
     import bpy  # type: ignore
+    constraint_refs = []
     for obj in bpy.data.objects:
-        if any(getattr(constraint, 'target', None) is b for constraint in obj.constraints):
-            raise ValueError("B を参照する Constraint があり、付替えを証明できません")
+        references = [c for c in obj.constraints if getattr(c, 'target', None) is b]
+        for constraint in references:
+            if (obj.type != 'EMPTY' or obj.parent is not None or obj.library or obj.override_library or
+                    len(obj.users_scene) != 1 or obj.name not in scene.objects or
+                    a in obj.children_recursive or b in obj.children_recursive or len(obj.constraints) != 1 or
+                    constraint.type != 'COPY_LOCATION' or constraint.target_space != 'WORLD' or
+                    constraint.owner_space != 'WORLD' or constraint.head_tail != 0 or
+                    constraint.use_bbone_shape or constraint.subtarget not in remap):
+                raise ValueError("B の Constraint 参照は親なし Empty の World/head Copy Location のみ対応しています")
+            constraint_refs.append((obj, constraint, constraint.subtarget, remap[constraint.subtarget]))
         if obj.type == 'ARMATURE' and any(
                 getattr(constraint, 'target', None) is b
                 for pose in obj.pose.bones for constraint in pose.constraints):
             raise ValueError("B を参照する Bone Constraint があり、付替えを証明できません")
-        if obj.name in scene.objects and obj not in (a, b) and _unsupported_reference(obj) and obj not in attached:
+        if obj.name in scene.objects and obj not in (a, b) and _unsupported_reference(obj, allowed_constraints=references) and obj not in attached:
             raise ValueError("Scene に未対応の Unity/VRC 参照があります")
     for obj in attached:
         if (obj.name not in scene.objects or obj.type != 'MESH' or obj.library or
@@ -191,7 +200,7 @@ def prepare_merge(a, b, choices, scene):
         return value
     b_only.sort(key=depth)
     return {"a": a, "b": b, "remap": remap, "classes": classifications,
-            "attached": attached, "b_only": [bone.name for bone in b_only]}
+            "attached": attached, "b_only": [bone.name for bone in b_only], "constraints": constraint_refs}
 
 
 def _activate_object(obj):
@@ -310,6 +319,7 @@ def apply_merge(plan):
             "parent": obj.parent, "parent_type": obj.parent_type,
             "parent_bone": obj.parent_bone, "world": obj.matrix_world.copy(),
         }
+    constraint_world = [(obj, obj.matrix_world.copy()) for obj, _, _, _ in plan['constraints']]
     old_remap = a.get(REMAP_PROPERTY)
     prior = json.loads(old_remap) if old_remap is not None else {'version': 1, 'merges': []}
     id_before = {(side, name): owner.get(LOCAL_ID_PROPERTY)
@@ -317,6 +327,7 @@ def apply_merge(plan):
                  for name, owner in [('__armature__', armature),
                                      *((bone.name, bone) for bone in armature.data.bones)]}
     renamed_groups = []
+    retargeted_constraints = []
     try:
         _add_b_only_bones(plan)
         target_bones = [a.data.bones[name] for name in set(remap.values())]
@@ -341,6 +352,10 @@ def apply_merge(plan):
                 if parent_type == 'BONE':
                     obj.parent_bone = remap[old_parent_bone]
                 obj.matrix_world = world
+        for obj, constraint, old, new in plan['constraints']:
+            retargeted_constraints.append((constraint, constraint.target, constraint.subtarget))
+            constraint.target = a
+            constraint.subtarget = new
         records = []
         for old, new in remap.items():
             source = b.data.bones[old]
@@ -361,6 +376,9 @@ def apply_merge(plan):
         })
         a[REMAP_PROPERTY] = json.dumps(prior, sort_keys=True)
         bpy.context.view_layer.update()
+        for obj, world in constraint_world:
+            if not _close_matrix(obj.matrix_world, world):
+                raise RuntimeError("Constraint 付け替え後の World 配置が一致しません")
         for obj, snapshot in before.items():
             after = _evaluated_vertices(obj)
             baseline = snapshot['evaluated']
@@ -368,6 +386,9 @@ def apply_merge(plan):
                     (left - right).length > 1e-4 for left, right in zip(after, baseline)):
                 raise RuntimeError("付替え後の World 変形が一致しません")
     except Exception:
+        for constraint, target, subtarget in reversed(retargeted_constraints):
+            constraint.target = target
+            constraint.subtarget = subtarget
         for group, old_name in reversed(renamed_groups):
             group.name = old_name
         for obj, snapshot in before.items():

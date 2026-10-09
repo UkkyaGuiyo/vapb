@@ -201,7 +201,82 @@ def equivalent_parent_mapping_test():
     print('BONE_MERGE_PARENT_MAPPING_PASS mismatch_refused=2 renamed_mapping_preserved=1 future_pose_preserved=1 no_mutation_on_refusal=1')
 
 
+def world_copy_location_reference_test():
+    """Explicit Bone remap retargets a world/head Empty constraint transactionally."""
+    from types import SimpleNamespace
+    def fixture(subtarget):
+        reset()
+        a = rig('Constraint reference', (0, 0, 0), (0, 0, 0))
+        a.data.bones['Root'].name = 'ReferenceRoot'
+        b = rig('Constraint source', (0, 0, 0), (0, 0, 0), extra=True)
+        obj, modifier = mesh('Constraint skin', b)
+        owner = bpy.data.objects.new('Constraint owner', None)
+        bpy.context.collection.objects.link(owner)
+        constraint = owner.constraints.new('COPY_LOCATION')
+        constraint.target, constraint.subtarget = b, subtarget
+        constraint.target_space = constraint.owner_space = 'WORLD'
+        constraint.head_tail = 0
+        rows = [SimpleNamespace(source_name='Root', classification='EQUIVALENT',
+                                target_name='ReferenceRoot', confirmed=True),
+                SimpleNamespace(source_name='Extra', classification='B_ONLY',
+                                target_name='', confirmed=True)]
+        return a, b, obj, modifier, owner, constraint, rows
+    for name in ('Root', 'Extra'):
+        a,b,obj,modifier,owner,constraint,rows = fixture(name)
+        bpy.context.view_layer.update()
+        before = owner.matrix_world.copy()
+        plan = prepare_merge(a,b,rows,bpy.context.scene)
+        assert constraint.target is b and constraint.subtarget == name
+        assert bone_merge_module.apply_merge(plan) == (1,1)
+        target = 'ReferenceRoot' if name == 'Root' else name
+        assert constraint.target is a and constraint.subtarget == target
+        bpy.context.view_layer.update()
+        assert close_matrix(owner.matrix_world,before)
+        a.pose.bones['ReferenceRoot'].location.x = b.pose.bones['Root'].location.x = .5
+        bpy.context.view_layer.update()
+        expected = b.matrix_world @ b.pose.bones[name].head
+        assert (owner.matrix_world.translation-expected).length < 1e-5
+        assert b.name in bpy.data.objects
+    for unsupported in ('LOCAL', 'TAIL', 'UNKNOWN', 'COPY_ROTATION'):
+        a,b,obj,modifier,owner,constraint,rows = fixture('Root')
+        if unsupported == 'LOCAL': constraint.target_space = 'LOCAL'
+        elif unsupported == 'TAIL': constraint.head_tail = 1
+        elif unsupported == 'UNKNOWN': constraint.subtarget = 'Missing'
+        else:
+            owner.constraints.remove(constraint)
+            constraint = owner.constraints.new('COPY_ROTATION')
+            constraint.target, constraint.subtarget = b,'Root'
+        try:
+            prepare_merge(a,b,rows,bpy.context.scene)
+        except ValueError: pass
+        else: raise AssertionError('Unsupported constraint accepted: '+unsupported)
+        assert constraint.target is b and modifier.object is b and 'Extra' not in a.data.bones
+        assert REMAP_PROPERTY not in a and LOCAL_ID_PROPERTY not in a
+    a,b,obj,modifier,owner,constraint,rows = fixture('Root')
+    plan = prepare_merge(a,b,rows,bpy.context.scene)
+    bpy.context.view_layer.update()
+    before = owner.matrix_world.copy()
+    original = bone_merge_module._evaluated_vertices
+    def fail_after_retarget(mesh_object):
+        if constraint.target is a:
+            raise RuntimeError('injected after constraint retarget')
+        return original(mesh_object)
+    bone_merge_module._evaluated_vertices = fail_after_retarget
+    try:
+        try: bone_merge_module.apply_merge(plan)
+        except RuntimeError as error: assert 'injected' in str(error)
+        else: raise AssertionError('Constraint rollback injection did not run')
+    finally: bone_merge_module._evaluated_vertices = original
+    bpy.context.view_layer.update()
+    assert constraint.target is b and constraint.subtarget == 'Root' and modifier.object is b
+    assert obj.vertex_groups.get('Root') and not obj.vertex_groups.get('ReferenceRoot')
+    assert close_matrix(owner.matrix_world,before) and 'Extra' not in a.data.bones
+    assert REMAP_PROPERTY not in a and LOCAL_ID_PROPERTY not in a and LOCAL_ID_PROPERTY not in b
+    print('BONE_MERGE_COPY_LOCATION_PASS equivalent_and_b_only=2 unsupported_refused=4 future_pose_preserved=2 rollback=1')
+
+
 def main():
+    world_copy_location_reference_test()
     equivalent_parent_mapping_test()
     equivalent_deform_flag_test()
     for cls in BONE_MERGE_CLASSES:
