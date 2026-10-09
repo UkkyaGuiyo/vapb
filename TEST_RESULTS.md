@@ -201,3 +201,24 @@ Real failed-scene forensic evidence: provider slot binding was masked as `RESOLV
   ZIP register/unregister is verified again after push.
 - Mapped model-instance transform overrides remain unsupported without
   reliable source/default comparison. Private evidence is not committed.
+
+### Bone Merge equivalent Deform preservation (2026-10-09)
+
+At source baseline `266d45412c3cfaedac4e65eb1a3332881a31c5e4`, a public
+synthetic equivalent Bone with identical World Rest/current Pose but A
+`use_deform=false`, B `use_deform=true` passed preflight and Apply at rest.
+Applying the same 0.5 pose translation to A/B then produced 0.5 world Mesh
+error versus the retained B control. Current evaluated geometry alone therefore
+missed incompatible deformation semantics.
+
+The existing read-only preflight now refuses mismatched equivalent `use_deform`
+before any write. `tests/blender_bone_merge_test.py` has focused runtime RED/GREEN:
+both mismatch directions refuse without changing Bones, modifier, remap/local
+IDs or evaluated geometry; matching true/true and false/false controls retain
+future-pose geometry and B. The complete existing Blender 5.2.1 LTS runtime
+suite PASS covers posed world geometry, B-only chains, Bone parenting,
+collision/ambiguity/shared/animation/constraint/VRC refusals, no automatic
+Weight Transfer, target-only group preservation, rollback and Undo. The four
+nearest `test_bone_merge` policy tests PASS. Both owned Blender processes exit
+zero after GREEN; no Unity run, original packages, private assets or SDK work.
+This closes this concrete §11 defect, not broad Bone Merge/VRC or product release.

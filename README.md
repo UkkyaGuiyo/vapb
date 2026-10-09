@@ -119,6 +119,7 @@ This README and the Git history intentionally disclose the use of AI in developm
 - **File → Export → FBX + Unity Material Map**: 「出力のみ」のCleanupを個別に選べます。出力用コピーだけを整理し、編集中のsceneを維持します。このFBX出力と、上記のUnityPackage出力は別の入口です。
 - **Nキー → VAPB → Bone Merge**: 基準Aと対象Bを選び、候補を取得します。各BoneについてA側への対応またはB固有Boneとしての保持を明示確認し、解析後に実行します。移植先のrest / pose、Meshの変形、Bone親参照を検証し、失敗時は戻します。Bは保持し、Weight Transferは別操作です。
 - Bone Mergeの不明なUnity/VRC参照、Animation、Constraint、特殊なBone設定、共有データ、名前衝突、多対一対応は現在保護して停止します。これらを含む全面的な統合・Unity復元は引き続き実装中です。
+  同等BoneのDeform（変形に使う）設定がA/Bで違う場合も、付け替え前に停止します。A/BのBone設定と対応を確認して再解析してください。
 
 ### UnityPackage書き出し：直接Prefabの静的Mesh
 

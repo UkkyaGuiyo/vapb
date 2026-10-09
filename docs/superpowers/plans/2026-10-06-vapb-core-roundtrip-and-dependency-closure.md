@@ -344,3 +344,18 @@ and private logs remain local. Client validation and whole-product/Avatar
 acceptance are NOT_RUN; other historical limitations remain separate.
 
 [Combined public evidence and failure diagnosis](../../../tests/evidence/remapped_model_replacement_export_20261008/combined-skin-material-texture-return.json).
+
+### Semantic Bone Merge equivalent deformation setting — source repair
+
+Following the combined Skin/Material/Texture core proof, the next independent
+§11 defect was reproduced in existing Bone Merge: equal Rest/current Pose
+allowed a deforming B Bone to map to a non-deforming A Bone. Rest Apply passed,
+but equal later 0.5 pose translation lost 0.5 of Mesh movement. Two-line
+read-only preflight now rejects unequal equivalent `use_deform`; it does not
+change either Bone, transfer weights, reparent the rig or relax existing guards.
+Both mismatch directions and both matching controls pass actual Blender
+RED/GREEN; the existing full Bone Merge posed/parenting/rollback/Undo suite and
+four nearest policy tests pass. README explains the refusal and retry.
+
+[Concrete evidence and scope](../../../TEST_RESULTS.md).
+Other campaign and release gates remain pending; no whole-product claim.

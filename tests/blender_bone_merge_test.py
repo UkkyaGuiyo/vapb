@@ -104,7 +104,52 @@ def assert_rejected():
     assert outcome == {'CANCELLED'}
 
 
+def equivalent_deform_flag_test():
+    """Rest/Pose equality must not hide incompatible future skin deformation."""
+    from types import SimpleNamespace
+    for reference_deform, source_deform in ((False, True), (True, False)):
+        reset()
+        a = rig('Reference deform', (0, 0, 0), (0, 0, 0))
+        b = rig('Source deform', (0, 0, 0), (0, 0, 0))
+        obj, modifier = mesh('Weighted deform', b)
+        a.data.bones['Root'].use_deform = reference_deform
+        b.data.bones['Root'].use_deform = source_deform
+        choices = [SimpleNamespace(source_name='Root', classification='EQUIVALENT',
+                                   target_name='Root', confirmed=True)]
+        names = (tuple(a.data.bones.keys()), tuple(b.data.bones.keys()))
+        before = evaluated_world_vertices(obj)
+        try:
+            prepare_merge(a, b, choices, bpy.context.scene)
+        except ValueError as error:
+            assert 'Deform' in str(error)
+        else:
+            raise AssertionError('Equivalent deform mismatch accepted')
+        assert modifier.object is b and names == (tuple(a.data.bones.keys()), tuple(b.data.bones.keys()))
+        assert a.data.bones['Root'].use_deform == reference_deform
+        assert b.data.bones['Root'].use_deform == source_deform
+        assert REMAP_PROPERTY not in a and LOCAL_ID_PROPERTY not in a and LOCAL_ID_PROPERTY not in b
+        assert all((left-right).length < 1e-6 for left,right in zip(before,evaluated_world_vertices(obj)))
+    for deform in (True, False):
+        reset()
+        a = rig('Reference equal', (0, 0, 0), (0, 0, 0))
+        b = rig('Source equal', (0, 0, 0), (0, 0, 0))
+        obj, modifier = mesh('Weighted equal', b)
+        a.data.bones['Root'].use_deform = b.data.bones['Root'].use_deform = deform
+        choices = [SimpleNamespace(source_name='Root', classification='EQUIVALENT',
+                                   target_name='Root', confirmed=True)]
+        assert bone_merge_module.apply_merge(prepare_merge(a,b,choices,bpy.context.scene)) == (0,1)
+        a.pose.bones['Root'].location.x = b.pose.bones['Root'].location.x = .5
+        returned = evaluated_world_vertices(obj)
+        modifier.object = b
+        original = evaluated_world_vertices(obj)
+        modifier.object = a
+        assert all((left-right).length < 1e-6 for left,right in zip(returned,original))
+        assert b.name in bpy.data.objects
+    print('BONE_MERGE_DEFORM_FLAG_PASS mismatch_refused=2 matching_flags=2 future_pose_preserved=2 no_mutation_on_refusal=1')
+
+
 def main():
+    equivalent_deform_flag_test()
     for cls in BONE_MERGE_CLASSES:
         bpy.utils.register_class(cls)
     register_bone_merge_properties()
