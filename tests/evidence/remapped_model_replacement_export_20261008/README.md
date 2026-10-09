@@ -157,3 +157,39 @@ passed and its packaged Assistant/finalizer bytes match current source. The
 prepared package hash is in the JSON. This checkpoint did not start Unity or
 change the existing return project. UI reload, Cancel/Retry/Apply and restart
 acceptance remain pending the next owned frame.
+
+### Normal Editor Assistant and bounded Skin return: accepted (2026-10-09)
+
+`import-assistant-normal-editor-pass.json` preserves the corrected diagnosis and
+actual bounded acceptance. The loaded Unity TextAsset retained the earlier
+Static kind/GUID while the same Asset path on disk and in the imported package
+declared source-model Skin. This difference survived normal startup and real
+assembly reload. Initialization order alone was not the direct cause. The
+Assistant now inspects/fingerprints the same disk bytes as the strict Finalizer,
+with bounded-path, Asset-existence, schema and exact provider checks intact.
+It does not reimport, guess bindings or accept unknown tasks. The internal cause
+of Unity's cached artifact retention was not diagnosed.
+
+The corrected helper was delivered in normal-import packages. Real script
+reload retained a ready Window without changing Asset bytes. Preflight and
+Cancel left Assets unchanged; Retry, explicit Apply, output selection and the
+existing strict Unity return passed. Normal restart suppressed the applied
+prompt and left Assets unchanged. A separate unseen package triggered an
+automatic ready Window during ordinary import without a VAPB manual entry.
+All accepted Editor exits were 0. Original FBX/meta, Materials/meta, Scene and
+ProjectSettings protection covered 57 files with zero differences; owned
+Editors/children and lock were absent and the frame was returned.
+
+The existing probe invokes the same UI handlers through Editor API and uses a
+real assembly reload; this is not a human click/visual appearance claim. A
+prior observer was mistakenly re-invoked while a nested result dialog blocked;
+its reset report was rejected. Final observations used one call and closed
+only the owned nested result dialog. Probe reload resume/duplicate guards were
+minimally corrected, with no new runner or product schema.
+
+Scope remains one author-owned source-model Skin: 24 vertices, 12 triangles,
+2 bones, 3 exact Material GUID/fileID identities, face membership, Unity-space
+1.25 scale and weights/source ancestry. The 27 Texture references are null;
+non-null Texture closure, broad hierarchy/component semantics, old overrides
+and winding boundaries remain unaccepted. Local raw logs, binary packages and
+process/lease records are not published.

@@ -84,11 +84,26 @@ public static class VapbModelSkinRoundtripProbe
         AssetDatabase.importPackageCancelled += OnCancelled;
         EditorApplication.update += Timeout;
         if (SessionState.GetString(Phase, "") == "completed") EditorApplication.delayCall += ValidateImported;
-        if (SessionState.GetString(Phase, "") == "assistant") EditorApplication.delayCall += RunAssistant;
+        if (SessionState.GetString(Phase, "") == "assistant") EditorApplication.update += ResumeAssistant;
 
+    }
+    private static void ResumeAssistant()
+    {
+        if (EditorApplication.isCompiling || EditorApplication.isUpdating) return;
+        EditorApplication.update -= ResumeAssistant;
+        RunAssistant();
+    }
+    [UnityEditor.Callbacks.DidReloadScripts]
+    private static void ResumeReloadedAssistant()
+    {
+        if (SessionState.GetString(Phase, "") != "assistant") return;
+        EditorApplication.update -= ResumeAssistant;
+        EditorApplication.update += ResumeAssistant;
     }
     [Serializable] private sealed class AssistantReport
     {
+        public string manifest_disk_kind, manifest_loaded_kind, manifest_loaded_guid, manifest_loaded_asset_path;
+        public bool reload_window_observed, reload_assets_unchanged;
         public bool pass, automatic_window_observed, manual_entry_requested, japanese_title, preflight_ready,
             preflight_assets_unchanged, cancel_assets_unchanged, cancel_recorded,
             manual_menu_reopened, retry_ready, output_created, output_selected,
@@ -96,7 +111,7 @@ public static class VapbModelSkinRoundtripProbe
         public string error, action_transport = "Unity Editor API invokes the same UI handlers; no human clicks", identity;
     }
     private static AssistantReport assistantReport;
-    private static bool assistantManualOpened;
+    private static bool assistantManualOpened, assistantReloadAwaiting;
     private static double assistantStarted;
     private static int assistantStage;
     private static Dictionary<string, string> assistantAssets;
@@ -105,12 +120,23 @@ public static class VapbModelSkinRoundtripProbe
     [MenuItem("Tools/VAPB/Observe Assistant (API probe)")]
     public static void RunAssistant()
     {
+        if (assistantReport != null && !assistantReloadAwaiting) return;
+        assistantReloadAwaiting = false;
         if (Application.isBatchMode) throw new InvalidOperationException("ASSISTANT_REQUIRES_NORMAL_EDITOR");
         SessionState.SetBool("VAPB_ASSISTANT_OBSERVER_STARTED", true);
         EditorApplication.update -= ObserveAssistant;
         Debug.Log("VAPB_ASSISTANT_OBSERVER_START");
-        assistantManualOpened = false;
+        assistantManualOpened = SessionState.GetBool("VAPB_ASSISTANT_RELOAD_REQUESTED", false);
         assistantReport = new AssistantReport(); assistantStarted = EditorApplication.timeSinceStartup;
+        TextAsset loadedManifest = AssetDatabase.LoadAssetAtPath<TextAsset>(ManifestPath);
+        assistantReport.manifest_disk_kind = JsonUtility.FromJson<Manifest>(File.ReadAllText(ProjectFile(ManifestPath))).reference_rebind_tasks[0].kind;
+        if (loadedManifest != null)
+        {
+            assistantReport.manifest_loaded_kind = JsonUtility.FromJson<Manifest>(loadedManifest.text).reference_rebind_tasks[0].kind;
+            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(loadedManifest, out string loadedGuid, out long loadedId);
+            assistantReport.manifest_loaded_guid = loadedGuid;
+            assistantReport.manifest_loaded_asset_path = AssetDatabase.GetAssetPath(loadedManifest);
+        }
         assistantStage = Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbAssistantRestart") >= 0 ? 10 : 0;
         assistantReport.manual_entry_requested = Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbAssistantManual") >= 0;
 
@@ -151,6 +177,13 @@ public static class VapbModelSkinRoundtripProbe
         foreach (var pair in before) if (!after.TryGetValue(pair.Key, out string hash) || hash != pair.Value) return false;
         return true;
     }
+    private static string AssistantAssetsFingerprint()
+    {
+        var lines = new List<string>();
+        foreach (var pair in AssistantAssetSnapshot()) lines.Add(pair.Key + " " + pair.Value);
+        lines.Sort(StringComparer.Ordinal);
+        return String.Join("\n", lines);
+    }
     private static bool AssistantState(string identity, string state)
     {
         string file = ProjectFile("Library/VapbApplyAssistant.state");
@@ -158,6 +191,7 @@ public static class VapbModelSkinRoundtripProbe
     }
     private static void ObserveAssistant()
     {
+        if (assistantReloadAwaiting) return;
         if (EditorApplication.isCompiling || EditorApplication.isUpdating ||
             EditorApplication.timeSinceStartup - assistantStarted < 2) return;
         try
@@ -192,6 +226,21 @@ public static class VapbModelSkinRoundtripProbe
                 assistantReport.japanese_title = window.titleContent.text == "VAPB：編集内容を確認";
                 assistantReport.preflight_ready = AssistantReady(entry);
                 if (!assistantReport.preflight_ready) throw new InvalidOperationException("ASSISTANT_PREFLIGHT_REJECTED:" + entry.GetType().GetField("error").GetValue(entry));
+                if (Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbAssistantReload") >= 0)
+                {
+                    if (!SessionState.GetBool("VAPB_ASSISTANT_RELOAD_REQUESTED", false))
+                    {
+                        SessionState.SetString("VAPB_ASSISTANT_RELOAD_ASSETS", AssistantAssetsFingerprint());
+                        SessionState.SetBool("VAPB_ASSISTANT_RELOAD_REQUESTED", true);
+                        Debug.Log("VAPB_ASSISTANT_REQUEST_SCRIPT_RELOAD");
+                        assistantReloadAwaiting = true;
+                        EditorUtility.RequestScriptReload();
+                        return;
+                    }
+                    assistantReport.reload_window_observed = true;
+                    assistantReport.reload_assets_unchanged = SessionState.GetString("VAPB_ASSISTANT_RELOAD_ASSETS", "") == AssistantAssetsFingerprint();
+                    if (!assistantReport.reload_assets_unchanged) throw new InvalidOperationException("ASSISTANT_RELOAD_CHANGED_ASSETS");
+                }
                 var snapshot = AssistantAssetSnapshot();
                 window.GetType().GetMethod("RefreshEntry", AssistantFlags).Invoke(window, new[] { entry });
                 assistantReport.preflight_assets_unchanged = AssistantAssetsSame(snapshot);

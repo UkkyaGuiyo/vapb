@@ -105,14 +105,20 @@ public sealed class VapbImportAssistant : EditorWindow
         var entry = new Entry { path = path };
         try
         {
-            TextAsset asset = AssetDatabase.LoadAssetAtPath<TextAsset>(path);
-            if (asset == null) throw new InvalidOperationException("MANIFEST_UNAVAILABLE");
+            if (String.IsNullOrEmpty(path) || !path.StartsWith("Assets/VAPBExport/", StringComparison.Ordinal) ||
+                path.Contains("..") || !path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ||
+                AssetDatabase.LoadAssetAtPath<TextAsset>(path) == null)
+                throw new InvalidOperationException("MANIFEST_UNAVAILABLE");
+            // Match the finalizers: imported TextAsset content can retain a previous
+            // manifest after package replacement. Inspect and fingerprint the same
+            // on-disk bytes that strict Apply will validate, without reimporting.
+            string text = File.ReadAllText(Path.Combine(Directory.GetParent(Application.dataPath).FullName, path));
             using (var sha = SHA256.Create())
             {
-                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(path + "\n" + asset.text));
+                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(path + "\n" + text));
                 entry.identity = BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
             }
-            Manifest manifest = JsonUtility.FromJson<Manifest>(asset.text);
+            Manifest manifest = JsonUtility.FromJson<Manifest>(text);
             if (manifest == null || manifest.schema_version != "vapb-export-manifest-1" ||
                 manifest.reference_rebind_tasks == null || manifest.reference_rebind_tasks.Length == 0)
                 throw new InvalidOperationException("MANIFEST_UNSUPPORTED");

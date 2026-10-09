@@ -1,0 +1,219 @@
+{
+  "status": "PASS_BOUNDED_NORMAL_EDITOR_ASSISTANT_AND_SOURCE_SKIN_RETURN",
+  "unity": "2022.3.22f1",
+  "direct_cause": {
+    "observed_disk_kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "observed_loaded_TextAsset_kind": "BUILD_EXPORTED_STATIC_V2",
+    "loaded_TextAsset_guid": "b336eab55f53cbe47e82eece8dbae291",
+    "disk_manifest_meta_guid": "1c889fa3bb0bd4fd873fccad4b5cace6",
+    "observation": "Same manifest Asset path retained old loaded TextAsset kind/GUID while current disk/package bytes declared source-model Skin. It remained different after normal startup and real assembly reload.",
+    "consequence": "Assistant dispatched the old Static kind, whose provider was absent in this native-helper context. TASK_UNSUPPORTED was a correct rejection of the wrong cached input.",
+    "correction": "Assistant now reads and fingerprints the same current disk bytes as strict Finalizer. Asset existence, bounded path, schema and exact registered-provider checks remain. No reimport or guessed mapping.",
+    "prior_hypothesis": "Provider initialization order alone was not the direct cause. Earlier initialization/stale-view changes are defensive; this evidence supersedes that diagnosis.",
+    "cache_retention_internal_cause": "NOT_DIAGNOSED: source-versus-loaded discrepancy is observed; no general Unity cache bug claim."
+  },
+  "packages": [
+    {
+      "label": "import-assistant-native-20261009-07/NativeSkinOutput.unitypackage",
+      "sha256": "19b02730f37b77c54858c6ad5b8b3767ed808b411a59464e1af4472fd3cff2a1",
+      "helpers": {
+        "VapbModelSkinFinalizer.cs": {
+          "matches_current_source": true,
+          "sha256": "408df6d6ba189a614c734833765340adfdc494546fdc70a2ea248d6a1a8d285e"
+        },
+        "VapbImportAssistant.cs": {
+          "matches_current_source": true,
+          "sha256": "4823298b2512ef59ce9034b0966add7da7ee7a04b847bc02094be779c062b50b"
+        }
+      }
+    },
+    {
+      "label": "import-assistant-native-20261009-08/NativeSkinOutput.unitypackage",
+      "sha256": "336a143ba62fb6c9a91083910d74b40e22b3c1149c4a3aaaadddb2eedd6348b6",
+      "helpers": {
+        "VapbModelSkinFinalizer.cs": {
+          "matches_current_source": true,
+          "sha256": "408df6d6ba189a614c734833765340adfdc494546fdc70a2ea248d6a1a8d285e"
+        },
+        "VapbImportAssistant.cs": {
+          "matches_current_source": true,
+          "sha256": "4823298b2512ef59ce9034b0966add7da7ee7a04b847bc02094be779c062b50b"
+        }
+      }
+    }
+  ],
+  "manual_real_reload_and_actions": {
+    "manifest_disk_kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "manifest_loaded_kind": "BUILD_EXPORTED_STATIC_V2",
+    "manifest_loaded_guid": "b336eab55f53cbe47e82eece8dbae291",
+    "manifest_loaded_asset_path": "Assets/VAPBExport/manifest.json",
+    "reload_window_observed": true,
+    "reload_assets_unchanged": true,
+    "pass": true,
+    "automatic_window_observed": false,
+    "manual_entry_requested": true,
+    "japanese_title": true,
+    "preflight_ready": true,
+    "preflight_assets_unchanged": true,
+    "cancel_assets_unchanged": true,
+    "cancel_recorded": true,
+    "manual_menu_reopened": true,
+    "retry_ready": true,
+    "output_created": true,
+    "output_selected": true,
+    "applied_recorded": true,
+    "restart_no_prompt": false,
+    "restart_assets_unchanged": false,
+    "error": "",
+    "action_transport": "Unity Editor API invokes the same UI handlers; no human clicks",
+    "identity": "fb5d449f9ef0cd62270801ec369d02b7fec170a3601ad17c0396282d33c538c3"
+  },
+  "unseen_package_automatic_detection_and_actions": {
+    "manifest_disk_kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "manifest_loaded_kind": "BUILD_EXPORTED_STATIC_V2",
+    "manifest_loaded_guid": "b336eab55f53cbe47e82eece8dbae291",
+    "manifest_loaded_asset_path": "Assets/VAPBExport/manifest.json",
+    "reload_window_observed": false,
+    "reload_assets_unchanged": false,
+    "pass": true,
+    "automatic_window_observed": true,
+    "manual_entry_requested": false,
+    "japanese_title": true,
+    "preflight_ready": true,
+    "preflight_assets_unchanged": true,
+    "cancel_assets_unchanged": true,
+    "cancel_recorded": true,
+    "manual_menu_reopened": true,
+    "retry_ready": true,
+    "output_created": true,
+    "output_selected": true,
+    "applied_recorded": true,
+    "restart_no_prompt": false,
+    "restart_assets_unchanged": false,
+    "error": "",
+    "action_transport": "Unity Editor API invokes the same UI handlers; no human clicks",
+    "identity": "790dcdd92926a7af74c1744c85dafe921d40675de7e14386007dbd56df706a65"
+  },
+  "normal_restart_after_applied": {
+    "manifest_disk_kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "manifest_loaded_kind": "BUILD_EXPORTED_STATIC_V2",
+    "manifest_loaded_guid": "b336eab55f53cbe47e82eece8dbae291",
+    "manifest_loaded_asset_path": "Assets/VAPBExport/manifest.json",
+    "reload_window_observed": false,
+    "reload_assets_unchanged": false,
+    "pass": true,
+    "automatic_window_observed": false,
+    "manual_entry_requested": false,
+    "japanese_title": false,
+    "preflight_ready": false,
+    "preflight_assets_unchanged": false,
+    "cancel_assets_unchanged": false,
+    "cancel_recorded": false,
+    "manual_menu_reopened": false,
+    "retry_ready": false,
+    "output_created": false,
+    "output_selected": false,
+    "applied_recorded": false,
+    "restart_no_prompt": true,
+    "restart_assets_unchanged": true,
+    "error": "",
+    "action_transport": "Unity Editor API invokes the same UI handlers; no human clicks",
+    "identity": ""
+  },
+  "strict_source_skin_return": {
+    "pass": true,
+    "error": "NONE",
+    "package_imported": true,
+    "first_apply": true,
+    "variant_created": true,
+    "variant_linked": true,
+    "edited_mesh_bound": true,
+    "originals_unchanged": true,
+    "second_apply": true,
+    "second_apply_unchanged": true,
+    "geometry_changed": true,
+    "vertex_layout_changed": false,
+    "geometry_matches_edited_model": true,
+    "topology_and_weights_valid": true,
+    "target_bones_and_root_preserved": true,
+    "materials_preserved": true,
+    "siblings_preserved": true,
+    "extra_component_rejected": false,
+    "rejected_variant_unchanged": false,
+    "variant_restored_after_negative": false,
+    "bad_candidate_rejected": false,
+    "bad_candidate_unchanged": false,
+    "manifest_restored_after_negative": false,
+    "selected_skin_count": 1,
+    "sibling_renderer_count": 0,
+    "edited_vertex_count": 24,
+    "edited_bone_count": 2,
+    "max_vertex_delta": 0.004330126103013754,
+    "source_bounds_extent": 0.017320508137345314,
+    "edited_bounds_extent": 0.021650634706020355,
+    "vertex_change_threshold": 1.0000000116860974e-07,
+    "native_geometry_125": true,
+    "native_weights_equal": true,
+    "native_bounds_contain_rest": true,
+    "native_geometry_expected_scale": true,
+    "expected_native_scale": 1.25,
+    "edited_mesh_guid": "fd401842befa27f2f67f1816fc9f4c4b",
+    "edited_mesh_file_id": "8378990625266265184",
+    "native_material_identity": true,
+    "native_face_membership": true,
+    "material_guid_file_ids": [
+      "eb805efb35118044db5e74adc652673a:2100000",
+      "0318f358e4c29034aa90cc8c50b58a93:2100000",
+      "64f92a1bd9b35a040bf9e2c6d200b34c:2100000"
+    ],
+    "triangle_count": 12,
+    "null_texture_reference_count": 27,
+    "returned_local_bounds": {
+      "m_Center": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "m_Extent": {
+        "x": 0.01249999925494194,
+        "y": 0.012499997392296791,
+        "z": 0.012499997392296791
+      }
+    }
+  },
+  "normal_exit_codes": {
+    "fixed_package_import": 0,
+    "real_reload_apply_return": 0,
+    "restart": 0,
+    "automatic_import_apply_return": 0
+  },
+  "cleanup": {
+    "protected_file_count": 57,
+    "protected_changed_count": 0,
+    "owned_editors_absent": true,
+    "tracked_owned_children_absent": true,
+    "project_lock_absent": true,
+    "other_editor_count": 0,
+    "resource_frame_returned": true
+  },
+  "action_transport": "Owned native diagnostic menu invokes existing Unity Editor API probe; same private UI handlers, no human clicks. Only owned nested result dialog closed through Windows UI Automation.",
+  "scope": {
+    "source": "single author-owned no-Prefab source-model Skin, explicit remap, 3 Materials",
+    "geometry": "24 vertices, 12 triangles, 2 bones; Unity-to-Unity 1.25 scale, weights and source ancestry preserved",
+    "textures": "27 null Texture references preserved; non-null Texture references NOT_TESTED",
+    "unsupported_tasks": "Existing missing-kind/unregistered-provider/mixed-provider rejection maintained; no new unsupported synthetic runtime fixture in this checkpoint.",
+    "not_claimed": [
+      "all formats",
+      "all Material layouts",
+      "old override/winding closure",
+      "human visual/click acceptance",
+      "generic Prefab negative cases whose report fields remain false"
+    ]
+  },
+  "observation_repairs": [
+    "CLI observer before imports and subsequent remembered prompted identities do not establish first-import auto detection. Final automatic acceptance used a previously unseen package in one normal import process, without VAPB manual entry.",
+    "Existing probe now resumes after real reload on stable update and guards duplicate entry. No new runner or product schema.",
+    "An earlier result-dialog controller searched only top-level Windows; actual modal was a descendant of the owned Unity Window. That observer-contaminated attempt is not PASS. Final runs used one diagnostic call and correct nested dialog handling."
+  ],
+  "remaining_product_work": "The limited supported route is accepted. Broader non-null Texture, hierarchy/component references and the already declared override/winding boundaries remain outside this checkpoint."
+}
