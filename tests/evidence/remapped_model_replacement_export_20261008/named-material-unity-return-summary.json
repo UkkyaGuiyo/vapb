@@ -1,0 +1,38 @@
+{
+  "status": "PASS_BOUNDED_REFERENCES_AND_GEOMETRY_PLACEMENT_NOT_ACCEPTED",
+  "source_code_commit": "d56225f57cf53ddadcea11137b4088f7a18bc1e4",
+  "scope": "single no-Prefab source-model Skin with organized output Material paths",
+  "unity": {
+    "normal_import": true,
+    "assistant_preflight_cancel_retry_explicit_apply": true,
+    "action_transport": "existing API probe, no human visual acceptance",
+    "separate_selected_variant": true,
+    "source_variant_linked": true,
+    "exact_material_guid_file_id": true,
+    "face_membership": true,
+    "exact_texture_identity": true,
+    "nonnull_texture_roles": 2,
+    "same_unity_space_scale": 1.25,
+    "geometry_scale_verified": true,
+    "triangles": 12,
+    "vertices": 24,
+    "bones": 2,
+    "original_asset_meta_files_byte_identical": 10,
+    "protected_non_moving_files_unchanged": 31,
+    "original_material_asset_meta_bytes_unchanged": 6,
+    "normal_exit_code": 0,
+    "owned_editor_and_children_absent": true,
+    "project_lock_absent": true,
+    "frame_released": true
+  },
+  "placement": {
+    "accepted": false,
+    "desired_paths_occupied_by_other_guids": 3,
+    "source_materials_retained_at_existing_paths": 3,
+    "hand_repair": false,
+    "product_fault_attribution": "NOT_ESTABLISHED; existing shared verification Project has unrelated path occupants"
+  },
+  "next_action": "When separately assigned a frame, use an existing isolated Project with source GUIDs and intended Material destinations absent; preserve old Project and occupants. Do not fix product source from this contaminated-path observation alone.",
+  "whole_product": "NOT_COMPLETE",
+  "commercial_materials": "NOT_USED_OR_PUBLISHED"
+}

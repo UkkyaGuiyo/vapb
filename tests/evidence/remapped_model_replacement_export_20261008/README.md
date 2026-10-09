@@ -319,3 +319,23 @@ The focused existing suites ran 33 tests: 32 passed and one Blender-only test sk
 Named-path Unity return is NOT_RUN; earlier unchanged-path return does not close it.
 No new schema, identity family, fixture matrix or runner was introduced. Commercial
 input bodies, derivatives, identifiers, paths and detailed contents are excluded.
+
+### Named source-model Skin: Unity references accepted, placement open (2026-10-09)
+
+`named-material-unity-return-summary.json` records normal import of the already
+source-tested named output into the existing dedicated ReturnProject. The existing
+Assistant API probe exercised preflight, Cancel, Retry and explicit Apply. The fresh
+separate selected Variant, exact three Material GUID/fileIDs, face membership, two
+nonnull Texture roles and Unity-space 1.25 geometry passed. Original ten Asset/meta
+files, including all three Material bodies/meta, remain byte-identical. The other
+31 protected files are unchanged. The owned Editor exited 0, children and Project
+lock are absent and the frame was released.
+
+Material placement is **not accepted**: each intended destination was occupied by
+an unrelated existing Material GUID, while the intended GUID stayed at its original
+path. Comparing bytes at the intended path initially compared the wrong asset;
+exact GUID lookup corrected that diagnosis. Runtime reference PASS does not prove
+organized destination placement. No source change, hand move, overwrite, original
+repair or purchase-material import followed. Reuse an existing isolated Project
+without those source GUIDs/destinations for the next separately allocated frame;
+preserve this Project and its occupants. Whole-product acceptance remains open.

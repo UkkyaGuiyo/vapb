@@ -133,8 +133,9 @@ portable collisions. Legacy/no-evidence Materials remain Unassigned. The single
 no-Prefab source-model Skin route now reuses the same allocator for its selected
 source Materials, with exact retained usage or Unassigned, path-only MOVE and
 unchanged source Material/meta bytes. Source tests and real Blender save/reopen,
-repeat export and package readback passed; named-path Unity return is pending a
-shared frame. Other model/Prefab Skin routes remain outside this extension. Fresh Unity
+repeat export and package readback passed. Unity references, face membership,
+Texture and geometry passed; destination placement remains unaccepted because
+the reused verification Project already held unrelated assets at all three paths. Other model/Prefab Skin routes remain outside this extension. Fresh Unity
 2022.3.22f1 verifies identity/bytes/m_Name/references and repeated Finalizer plus
 save/reimport for the supported static route; see Current State for the existing
 unused-slot limitation. No m_Name synchronization.
