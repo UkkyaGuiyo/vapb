@@ -8,7 +8,7 @@ Current installable WIP snapshot: `vapb-c5585a6.zip`, code commit `c5585a669320f
 python tools/build_distribution_zip.py --repo . --revision c5585a669320faece2133cab80470ca65104fa09 --output vapb-c5585a6.zip
 ```
 
-Source checkpoint after this ZIP: Semantic Bone Merge now refuses equivalent Bone mappings whose parent correspondence differs. The parent guard and subsequent bounded World/head Copy Location support are not included in `vapb-c5585a6.zip`; see [the regression result](TEST_RESULTS.md#bone-merge-parent-correspondence-2026-10-09).
+Source checkpoint after this ZIP: Semantic Bone Merge now refuses equivalent Bone mappings whose parent correspondence differs. The parent guard, bounded World/head Copy Location and Bone location Action support are not included in `vapb-c5585a6.zip`; see [the regression result](TEST_RESULTS.md#bone-merge-parent-correspondence-2026-10-09).
 
 Standard isolated Blender installation passed. The sole runtime change fixes Unity JSON reading of absent optional Skin receipts. Focused native JSON controls and normal Unity import/Finalizer Apply/repeat passed for one first-party PhysBone/Collider case using the existing SDK, preserving null roots, settings, real script identities and the native Collider reference. [Native component scope and retained failures](tests/evidence/remapped_model_replacement_export_20261008/native-physbone-collider-roundtrip.json) and [earlier distribution observations](tests/evidence/remapped_model_replacement_export_20261008/distribution-native-skin-return-summary.json) remain separate. The unchanged current ZIP also passed one [native ContactSender return](tests/evidence/remapped_model_replacement_export_20261008/native-contact-sender-roundtrip.json): explicit bone Transform identity, radius, tag and source correspondence survive Apply/repeat. GUI clicks, client simulation and full Avatar state remain unverified. This is an installable WIP snapshot. SDK and input assets are not included in the add-on ZIP.
 
@@ -135,6 +135,8 @@ This README and the Git history intentionally disclose the use of AI in developm
 同等 Bone の親が確定 mapping と一致しない場合は、Mesh の付け替え前に停止します。A/B の親階層と対応を確認して再解析してください。親の自動変更は行いません。
 
 Bone Merge は、親なし Empty の単一 Copy Location（World→World、head 指定）も確定 Bone mapping で付け替えます。プレビューと結果に Constraint 件数を表示し、位置が変わる場合は rollback します。Local 空間・tail・不明 Bone・他形式の Constraint、Animation、Unity/VRC 参照はこの限定経路の対象外です。
+
+Bone Merge は、A に既存 animation がなく、全 Bone が確定した同等対応で標準継承設定の場合、B の単一 slot/layer/strip の location Action をコピーして A に付け替えます。原本 B の Action は保持します。現在 Pose/Rest の一致は従来どおり必要です。Object channel、Driver、NLA、回転/Scale channel、B 固有 Bone の Action、Unity Animator/Expressions はこの経路では未対応です。プレビューと結果にコピー件数を表示し、Undo/Redo に対応します。
 
 ### UnityPackage書き出し：直接Prefabの静的Mesh
 

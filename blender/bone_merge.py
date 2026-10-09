@@ -65,8 +65,8 @@ def _rigid_world(matrix):
                     for i in range(3) for j in range(i + 1, 3)))
 
 
-def _unsupported_reference(owner, *, allowed_constraints=()):
-    if getattr(owner, "animation_data", None):
+def _unsupported_reference(owner, *, allowed_constraints=(), allowed_animation=False):
+    if getattr(owner, "animation_data", None) and not allowed_animation:
         return True
     if any(c not in allowed_constraints for c in getattr(owner, "constraints", ())):
         return True
@@ -90,6 +90,45 @@ def _attached_objects(a, b):
     return [obj for obj in bpy.data.objects if obj is not a and obj is not b and
             (obj.parent is b or any(mod.type == 'ARMATURE' and mod.object is b
                                     for mod in obj.modifiers))]
+
+
+def _bone_location_action(a, b, remap):
+    data = b.animation_data
+    if data is None:
+        return None
+    action = data.action
+    if (a.animation_data is not None or action is None or action.library or action.override_library or
+            data.drivers or data.nla_tracks or data.use_tweak_mode or
+            data.action_blend_type != 'REPLACE' or data.action_influence != 1 or
+            not action.is_action_layered or len(action.slots) != 1 or len(action.layers) != 1 or
+            len(action.layers[0].strips) != 1 or data.action_slot is None):
+        raise ValueError("Bone Action は A が未アニメーションで、単一 location Clip/slot のみ対応しています")
+    paths = {}
+    for source in b.data.bones:
+        target = a.data.bones.get(remap[source.name])
+        if target is None or any(
+                bone.bbone_segments != 1 or bone.inherit_scale != 'FULL' or
+                not bone.use_inherit_rotation or not bone.use_local_location or
+                bone.use_relative_parent or bone.use_connect for bone in (source, target)):
+            raise ValueError("Bone Action は標準継承設定の同等 Bone のみ対応しています")
+        source_pose, target_pose = b.pose.bones[source.name], a.pose.bones[target.name]
+        if source_pose.rotation_mode != target_pose.rotation_mode:
+            raise ValueError("Bone Action の回転モードが一致しません")
+        paths[source_pose.path_from_id()+'.location'] = target_pose.path_from_id()+'.location'
+    strip = action.layers[0].strips[0]
+    bag = strip.channelbag(data.action_slot) if strip.type == 'KEYFRAME' else None
+    if bag is None or not bag.fcurves:
+        raise ValueError("Bone Action の channel がありません")
+    destinations = set()
+    for curve in bag.fcurves:
+        if curve.data_path not in paths or curve.array_index not in (0,1,2):
+            raise ValueError("Bone Action の location 以外の binding は未対応です")
+        address = (paths[curve.data_path], curve.array_index)
+        if address in destinations:
+            raise ValueError("Bone Action の付け替え先 binding が重複しています")
+        destinations.add(address)
+    return {'source': action, 'slot': data.action_slot.identifier, 'paths': paths,
+            'extrapolation': data.action_extrapolation}
 
 
 def prepare_merge(a, b, choices, scene):
@@ -126,8 +165,9 @@ def prepare_merge(a, b, choices, scene):
             uuid.UUID(str(value))
     except (TypeError, ValueError):
         raise ValueError("Armature/Bone のローカル ID が無効です") from None
+    action_plan = _bone_location_action(a, b, remap)
     for owner in (a, b, a.data, b.data, *a.pose.bones, *b.pose.bones):
-        if _unsupported_reference(owner):
+        if _unsupported_reference(owner, allowed_animation=owner is b and action_plan is not None):
             raise ValueError("Animation / Constraint / VRC 参照があり、付替えを証明できません")
     if _unsupported_reference(scene):
         raise ValueError("Scene に未対応の Unity/VRC 参照があります")
@@ -200,7 +240,7 @@ def prepare_merge(a, b, choices, scene):
         return value
     b_only.sort(key=depth)
     return {"a": a, "b": b, "remap": remap, "classes": classifications,
-            "attached": attached, "b_only": [bone.name for bone in b_only], "constraints": constraint_refs}
+            "attached": attached, "b_only": [bone.name for bone in b_only], "constraints": constraint_refs, "action": action_plan}
 
 
 def _activate_object(obj):
@@ -328,6 +368,8 @@ def apply_merge(plan):
                                      *((bone.name, bone) for bone in armature.data.bones)]}
     renamed_groups = []
     retargeted_constraints = []
+    copied_action = None
+    action_data_created = False
     try:
         _add_b_only_bones(plan)
         target_bones = [a.data.bones[name] for name in set(remap.values())]
@@ -352,6 +394,17 @@ def apply_merge(plan):
                 if parent_type == 'BONE':
                     obj.parent_bone = remap[old_parent_bone]
                 obj.matrix_world = world
+        if plan['action'] is not None:
+            capture = plan['action']
+            copied_action = capture['source'].copy()
+            slot = copied_action.slots[capture['slot']]
+            for curve in copied_action.layers[0].strips[0].channelbag(slot).fcurves:
+                curve.data_path = capture['paths'][curve.data_path]
+            a.animation_data_create()
+            action_data_created = True
+            a.animation_data.action = copied_action
+            a.animation_data.action_slot = slot
+            a.animation_data.action_extrapolation = capture['extrapolation']
         for obj, constraint, old, new in plan['constraints']:
             retargeted_constraints.append((constraint, constraint.target, constraint.subtarget))
             constraint.target = a
@@ -386,6 +439,10 @@ def apply_merge(plan):
                     (left - right).length > 1e-4 for left, right in zip(after, baseline)):
                 raise RuntimeError("付替え後の World 変形が一致しません")
     except Exception:
+        if copied_action is not None:
+            if action_data_created:
+                a.animation_data_clear()
+            bpy.data.actions.remove(copied_action)
         for constraint, target, subtarget in reversed(retargeted_constraints):
             constraint.target = target
             constraint.subtarget = subtarget

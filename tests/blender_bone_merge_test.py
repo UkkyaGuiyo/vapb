@@ -275,6 +275,107 @@ def world_copy_location_reference_test():
     print('BONE_MERGE_COPY_LOCATION_PASS equivalent_and_b_only=2 unsupported_refused=4 future_pose_preserved=2 rollback=1')
 
 
+def bone_location_action_test():
+    """Copy one exact Bone location Action; preserve B and rollback new resources."""
+    from types import SimpleNamespace
+    def fixture():
+        reset()
+        a = rig('Action reference', (0,0,0), (0,0,0))
+        b = rig('Action source', (0,0,0), (0,0,0))
+        a.data.bones['Root'].name = 'Target"Root'
+        b.data.bones['Root'].name = 'Source"Root'
+        obj,modifier = mesh('Action skin', b, root_name='Source"Root')
+        bone = b.pose.bones['Source"Root']
+        bone.location.x = 0
+        bone.keyframe_insert(data_path='location',frame=1)
+        bone.location.x = .5
+        bone.keyframe_insert(data_path='location',frame=10)
+        bpy.context.scene.frame_set(1)
+        rows = [SimpleNamespace(source_name='Source"Root',classification='EQUIVALENT',
+                                target_name='Target"Root',confirmed=True)]
+        return a,b,obj,modifier,rows
+    def curves(armature):
+        data = armature.animation_data
+        return data.action.layers[0].strips[0].channelbag(data.action_slot).fcurves
+    def signature(armature):
+        return tuple((c.data_path,c.array_index,tuple(tuple(k.co) for k in c.keyframe_points))
+                     for c in curves(armature))
+    a,b,obj,modifier,rows = fixture()
+    source_action, source_signature = b.animation_data.action,signature(b)
+    expected = {}
+    for frame in (1,5,10):
+        bpy.context.scene.frame_set(frame)
+        expected[frame] = evaluated_world_vertices(obj)
+    bpy.context.scene.frame_set(1)
+    assert bone_merge_module.apply_merge(prepare_merge(a,b,rows,bpy.context.scene)) == (0,1)
+    assert a.animation_data.action is not source_action and b.animation_data.action is source_action
+    assert signature(b) == source_signature
+    target_path = a.pose.bones['Target"Root'].path_from_id()+'.location'
+    assert all(c.data_path == target_path for c in curves(a))
+    for frame in (1,5,10):
+        bpy.context.scene.frame_set(frame)
+        assert all((x-y).length < 1e-5 for x,y in zip(expected[frame],evaluated_world_vertices(obj)))
+    for unsupported in ('OBJECT_PATH','DESTINATION_ACTION','DRIVER'):
+        a,b,obj,modifier,rows = fixture()
+        if unsupported == 'OBJECT_PATH': b.keyframe_insert(data_path='location',frame=1)
+        elif unsupported == 'DESTINATION_ACTION': a.keyframe_insert(data_path='location',frame=1)
+        else: b.driver_add('location',0)
+        try: prepare_merge(a,b,rows,bpy.context.scene)
+        except ValueError: pass
+        else: raise AssertionError('Unsupported Action accepted: '+unsupported)
+        assert modifier.object is b and REMAP_PROPERTY not in a
+    a,b,obj,modifier,rows = fixture()
+    plan = prepare_merge(a,b,rows,bpy.context.scene)
+    source_action, source_signature = b.animation_data.action,signature(b)
+    actions_before = set(bpy.data.actions)
+    original = bone_merge_module._evaluated_vertices
+    def fail_after_action(mesh_object):
+        if a.animation_data and a.animation_data.action:
+            raise RuntimeError('injected after Action assignment')
+        return original(mesh_object)
+    bone_merge_module._evaluated_vertices = fail_after_action
+    try:
+        try: bone_merge_module.apply_merge(plan)
+        except RuntimeError as error: assert 'injected' in str(error)
+        else: raise AssertionError('Action rollback injection did not run')
+    finally: bone_merge_module._evaluated_vertices = original
+    assert a.animation_data is None and set(bpy.data.actions) == actions_before
+    assert b.animation_data.action is source_action and signature(b) == source_signature
+    assert modifier.object is b and obj.vertex_groups.get('Source"Root')
+    assert REMAP_PROPERTY not in a and LOCAL_ID_PROPERTY not in a and LOCAL_ID_PROPERTY not in b
+    a,b,obj,modifier,rows = fixture()
+    a['_test_action_merge_A'] = b['_test_action_merge_B'] = obj['_test_action_merge_mesh'] = True
+    source_name,source_signature = b.animation_data.action.name,signature(b)
+    state = bpy.context.scene.vapb_bone_merge
+    state.reference,state.source = a,b
+    state.mappings.clear()
+    for choice in rows:
+        row = state.mappings.add()
+        row.source_name,row.target_name = choice.source_name,choice.target_name
+        row.classification,row.confirmed = choice.classification,choice.confirmed
+    bpy.ops.ed.undo_push(message='Before owned Bone Action merge')
+    assert bpy.ops.vapb.bone_merge_apply() == {'FINISHED'}
+    copy_name = a.animation_data.action.name
+    bpy.ops.ed.undo_push(message='After owned Bone Action merge')
+    assert bpy.ops.ed.undo() == {'FINISHED'}
+    a = next(o for o in bpy.data.objects if o.get('_test_action_merge_A'))
+    b = next(o for o in bpy.data.objects if o.get('_test_action_merge_B'))
+    obj = next(o for o in bpy.data.objects if o.get('_test_action_merge_mesh'))
+    assert a.animation_data is None and copy_name not in bpy.data.actions
+    assert b.animation_data.action.name == source_name and signature(b) == source_signature
+    assert obj.modifiers['Skin'].object is b and obj.vertex_groups.get('Source"Root')
+    assert REMAP_PROPERTY not in a and LOCAL_ID_PROPERTY not in a
+    assert bpy.ops.ed.redo() == {'FINISHED'}
+    a = next(o for o in bpy.data.objects if o.get('_test_action_merge_A'))
+    b = next(o for o in bpy.data.objects if o.get('_test_action_merge_B'))
+    obj = next(o for o in bpy.data.objects if o.get('_test_action_merge_mesh'))
+    assert a.animation_data.action.name == copy_name and obj.modifiers['Skin'].object is a
+    assert b.animation_data.action.name == source_name and signature(b) == source_signature
+    bpy.context.scene.frame_set(5)
+    assert all((x-y).length < 1e-5 for x,y in zip(expected[5],evaluated_world_vertices(obj)))
+    print('BONE_MERGE_LOCATION_ACTION_PASS escaped_rna_path=1 frames_preserved=3 source_action_unchanged=1 unsupported_refused=3 rollback_no_action_leak=1 operator_undo_redo=1')
+
+
 def main():
     world_copy_location_reference_test()
     equivalent_parent_mapping_test()
@@ -283,6 +384,7 @@ def main():
         bpy.utils.register_class(cls)
     register_bone_merge_properties()
     try:
+        bone_location_action_test()
         reset()
         a = rig('A collision', (0, 0, 0), (0, 0, 0), extra=True)
         b = rig('B collision', (0, 0, 0), (0, 0, 0), extra=True)
