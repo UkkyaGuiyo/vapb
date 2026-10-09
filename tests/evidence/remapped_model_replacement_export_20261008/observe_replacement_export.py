@@ -23,6 +23,16 @@ try:
         rig = obj.modifiers[0].object
         bone_state = [(b.get('_vapb_fbx_model_uid'), b.get('_vapb_fbx_bone_realization_id'),
                        tuple(tuple(row) for row in b.matrix_local)) for b in rig.data.bones]
+        reopened = '--native-reopen' in sys.argv
+        if reopened:
+            material_state = [(slot.material.get('unity_material_guid'), slot.material.get('unity_material_file_id')) for slot in obj.material_slots]
+            assert bpy.ops.wm.save_as_mainfile(filepath=str(work/'NativeSkinEdit.blend')) == {'FINISHED'}
+            assert bpy.ops.wm.open_mainfile(filepath=str(work/'NativeSkinEdit.blend')) == {'FINISHED'}
+            meshes = [o for o in bpy.context.scene.objects if o.type=='MESH'];assert len(meshes)==1;obj=meshes[0]
+            rig = obj.modifiers[0].object
+            assert vertices == [tuple(v.co) for v in obj.data.vertices]
+            assert material_state == [(slot.material.get('unity_material_guid'), slot.material.get('unity_material_file_id')) for slot in obj.material_slots]
+            assert bone_state == [(b.get('_vapb_fbx_model_uid'), b.get('_vapb_fbx_bone_realization_id'), tuple(tuple(row) for row in b.matrix_local)) for b in rig.data.bones]
         obj.select_set(True);bpy.context.view_layer.objects.active=obj
         output = work/'NativeSkinOutput.unitypackage'
         assert bpy.ops.export_scene.vapb_unitypackage(filepath=str(output)) == {'FINISHED'}
@@ -39,7 +49,7 @@ try:
         report = dict(status='PASS_BOUNDED_NATIVE_SKIN_EXPORT_ONLY', input_sha256=input_sha,
                       output_sha256=hashlib.sha256(output.read_bytes()).hexdigest(), task=task,
                       source_assets_and_meta_byte_preserved=True, editing_mesh_and_bones_unchanged_by_export=True,
-                      edit_scale=edit_scale, unity_return='NOT_RUN', scope='single no-Prefab source-model Skin unchanged export' if edit_scale == 1.0 else 'single no-Prefab source-model Skin geometry edit')
+                      edit_scale=edit_scale, scene_saved_reopened=reopened, unity_return='NOT_RUN', scope='single no-Prefab source-model Skin unchanged export' if edit_scale == 1.0 else 'single no-Prefab source-model Skin geometry edit')
         (work/'native-skin-export-observation.json').write_text(json.dumps(report,indent=2)+'\n')
         print('VAPB_NATIVE_SKIN_EXPORT',report['status']);sys.exit(0)
     if '--replacement-only' not in sys.argv:
