@@ -29,6 +29,37 @@ def install_in_isolated_child(archive_path: Path) -> None:
     assert addon.PREFERENCES_CLASSES
     assert module in bpy.context.preferences.addons
     assert addon_utils.check(module) == (True, True)
+    args = sys.argv[sys.argv.index('--') + 1:]
+    if '--action-scene' in args:
+        import hashlib,json,tarfile
+        scene = Path(args[args.index('--action-scene') + 1]).resolve()
+        output = Path(args[args.index('--action-output') + 1]).resolve()
+        before = hashlib.sha256(scene.read_bytes()).hexdigest()
+        bpy.ops.wm.open_mainfile(filepath=str(scene))
+        meshes = [obj for obj in bpy.context.scene.objects if obj.type == 'MESH' and
+                  any(mod.type == 'ARMATURE' for mod in obj.modifiers)]
+        assert len(meshes) == 1
+        mesh = meshes[0]
+        rig = next(mod.object for mod in mesh.modifiers if mod.type == 'ARMATURE')
+        original_action = rig.animation_data.action
+        assert original_action is not None
+        bpy.ops.object.select_all(action='DESELECT')
+        mesh.select_set(True)
+        bpy.context.view_layer.objects.active = mesh
+        assert bpy.ops.export_scene.vapb_unitypackage(filepath=str(output)) == {'FINISHED'}
+        with tarfile.open(output,'r:gz') as package:
+            rows = {}
+            for member in package.getmembers():
+                if member.name.endswith('/pathname'):
+                    path = package.extractfile(member).read().decode().strip()
+                    rows[path] = package.extractfile(member.name.rsplit('/',1)[0]+'/asset').read()
+        task = json.loads(rows['Assets/VAPBExport/manifest.json'])['reference_rebind_tasks'][0]
+        recipe = task['action_clip']
+        assert rows['Assets/VAPBExport/Editor/VapbActionClipFinalizer.cs'] == (Path(addon.__file__).parent/'unity_editor/Editor/VapbActionClipFinalizer.cs').read_bytes()
+        assert hashlib.sha256(rows['Assets/VAPBExport/ActionCarrier_'+recipe['carrier_guid']+'.fbx']).hexdigest() == recipe['carrier_sha256']
+        assert rig.animation_data.action == original_action
+        assert hashlib.sha256(scene.read_bytes()).hexdigest() == before
+        print('DIST_INSTALLED_NORMAL_ACTION_EXPORT_OK helper_packaged=1 source_action_and_scene_preserved=1 human_gui_clicks=NOT_RUN')
     assert bpy.ops.preferences.addon_disable(module=module) == {'FINISHED'}
     assert module not in bpy.context.preferences.addons
     assert addon_utils.check(module) == (False, False)
@@ -56,7 +87,7 @@ def main() -> None:
         subprocess.run([
             bpy.app.binary_path, '--background', '--factory-startup', '--disable-autoexec',
             '--python-exit-code', '1', '--python', str(Path(__file__).resolve()),
-            '--', str(archive_path), '--isolated-child',
+            '--', str(archive_path), *sys.argv[sys.argv.index('--') + 2:], '--isolated-child',
         ], cwd=install_root, env=env, check=True)
 
 

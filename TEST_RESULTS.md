@@ -410,3 +410,29 @@ private paths and SDK assets remain local. Human GUI clicks/assignment, continuo
 animation equivalence, nested/direct Prefab Action runtime, general Avatar retargeting
 and VRC runtime are NOT_RUN. Distribution ZIP is unchanged; this is bounded source
 capability plus representative native acceptance, not whole-product completion.
+
+## Installable ZIP independent Clip dependency fix (2026-10-10)
+
+Specification 12 requires the ordinary user workflow without source editing;
+specification 21 requires runtime-complete installable ZIPs from a verified commit.
+The explicit distribution support-file list omitted the new
+`VapbActionClipFinalizer.cs`, although normal export reads it unconditionally.
+A ZIP built from the preceding source revision therefore lacked a required export
+consumer. The existing distribution helper-completeness assertion reproduces RED.
+Adding that one support file restores GREEN for all five existing distribution checks.
+No runtime behavior, Controller assignment or source asset semantics were broadened.
+
+The existing isolated install test now optionally opens an owned Action Skin scene
+and invokes the same registered export operator used by the menu. Blender 5.2.1
+standard addon_install/enable/disable succeeds from the fixed ZIP with isolated
+user scripts/config/data/extensions and no saved user preference file. Normal
+installed-code export produces the Action task, matching carrier hash and packaged
+Clip consumer; source Action and saved scene bytes are retained. The installed
+consumer bytes match the source already native-verified in the preceding checkpoint.
+This fixes the shipped-addon runtime dependency, rather than merely repackaging code.
+
+The final revision ZIP is generated with the existing distribution builder after
+this source commit. Its exact local filename, source SHA and SHA-256 are reported
+with delivery. No ZIP/owned fixture binary is added to GitHub. Human GUI clicks,
+manual Unity Clip assignment and broad VRC runtime remain NOT_RUN. Unity was not
+launched again for this packaging-only runtime dependency correction.

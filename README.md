@@ -376,4 +376,4 @@ identity or ambiguous target paths refuse. Skin still travels separately in rest
 pose. The owned two-Bone source-model case passes native Unity Clip creation,
 repeat/collision controls and three sampled final-Variant Skin deformations.
 Human GUI assignment, general Avatar/retargeting and VRC runtime remain unverified.
-The existing distribution ZIP has not been rebuilt for this source change.
+The installable ZIP builder includes the independent Clip consumer. Generate a source-revision ZIP with `python tools/build_distribution_zip.py --repo . --revision HEAD --output-dir dist`. Local ZIP delivery and standard installation checks are recorded separately from source/GitHub saves.

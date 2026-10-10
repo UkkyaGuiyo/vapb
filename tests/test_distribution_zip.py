@@ -29,6 +29,7 @@ class DistributionZipTests(unittest.TestCase):
             'unity_editor/Editor/VapbImportAssistant.cs',
             'unity_editor/Editor/VapbReferenceFinalizer.cs',
             'unity_editor/Editor/VapbModelSkinFinalizer.cs',
+            'unity_editor/Editor/VapbActionClipFinalizer.cs',
             'unity_editor/Editor/VapbSkinWeightImporter.cs',
             'unity_editor/Editor/VapbFinalStateFinalizer.cs',
         }
