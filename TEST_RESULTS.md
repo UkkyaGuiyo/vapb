@@ -428,7 +428,8 @@ standard addon_install/enable/disable succeeds from the fixed ZIP with isolated
 user scripts/config/data/extensions and no saved user preference file. Normal
 installed-code export produces the Action task, matching carrier hash and packaged
 Clip consumer; source Action and saved scene bytes are retained. The installed
-consumer bytes match the source already native-verified in the preceding checkpoint.
+consumer sources match the preceding native-verified sources after normalizing line
+endings; Git archive/checkouts change line endings, so raw byte equality is not claimed.
 This fixes the shipped-addon runtime dependency, rather than merely repackaging code.
 
 The final revision ZIP is generated with the existing distribution builder after
