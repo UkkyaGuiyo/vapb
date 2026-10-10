@@ -20,15 +20,35 @@ from ..export.model_package import SourcePackage, ModelReplacement, TextureRepla
 from ..export.package_writer import UnityPackageWriter
 from ..export.raw_assets import RawAssetRepository
 from ..export.staging import StagedUnityAsset
-from ..export.final_state_package import export_final_state_package, _material_texture_guids, _material_data
+from ..export.final_state_package import export_final_state_package, _material_texture_guids, _material_data, _source_assets
 from ..export.material_naming import allocate_material_paths
 from ..blender.material_owner_usage import proven_owners
 from ..export.triangle_staging import frozen_export_meshes
 
 
-def _materials(mesh, package_id, assets):
+def _model_material_sources(scene, meshes, package_id):
+    """Use only selected Material namespaces, verified against retained archives."""
+    package_ids = {package_id}
+    for mesh in meshes:
+        for slot in mesh.material_slots:
+            if slot.material is not None:
+                provider = slot.material.get('unity_source_package_id', '')
+                if not provider:
+                    raise ValueError('source Material package is unavailable')
+                package_ids.add(provider)
+    registry = load_scene_registry(scene)
+    sources, assets_by_package = [], {}
+    for provider in sorted(package_ids):
+        assets_by_package[provider] = _source_assets(scene, provider)
+        package = registry.packages[provider]
+        sources.append(SourcePackage(Path(package['source_archive_path']), package['package_sha256']))
+    return sources, assets_by_package
+
+
+def _materials(mesh, package_id, assets, *, assets_by_package=None):
     result = []
     sources = {asset.guid: asset for asset in assets}
+    providers = assets_by_package if assets_by_package is not None else {package_id: sources}
     # Same reserved Unity resource GUIDs as the existing Skin/direct closure checks.
     builtins = {'0' * 32, '0000000000000000e000000000000000', '0000000000000000f000000000000000'}
     for slot in mesh.material_slots:
@@ -36,24 +56,31 @@ def _materials(mesh, package_id, assets):
         if material is None:
             result.append(None)
             continue
-        if material.get('unity_source_package_id') != package_id:
+        provider = material.get('unity_source_package_id')
+        if provider not in providers:
             raise ValueError('素材の出所Packageが異なります。依存Packageの書き出しは未対応です')
         guid = material.get('unity_material_guid', '')
         file_id = material.get('unity_material_file_id', '')
-        source = sources.get(guid)
+        material_sources = providers[provider]
+        source = material_sources.get(guid)
+        if provider != package_id and source is not None and not source.pathname.lower().endswith('.mat'):
+            raise ValueError('cross-package embedded Material identity is unsupported')
+        if provider != package_id and source is not None and not re.search(
+                rb'(?m)^---\s+!u!21\s+&' + re.escape(str(file_id).encode()) + rb'\b', source.asset_bytes):
+            raise ValueError('Unity Material asset identity is not proven')
         if not guid or not file_id or source is None:
             raise ValueError('素材の元Assetを確認できません。新規素材はこの経路では未対応です')
         # Unity serialized state is authoritative even for unpreviewed properties.
         # Inspect only selected .mat assets; do not reinterpret embedded FBX Materials.
         if source.pathname.lower().endswith('.mat'):
-            missing = _material_texture_guids(source.asset_bytes) - sources.keys() - builtins
+            missing = _material_texture_guids(source.asset_bytes) - material_sources.keys() - builtins
             if missing:
                 raise ValueError('素材のTexture参照を元Package内で解決できません。依存Textureの欠落した出力は作成しません')
         result.append({'guid': guid, 'file_id': str(file_id)})
     return result
 
 
-def _working_textures(mesh, package_id, assets, *, additional_meshes=()):
+def _working_textures(mesh, package_id, assets, *, additional_meshes=(), assets_by_package=None):
     """Read source-identified working images without saving over their files."""
     images, visited = {}, set()
 
@@ -73,12 +100,14 @@ def _working_textures(mesh, package_id, assets, *, additional_meshes=()):
             if slot.material is not None:
                 visit(slot.material.node_tree)
     sources = {asset.guid: asset for asset in assets}
+    source_packages = assets_by_package if assets_by_package is not None else {package_id: sources}
     providers = {}
     replacements = []
     for image in images.values():
         guid = image.get('unity_guid', '')
-        asset = sources.get(guid)
-        if (image.get('unity_source_package_id') != package_id or asset is None or
+        provider = image.get('unity_source_package_id')
+        asset = source_packages.get(provider, {}).get(guid)
+        if (provider not in source_packages or asset is None or
                 image.get('unity_asset_path') != asset.pathname or
                 not re.search(rb'(?m)^TextureImporter:\s*$', asset.meta_bytes)):
             raise ValueError('画像の元Package・Texture Assetを確認できません。新規画像の追加は未対応です')
@@ -107,7 +136,7 @@ def _working_textures(mesh, package_id, assets, *, additional_meshes=()):
         if guid in providers and providers[guid] != encoded:
             raise ValueError('同一Textureに異なる編集画像があります。出力を一意に選べません')
         if guid not in providers and encoded != asset.asset_bytes:
-            replacements.append(TextureReplacement(package_id, guid,
+            replacements.append(TextureReplacement(provider, guid,
                 hashlib.sha256(asset.asset_bytes).hexdigest(), encoded))
         providers[guid] = encoded
     return replacements
@@ -340,7 +369,7 @@ def _reject_untransported_skin_animation(mesh, rig, *, allow_bone_action=False):
         raise ValueError('編集AnimationのUnity復帰は未対応です。ClipやDriverを破棄せず出力を停止しました')
 
 
-def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=False):
+def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=False, assets_by_package=None):
     """Defer model Renderer identity to Unity while preserving source assets."""
     from ..blender.fbx_witness import prepare_witness, source_export_scale_options, source_skin_bone_uids, source_skin_shared_parent
     from ..blender.fbx_receipt import RECEIPT_VERSION
@@ -421,7 +450,7 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
         bones.append({'edited_bone_realization_id': str(bone[keys[3]]),
                       'source_model_uid': str(bone[keys[2]])})
     task = (source_model_skin_task if source_model else direct_skin_task if direct else model_skin_task)(metadata, bones, assets)
-    task['material_bindings'] = model_skin_material_bindings(_materials(mesh, package_id, assets))
+    task['material_bindings'] = model_skin_material_bindings(_materials(mesh, package_id, assets, assets_by_package=assets_by_package))
     original = next(a for a in assets if a.guid == task['source_model_guid'])
     guid = hashlib.sha256(('VAPB_MODEL_SKIN_V1:' + package_id + ':' + realization).encode()).hexdigest()[:32]
     path = f'Assets/VAPBExport/EditedSkin_{guid}.fbx'
@@ -531,7 +560,7 @@ def export_model_skin_package(context, mesh, output, *, direct=False):
     return export_model_skin_packages(context, [mesh], output, direct_flags=[direct])
 
 
-def _source_model_material_paths(meshes, package_id, assets):
+def _source_model_material_paths(meshes, package_id, assets, *, assets_by_package=None):
     """Name already validated source Materials from retained exact usage only."""
     sources = {asset.guid: asset for asset in assets}
     rows = {}
@@ -541,8 +570,9 @@ def _source_model_material_paths(meshes, package_id, assets):
             if material is None:
                 continue
             guid, file_id = material.get('unity_material_guid'), str(material.get('unity_material_file_id'))
-            source = sources[guid]
-            owners = proven_owners(material, package_id, guid, file_id, source.asset_bytes)
+            provider = material.get('unity_source_package_id')
+            source = (assets_by_package[provider] if assets_by_package is not None else sources)[guid]
+            owners = proven_owners(material, provider, guid, file_id, source.asset_bytes)
             row = rows.setdefault(guid, {'guid': guid, 'name': _material_data(source.asset_bytes).name, 'owners': {}})
             for owner, label in owners.items():
                 if owner in row['owners'] and row['owners'][owner] != label:
@@ -571,23 +601,25 @@ def export_model_skin_packages(context, meshes, output, *, direct_flags=None):
     package = load_scene_registry(context.scene).packages.get(package_id)
     if not package:
         raise ValueError('元Packageの保存情報がありません')
-    source = SourcePackage(Path(package['source_archive_path']), package['package_sha256'])
-    source_bytes = source.path.read_bytes()
-    if hashlib.sha256(source_bytes).hexdigest() != source.expected_sha256:
-        raise ValueError('保存済み原本のハッシュが変わっています')
-    assets = RawAssetRepository(source.path).read_all(source_bytes)
+    sources, assets_by_package = _model_material_sources(context.scene, meshes, package_id)
+    assets = list(assets_by_package[package_id].values())
+    for mesh in meshes:
+        _materials(mesh, package_id, assets, assets_by_package=assets_by_package)
+    # Validate full original closures/collisions before staging edited model assets.
+    tree, manifest = materialize_model_package(sources, [], generator_version='0.4.0',
+        blender_version=bpy.app.version_string,
+        material_paths=_source_model_material_paths(meshes, package_id, assets,
+            assets_by_package=assets_by_package) if source_model else None,
+        texture_replacements=_working_textures(meshes[0], package_id, assets,
+            additional_meshes=meshes[1:], assets_by_package=assets_by_package))
     if direct_flags is None:
         direct_flags = [not bool(mesh.get('_vapb_model_instance_edge_path')) for mesh in meshes]
     if len(direct_flags) != len(meshes):
         raise ValueError('Skinの出力対象と参照方式が一致しません')
-    prepared = [_prepare_model_skin(context, mesh, assets, direct=direct, source_model=source_model)
+    prepared = [_prepare_model_skin(context, mesh, assets, direct=direct, source_model=source_model,
+                                     assets_by_package=assets_by_package)
                 for mesh, direct in zip(meshes, direct_flags)]
     tasks = group_model_skin_tasks([task for task, _ in prepared])
-    tree, manifest = materialize_model_package([source], [], generator_version='0.4.0',
-        blender_version=bpy.app.version_string,
-        material_paths=_source_model_material_paths(meshes, package_id, assets) if source_model else None,
-        texture_replacements=_working_textures(meshes[0], package_id, assets,
-                                               additional_meshes=meshes[1:]))
     generated = [asset for _, entries in prepared for asset in entries]
     for asset in generated:
         tree.add(asset)
