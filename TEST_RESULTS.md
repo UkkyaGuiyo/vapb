@@ -328,3 +328,35 @@ Unity import/take/local-rest-basis proof, independent .anim creation, normal
 package/Finalizer integration, root/path ambiguity controls and GUI delivery are
 NOT_RUN or UNIMPLEMENTED. No Controller/Animator, original FBX/meta/Material,
 existing Skin route, distribution ZIP or product-wide acceptance changed.
+
+## Single Action carrier: native Unity feasibility gate (2026-10-10)
+
+The owned carrier prepared from the existing two-Bone merged Skin was measured
+once by `VapbActionCarrierProbe.Run` in Unity 2022.3.22f1. The probe reuses the
+existing source witness, resolves all two source Bone identities by GUID/local ID,
+and accepts exactly one importer-reported take and matching native Clip. Carrier
+Bone custom-property markers resolve uniquely; maximum local/rest TRS matrix
+difference from the source is 2.384185791015625e-7 (bound 1e-5).
+
+For the one explicitly authored Bone, 10 native Transform curves are remapped
+relative to the source root. Twenty extra native rig/untouched-Bone curves have
+constant key values and are excluded. A separate non-Legacy `.anim` was created
+without assigning an Animator/Controller. At start, midpoint and end, remapped
+local pose matrix difference from the native carrier is zero. This is a bounded
+native transport feasibility result, not proof of arbitrary retargeting, continuous
+Animation equivalence, or all possible constant-curve tangent behavior.
+
+Editor normal exit 0; all 3041 pre-existing Assets/Packages/ProjectSettings files
+match their original hashes after restoration, with no new files remaining.
+No active owned descendants or assigned Project lock remained; exact pool lease
+and shared mutex were released. Private carrier, Clip, configuration, paths and
+raw logs remain local; no SDK/purchased asset binaries are committed.
+
+Normal exporter/manifest/Finalizer independent-Clip integration remains
+UNIMPLEMENTED. The existing Skin Animation-loss refusal remains unchanged.
+Native independent Clip reload/repeat/path-collision and animated final Variant
+Skin-deformation controls, manual GUI assignment and runtime behavior are NOT_RUN.
+Distribution ZIP is unchanged. Next minimum is to connect the proved transport
+through the existing task/occurrence resolution while retaining original source
+assets and Animator refusal; its normal-package acceptance needs a fresh assigned
+Unity frame. This checkpoint does not establish whole-product completion.
