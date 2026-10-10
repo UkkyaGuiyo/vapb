@@ -357,3 +357,23 @@ Geometry-only、Material-only、Texture-onlyのUnityPackageを同一Sceneへ順�
 通常開発の正本は [UkkyaGuiyo/vapb](https://github.com/UkkyaGuiyo/vapb) です。Blender Add-on/Python は **GPL-3.0-or-later**、独立した `unity_editor/` の C# helper は **MIT** です。適用範囲・出自・外部ソフトウェアとの境界は [LICENSES.md](LICENSES.md) を参照してください。入力アセット自体の権利条件は変更しません。
 
 旧 private repository の全履歴は保持し、こちらには個人パス・実Asset識別情報を取り除いて再構成した履歴を収録します。`archive/` のブランチは開発過程の保存用であり、現行の対応範囲や配布推奨版を示しません。履歴の古いローカル検証スクリプトは環境変数で入力を指定する必要があります。詳細は [公開履歴の移行記録](docs/PUBLIC_HISTORY_MIGRATION.md) を参照してください。
+
+### Edited Bone Action return (source branch)
+
+For a supported imported Skin, keep one active Bone TRS Action on its Armature
+and export through the existing UnityPackage route. Import that package into
+Unity and use the existing VAPB Apply prompt. Apply creates the edited Prefab
+Variant and a separate `Assets/VAPBExport/EditedAction_*.anim` asset. The prompt
+shows the Clip path and its playback root: the root GameObject of that Variant.
+Assign the Clip manually in Unity relative to that root; assigning it on a child
+or unrelated avatar root changes its binding paths. Existing Controllers and
+Animator state are preserved; no Controller or automatic assignment is created.
+
+This bounded route requires complete existing Bone identity mappings, matching
+local/rest bases and hierarchy, one layered Action/slot and supported Bone TRS
+channels. Driver/NLA/Constraint, Mesh/Shape Key/Object animation, unmatched Bone
+identity or ambiguous target paths refuse. Skin still travels separately in rest
+pose. The owned two-Bone source-model case passes native Unity Clip creation,
+repeat/collision controls and three sampled final-Variant Skin deformations.
+Human GUI assignment, general Avatar/retargeting and VRC runtime remain unverified.
+The existing distribution ZIP has not been rebuilt for this source change.

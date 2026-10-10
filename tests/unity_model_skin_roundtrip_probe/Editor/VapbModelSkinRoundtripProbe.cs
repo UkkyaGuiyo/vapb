@@ -29,7 +29,9 @@ public static class VapbModelSkinRoundtripProbe
         public BoneMapping[] bone_mappings;
         public MaterialBinding[] material_bindings;
         public WeightTransport weight_transport;
+        public ActionRecipe action_clip;
     }
+    [Serializable] private sealed class ActionRecipe { public string output_path, carrier_guid; public string[] animated_bone_realization_ids; }
     [Serializable] private sealed class WeightTransport { public WeightPoint[] points; }
     [Serializable] private sealed class WeightPoint { public int cp; public int[] expected_bits; }
     [Serializable] private sealed class ParentTransformMapping { public string source_model_uid, edited_transform_realization_id; }
@@ -43,6 +45,9 @@ public static class VapbModelSkinRoundtripProbe
     }
     [Serializable] private sealed class Report
     {
+        public bool action_early_failure_preserved, action_playback_root_reported, action_package_units_parsed;
+        public bool action_clip_created, action_clip_repeat_unchanged, action_clip_collision_rejected, action_collision_preserved, action_skin_moves, action_skin_matches_carrier;
+        public float action_skin_max_error;
         public bool pass;
         public string error;
         public bool package_imported;
@@ -309,6 +314,7 @@ public static class VapbModelSkinRoundtripProbe
     {
         try
         {
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
             string package = ProjectFile("Output.unitypackage");
             string[] gateArgs = Environment.GetCommandLineArgs();
             int gateIndex = Array.IndexOf(gateArgs, "-vapbPackage");
@@ -352,6 +358,7 @@ public static class VapbModelSkinRoundtripProbe
 
     private static void ValidateImported()
     {
+        if(EditorApplication.isCompiling || EditorApplication.isUpdating) { EditorApplication.delayCall += ValidateImported; return; }
         string phase = SessionState.GetString(Phase, "");
         if (phase != "completed" && phase != "") return;
         SessionState.SetString(Phase, "validating");
@@ -381,6 +388,7 @@ public static class VapbModelSkinRoundtripProbe
                 report.source_external_material_map=remaps.ToArray();
             }
             string beforeSource = Hash(Disk(sourcePath)), beforeSourceMeta = Hash(Disk(sourcePath)+".meta");
+            if(Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbExpectedAction")>=0) ValidateActionFailureBeforeOutput(task,report);
             Application.LogCallback gateLog = (message, trace, kind) => {
                 if (kind == LogType.Exception) report.apply_exception = message;
                 const string prefix = "VAPB_MODEL_SKIN_VARIANT_REJECTED=";
@@ -471,7 +479,7 @@ public static class VapbModelSkinRoundtripProbe
                 var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static;
                 report.native_weights_equal = (bool)typeof(VapbModelSkinFinalizer).GetMethod("SameSkinInfluences", flags).Invoke(null, new object[] { originalSkin.sharedMesh, editedMesh });
                 report.exported_weights_validated = task.weight_transport != null && report.first_apply && report.second_apply && ModelContainsMesh(editedModel, editedMesh);
-                if(task.weight_transport != null) { NegativeWeightTransport(task, firstHash, report); WeightReaderControls(report); }
+                if(task.weight_transport != null && Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbExpectedAction")<0) { NegativeWeightTransport(task, firstHash, report); WeightReaderControls(report); }
                 report.native_material_identity = task.material_bindings != null && task.material_bindings.Length == selected.sharedMaterials.Length;
                 var expectedMaterials = new List<string>();
                 if(task.material_bindings!=null) foreach(var binding in task.material_bindings) expectedMaterials.Add(binding.guid+":"+binding.file_id);
@@ -534,7 +542,8 @@ public static class VapbModelSkinRoundtripProbe
                     report.edited_mesh_bound && report.originals_unchanged && report.second_apply_unchanged &&
                     report.geometry_matches_edited_model && report.topology_and_weights_valid && report.target_bones_and_root_preserved &&
                     report.materials_preserved && report.siblings_preserved && report.native_geometry_expected_scale &&
-                    (task.weight_transport == null ? report.native_weights_equal : report.exported_weights_validated && report.weight_ulp_rejected && report.weight_data_rejected && report.weight_raw_rejected && report.weight_controls_preserved && report.cp_label_rejected && report.decode_budget_rejected) && report.native_bounds_contain_rest && report.native_material_identity && report.native_texture_identity && report.native_face_membership && identity && editedGuid==task.model_guid && editedGuid!=task.source_model_guid && editedId!=0;
+                    (task.weight_transport == null ? report.native_weights_equal : report.exported_weights_validated && (Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbExpectedAction")>=0 || report.weight_ulp_rejected && report.weight_data_rejected && report.weight_raw_rejected && report.weight_controls_preserved && report.cp_label_rejected && report.decode_budget_rejected)) && report.native_bounds_contain_rest && report.native_material_identity && report.native_texture_identity && report.native_face_membership && identity && editedGuid==task.model_guid && editedGuid!=task.source_model_guid && editedId!=0;
+                if(Array.IndexOf(Environment.GetCommandLineArgs(), "-vapbExpectedAction")>=0) { ValidateActionReturn(task,report); report.pass &= report.action_package_units_parsed && report.action_playback_root_reported && report.action_early_failure_preserved && report.action_clip_created && report.action_clip_repeat_unchanged && report.action_clip_collision_rejected && report.action_collision_preserved && report.action_skin_moves && report.action_skin_matches_carrier; }
                 report.error=report.pass ? "NONE" : "ASSERTION_FAILED";
                 Finish(report); return;
             }
@@ -556,6 +565,7 @@ public static class VapbModelSkinRoundtripProbe
         }
         catch (Exception error)
         {
+            Debug.LogError("VAPB_ACTION_ACCEPTANCE_EXCEPTION="+error.Message);
             report.pass = false;
             report.error = error is InvalidOperationException &&
                 (error.Message == "MANIFEST_MISSING" || error.Message == "TASK_MISSING" ||
@@ -570,6 +580,78 @@ public static class VapbModelSkinRoundtripProbe
         Finish(report);
     }
 
+    private static void ValidateActionReturn(Task task,Report report)
+    {
+        if(task.action_clip==null || String.IsNullOrEmpty(task.action_clip.output_path)) throw new InvalidOperationException("ACTION_RECIPE_MISSING");
+        var inspection=typeof(VapbModelSkinFinalizer).GetMethod("InspectForAssistant",System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic).Invoke(null,new object[]{ManifestPath}) as VapbImportAssistant.Inspection;
+        report.action_playback_root_reported=inspection!=null && inspection.output==task.variant_path && inspection.changes.Contains(task.action_clip.output_path) && inspection.changes.Contains("Playback root: root GameObject of "+task.variant_path);
+        string output=task.action_clip.output_path; string originalClip=Hash(Disk(output)),originalVariant=Hash(Disk(task.variant_path));
+        string sourcePath=AssetDatabase.GUIDToAssetPath(task.source_model_guid);
+        string sourceHash=Hash(Disk(sourcePath)),sourceMetaHash=Hash(Disk(sourcePath)+".meta");
+        var clip=AssetDatabase.LoadAssetAtPath<AnimationClip>(output);
+        report.action_clip_created=clip!=null && !clip.legacy;
+        report.action_clip_repeat_unchanged=VapbModelSkinFinalizer.Apply(ManifestPath) && originalClip==Hash(Disk(output)) && originalVariant==Hash(Disk(task.variant_path));
+        byte[] before=File.ReadAllBytes(Disk(output));
+        try
+        {
+            var binding=AnimationUtility.GetCurveBindings(clip)[0];var curve=AnimationUtility.GetEditorCurve(clip,binding);
+            var key=curve.keys[0];key.value+=0.125f;curve.MoveKey(0,key);AnimationUtility.SetEditorCurve(clip,binding,curve);AssetDatabase.SaveAssets();
+            string changed=Hash(Disk(output));
+            report.action_clip_collision_rejected=!VapbModelSkinFinalizer.Apply(ManifestPath);
+            report.action_collision_preserved=changed==Hash(Disk(output)) && originalVariant==Hash(Disk(task.variant_path));
+        }
+        finally { File.WriteAllBytes(Disk(output),before);AssetDatabase.ImportAsset(output,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport); }
+        clip=AssetDatabase.LoadAssetAtPath<AnimationClip>(output);
+        Type type=typeof(VapbModelSkinFinalizer);var flags=System.Reflection.BindingFlags.Static|System.Reflection.BindingFlags.NonPublic;
+        object nativeTask=JsonUtility.FromJson(JsonUtility.ToJson(task),type.GetNestedType("Task",System.Reflection.BindingFlags.NonPublic));
+        // Use the full manifest task; the public probe shape intentionally omits witness fields.
+        object nativeManifest=type.GetMethod("ParseManifestJson",flags).Invoke(null,new object[]{File.ReadAllText(Disk(ManifestPath))});
+        nativeTask=((Array)nativeManifest.GetType().GetField("reference_rebind_tasks").GetValue(nativeManifest)).GetValue(0);
+        object plan=type.GetMethod("PrepareWitness",flags).Invoke(null,new[]{nativeTask});
+        object witness=plan.GetType().GetField("witness").GetValue(plan);
+        var ids=(Dictionary<string,long>)witness.GetType().GetField("transformIds").GetValue(witness);
+        GameObject source=AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath),variant=AssetDatabase.LoadAssetAtPath<GameObject>(task.variant_path);
+        string carrierPath=AssetDatabase.GUIDToAssetPath(task.action_clip.carrier_guid);GameObject carrier=AssetDatabase.LoadAssetAtPath<GameObject>(carrierPath);
+        AnimationClip take=null;string takeName=((ModelImporter)AssetImporter.GetAtPath(carrierPath)).defaultClipAnimations[0].name;
+        foreach(UnityEngine.Object asset in AssetDatabase.LoadAllAssetsAtPath(carrierPath)) if(asset is AnimationClip c && c.name==takeName)take=c;
+        var targetPaths=new Dictionary<string,string>();var carrierPaths=new Dictionary<string,string>();
+        foreach(string id in task.action_clip.animated_bone_realization_ids)
+        {
+            string uid=null;foreach(var row in task.bone_mappings)if(row.edited_bone_realization_id==id)uid=row.source_model_uid;
+            Transform found=null;foreach(Transform t in source.GetComponentsInChildren<Transform>(true))
+                if(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(t,out string guid,out long local) && guid==task.source_model_guid && local==ids[uid]) { if(found!=null)throw new InvalidOperationException("ACTION_TARGET_DUPLICATE");found=t; }
+            if(found==null)throw new InvalidOperationException("ACTION_TARGET_MISSING");
+            targetPaths.Add(id,AnimationUtility.CalculateTransformPath(found,source.transform));
+            foreach(var marker in carrier.GetComponentsInChildren<VapbRealizationMarker>(true))if(marker.boneRealizationId==id)carrierPaths.Add(id,AnimationUtility.CalculateTransformPath(marker.transform,carrier.transform));
+        }
+        GameObject actual=null,expected=null,native=null;Mesh bakedA=null,bakedB=null;
+        try
+        {
+            actual=UnityEngine.Object.Instantiate(variant);expected=UnityEngine.Object.Instantiate(variant);native=UnityEngine.Object.Instantiate(carrier);
+            var skinA=actual.GetComponentsInChildren<SkinnedMeshRenderer>(true)[0];var skinB=expected.GetComponentsInChildren<SkinnedMeshRenderer>(true)[0];
+            bakedA=new Mesh();bakedB=new Mesh();skinA.BakeMesh(bakedA);Vector3[] rest=bakedA.vertices;
+            report.action_skin_matches_carrier=true;
+            foreach(float fraction in new[]{0f,0.5f,1f})
+            {
+                clip.SampleAnimation(actual,clip.length*fraction);take.SampleAnimation(native,take.length*fraction);
+                foreach(string id in targetPaths.Keys) {Transform target=expected.transform.Find(targetPaths[id]);Transform pose=native.transform.Find(carrierPaths[id]);target.localPosition=pose.localPosition;target.localRotation=pose.localRotation;target.localScale=pose.localScale;}
+                skinA.BakeMesh(bakedA);skinB.BakeMesh(bakedB);var a=bakedA.vertices;var b=bakedB.vertices;
+                if(a.Length!=b.Length || a.Length!=rest.Length)throw new InvalidOperationException("ACTION_SKIN_LAYOUT_DIFFERS");
+                for(int i=0;i<a.Length;i++) {float difference=(a[i]-b[i]).magnitude;report.action_skin_max_error=Mathf.Max(report.action_skin_max_error,difference);if(difference>=0.0001f)report.action_skin_matches_carrier=false;if((a[i]-rest[i]).magnitude>0.001f)report.action_skin_moves=true;}
+            }
+        }
+        finally {if(actual!=null)UnityEngine.Object.DestroyImmediate(actual);if(expected!=null)UnityEngine.Object.DestroyImmediate(expected);if(native!=null)UnityEngine.Object.DestroyImmediate(native);if(bakedA!=null)UnityEngine.Object.DestroyImmediate(bakedA);if(bakedB!=null)UnityEngine.Object.DestroyImmediate(bakedB);}
+        report.originals_unchanged &= sourceHash==Hash(Disk(sourcePath)) && sourceMetaHash==Hash(Disk(sourcePath)+".meta");
+    }
+
+    private static void ValidateActionFailureBeforeOutput(Task task,Report report)
+    {
+        string path=AssetDatabase.GUIDToAssetPath(task.action_clip.carrier_guid);var importer=AssetImporter.GetAtPath(path) as ModelImporter;report.action_package_units_parsed=importer!=null && importer.useFileScale && importer.globalScale==1f && !importer.bakeAxisConversion;byte[] before=File.ReadAllBytes(Disk(path));
+        try {
+            byte[] altered=(byte[])before.Clone();altered[altered.Length-1]^=1;File.WriteAllBytes(Disk(path),altered);
+            report.action_early_failure_preserved=!VapbModelSkinFinalizer.Apply(ManifestPath) && !File.Exists(Disk(task.action_clip.output_path)) && !File.Exists(Disk(task.variant_path));
+        } finally {File.WriteAllBytes(Disk(path),before);AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceUpdate|ImportAssetOptions.ForceSynchronousImport);}
+    }
     private static string NativeIdentity(UnityEngine.Object value)
     {
         return value != null && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(value, out string guid, out long id)

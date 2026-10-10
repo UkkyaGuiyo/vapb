@@ -68,7 +68,7 @@ public sealed class VapbModelSkinPostprocessor : AssetPostprocessor
 }
 
 [InitializeOnLoad]
-public static class VapbModelSkinFinalizer
+public static partial class VapbModelSkinFinalizer
 {
     private const string Kind = "RESTORE_MODEL_SKIN_VARIANT_V1";
     private const string DirectKind = "RESTORE_DIRECT_SKIN_VARIANT_V1";
@@ -126,6 +126,7 @@ public static class VapbModelSkinFinalizer
         public string witness_sha256;
         public string[] source_model_uids;
         public WeightTransport weight_transport;
+        public ActionClipRecipe action_clip;
     }
     [Serializable] private sealed class WeightTransport {
         public int version, control_point_count, uv_channel;
@@ -260,7 +261,7 @@ public static class VapbModelSkinFinalizer
         }
         return new VapbImportAssistant.Inspection {
             target = rootPath, output = first.variant_path, count = manifest.reference_rebind_tasks.Length,
-            changes = "編集Meshとウェイトを別Prefab Variantへ復元します。原本・骨階層・Material参照を保持し、Bone/rootBoneを再接続します。既存Unity設定の未対応変更は推測しません。",
+            changes = "編集Meshとウェイトを別Prefab Variantへ復元します。原本・骨階層・Material参照を保持し、Bone/rootBoneを再接続します。既存Unity設定の未対応変更は推測しません。" + ActionInstructions(manifest.reference_rebind_tasks),
             warning = "source・編集データ・素材・必要Script・保存先の事前確認を通過しました。FBXの出所識別・骨のrest・編集範囲は、適用時に再検証します。未対応なら適用を拒否します。" };
     }
 
@@ -315,7 +316,7 @@ public static class VapbModelSkinFinalizer
                 if (!FileHash(Disk(sourcePath) + ".meta").Equals(plan.sourceMetaHash,
                     StringComparison.OrdinalIgnoreCase)) Reject("SOURCE_RESTORE_FAILED");
             }
-            SaveVariant(plans, prefab);
+            ApplyVariantWithActionClips(plans, prefab);
             Debug.Log("VAPB_MODEL_SKIN_VARIANT_APPLIED=" + plans.Count);
             return true;
         }
@@ -668,6 +669,7 @@ public static class VapbModelSkinFinalizer
 
     private static void ValidateTask(Task task)
     {
+        ValidateActionRecipe(task);
         bool direct = task.kind == DirectKind;
         bool sourceModel = task.kind == SourceKind;
         if (task.weight_transport != null && (!sourceModel || task.parent_transform_mapping == null)) Reject("WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED");
@@ -789,7 +791,7 @@ public static class VapbModelSkinFinalizer
                     sawTasks = true; arrayStart = value;
                 }
                 else if (arrayDepth > 0 && depth == arrayDepth + 1 && taskIndex >= 0 &&
-                    (key == "weight_transport" || key == "parent_transform_mapping"))
+                    (key == "weight_transport" || key == "parent_transform_mapping" || key == "action_clip"))
                 {
                     bool isNull = value + 4 <= json.Length && json.Substring(value, 4) == "null";
                     if (isNull) present[taskIndex].Remove(key); else present[taskIndex].Add(key);
@@ -814,6 +816,7 @@ public static class VapbModelSkinFinalizer
         {
             Task task = manifest.reference_rebind_tasks[i];
             if (task == null) continue;
+            if (!present[i].Contains("action_clip")) task.action_clip = null;
             if (!present[i].Contains("weight_transport")) task.weight_transport = null;
             if (!present[i].Contains("parent_transform_mapping")) task.parent_transform_mapping = null;
         }

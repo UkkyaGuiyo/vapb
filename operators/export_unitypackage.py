@@ -331,11 +331,11 @@ def export_skin_package(context, mesh, output):
     return _write_package(tree, manifest, output)
 
 
-def _reject_untransported_skin_animation(mesh, rig):
-    # Existing Skin routes emit rest-pose copies, with no authored clip/driver recipe.
+def _reject_untransported_skin_animation(mesh, rig, *, allow_bone_action=False):
+    # Skin remains rest-pose; only the model route separately validates/transports Bone Action.
     animation_owners = (mesh, mesh.data, mesh.data.shape_keys, rig, rig.data)
     if any((data := getattr(owner, 'animation_data', None)) is not None and
-           (data.action is not None or data.drivers or data.nla_tracks)
+           ((data.action is not None and not (owner is rig and allow_bone_action)) or data.drivers or data.nla_tracks)
            for owner in animation_owners):
         raise ValueError('編集AnimationのUnity復帰は未対応です。ClipやDriverを破棄せず出力を停止しました')
 
@@ -358,7 +358,7 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
     if len(modifiers) != 1 or modifiers[0].type != 'ARMATURE' or not modifiers[0].object:
         raise ValueError('このモデルSkin経路は一つのArmature Modifierが必要です')
     rig = modifiers[0].object
-    _reject_untransported_skin_animation(mesh, rig)
+    _reject_untransported_skin_animation(mesh, rig, allow_bone_action=True)
     if (rig.library or rig.data.library or mesh.constraints or rig.constraints or
             any(pose.constraints for pose in rig.pose.bones) or modifiers[0].use_bone_envelopes):
         raise ValueError('Constraint・リンク・Envelope付きSkinはこの復元経路では未対応です')
@@ -442,6 +442,22 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
         if {row['source_model_uid'] for row in bones} != selected_uids:
             raise ValueError('元SkinのBoneをすべて出所記録から取得できません')
         task['bone_mappings'] = bones
+        from ..export.action_carrier import action_plan, export_action_carrier
+        action = action_plan(rig, bones) if rig.animation_data and rig.animation_data.action else None
+        action_asset = None
+        if action is not None:
+            carrier = folder / 'action.fbx'
+            recipe = export_action_carrier(context, rig, carrier, bones)
+            carrier_bytes = carrier.read_bytes()
+            carrier_sha = hashlib.sha256(carrier_bytes).hexdigest()
+            carrier_guid = hashlib.sha256(('VAPB_ACTION_V1:' + package_id + ':' + realization + ':' + carrier_sha).encode()).hexdigest()[:32]
+            task['action_clip'] = dict(version=1, carrier_guid=carrier_guid, carrier_sha256=carrier_sha,
+                output_path=f'Assets/VAPBExport/EditedAction_{carrier_guid}.anim',
+                animated_bone_realization_ids=recipe['animated_bone_realization_ids'],
+                fps=recipe['fps'], duration=(recipe['frames'][-1]-recipe['frames'][0])/recipe['fps'])
+            action_asset = StagedUnityAsset(carrier_guid, f'Assets/VAPBExport/ActionCarrier_{carrier_guid}.fbx',
+                carrier_bytes, f'fileFormatVersion: 2\nguid: {carrier_guid}\nModelImporter:\n  serializedVersion: 22200\n  meshes:\n    globalScale: 1\n    useFileScale: 1\n    bakeAxisConversion: 0\n'.encode(),
+                asset_type='GENERATED_EXPORT_SUPPORT', operation='CREATE', strategy='REGENERATE_FROM_BLENDER')
         selected_bones = [b for b in rig.data.bones if str(b.get('_vapb_fbx_model_uid')) in selected_uids]
         parent_proof = source_skin_shared_parent(raw, task['source_model_uid'], task['source_geometry_uid'],
                                                 allow_single=True) if source_model else None
@@ -506,6 +522,8 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
         generated.append(StagedUnityAsset(asset_guid, destination, data,
             f'fileFormatVersion: 2\nguid: {asset_guid}\n'.encode(), operation='CREATE',
             asset_type='GENERATED_EXPORT_SUPPORT'))
+    if action_asset is not None:
+        generated.append(action_asset)
     return task, generated
 
 
@@ -652,6 +670,8 @@ def _write_package(tree, manifest, output):
                       (first_party / 'Editor/VapbImportAssistant.cs').read_bytes()))
     generated.append(('Assets/VAPBExport/Editor/VapbModelSkinFinalizer.cs',
                       (first_party / 'Editor/VapbModelSkinFinalizer.cs').read_bytes()))
+    generated.append(('Assets/VAPBExport/Editor/VapbActionClipFinalizer.cs',
+                      (first_party / 'Editor/VapbActionClipFinalizer.cs').read_bytes()))
     if policies:
         generated.append(('Assets/VAPBExport/Editor/VapbSkinWeightImporter.cs',
                           (first_party / 'Editor/VapbSkinWeightImporter.cs').read_bytes()))

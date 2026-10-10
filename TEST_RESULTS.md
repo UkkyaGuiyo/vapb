@@ -360,3 +360,53 @@ Distribution ZIP is unchanged. Next minimum is to connect the proved transport
 through the existing task/occurrence resolution while retaining original source
 assets and Animator refusal; its normal-package acceptance needs a fresh assigned
 Unity frame. This checkpoint does not establish whole-product completion.
+
+## Normal package independent Bone Clip return (2026-10-10)
+
+The existing model Skin export route now carries its supported single active Bone
+TRS Action in a separate FBX and attaches a bounded `action_clip` task. Mesh/Shape
+Key/Object animation, Driver/NLA/Constraint, unmapped Bones and unsupported curves
+still refuse; the older general Skin route retains its refusal. The Skin payload
+remains rest-pose only. The existing Finalizer resolves the selected occurrence,
+checks carrier take/markers, local rest/hierarchy and binding uniqueness, then
+creates an independent non-Legacy `.anim` alongside the linked edited Variant.
+The normal Apply prompt preserves its Variant selection path and reports the
+independent Clip plus Variant root for manual assignment. No Controller/Animator
+assignment, source FBX/meta/Material rewrite or new retargeting facility is added.
+
+Initial normal import formally refused local/rest mismatch. Carrier transport had
+been incorrectly given the static Skin source-unit preset, and GUID-only generated
+carrier metadata left destination file-scale disabled. The carrier now retains its
+separately verified native exporter preset and explicitly emits its own
+ModelImporter file-scale/global-scale/axis policy. The consumer verifies that
+policy before extracting curves. This uses the relevant existing Atlas lesson;
+coordinates, source importer metadata and tolerances were not changed. A temporary
+helper replacement archive was also discarded after its import did not realize the
+new carrier; the final proof uses the product's ordinary GNU-format writer output.
+Only owned helpers were staged to avoid restoration-cache compilation artifacts.
+
+Blender 5.2.1 normal export passes: carrier/helper/task included, original saved
+Scene and active Action retained, unsupported Object channel refused before output,
+and ordinary non-animated package still exports. The nearest 21 existing Python
+model Skin/group/Material/script-dependency tests pass via unittest.
+
+Unity 2022.3.22f1 normal ImportPackage proof PASS: emitted unit metadata parsed,
+early carrier hash failure leaves no Variant/Clip, first Apply produces both,
+repeat Apply leaves Variant/Clip bytes unchanged, and a deliberately altered Clip
+is refused without overwriting it or the Variant. Clip restore and native reload
+succeed. Assistant inspection reports the correct Clip and playback root while
+retaining the real Variant path for selection. For the existing owned two-Bone
+merged Skin, final Variant BakeMesh moves and matches independently applied native
+carrier poses at start/midpoint/end: maximum vertex difference zero. All 45 vertices,
+15 triangles, two Bones/root, Material and two non-null Texture roles retain the
+existing bounded native geometry/identity checks. Exported authored weights validate;
+original versus authored weight equality is not claimed. Previously completed
+weight corruption/decoder controls were not rerun in this Action-only frame.
+
+Normal Editor exit 0. All 3041 protected pre-existing files match their hashes,
+no new files remain, active owned children are zero, Project lock is absent, and
+exact pool lease/shared mutex are released. Raw logs, package/Clip/Scene binaries,
+private paths and SDK assets remain local. Human GUI clicks/assignment, continuous
+animation equivalence, nested/direct Prefab Action runtime, general Avatar retargeting
+and VRC runtime are NOT_RUN. Distribution ZIP is unchanged; this is bounded source
+capability plus representative native acceptance, not whole-product completion.
