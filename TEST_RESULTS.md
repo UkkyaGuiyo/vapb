@@ -300,3 +300,31 @@ Native Unity 2022.3.22f1 result PASS: normal package import, first Apply, linked
 Edited positive weights 87 pass exported-weight validation; original native source has 60 because of the already established importer tiny-weight omission. native_weights_equal is false and is not advertised as original-weight equality. Source-model branch extra-component negative controls are NOT_RUN, not PASS. Runtime animation/VRC behavior is not asserted; authored native Animation return remains UNIMPLEMENTED.
 
 Owned Editor normal exit 0. All 3027 pre-existing Assets/Packages/ProjectSettings files unchanged after restoration, source input and prepared package unchanged, active owned children zero, project lock absent, exact pool lease released and shared mutex freshly verified free. Private raw log/result/assets remain local; only aggregate observations are saved publicly. Distribution ZIP remains unchanged.
+
+## Single Action FBX carrier: Blender-only checkpoint (2026-10-10)
+
+`export/action_carrier.py` adds a separate single-rig, layered Action/slot carrier.
+The existing rest-pose Skin exporter and its Animation refusal are unchanged.
+Only active Bone TRS channels with complete existing Bone mappings are accepted;
+linked rigs, Driver/NLA/Constraint contexts and unsupported channels refuse.
+Copies use neutral transport labels and retain only the existing identity markers.
+One actual native take is required. Additional baked rig/untouched-Bone channels
+are not authored bindings: the reader requires their emitted values to be constant;
+a future Unity consumer must exclude them and independently verify target basis.
+
+`tests/blender_action_carrier_test.py` reuses the owned Bone Merge fixture.
+Blender 5.2.1 passes actual FBX reimport, three pose and Skin-deformation samples,
+save/reopen, source Action conservation, copied fake-user resource cleanup and
+missing-identity/channel/Driver/NLA/output-collision refusals. The existing full
+Bone Merge native suite also passes, including Animation-loss refusal and Undo.
+The native reimport control uses zero animation offset. Half-frame bake includes
+the integer-endpoint midpoint directly; sampled comparisons retain the existing
+fixture's 1e-4 bound. Continuous-time or bitwise Animation equivalence is not claimed.
+
+A carrier was also prepared locally from the existing owned two-Bone merged Skin
+Scene by animating the previously witnessed root identity; the input blend bytes
+are unchanged. These binary artifacts and private paths are not committed.
+Unity import/take/local-rest-basis proof, independent .anim creation, normal
+package/Finalizer integration, root/path ambiguity controls and GUI delivery are
+NOT_RUN or UNIMPLEMENTED. No Controller/Animator, original FBX/meta/Material,
+existing Skin route, distribution ZIP or product-wide acceptance changed.
