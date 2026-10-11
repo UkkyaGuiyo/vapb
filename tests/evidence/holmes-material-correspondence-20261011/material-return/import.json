@@ -1,0 +1,9 @@
+{
+  "instruction_id": "HOLMES-20261011-04",
+  "phase": "import",
+  "blender_version": "5.2.1 LTS",
+  "status": "PASS",
+  "normal_import": "PASS",
+  "before_blend_sha256": "a93fc0d6d45210f61e047a5e3c4845cd250839bd6ccc8e667a3541912d73febb",
+  "original_preservation": "PASS"
+}

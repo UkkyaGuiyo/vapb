@@ -1,0 +1,163 @@
+{
+  "instruction_id": "HOLMES-20261011-04",
+  "phase": "confirm-edit",
+  "blender_version": "5.2.1 LTS",
+  "status": "PASS",
+  "pre_confirm_persistence": "PASS",
+  "standard_confirm": "PASS",
+  "edit": "p4 R0 to R2; p0 R0 retained",
+  "faces": [
+    {
+      "source_polygon": 0,
+      "uv": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.03125,
+          0.0
+        ],
+        [
+          0.0,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 3
+    },
+    {
+      "source_polygon": 1,
+      "uv": [
+        [
+          0.125,
+          0.0
+        ],
+        [
+          0.15625,
+          0.0
+        ],
+        [
+          0.15625,
+          0.03125
+        ],
+        [
+          0.125,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 4
+    },
+    {
+      "source_polygon": 2,
+      "uv": [
+        [
+          0.25,
+          0.0
+        ],
+        [
+          0.28125,
+          0.0
+        ],
+        [
+          0.28125,
+          0.03125
+        ],
+        [
+          0.25,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 4
+    },
+    {
+      "source_polygon": 3,
+      "uv": [
+        [
+          0.375,
+          0.0
+        ],
+        [
+          0.40625,
+          0.0
+        ],
+        [
+          0.375,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 3
+    },
+    {
+      "source_polygon": 4,
+      "uv": [
+        [
+          0.5,
+          0.0
+        ],
+        [
+          0.53125,
+          0.0
+        ],
+        [
+          0.5,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 3
+    },
+    {
+      "source_polygon": 5,
+      "uv": [
+        [
+          0.625,
+          0.0
+        ],
+        [
+          0.65625,
+          0.0
+        ],
+        [
+          0.65625,
+          0.03125
+        ],
+        [
+          0.625,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 4
+    }
+  ],
+  "blend_sha256": "b034e336787eb9f1b29c51631733c2e0722439e6fa728d42814cc66ffe7b0411",
+  "original_preservation": "PASS"
+}

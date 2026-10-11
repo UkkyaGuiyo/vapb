@@ -1,0 +1,226 @@
+{
+  "instruction_id": "HOLMES-20261011-04",
+  "phase": "export",
+  "blender_version": "5.2.1 LTS",
+  "status": "PASS",
+  "post_confirm_final_state": "PASS",
+  "standard_export": "PASS",
+  "package_sha256": "0ccf9cd8d4f507a8589c02631d8865ddc456bd8e2627394ae9a8549843118dc9",
+  "exported_fbx_sha256": "86511b3319fb83a9d18e2ee46740bb3037be8d8df8210b466a4b3c545b1f5087",
+  "manifest_sha256": "b26d11116b63bef9e4e8c41d324eaa345ca6a6e14052be45640f024835358048",
+  "faces": [
+    {
+      "source_polygon": 0,
+      "uv": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.03125,
+          0.0
+        ],
+        [
+          0.0,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 3
+    },
+    {
+      "source_polygon": 1,
+      "uv": [
+        [
+          0.125,
+          0.0
+        ],
+        [
+          0.15625,
+          0.0
+        ],
+        [
+          0.15625,
+          0.03125
+        ],
+        [
+          0.125,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 4
+    },
+    {
+      "source_polygon": 2,
+      "uv": [
+        [
+          0.25,
+          0.0
+        ],
+        [
+          0.28125,
+          0.0
+        ],
+        [
+          0.28125,
+          0.03125
+        ],
+        [
+          0.25,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 4
+    },
+    {
+      "source_polygon": 3,
+      "uv": [
+        [
+          0.375,
+          0.0
+        ],
+        [
+          0.40625,
+          0.0
+        ],
+        [
+          0.375,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 3
+    },
+    {
+      "source_polygon": 4,
+      "uv": [
+        [
+          0.5,
+          0.0
+        ],
+        [
+          0.53125,
+          0.0
+        ],
+        [
+          0.5,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 3
+    },
+    {
+      "source_polygon": 5,
+      "uv": [
+        [
+          0.625,
+          0.0
+        ],
+        [
+          0.65625,
+          0.0
+        ],
+        [
+          0.65625,
+          0.03125
+        ],
+        [
+          0.625,
+          0.03125
+        ]
+      ],
+      "material": {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "topology": 4
+    }
+  ],
+  "assets": [
+    {
+      "guid": "0f7218cf26f9b325a180107e8d120043",
+      "path": "Assets/VAPBExport/Editor/VapbReferenceFinalizer.cs",
+      "sha256": "8aaa4ab384a25a7872f295a1906cb47224313088cccd90b3372a4dd9c47f30ba"
+    },
+    {
+      "guid": "1c889fa3bb0bd4fd873fccad4b5cace6",
+      "path": "Assets/VAPBExport/manifest.json",
+      "sha256": "b26d11116b63bef9e4e8c41d324eaa345ca6a6e14052be45640f024835358048"
+    },
+    {
+      "guid": "242d369718abeb942873ec054737cf94",
+      "path": "Assets/HolmesOrderedFacePlan/R2.mat",
+      "sha256": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467"
+    },
+    {
+      "guid": "4d7af3be41387054c9f86b68e180d9e7",
+      "path": "Assets/HolmesOrderedFacePlan/R3.mat",
+      "sha256": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71"
+    },
+    {
+      "guid": "70c1cb3bd3a723141a677eca237e252c",
+      "path": "Assets/HolmesOrderedFacePlan/R1.mat",
+      "sha256": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41"
+    },
+    {
+      "guid": "92ab2996b5aacb40554674e45038b269",
+      "path": "Assets/VAPBExport/Editor/VapbModelSkinFinalizer.cs",
+      "sha256": "3ae5665d71a128ddfd5f395381a80a5ab202e550ebc63644163356f2397b8232"
+    },
+    {
+      "guid": "983dd9d36c5824d488269d7d6d6f0434",
+      "path": "Assets/HolmesOrderedFacePlan/Receiver.prefab",
+      "sha256": "80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104"
+    },
+    {
+      "guid": "a18ea984e1612130c22b6250c2851d1c",
+      "path": "Assets/VAPBExport/VapbRealizationMarker.cs",
+      "sha256": "fe7b2d1a8a80a13dc18b3d9a79704e957c4b4eb4cf0317dcb690203a9ae6870a"
+    },
+    {
+      "guid": "afd253dd071f7e5469e24392cdbf181c",
+      "path": "Assets/HolmesOrderedFacePlan/R0.mat",
+      "sha256": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999"
+    },
+    {
+      "guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+      "path": "Assets/HolmesOrderedFacePlan/OrderedSix.fbx",
+      "sha256": "86511b3319fb83a9d18e2ee46740bb3037be8d8df8210b466a4b3c545b1f5087"
+    },
+    {
+      "guid": "f3334e9e08891008e46d1cb83cea2780",
+      "path": "Assets/VAPBExport/Editor/VapbActionClipFinalizer.cs",
+      "sha256": "b679f311385152a8a4df7d9e3a974d3b66cf6bae48596c7f940135a2c942fcef"
+    },
+    {
+      "guid": "f8d79524935995afa312c6faf909c2d4",
+      "path": "Assets/VAPBExport/Editor/VapbImportAssistant.cs",
+      "sha256": "236f6c7edecf4bf5e2971253db60628a628ada11d21d7153c20c2075e6fd47ad"
+    }
+  ],
+  "original_preservation": "PASS"
+}

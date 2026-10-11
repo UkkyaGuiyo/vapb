@@ -1,0 +1,183 @@
+{
+  "instruction_id": "HOLMES-20261011-04",
+  "status": "PASS",
+  "export_transport": "PASS",
+  "final_face_materials": "PASS",
+  "package_sha256": "0ccf9cd8d4f507a8589c02631d8865ddc456bd8e2627394ae9a8549843118dc9",
+  "fbx_sha256": "86511b3319fb83a9d18e2ee46740bb3037be8d8df8210b466a4b3c545b1f5087",
+  "manifest_sha256": "b26d11116b63bef9e4e8c41d324eaa345ca6a6e14052be45640f024835358048",
+  "fbx_version": 7400,
+  "transported_realization_id": "0dae0fb0-0b47-4293-a4f7-41a90503b0c9",
+  "actual_mesh": {
+    "guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+    "file_id": "-7713446866133851500"
+  },
+  "actual_renderer": {
+    "guid": "983dd9d36c5824d488269d7d6d6f0434",
+    "file_id": "9090392177786753814"
+  },
+  "faces": [
+    {
+      "final_polygon": 0,
+      "expected_material": {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      },
+      "native_materials": [
+        {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        }
+      ],
+      "native_groups": [
+        0
+      ],
+      "native_face_count": 1,
+      "native_topologies": [
+        "Triangles"
+      ],
+      "final_corner_count": 3,
+      "native_winding": -1,
+      "fbx_winding": 1,
+      "cover": "PASS"
+    },
+    {
+      "final_polygon": 1,
+      "expected_material": {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      },
+      "native_materials": [
+        {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        }
+      ],
+      "native_groups": [
+        1
+      ],
+      "native_face_count": 2,
+      "native_topologies": [
+        "Triangles",
+        "Triangles"
+      ],
+      "final_corner_count": 4,
+      "native_winding": -1,
+      "fbx_winding": 1,
+      "cover": "PASS"
+    },
+    {
+      "final_polygon": 2,
+      "expected_material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000"
+      },
+      "native_materials": [
+        {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        }
+      ],
+      "native_groups": [
+        2
+      ],
+      "native_face_count": 2,
+      "native_topologies": [
+        "Triangles",
+        "Triangles"
+      ],
+      "final_corner_count": 4,
+      "native_winding": -1,
+      "fbx_winding": 1,
+      "cover": "PASS"
+    },
+    {
+      "final_polygon": 3,
+      "expected_material": {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000"
+      },
+      "native_materials": [
+        {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        }
+      ],
+      "native_groups": [
+        3
+      ],
+      "native_face_count": 1,
+      "native_topologies": [
+        "Triangles"
+      ],
+      "final_corner_count": 3,
+      "native_winding": -1,
+      "fbx_winding": 1,
+      "cover": "PASS"
+    },
+    {
+      "final_polygon": 4,
+      "expected_material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000"
+      },
+      "native_materials": [
+        {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        }
+      ],
+      "native_groups": [
+        2
+      ],
+      "native_face_count": 1,
+      "native_topologies": [
+        "Triangles"
+      ],
+      "final_corner_count": 3,
+      "native_winding": -1,
+      "fbx_winding": 1,
+      "cover": "PASS"
+    },
+    {
+      "final_polygon": 5,
+      "expected_material": {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      },
+      "native_materials": [
+        {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        }
+      ],
+      "native_groups": [
+        1
+      ],
+      "native_face_count": 2,
+      "native_topologies": [
+        "Triangles",
+        "Triangles"
+      ],
+      "final_corner_count": 4,
+      "native_winding": -1,
+      "fbx_winding": 1,
+      "cover": "PASS"
+    }
+  ],
+  "comparison": "Final edited Blender UV corner coverage against actual FBX and Unity index streams; no slot-array-only inference",
+  "render": "NOT_RUN",
+  "position_comparison": "NOT_RUN"
+}

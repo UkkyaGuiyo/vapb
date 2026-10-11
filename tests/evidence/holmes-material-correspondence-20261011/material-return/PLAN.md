@@ -19,7 +19,8 @@ guard. Original input and old evidence protected. Export final Blender state win
 
 Reuse existing private resource runners: fresh processes/RAM/mutex/pool checks,
 owned normal exits, Unity inventory restoration and exact lease release.
-VHSI preparation has current Unity priority; do not claim a new Unity lease until
-the parent releases that scheduling hold. Source work continues independently.
+Initial shared-resource preparation priority prohibited a new Unity lease.
+Parent subsequently confirmed normal exit/resource release at 11:00:55 UTC and
+explicitly instructed continuation. Fresh checks passed before actual execution.
 Record any blocked runtime honestly, then save normal purpose commits and GitHub
 readback. Formal usage ≤5% means save/handoff/stop.
