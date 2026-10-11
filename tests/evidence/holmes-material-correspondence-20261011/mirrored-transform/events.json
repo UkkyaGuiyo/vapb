@@ -1,0 +1,62 @@
+[
+  {
+    "utc": "2026-10-11T15:07:34.4014015Z",
+    "stage": "D_observer_initialize",
+    "detail": "finalizer=False"
+  },
+  {
+    "utc": "2026-10-11T15:07:34.4586377Z",
+    "stage": "D_after_reload",
+    "detail": ""
+  },
+  {
+    "utc": "2026-10-11T15:07:35.6658288Z",
+    "stage": "A_import_start",
+    "detail": "finalizer=False"
+  },
+  {
+    "utc": "2026-10-11T15:07:36.4765114Z",
+    "stage": "C_compile_started",
+    "detail": ""
+  },
+  {
+    "utc": "2026-10-11T15:07:37.6982447Z",
+    "stage": "C_assembly_finished",
+    "detail": "Assembly-CSharp-Editor.dll;errors=0"
+  },
+  {
+    "utc": "2026-10-11T15:07:37.7002659Z",
+    "stage": "C_assembly_finished",
+    "detail": "Assembly-CSharp.dll;errors=0"
+  },
+  {
+    "utc": "2026-10-11T15:07:37.7002659Z",
+    "stage": "C_compile_finished",
+    "detail": ""
+  },
+  {
+    "utc": "2026-10-11T15:07:37.7169052Z",
+    "stage": "D_before_reload",
+    "detail": ""
+  },
+  {
+    "utc": "2026-10-11T15:07:38.7994772Z",
+    "stage": "D_observer_initialize",
+    "detail": "finalizer=True"
+  },
+  {
+    "utc": "2026-10-11T15:07:38.8711682Z",
+    "stage": "D_after_reload",
+    "detail": ""
+  },
+  {
+    "utc": "2026-10-11T15:07:39.1583201Z",
+    "stage": "B_import_completed",
+    "detail": "isCompiling=False"
+  },
+  {
+    "utc": "2026-10-11T15:07:39.2271925Z",
+    "stage": "E_finalizer_available",
+    "detail": "assembly=Assembly-CSharp-Editor"
+  }
+]

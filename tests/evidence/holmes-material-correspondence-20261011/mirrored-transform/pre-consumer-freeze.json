@@ -1,0 +1,22 @@
+{
+  "captured_before_consumer_utc": "2026-10-11T15:07:04.444962+00:00",
+  "oracle_sha256": "cbe13e2671261ff59416d38af39c03423d828676a1278642c30694ed81eb9543",
+  "render_oracle_sha256": "dd08aff37e49625f704833c5c69c5431ea31f9abe9cc769e11d01bbac9dd05c7",
+  "package_sha256": "0f699eb64a3b864cd06ddede7d4e691bd063701d8c675a95ab20b2ccf473edbf",
+  "blender_saved_state_sha256": "a2372aa3ae59a3111f804b9d34d8cac125a0a62906b3209555a96df4688af4be",
+  "convention_sha256": "3c153a72ce6c1273069c5760046b284a287130c71cc14d4adf76b7d399240ec8",
+  "product_source_sha256": {
+    "export/final_state_package.py": "8413dffbcb0c6de8a1e81ff6351b0198e5cfaa51c864c261dccdd2f31710dd59",
+    "export/fbx_export.py": "e4a81ee7e0851eb1da30967b5480bc7d7d3b320582ae3ca424c09eb5f602f1d4",
+    "unity_editor/Editor/VapbFinalStateFinalizer.cs": "b75c6a0e36be8e50c3f687bb289be58319b30852be7b91096e2e7a5c542bae11",
+    "unity_editor/Editor/VapbImportAssistant.cs": "236f6c7edecf4bf5e2971253db60628a628ada11d21d7153c20c2075e6fd47ad"
+  },
+  "executed_observer_sha256": "c0eb06127f359326dfc76ffab3f3a23af24e512e9db512d513aad3ca9d963f45",
+  "observation_shader_sha256": "18579c702a4a474beb2cace9da06e1e106d19ef6c872cbb8bd808c5488c3acba",
+  "prior07_read_only": {
+    "commit": "a5ff57d32303b2489cc4ce9036579e914ca11b42",
+    "report_sha256": "9ac404d07d7a85b1b4a71b887eff11e1c48b4bfdb41d84ac4c1929b31365fda7",
+    "native_sha256": "fc85a568c0eba583889470ad2c85c42516c02180e9a1740ff9d9a7f5748b24c6"
+  },
+  "actual_graphics_requested": true
+}

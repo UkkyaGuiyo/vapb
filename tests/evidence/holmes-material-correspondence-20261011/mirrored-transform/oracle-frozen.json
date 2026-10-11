@@ -1,0 +1,431 @@
+{
+  "instruction_id": "HOLMES-20261011-08",
+  "source": "CHAT_FALLBACK_NOT_SAVED_TO_GITHUB",
+  "base_sha": "c0fee02206782f8786ee02e8d960df3a983b75ac",
+  "basis_C": [
+    [
+      -1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      -1,
+      0
+    ]
+  ],
+  "determinant": -1,
+  "translation_expected": [
+    -3,
+    5,
+    2
+  ],
+  "basis_grounds": [
+    "Installed official Blender axis_conversion defaults from_forward=Y/from_up=Z; FBX preset to_forward=-Z/to_up=Y gives A(x,y,z)=(x,z,-y).",
+    "Unity left-handed +X right/+Y up/+Z forward; FBX RH to Unity LH conversion reflects X. C=H*A: (-x,z,-y).",
+    "Read-only HOLMES06 undeformed native Mesh reflects X*0.01; Renderer matrix rotates X -90deg and scales100, consistent with C. No06 rerun; no07 observation used."
+  ],
+  "official_sources": [
+    "https://docs.unity3d.com/2022.3/Documentation/Manual/QuaternionAndEulerRotationsInUnity.html",
+    "https://docs.unity3d.com/2022.3/Documentation/Manual/AnatomyofaMesh.html",
+    "https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Rendering.BatchDrawCommandFlags.FlipWinding.html",
+    "https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Camera.Render.html",
+    "https://docs.unity3d.com/2022.3/Documentation/Manual/SL-Cull.html"
+  ],
+  "tolerance_rule": "float32 u=2^-24. Position component envelope128*u*B, B=max(1,max_i(abs(t_i)+sum_j(abs(Mij)*halfedge_j))). Normal envelope256*u*scaleCondition with scaleCondition=1.5/0.75=2. Engineering envelope fixed before new consumer, not a formal bound on every importer operation.",
+  "normals": "normalize(C * inverseTranspose(Blender matrix3) * localFaceNormal)",
+  "winding": "cross(Ma,Mb)=det(M)*inverseTranspose(M)*cross(a,b). Record Object determinant and C determinant separately. Native raw world triangle cross dot outward normal must have actual Renderer determinant sign when source front local winding is retained. Det-aware parity dot=sign(RendererDet)*rawDot>=0.999999. Negative RendererDet indicates reflection retained; positive with B/C equal indicates mirror baked into geometry. D is analytic parity, not rendered front-face proof; real CullBack outside/inside on untouched-Mesh observational clone establishes E. No observer culling override.",
+  "winding_dot_minimum": 0.999999,
+  "render_culling": "NOT_RUN",
+  "halfedges": [
+    0.5,
+    1,
+    2.5
+  ],
+  "location": [
+    3,
+    -2,
+    5
+  ],
+  "euler_xyz_degrees": [
+    20,
+    -30,
+    40
+  ],
+  "scale": [
+    -1.25,
+    0.75,
+    1.5
+  ],
+  "object_determinant_expected": -1.40625,
+  "basis_determinant": -1,
+  "combined_determinant_expected": 1.40625,
+  "render_protocol": {
+    "shader": "Hidden/Holmes08/CullBack",
+    "cull": "Back",
+    "clone_only": true,
+    "orthographic_size": 0.05,
+    "distance_outside_inside": 0.25,
+    "resolution": 32,
+    "outside_min_white_pixels": 900,
+    "inside_max_white_pixels": 0,
+    "graphics_required": true,
+    "product_material_render": "NOT_RUN",
+    "null_graphics_result": "NOT_RUN"
+  },
+  "object_determinant": -1.40625,
+  "combined_world_basis_determinant": 1.40625,
+  "blender_state_sha256": "0b2a9e022896c6709b5cf6924541675a19b0eb5b62429c691f0cd7a5176d43e1",
+  "world_bound": 8.586389720439911,
+  "world_component_tolerance": 6.550895477630547e-05,
+  "normal_component_tolerance": 3.0517578125e-05,
+  "faces": [
+    {
+      "plane": "+X",
+      "local_corners": [
+        [
+          0.5,
+          1.0,
+          -2.5
+        ],
+        [
+          0.5,
+          1.0,
+          2.5
+        ],
+        [
+          0.5,
+          -1.0,
+          2.5
+        ],
+        [
+          0.5,
+          -1.0,
+          -2.5
+        ]
+      ],
+      "world_corners": [
+        [
+          -2.5593864917755127,
+          1.8579075336456299,
+          -0.22457611560821533
+        ],
+        [
+          -1.5088099241256714,
+          7.961389541625977,
+          4.005529403686523
+        ],
+        [
+          -2.6113460063934326,
+          7.517092704772949,
+          4.920413970947266
+        ],
+        [
+          -3.6619226932525635,
+          1.4136102199554443,
+          0.690308690071106
+        ]
+      ],
+      "world_normal": [
+        0.663413941860199,
+        -0.5000000596046448,
+        0.5566703677177429
+      ],
+      "material": {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      }
+    },
+    {
+      "plane": "+Y",
+      "local_corners": [
+        [
+          -0.5,
+          1.0,
+          -2.5
+        ],
+        [
+          -0.5,
+          1.0,
+          2.5
+        ],
+        [
+          0.5,
+          1.0,
+          2.5
+        ],
+        [
+          0.5,
+          1.0,
+          -2.5
+        ]
+      ],
+      "world_corners": [
+        [
+          -3.3886539936065674,
+          2.48290753364563,
+          -0.9204140901565552
+        ],
+        [
+          -2.3380773067474365,
+          8.586389541625977,
+          3.3096914291381836
+        ],
+        [
+          -1.5088099241256714,
+          7.961389541625977,
+          4.005529403686523
+        ],
+        [
+          -2.5593864917755127,
+          1.8579075336456299,
+          -0.22457611560821533
+        ]
+      ],
+      "world_normal": [
+        0.735024094581604,
+        0.29619818925857544,
+        -0.6099231839179993
+      ],
+      "material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      }
+    },
+    {
+      "plane": "+Z",
+      "local_corners": [
+        [
+          0.5,
+          1.0,
+          2.5
+        ],
+        [
+          -0.5,
+          1.0,
+          2.5
+        ],
+        [
+          -0.5,
+          -1.0,
+          2.5
+        ],
+        [
+          0.5,
+          -1.0,
+          2.5
+        ]
+      ],
+      "world_corners": [
+        [
+          -1.5088099241256714,
+          7.961389541625977,
+          4.005529403686523
+        ],
+        [
+          -2.3380773067474365,
+          8.586389541625977,
+          3.3096914291381836
+        ],
+        [
+          -3.4406135082244873,
+          8.14209270477295,
+          4.224575996398926
+        ],
+        [
+          -2.6113460063934326,
+          7.517092704772949,
+          4.920413970947266
+        ]
+      ],
+      "world_normal": [
+        0.14007684588432312,
+        0.8137977123260498,
+        0.5640140175819397
+      ],
+      "material": {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      }
+    },
+    {
+      "plane": "-X",
+      "local_corners": [
+        [
+          -0.5,
+          -1.0,
+          -2.5
+        ],
+        [
+          -0.5,
+          -1.0,
+          2.5
+        ],
+        [
+          -0.5,
+          1.0,
+          2.5
+        ],
+        [
+          -0.5,
+          1.0,
+          -2.5
+        ]
+      ],
+      "world_corners": [
+        [
+          -4.491189956665039,
+          2.0386102199554443,
+          -0.005529284477233887
+        ],
+        [
+          -3.4406135082244873,
+          8.14209270477295,
+          4.224575996398926
+        ],
+        [
+          -2.3380773067474365,
+          8.586389541625977,
+          3.3096914291381836
+        ],
+        [
+          -3.3886539936065674,
+          2.48290753364563,
+          -0.9204140901565552
+        ]
+      ],
+      "world_normal": [
+        -0.663413941860199,
+        0.5000000596046448,
+        -0.5566703677177429
+      ],
+      "material": {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      }
+    },
+    {
+      "plane": "-Y",
+      "local_corners": [
+        [
+          0.5,
+          -1.0,
+          -2.5
+        ],
+        [
+          0.5,
+          -1.0,
+          2.5
+        ],
+        [
+          -0.5,
+          -1.0,
+          2.5
+        ],
+        [
+          -0.5,
+          -1.0,
+          -2.5
+        ]
+      ],
+      "world_corners": [
+        [
+          -3.6619226932525635,
+          1.4136102199554443,
+          0.690308690071106
+        ],
+        [
+          -2.6113460063934326,
+          7.517092704772949,
+          4.920413970947266
+        ],
+        [
+          -3.4406135082244873,
+          8.14209270477295,
+          4.224575996398926
+        ],
+        [
+          -4.491189956665039,
+          2.0386102199554443,
+          -0.005529284477233887
+        ]
+      ],
+      "world_normal": [
+        -0.735024094581604,
+        -0.29619818925857544,
+        0.6099231839179993
+      ],
+      "material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      }
+    },
+    {
+      "plane": "-Z",
+      "local_corners": [
+        [
+          -0.5,
+          1.0,
+          -2.5
+        ],
+        [
+          0.5,
+          1.0,
+          -2.5
+        ],
+        [
+          0.5,
+          -1.0,
+          -2.5
+        ],
+        [
+          -0.5,
+          -1.0,
+          -2.5
+        ]
+      ],
+      "world_corners": [
+        [
+          -3.3886539936065674,
+          2.48290753364563,
+          -0.9204140901565552
+        ],
+        [
+          -2.5593864917755127,
+          1.8579075336456299,
+          -0.22457611560821533
+        ],
+        [
+          -3.6619226932525635,
+          1.4136102199554443,
+          0.690308690071106
+        ],
+        [
+          -4.491189956665039,
+          2.0386102199554443,
+          -0.005529284477233887
+        ]
+      ],
+      "world_normal": [
+        -0.14007684588432312,
+        -0.8137977123260498,
+        -0.5640140175819397
+      ],
+      "material": {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      }
+    }
+  ]
+}

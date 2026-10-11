@@ -1,0 +1,75 @@
+{
+  "blender": {
+    "replace": {
+      "process": {
+        "owner": "VAPB-HOLMES-20261011-08-replace",
+        "actual_free_gib": 5.434909820556641,
+        "pid": 15728,
+        "script_sha256": "CF4DAAE28671BFFBB251233A12A723DC64F4F7B8A57D0E5E6BC8F49A0B1F9309",
+        "start_utc": "2026-10-11T15:05:08.6901965Z"
+      },
+      "exited": {
+        "owned_children_absent": true,
+        "exit_code": 0,
+        "exited_utc": "2026-10-11T15:05:12.2464327Z",
+        "pid": 15728
+      }
+    },
+    "export": {
+      "process": {
+        "owner": "VAPB-HOLMES-20261011-08-export",
+        "actual_free_gib": 5.419277191162109,
+        "pid": 5944,
+        "script_sha256": "CF4DAAE28671BFFBB251233A12A723DC64F4F7B8A57D0E5E6BC8F49A0B1F9309",
+        "start_utc": "2026-10-11T15:05:12.4983309Z"
+      },
+      "exited": {
+        "owned_children_absent": true,
+        "exit_code": 0,
+        "exited_utc": "2026-10-11T15:05:15.7693895Z",
+        "pid": 5944
+      }
+    }
+  },
+  "unity": {
+    "pid": 31132,
+    "startUtc": "2026-10-11T15:07:24.6399462Z",
+    "exitUtc": "2026-10-11T15:07:40.0267115Z",
+    "exitCode": 0,
+    "actual_free_gib": 4.9416656494140625,
+    "release": {
+      "capturedUtc": "2026-10-11T15:07:40.1365687Z",
+      "owner": "VAPB-HOLMES-20261011-08",
+      "ownedChildrenAbsent": true,
+      "lockAbsent": true,
+      "normalExitCode": 0,
+      "releaseVerified": true
+    }
+  },
+  "resource_return": {
+    "capturedUtc": "2026-10-11T15:09:11.0241270Z",
+    "processCensusConflict": false,
+    "mutexAvailableAndProbeReleased": true,
+    "poolAllFree": true,
+    "freePhysicalMemoryGiB": 5.1588592529296875,
+    "newProjectLockAbsent": true,
+    "blenderAbsent": true
+  },
+  "product_source_sha256": {
+    "export/final_state_package.py": "8413dffbcb0c6de8a1e81ff6351b0198e5cfaa51c864c261dccdd2f31710dd59",
+    "export/fbx_export.py": "e4a81ee7e0851eb1da30967b5480bc7d7d3b320582ae3ca424c09eb5f602f1d4",
+    "unity_editor/Editor/VapbFinalStateFinalizer.cs": "b75c6a0e36be8e50c3f687bb289be58319b30852be7b91096e2e7a5c542bae11",
+    "unity_editor/Editor/VapbImportAssistant.cs": "236f6c7edecf4bf5e2971253db60628a628ada11d21d7153c20c2075e6fd47ad"
+  },
+  "executed_observer_sha256": "c0eb06127f359326dfc76ffab3f3a23af24e512e9db512d513aad3ca9d963f45",
+  "original_frozen_hashes_unchanged": 12,
+  "product_code_changes": false,
+  "object_determinant": -1.40625,
+  "basis_determinant": -1,
+  "renderer_determinant": -1406250.125,
+  "graphics_backend": "Direct3D11",
+  "oracle_frozen_sha256": "cbe13e2671261ff59416d38af39c03423d828676a1278642c30694ed81eb9543",
+  "pre_consumer_freeze_utc": "2026-10-11T15:07:04.444962+00:00",
+  "difference_from07": "ObjectScale.x sign only; local vertices/polygon order/UV/face normals/T/Euler/slots/Material providers match read-only07 recorded input; no07 rerun.",
+  "public_and_executed_blender_source_exact": true
+}

@@ -1,0 +1,554 @@
+{
+  "instruction_id": "HOLMES-20261011-08",
+  "verdict": "VERIFIED_IN_SCOPE",
+  "H_A": "SUPPORTED_IN_SCOPE",
+  "H_B": "NOT_OBSERVED_IN_SCOPE",
+  "first_failed_stage": null,
+  "positive": {
+    "A_material": {
+      "status": "PASS"
+    },
+    "B_world": {
+      "status": "PASS",
+      "max_component_error": 5.21540641784668e-07,
+      "coverage": [
+        {
+          "plane": "+X",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "+Y",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "+Z",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "-X",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "-Y",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "-Z",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        }
+      ],
+      "tolerance": 6.550895477630547e-05
+    },
+    "C_normal": {
+      "status": "PASS",
+      "max_component_error": 1.76770277304783e-07,
+      "tolerance": 3.0517578125e-05
+    },
+    "D_winding": {
+      "status": "PASS",
+      "minimum_det_aware_dot": 0.9999999999999776,
+      "minimum_raw_world_dot": -0.9999999999999987,
+      "maximum_raw_world_dot": -0.9999999999999776,
+      "renderer_determinant": -1406250.125,
+      "reflection_route": "negative Transform retained",
+      "raw_world_cross_expected_sign": -1,
+      "object_determinant": -1.40625,
+      "dot_minimum": 0.999999,
+      "basis_determinant": -1,
+      "unity_front": "clockwise relative to camera",
+      "render_culling": "separately judged by E_render; D is analytic"
+    },
+    "E_render": {
+      "status": "PASS",
+      "reason": "",
+      "graphics_backend": "Direct3D11",
+      "product_material_render": "NOT_RUN",
+      "observation_clone_only": true,
+      "pixels": [
+        {
+          "plane": "+X",
+          "side": "outside",
+          "png_sha256": "7c9d0ff20d7c490ba2075ef8270bd6aa2b94e51ebf8182d431c00c9410f70bb0",
+          "white_pixels": 1024,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -2.4195127487182617,
+            "y": 4.5625,
+            "z": 2.487086534500122
+          },
+          "camera_forward": {
+            "x": -0.6634141206741333,
+            "y": 0.5000000596046448,
+            "z": -0.5566702485084534
+          }
+        },
+        {
+          "plane": "+X",
+          "side": "inside",
+          "png_sha256": "1c8089f74b63c59903d6e30e4625d00c19928a24122c36eb01a821476c248cf9",
+          "white_pixels": 0,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -2.7512197494506836,
+            "y": 4.8125,
+            "z": 2.2087514400482178
+          },
+          "camera_forward": {
+            "x": 0.6634141206741333,
+            "y": -0.5000000596046448,
+            "z": 0.5566701889038086
+          }
+        },
+        {
+          "plane": "+Y",
+          "side": "outside",
+          "png_sha256": "7c9d0ff20d7c490ba2075ef8270bd6aa2b94e51ebf8182d431c00c9410f70bb0",
+          "white_pixels": 1024,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -2.2649757862091064,
+            "y": 5.296197891235352,
+            "z": 1.390076756477356
+          },
+          "camera_forward": {
+            "x": -0.7350242733955383,
+            "y": -0.2961978316307068,
+            "z": 0.6099231243133545
+          }
+        },
+        {
+          "plane": "+Y",
+          "side": "inside",
+          "png_sha256": "1c8089f74b63c59903d6e30e4625d00c19928a24122c36eb01a821476c248cf9",
+          "white_pixels": 0,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -2.6324880123138428,
+            "y": 5.148098945617676,
+            "z": 1.6950384378433228
+          },
+          "camera_forward": {
+            "x": 0.7350242733955383,
+            "y": 0.2961978316307068,
+            "z": -0.609923243522644
+          }
+        },
+        {
+          "plane": "+Z",
+          "side": "outside",
+          "png_sha256": "7c9d0ff20d7c490ba2075ef8270bd6aa2b94e51ebf8182d431c00c9410f70bb0",
+          "white_pixels": 1024,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -2.439692497253418,
+            "y": 8.255189895629883,
+            "z": 4.256056308746338
+          },
+          "camera_forward": {
+            "x": -0.14007669687271118,
+            "y": -0.8137973546981812,
+            "z": -0.5640146732330322
+          }
+        },
+        {
+          "plane": "+Z",
+          "side": "inside",
+          "png_sha256": "1c8089f74b63c59903d6e30e4625d00c19928a24122c36eb01a821476c248cf9",
+          "white_pixels": 0,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -2.509730815887451,
+            "y": 7.848291397094727,
+            "z": 3.9740490913391113
+          },
+          "camera_forward": {
+            "x": 0.14007669687271118,
+            "y": 0.8137973546981812,
+            "z": 0.5640146136283875
+          }
+        },
+        {
+          "plane": "-X",
+          "side": "outside",
+          "png_sha256": "7c9d0ff20d7c490ba2075ef8270bd6aa2b94e51ebf8182d431c00c9410f70bb0",
+          "white_pixels": 1024,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -3.5804872512817383,
+            "y": 5.4375,
+            "z": 1.512913465499878
+          },
+          "camera_forward": {
+            "x": 0.6634141206741333,
+            "y": -0.5000000596046448,
+            "z": 0.5566701889038086
+          }
+        },
+        {
+          "plane": "-X",
+          "side": "inside",
+          "png_sha256": "1c8089f74b63c59903d6e30e4625d00c19928a24122c36eb01a821476c248cf9",
+          "white_pixels": 0,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -3.2487802505493164,
+            "y": 5.1875,
+            "z": 1.7912485599517822
+          },
+          "camera_forward": {
+            "x": -0.6634141206741333,
+            "y": 0.5000000596046448,
+            "z": -0.5566702485084534
+          }
+        },
+        {
+          "plane": "-Y",
+          "side": "outside",
+          "png_sha256": "7c9d0ff20d7c490ba2075ef8270bd6aa2b94e51ebf8182d431c00c9410f70bb0",
+          "white_pixels": 1024,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -3.7350242137908936,
+            "y": 4.703802108764648,
+            "z": 2.6099231243133545
+          },
+          "camera_forward": {
+            "x": 0.7350242733955383,
+            "y": 0.2961978316307068,
+            "z": -0.609923243522644
+          }
+        },
+        {
+          "plane": "-Y",
+          "side": "inside",
+          "png_sha256": "1c8089f74b63c59903d6e30e4625d00c19928a24122c36eb01a821476c248cf9",
+          "white_pixels": 0,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -3.3675119876861572,
+            "y": 4.851901054382324,
+            "z": 2.3049614429473877
+          },
+          "camera_forward": {
+            "x": -0.7350242733955383,
+            "y": -0.2961978316307068,
+            "z": 0.6099231243133545
+          }
+        },
+        {
+          "plane": "-Z",
+          "side": "outside",
+          "png_sha256": "7c9d0ff20d7c490ba2075ef8270bd6aa2b94e51ebf8182d431c00c9410f70bb0",
+          "white_pixels": 1024,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -3.560307502746582,
+            "y": 1.7448093891143799,
+            "z": -0.25605618953704834
+          },
+          "camera_forward": {
+            "x": 0.1400766372680664,
+            "y": 0.8137978315353394,
+            "z": 0.5640138387680054
+          }
+        },
+        {
+          "plane": "-Z",
+          "side": "inside",
+          "png_sha256": "1c8089f74b63c59903d6e30e4625d00c19928a24122c36eb01a821476c248cf9",
+          "white_pixels": 0,
+          "total_pixels": 1024,
+          "camera_position": {
+            "x": -3.490269184112549,
+            "y": 2.1517083644866943,
+            "z": 0.025950804352760315
+          },
+          "camera_forward": {
+            "x": -0.14007660746574402,
+            "y": -0.8137978315353394,
+            "z": -0.5640138387680054
+          }
+        }
+      ],
+      "shader_sha256": "18579c702a4a474beb2cace9da06e1e106d19ef6c872cbb8bd808c5488c3acba",
+      "original_assets_unchanged": true,
+      "observer_invert_culling": false
+    }
+  },
+  "negative_controls": {
+    "one_face_material_swap": {
+      "expected_rejection": "A_material",
+      "result": {
+        "A_material": {
+          "status": "FAIL",
+          "reason": "Actual face Material GUID/signedfileID differs"
+        },
+        "B_world": {
+          "status": "PASS",
+          "max_component_error": 5.21540641784668e-07,
+          "coverage": [
+            {
+              "plane": "+X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            }
+          ],
+          "tolerance": 6.550895477630547e-05
+        },
+        "C_normal": {
+          "status": "PASS",
+          "max_component_error": 1.76770277304783e-07,
+          "tolerance": 3.0517578125e-05
+        },
+        "D_winding": {
+          "status": "PASS",
+          "minimum_det_aware_dot": 0.9999999999999776,
+          "minimum_raw_world_dot": -0.9999999999999987,
+          "maximum_raw_world_dot": -0.9999999999999776,
+          "renderer_determinant": -1406250.125,
+          "reflection_route": "negative Transform retained",
+          "raw_world_cross_expected_sign": -1,
+          "object_determinant": -1.40625,
+          "dot_minimum": 0.999999,
+          "basis_determinant": -1,
+          "unity_front": "clockwise relative to camera",
+          "render_culling": "separately judged by E_render; D is analytic"
+        }
+      }
+    },
+    "world_axis_swap": {
+      "expected_rejection": "B_world",
+      "result": {
+        "A_material": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence"
+        },
+        "B_world": {
+          "status": "FAIL",
+          "reason": "missing/duplicate face or incompatible topology",
+          "max_component_error": null,
+          "coverage": [
+            {
+              "plane": "+X",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "+Y",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "+Z",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-X",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-Y",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-Z",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            }
+          ],
+          "tolerance": 6.550895477630547e-05
+        },
+        "C_normal": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence",
+          "max_component_error": null,
+          "tolerance": 3.0517578125e-05
+        },
+        "D_winding": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence",
+          "minimum_det_aware_dot": null,
+          "minimum_raw_world_dot": null,
+          "maximum_raw_world_dot": null,
+          "renderer_determinant": -1406250.125,
+          "reflection_route": "negative Transform retained",
+          "raw_world_cross_expected_sign": -1,
+          "object_determinant": -1.40625,
+          "dot_minimum": 0.999999,
+          "basis_determinant": -1,
+          "unity_front": "clockwise relative to camera",
+          "render_culling": "separately judged by E_render; D is analytic"
+        }
+      }
+    },
+    "normal_flip": {
+      "expected_rejection": "C_normal",
+      "result": {
+        "A_material": {
+          "status": "PASS"
+        },
+        "B_world": {
+          "status": "PASS",
+          "max_component_error": 5.21540641784668e-07,
+          "coverage": [
+            {
+              "plane": "+X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            }
+          ],
+          "tolerance": 6.550895477630547e-05
+        },
+        "C_normal": {
+          "status": "FAIL",
+          "reason": "Inverse-transpose world normal differs",
+          "max_component_error": 1.6275954243136854,
+          "tolerance": 3.0517578125e-05
+        },
+        "D_winding": {
+          "status": "PASS",
+          "minimum_det_aware_dot": 0.9999999999999776,
+          "minimum_raw_world_dot": -0.9999999999999987,
+          "maximum_raw_world_dot": -0.9999999999999776,
+          "renderer_determinant": -1406250.125,
+          "reflection_route": "negative Transform retained",
+          "raw_world_cross_expected_sign": -1,
+          "object_determinant": -1.40625,
+          "dot_minimum": 0.999999,
+          "basis_determinant": -1,
+          "unity_front": "clockwise relative to camera",
+          "render_culling": "separately judged by E_render; D is analytic"
+        }
+      }
+    },
+    "triangle_winding_reverse": {
+      "expected_rejection": "D_winding",
+      "result": {
+        "A_material": {
+          "status": "PASS"
+        },
+        "B_world": {
+          "status": "PASS",
+          "max_component_error": 5.21540641784668e-07,
+          "coverage": [
+            {
+              "plane": "+X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            }
+          ],
+          "tolerance": 6.550895477630547e-05
+        },
+        "C_normal": {
+          "status": "PASS",
+          "max_component_error": 1.76770277304783e-07,
+          "tolerance": 3.0517578125e-05
+        },
+        "D_winding": {
+          "status": "FAIL",
+          "reason": "Native index winding differs from determinant-aware outward parity",
+          "minimum_det_aware_dot": -0.9999999999999776,
+          "minimum_raw_world_dot": -0.9999999999999987,
+          "maximum_raw_world_dot": 0.9999999999999776,
+          "renderer_determinant": -1406250.125,
+          "reflection_route": "negative Transform retained",
+          "raw_world_cross_expected_sign": -1,
+          "object_determinant": -1.40625,
+          "dot_minimum": 0.999999,
+          "basis_determinant": -1,
+          "unity_front": "clockwise relative to camera",
+          "render_culling": "separately judged by E_render; D is analytic"
+        }
+      }
+    }
+  },
+  "world_capture_recalculation_error": 2.4484189609097484e-07,
+  "normal_capture_recalculation_error": 9.853754467936682e-08,
+  "uv_used_for_correspondence": false,
+  "old_receipt_used": false,
+  "render_culling": "PASS"
+}

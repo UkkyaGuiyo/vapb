@@ -1,0 +1,13 @@
+{
+  "asset_paths": [
+    "Assets",
+    "Assets/HolmesMirroredConsumer/Editor/Capture.cs",
+    "Assets/HolmesMirroredConsumer/Editor",
+    "Assets/HolmesMirroredConsumer",
+    "Assets/HolmesMirroredConsumer/ObserveCullBack.shader"
+  ],
+  "vapb_named_assemblies": [],
+  "finalizer_available": false,
+  "model_finalizer_available": false,
+  "assistant_available": false
+}
