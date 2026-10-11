@@ -11,7 +11,6 @@ import bpy  # type: ignore
 
 from ..unity.material_mapping import (
     external_object_guid_for_name,
-    resolve_material_entry,
     strip_material_suffix,
 )
 from ..unity.material_model import NormalizedMaterial, UnityMaterialData, UnityTextureRef
@@ -326,7 +325,6 @@ def apply_materials_by_name(
     scene=None,
 ) -> None:
     materials = list(materials)
-    by_name, by_guid = _material_maps(materials)
     material_library = material_library or {}
     for obj in objects:
         if not getattr(obj, "data", None) or not hasattr(obj.data, "materials"):
@@ -352,7 +350,6 @@ def apply_materials_by_name(
                 suffix = strip_material_suffix(slot.name)
                 exact = [row for row in external_rows if row.canonical_name and
                          strip_material_suffix(row.canonical_name) == suffix]
-            externally_mapped = bool(exact)
             if scene and exact:
                 from .fbx_receipt import validate_persistent_receipt
                 receipt_valid = validate_persistent_receipt(obj)
@@ -392,19 +389,10 @@ def apply_materials_by_name(
                     "target_file_id": str(row.canonical_file_id) if row.canonical_file_id is not None else "",
                     "target_type": row.canonical_second_type,
                     })
-            replacement = None
-            if asset_db and meta_text:
-                entry = resolve_material_entry(meta_text, slot.name, asset_db)
-                if entry:
-                    replacement = material_library.get(str(entry.path)) or by_guid.get(entry.guid)
-            if replacement is None and not externally_mapped:
-                replacement = by_name.get(slot.name.casefold()) or by_name.get(strip_material_suffix(slot.name).casefold())
-            if externally_mapped:
-                # ExternalObjects is resolved only through the receipt-backed
-                # path, which checks exact Material GUID and fileID.
-                continue
-            if replacement is not None:
-                _assign_object_material(obj, index, replacement)
+            # A matching name, including a sole candidate, is not a Unity
+            # Material reference. Preserve native FBX preview slots here.
+            # Explicit externalObjects bindings are written only by the
+            # receipt-backed resolver, which checks GUID, fileID and scope.
         # A model can carry externalObjects metadata before Blender has
         # created material slots (for example, a geometry-only FBX). Keep the
         # dependency as unresolved metadata instead of dropping it. It is

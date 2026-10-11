@@ -52,8 +52,8 @@ def main() -> None:
     second: {fileID: 2100000, guid: 77777777777777777777777777777777, type: 2}
 """
     run_case(explicit_missing, expected_replacement=False)
-    run_case("externalObjects: []\n", expected_replacement=True)
-    print("MATERIAL_MAPPING_AUTHORITY_PASS explicit_missing_guid=preserved unmatched_name=fallback")
+    run_case("externalObjects: []\n", expected_replacement=False)
+    print("MATERIAL_MAPPING_AUTHORITY_PASS explicit_missing_guid=preserved unmatched_name=preserved")
 
 
 if __name__ == "__main__":
