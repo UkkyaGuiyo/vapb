@@ -86,6 +86,6 @@ Unity/Blender exit0、保護3,041ファイル変更0・予期しない追加0。
 
 ## 10. 未完了と次の最小判断点
 
-今回得られたのは限定native挙動と安全な製品化可否の判定であり、ユーザーの最終往復機能が増えたとは報告しない。GUI/render/client、実購入corpus、最新ZIP、編集AnimationのUnity復帰、製品全体完成は未成立または未確認。
+今回得られたのは限定native挙動と安全な製品化可否の判定であり、このHOLMES作業で往復機能が増えたとは報告しない。編集Animationについては、対応する単一Bone-TRS Action→独立`.anim`＋別編集Variantの通常package経路は既に接続済み。自作2Boneのnative検証ではClip/Variant生成、repeat不変、改変Clip拒否、reload、および3時点の最終Variant Skin変形とcarrier poseの一致（最大観測頂点差0）を確認済みである。根拠は既存[normal package QA](../../../TEST_RESULTS.md#normal-package-independent-bone-clip-return-2026-10-10)と[79a28a9の実装接続訂正](../../../docs/2026-10-11-material-safety-audit.md#approved-independent-action-return-existing-implementation-reconciled)。一般Avatar/retargeting、CASE0024 Animation、本人GUI割当、連続時間のAnimation同等性、nested/direct Prefab Action runtime、VRC runtimeは未検証。HOLMESのGUI/render/client・実購入corpusでの面対応、最新ZIP反映、製品全体完成も今回の成立範囲には含めない。既存QAは再実行しない。
 
 face対応の次の不足証拠は、**通常入力契約で有効なnative partition導出の根拠、または既存carrierによるexact native face対応**。どちらも今回の有限実測／identity witnessにはない。この不足を新基盤で埋める作業は開始しない。現在はguardを維持してこの判定を保存し、次の承認済み製品作業へ戻せる状態とする。本人原文10見出しとの照合だけは原文取得後に行える。
