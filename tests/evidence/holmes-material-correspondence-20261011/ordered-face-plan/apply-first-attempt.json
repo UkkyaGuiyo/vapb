@@ -1,0 +1,13 @@
+{
+  "instruction_id": "HOLMES-20261011-02",
+  "apply": "NOT_RUN",
+  "evidence": "DIAGNOSTIC_ONLY",
+  "standard_confirm": "NOT_RUN",
+  "export": "NOT_RUN",
+  "render": "NOT_RUN",
+  "blender_version": "5.2.1 LTS",
+  "original_unchanged": "NOT_RUN",
+  "package_payload": "PASS",
+  "normal_import": "PASS",
+  "blocked_connection": "ValueError: normal Import lacks one actual receipt-selected Object/Mesh"
+}

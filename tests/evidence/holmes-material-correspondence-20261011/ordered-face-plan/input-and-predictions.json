@@ -1,0 +1,1215 @@
+{
+  "instruction_id": "HOLMES-20261011-02",
+  "instruction_commit": "02c51d6cda52bb912a0afc2c2f804e9ca09a8ac5",
+  "frozen_utc": "2026-10-11T08:59:36.797163+00:00",
+  "fbx_version": 7400,
+  "raw": {
+    "model_uid": 768679554,
+    "geometry_uid": 799089120,
+    "material_connections": [
+      26834720,
+      505943850
+    ],
+    "polygons": [
+      {
+        "polygon": 0,
+        "uid": 26834720,
+        "raw_slot": 0,
+        "cp": [
+          0,
+          1,
+          2
+        ],
+        "positions": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.03125,
+            0.0
+          ],
+          [
+            0.0,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 1,
+        "uid": 505943850,
+        "raw_slot": 1,
+        "cp": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "positions": [
+          [
+            3.0,
+            0.0,
+            0.0
+          ],
+          [
+            4.0,
+            0.0,
+            0.0
+          ],
+          [
+            4.0,
+            1.0,
+            0.0
+          ],
+          [
+            3.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.125,
+            0.0
+          ],
+          [
+            0.15625,
+            0.0
+          ],
+          [
+            0.15625,
+            0.03125
+          ],
+          [
+            0.125,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 2,
+        "uid": 26834720,
+        "raw_slot": 0,
+        "cp": [
+          7,
+          8,
+          9,
+          10
+        ],
+        "positions": [
+          [
+            6.0,
+            0.0,
+            0.0
+          ],
+          [
+            7.0,
+            0.0,
+            0.0
+          ],
+          [
+            7.0,
+            1.0,
+            0.0
+          ],
+          [
+            6.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.25,
+            0.0
+          ],
+          [
+            0.28125,
+            0.0
+          ],
+          [
+            0.28125,
+            0.03125
+          ],
+          [
+            0.25,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 3,
+        "uid": 505943850,
+        "raw_slot": 1,
+        "cp": [
+          11,
+          12,
+          13
+        ],
+        "positions": [
+          [
+            9.0,
+            0.0,
+            0.0
+          ],
+          [
+            10.0,
+            0.0,
+            0.0
+          ],
+          [
+            9.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.0
+          ],
+          [
+            0.40625,
+            0.0
+          ],
+          [
+            0.375,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 4,
+        "uid": 26834720,
+        "raw_slot": 0,
+        "cp": [
+          14,
+          15,
+          16
+        ],
+        "positions": [
+          [
+            12.0,
+            0.0,
+            0.0
+          ],
+          [
+            13.0,
+            0.0,
+            0.0
+          ],
+          [
+            12.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.5,
+            0.0
+          ],
+          [
+            0.53125,
+            0.0
+          ],
+          [
+            0.5,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 5,
+        "uid": 505943850,
+        "raw_slot": 1,
+        "cp": [
+          17,
+          18,
+          19,
+          20
+        ],
+        "positions": [
+          [
+            15.0,
+            0.0,
+            0.0
+          ],
+          [
+            16.0,
+            0.0,
+            0.0
+          ],
+          [
+            16.0,
+            1.0,
+            0.0
+          ],
+          [
+            15.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.625,
+            0.0
+          ],
+          [
+            0.65625,
+            0.0
+          ],
+          [
+            0.65625,
+            0.03125
+          ],
+          [
+            0.625,
+            0.03125
+          ]
+        ]
+      }
+    ]
+  },
+  "partitions": {
+    "partition_evidence": "CANDIDATE",
+    "ready_to_apply": false,
+    "model_uid": 768679554,
+    "geometry_uid": 799089120,
+    "input_revision": {
+      "fbx_sha256": "d9b6b443af0aafbd175b7ed05ab804f78c76f589378d5b83e1c7af26b562c506",
+      "meta_sha256": "abe596e605b91137f4f86eb5e5826a276b338c83e52e88cfb902d769af145c96",
+      "mesh_guid": "d6f28bcc59f94dbeba9883a9c79a0e03"
+    },
+    "declared_keep_quads": 1,
+    "effective_policy_evidence": "UNPROVEN_DECLARATION",
+    "groups": [
+      {
+        "ordinal": 0,
+        "uid": 26834720,
+        "topology": "Triangles",
+        "polygons": [
+          0,
+          4
+        ],
+        "multiplicity": 2
+      },
+      {
+        "ordinal": 1,
+        "uid": 505943850,
+        "topology": "Quads",
+        "polygons": [
+          1,
+          5
+        ],
+        "multiplicity": 2
+      },
+      {
+        "ordinal": 2,
+        "uid": 26834720,
+        "topology": "Quads",
+        "polygons": [
+          2
+        ],
+        "multiplicity": 1
+      },
+      {
+        "ordinal": 3,
+        "uid": 505943850,
+        "topology": "Triangles",
+        "polygons": [
+          3
+        ],
+        "multiplicity": 1
+      }
+    ],
+    "raw_polygons": [
+      {
+        "polygon": 0,
+        "uid": 26834720,
+        "raw_slot": 0,
+        "cp": [
+          0,
+          1,
+          2
+        ],
+        "positions": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.0,
+            0.0
+          ],
+          [
+            0.03125,
+            0.0
+          ],
+          [
+            0.0,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 1,
+        "uid": 505943850,
+        "raw_slot": 1,
+        "cp": [
+          3,
+          4,
+          5,
+          6
+        ],
+        "positions": [
+          [
+            3.0,
+            0.0,
+            0.0
+          ],
+          [
+            4.0,
+            0.0,
+            0.0
+          ],
+          [
+            4.0,
+            1.0,
+            0.0
+          ],
+          [
+            3.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.125,
+            0.0
+          ],
+          [
+            0.15625,
+            0.0
+          ],
+          [
+            0.15625,
+            0.03125
+          ],
+          [
+            0.125,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 2,
+        "uid": 26834720,
+        "raw_slot": 0,
+        "cp": [
+          7,
+          8,
+          9,
+          10
+        ],
+        "positions": [
+          [
+            6.0,
+            0.0,
+            0.0
+          ],
+          [
+            7.0,
+            0.0,
+            0.0
+          ],
+          [
+            7.0,
+            1.0,
+            0.0
+          ],
+          [
+            6.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.25,
+            0.0
+          ],
+          [
+            0.28125,
+            0.0
+          ],
+          [
+            0.28125,
+            0.03125
+          ],
+          [
+            0.25,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 3,
+        "uid": 505943850,
+        "raw_slot": 1,
+        "cp": [
+          11,
+          12,
+          13
+        ],
+        "positions": [
+          [
+            9.0,
+            0.0,
+            0.0
+          ],
+          [
+            10.0,
+            0.0,
+            0.0
+          ],
+          [
+            9.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.0
+          ],
+          [
+            0.40625,
+            0.0
+          ],
+          [
+            0.375,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 4,
+        "uid": 26834720,
+        "raw_slot": 0,
+        "cp": [
+          14,
+          15,
+          16
+        ],
+        "positions": [
+          [
+            12.0,
+            0.0,
+            0.0
+          ],
+          [
+            13.0,
+            0.0,
+            0.0
+          ],
+          [
+            12.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.5,
+            0.0
+          ],
+          [
+            0.53125,
+            0.0
+          ],
+          [
+            0.5,
+            0.03125
+          ]
+        ]
+      },
+      {
+        "polygon": 5,
+        "uid": 505943850,
+        "raw_slot": 1,
+        "cp": [
+          17,
+          18,
+          19,
+          20
+        ],
+        "positions": [
+          [
+            15.0,
+            0.0,
+            0.0
+          ],
+          [
+            16.0,
+            0.0,
+            0.0
+          ],
+          [
+            16.0,
+            1.0,
+            0.0
+          ],
+          [
+            15.0,
+            1.0,
+            0.0
+          ]
+        ],
+        "uv": [
+          [
+            0.625,
+            0.0
+          ],
+          [
+            0.65625,
+            0.0
+          ],
+          [
+            0.65625,
+            0.03125
+          ],
+          [
+            0.625,
+            0.03125
+          ]
+        ]
+      }
+    ]
+  },
+  "plan": {
+    "ready_to_apply": false,
+    "partition_evidence": "CANDIDATE",
+    "serialized_reference_evidence": "EXACT",
+    "source_binding": "UNPROVEN",
+    "unresolved": [],
+    "faces": [
+      {
+        "polygon": 0,
+        "model_uid": 768679554,
+        "geometry_uid": 799089120,
+        "raw_uid": 26834720,
+        "group": 0,
+        "topology": "Triangles",
+        "material": {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "polygon": 1,
+        "model_uid": 768679554,
+        "geometry_uid": 799089120,
+        "raw_uid": 505943850,
+        "group": 1,
+        "topology": "Quads",
+        "material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "polygon": 2,
+        "model_uid": 768679554,
+        "geometry_uid": 799089120,
+        "raw_uid": 26834720,
+        "group": 2,
+        "topology": "Quads",
+        "material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "polygon": 3,
+        "model_uid": 768679554,
+        "geometry_uid": 799089120,
+        "raw_uid": 505943850,
+        "group": 3,
+        "topology": "Triangles",
+        "material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "polygon": 4,
+        "model_uid": 768679554,
+        "geometry_uid": 799089120,
+        "raw_uid": 26834720,
+        "group": 0,
+        "topology": "Triangles",
+        "material": {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "polygon": 5,
+        "model_uid": 768679554,
+        "geometry_uid": 799089120,
+        "raw_uid": 505943850,
+        "group": 1,
+        "topology": "Quads",
+        "material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      }
+    ],
+    "input_revision": {
+      "fbx_sha256": "d9b6b443af0aafbd175b7ed05ab804f78c76f589378d5b83e1c7af26b562c506",
+      "meta_sha256": "abe596e605b91137f4f86eb5e5826a276b338c83e52e88cfb902d769af145c96",
+      "mesh_guid": "d6f28bcc59f94dbeba9883a9c79a0e03"
+    },
+    "receiver": {
+      "root_context_id": "diagnostic-ordered-six",
+      "root_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+      "root_member_id": "983dd9d36c5824d488269d7d6d6f0434",
+      "root_asset_guid": "983dd9d36c5824d488269d7d6d6f0434",
+      "root_revision_sha256": "80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104",
+      "instance_edge_path": [],
+      "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+      "source_member_id": "983dd9d36c5824d488269d7d6d6f0434",
+      "source_revision_sha256": "80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104",
+      "source_key": {
+        "source_kind": "PREFAB_LOCAL",
+        "source_asset_guid": "983dd9d36c5824d488269d7d6d6f0434",
+        "renderer_file_id": 9090392177786753814
+      },
+      "renderer_class_id": 23,
+      "owner": {
+        "source_kind": "PREFAB_LOCAL",
+        "source_asset_guid": "983dd9d36c5824d488269d7d6d6f0434",
+        "owner_game_object_id": 3717565062898049783
+      },
+      "owner_name": "Receiver",
+      "mesh": {
+        "mesh_guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+        "mesh_file_id": -7487798873075540560
+      },
+      "materials": {
+        "0": {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        },
+        "1": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        },
+        "2": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        },
+        "3": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": 2100000,
+          "raw_file_id": 2100000,
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      "material_slot_count": 4,
+      "material_status": "EXACT",
+      "occurrence_id": "72c63e4c247bb64a814f70de324a555f44208cfdfff06cc3a2528cd4b218015f",
+      "providers": [
+        {
+          "reference": {
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+            "guid": "afd253dd071f7e5469e24392cdbf181c",
+            "file_id": "2100000"
+          },
+          "revision_sha256": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999",
+          "meta_sha256": "796c5cd00368ccf62599c950e697d4a1a13c8b76317dda98464bf86bf2881c78"
+        },
+        {
+          "reference": {
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+            "guid": "70c1cb3bd3a723141a677eca237e252c",
+            "file_id": "2100000"
+          },
+          "revision_sha256": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41",
+          "meta_sha256": "a6d65eae11ec70040bdc311f4f48c2afcb5892fedb68b3ba43545847652a701e"
+        },
+        {
+          "reference": {
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+            "guid": "242d369718abeb942873ec054737cf94",
+            "file_id": "2100000"
+          },
+          "revision_sha256": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467",
+          "meta_sha256": "428010a87586d7166f0eda8cf6df8aac5120a66f9174c71d3a404e7ef9264145"
+        },
+        {
+          "reference": {
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+            "guid": "4d7af3be41387054c9f86b68e180d9e7",
+            "file_id": "2100000"
+          },
+          "revision_sha256": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71",
+          "meta_sha256": "cba5bc9d04752cddec8c75d72346a18918c40575c1a62bdb801072a3e55484ff"
+        }
+      ],
+      "source_binding": "UNPROVEN",
+      "input_revision": {
+        "fbx_sha256": "d9b6b443af0aafbd175b7ed05ab804f78c76f589378d5b83e1c7af26b562c506",
+        "meta_sha256": "abe596e605b91137f4f86eb5e5826a276b338c83e52e88cfb902d769af145c96"
+      }
+    }
+  },
+  "predictions": {
+    "PAIR_FIRST": {
+      "groups": [
+        {
+          "ordinal": 0,
+          "uid": 26834720,
+          "topology": "Triangles",
+          "polygons": [
+            0,
+            4
+          ],
+          "multiplicity": 2
+        },
+        {
+          "ordinal": 1,
+          "uid": 505943850,
+          "topology": "Quads",
+          "polygons": [
+            1,
+            5
+          ],
+          "multiplicity": 2
+        },
+        {
+          "ordinal": 2,
+          "uid": 26834720,
+          "topology": "Quads",
+          "polygons": [
+            2
+          ],
+          "multiplicity": 1
+        },
+        {
+          "ordinal": 3,
+          "uid": 505943850,
+          "topology": "Triangles",
+          "polygons": [
+            3
+          ],
+          "multiplicity": 1
+        }
+      ],
+      "faces": [
+        {
+          "polygon": 0,
+          "group": 0,
+          "topology": "Triangles",
+          "material": {
+            "guid": "afd253dd071f7e5469e24392cdbf181c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 1,
+          "group": 1,
+          "topology": "Quads",
+          "material": {
+            "guid": "70c1cb3bd3a723141a677eca237e252c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 2,
+          "group": 2,
+          "topology": "Quads",
+          "material": {
+            "guid": "242d369718abeb942873ec054737cf94",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 3,
+          "group": 3,
+          "topology": "Triangles",
+          "material": {
+            "guid": "4d7af3be41387054c9f86b68e180d9e7",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 4,
+          "group": 0,
+          "topology": "Triangles",
+          "material": {
+            "guid": "afd253dd071f7e5469e24392cdbf181c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 5,
+          "group": 1,
+          "topology": "Quads",
+          "material": {
+            "guid": "70c1cb3bd3a723141a677eca237e252c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        }
+      ]
+    },
+    "PAIR_RUN": {
+      "groups": [
+        {
+          "ordinal": 0,
+          "uid": 26834720,
+          "topology": "Triangles",
+          "polygons": [
+            0
+          ]
+        },
+        {
+          "ordinal": 1,
+          "uid": 505943850,
+          "topology": "Quads",
+          "polygons": [
+            1
+          ]
+        },
+        {
+          "ordinal": 2,
+          "uid": 26834720,
+          "topology": "Quads",
+          "polygons": [
+            2
+          ]
+        },
+        {
+          "ordinal": 3,
+          "uid": 505943850,
+          "topology": "Triangles",
+          "polygons": [
+            3
+          ]
+        },
+        {
+          "ordinal": 4,
+          "uid": 26834720,
+          "topology": "Triangles",
+          "polygons": [
+            4
+          ]
+        },
+        {
+          "ordinal": 5,
+          "uid": 505943850,
+          "topology": "Quads",
+          "polygons": [
+            5
+          ]
+        }
+      ],
+      "faces": [
+        {
+          "polygon": 0,
+          "group": 0,
+          "topology": "Triangles",
+          "material": {
+            "guid": "afd253dd071f7e5469e24392cdbf181c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 1,
+          "group": 1,
+          "topology": "Quads",
+          "material": {
+            "guid": "70c1cb3bd3a723141a677eca237e252c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 2,
+          "group": 2,
+          "topology": "Quads",
+          "material": {
+            "guid": "242d369718abeb942873ec054737cf94",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 3,
+          "group": 3,
+          "topology": "Triangles",
+          "material": {
+            "guid": "4d7af3be41387054c9f86b68e180d9e7",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 4,
+          "group": 4,
+          "topology": "Triangles",
+          "material": null
+        },
+        {
+          "polygon": 5,
+          "group": 5,
+          "topology": "Quads",
+          "material": null
+        }
+      ]
+    },
+    "UID_FIRST": {
+      "groups": [
+        {
+          "ordinal": 0,
+          "uid": 26834720,
+          "topology": "Triangles",
+          "polygons": [
+            0,
+            4
+          ],
+          "multiplicity": 2
+        },
+        {
+          "ordinal": 1,
+          "uid": 26834720,
+          "topology": "Quads",
+          "polygons": [
+            2
+          ],
+          "multiplicity": 1
+        },
+        {
+          "ordinal": 2,
+          "uid": 505943850,
+          "topology": "Quads",
+          "polygons": [
+            1,
+            5
+          ],
+          "multiplicity": 2
+        },
+        {
+          "ordinal": 3,
+          "uid": 505943850,
+          "topology": "Triangles",
+          "polygons": [
+            3
+          ],
+          "multiplicity": 1
+        }
+      ],
+      "faces": [
+        {
+          "polygon": 0,
+          "group": 0,
+          "topology": "Triangles",
+          "material": {
+            "guid": "afd253dd071f7e5469e24392cdbf181c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 1,
+          "group": 2,
+          "topology": "Quads",
+          "material": {
+            "guid": "242d369718abeb942873ec054737cf94",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 2,
+          "group": 1,
+          "topology": "Quads",
+          "material": {
+            "guid": "70c1cb3bd3a723141a677eca237e252c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 3,
+          "group": 3,
+          "topology": "Triangles",
+          "material": {
+            "guid": "4d7af3be41387054c9f86b68e180d9e7",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 4,
+          "group": 0,
+          "topology": "Triangles",
+          "material": {
+            "guid": "afd253dd071f7e5469e24392cdbf181c",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        },
+        {
+          "polygon": 5,
+          "group": 2,
+          "topology": "Quads",
+          "material": {
+            "guid": "242d369718abeb942873ec054737cf94",
+            "file_id": 2100000,
+            "raw_file_id": 2100000,
+            "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+          }
+        }
+      ]
+    }
+  },
+  "creation": {
+    "exposed": "Imported Mesh/Model Renderer/Prefab Renderer/Material asset identities; fixed four references; importer policy",
+    "withheld": "Native groups, topology, face/index order, UV, vertices, normals; no GetIndices/GetTriangles/GetTopology/subMeshCount used in creation",
+    "mesh": {
+      "guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+      "file_id": "-7487798873075540560"
+    },
+    "model_renderer": {
+      "guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+      "file_id": "-7511558181221131132"
+    },
+    "receiver_renderer": {
+      "guid": "983dd9d36c5824d488269d7d6d6f0434",
+      "file_id": "9090392177786753814"
+    },
+    "prefab": {
+      "guid": "983dd9d36c5824d488269d7d6d6f0434",
+      "file_id": "3717565062898049783"
+    },
+    "materials": [
+      {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000"
+      }
+    ]
+  },
+  "package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+  "package_sha256": "5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+  "asset_sha256": {
+    "OrderedSix.fbx": "d9b6b443af0aafbd175b7ed05ab804f78c76f589378d5b83e1c7af26b562c506",
+    "OrderedSix.fbx.meta": "abe596e605b91137f4f86eb5e5826a276b338c83e52e88cfb902d769af145c96",
+    "R0.mat": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999",
+    "R0.mat.meta": "796c5cd00368ccf62599c950e697d4a1a13c8b76317dda98464bf86bf2881c78",
+    "R1.mat": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41",
+    "R1.mat.meta": "a6d65eae11ec70040bdc311f4f48c2afcb5892fedb68b3ba43545847652a701e",
+    "R2.mat": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467",
+    "R2.mat.meta": "428010a87586d7166f0eda8cf6df8aac5120a66f9174c71d3a404e7ef9264145",
+    "R3.mat": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71",
+    "R3.mat.meta": "cba5bc9d04752cddec8c75d72346a18918c40575c1a62bdb801072a3e55484ff",
+    "Receiver.prefab": "80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104",
+    "Receiver.prefab.meta": "d7b4933c0c20d8e6af9eac5016c2d44930374a47dbda26704c72706af1e2a56d"
+  },
+  "code_sha256": {
+    "candidates.py": "d4c0312ea59f570d0bf721340a3e8cf15eb947b183966d57eae1f5863e75aebd",
+    "freeze_input.py": "5bfbcc91faafbc30c2a604c60e364f3f6387e165b250dd77fa2230e5ab0331ee",
+    "generate_fixture.py": "9e63b73d1348db13bb5bdce9b012b92552eb3714e990a2c635058e985485f95e",
+    "judge_holdout.py": "5499fced8758a582ef24074f8de25636bb8d24a00d40d5fc6f33e776d6c90e91",
+    "test_candidates.py": "077e711e27a99866cd1a82f092870f7c92a14d95ac56ec93d7125412427c0b2c",
+    "test_judge.py": "82d1f8b1c8ffe1930b0fa46462759407aa0913e4c4a60c77c36b242c828463e9"
+  },
+  "face_observation_exists": false
+}

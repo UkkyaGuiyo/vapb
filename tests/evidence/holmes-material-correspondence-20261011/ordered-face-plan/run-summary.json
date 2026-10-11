@@ -1,0 +1,159 @@
+{
+  "instruction_id": "HOLMES-20261011-02",
+  "instruction_commit": "02c51d6cda52bb912a0afc2c2f804e9ca09a8ac5",
+  "base_sha": "e09c2ee31b83e22a8fc77dd850961e9fe1be7c76",
+  "branch": "feature/holmes-ordered-face-plan-20261011",
+  "global_agents_sha256": "9BE8886133EEE50F5E24A5A183AF086EACDFEE41EBCF3D5AB0510907D34D6918",
+  "actual_primary_model_reasoning": "UNAVAILABLE",
+  "reviewers": "GPT-6.1 SOL / medium, independent generation and native contexts",
+  "focused_tests": {
+    "command": "python -B -m unittest test_candidates.py test_judge.py test_receipt_selection.py",
+    "passed": 7
+  },
+  "native_face_measurement_runs": 1,
+  "metadata_only_supplement_runs": 1,
+  "source_code_sha256": {
+    "apply_copy.py": "5bfcb00fe9a04066d39b86b2cebff1f444063ddfe9f1744977b50479200cf564",
+    "candidates.py": "d4c0312ea59f570d0bf721340a3e8cf15eb947b183966d57eae1f5863e75aebd",
+    "Capture.cs": "f9aee4ee716163c7527cbe3d1c90960a92bc664c6d74e0f1e2b51c9df60ada90",
+    "executed-apply.py.txt": "adf6f3d39ade0303abb29801466885ea535b2ded7408d1292279a991d22f6595",
+    "executed-capture.cs.txt": "34435921d490f52d87bfe024b8ba2085b335a7e4cdf633f1981ae71cd318c8f7",
+    "freeze_input.py": "5bfbcc91faafbc30c2a604c60e364f3f6387e165b250dd77fa2230e5ab0331ee",
+    "generate_fixture.py": "9e63b73d1348db13bb5bdce9b012b92552eb3714e990a2c635058e985485f95e",
+    "judge_holdout.py": "072222c2293550abbe208ab04c51537b901d559d869a193a449b8097ccc1fa33",
+    "test_candidates.py": "077e711e27a99866cd1a82f092870f7c92a14d95ac56ec93d7125412427c0b2c",
+    "test_judge.py": "6d07fa8a175f1e03b256f3bcb9276ed55d5d253c0dc5ca00b459c42148fd36dc",
+    "test_receipt_selection.py": "6f096e047ae965c695ddd74c001c6126651044fb3439306dd4282ec0eba07479"
+  },
+  "runs": {
+    "create": {
+      "pid": 16064,
+      "start_utc": "2026-10-11T08:58:26.8289389Z",
+      "exit": {
+        "exited_utc": "2026-10-11T08:58:53.1228093Z",
+        "pid": 16064,
+        "exit_code": 0
+      },
+      "actual_free_gib": 5.011207580566406,
+      "executed_capture_sha256": "34435921d490f52d87bfe024b8ba2085b335a7e4cdf633f1981ae71cd318c8f7",
+      "preservation": {
+        "protected_files": 3041,
+        "project_lock_present": false,
+        "active_owned_children": [
+          null
+        ],
+        "unexpected_files": [],
+        "changed": []
+      },
+      "lease_release": {
+        "result": "RELEASED",
+        "slot": 1,
+        "project": "VRC-Avatar-Gimmick-01",
+        "releasedAtUtc": "2026-10-11T08:58:55.4542558Z"
+      },
+      "mutex_released": true
+    },
+    "capture": {
+      "pid": 31416,
+      "start_utc": "2026-10-11T09:00:24.6449477Z",
+      "exit": {
+        "exit_code": 0,
+        "pid": 31416,
+        "exited_utc": "2026-10-11T09:00:39.1431778Z"
+      },
+      "actual_free_gib": 5.034454345703125,
+      "executed_capture_sha256": "34435921d490f52d87bfe024b8ba2085b335a7e4cdf633f1981ae71cd318c8f7",
+      "preservation": {
+        "project_lock_present": false,
+        "protected_files": 3041,
+        "changed": [],
+        "unexpected_files": [],
+        "active_owned_children": [
+          null
+        ]
+      },
+      "lease_release": {
+        "result": "RELEASED",
+        "slot": 1,
+        "project": "VRC-Avatar-Gimmick-01",
+        "releasedAtUtc": "2026-10-11T09:00:41.5629482Z"
+      },
+      "mutex_released": true
+    },
+    "verify": {
+      "pid": 31892,
+      "start_utc": "2026-10-11T09:02:52.3003805Z",
+      "exit": {
+        "exited_utc": "2026-10-11T09:03:08.8060493Z",
+        "pid": 31892,
+        "exit_code": 0
+      },
+      "actual_free_gib": 5.0441741943359375,
+      "executed_capture_sha256": "f9aee4ee716163c7527cbe3d1c90960a92bc664c6d74e0f1e2b51c9df60ada90",
+      "preservation": {
+        "unexpected_files": [],
+        "project_lock_present": false,
+        "protected_files": 3041,
+        "changed": [],
+        "active_owned_children": [
+          null
+        ]
+      },
+      "lease_release": {
+        "result": "RELEASED",
+        "slot": 1,
+        "project": "VRC-Avatar-Gimmick-01",
+        "releasedAtUtc": "2026-10-11T09:03:11.2489040Z"
+      },
+      "mutex_released": true
+    },
+    "generation": {
+      "pid": 27636,
+      "start_utc": "2026-10-11T08:57:48.1149821Z",
+      "exit": {
+        "owned_children_absent": true,
+        "exited_utc": "2026-10-11T08:57:51.2619463Z",
+        "exit_code": 0,
+        "pid": 27636
+      },
+      "actual_free_gib": 5.012271881103516,
+      "executed_script_sha256": "9E63B73D1348DB13BB5BDCE9B012B92552EB3714E990A2C635058E985485F95E",
+      "mutex_released": true
+    },
+    "apply": {
+      "pid": 32168,
+      "start_utc": "2026-10-11T09:06:18.3247297Z",
+      "exit": {
+        "exited_utc": "2026-10-11T09:06:21.7668547Z",
+        "owned_children_absent": true,
+        "exit_code": 0,
+        "pid": 32168
+      },
+      "actual_free_gib": 5.044776916503906,
+      "executed_script_sha256": "ADF6F3D39ADE0303ABB29801466885EA535B2DED7408D1292279A991D22F6595",
+      "mutex_released": true
+    },
+    "apply-02": {
+      "pid": 24196,
+      "start_utc": "2026-10-11T09:09:23.0306585Z",
+      "exit": {
+        "exit_code": 0,
+        "pid": 24196,
+        "exited_utc": "2026-10-11T09:09:26.5230651Z",
+        "owned_children_absent": true
+      },
+      "actual_free_gib": 5.0412139892578125,
+      "executed_script_sha256": "5BFCB00FE9A04066D39B86B2CEBFF1F444063DDFE9F1744977B50479200CF564",
+      "mutex_released": true
+    }
+  },
+  "immutable_fixture_sha256": {
+    "input-and-predictions.json": "b78e0eca16cd06406821bffee7d0eac8a48f584a3c9a8c43870530f2accab6ae",
+    "native.json": "e729f666ebb9a6f9b51d670be34e3d55e2294ee43472d607c25711c85eb3a51a",
+    "supplement.json": "f2eed7b9b9a69f34e3e5f40f7fada9f7c5c532cc8d90b4028249b8571c012f89",
+    "judgment.json": "0153ce4721770c03ed58fe9762b3ab4e8a46b2f0968a3f9e7a8938a349cf1269",
+    "apply-first-attempt.json": "1a086d9d5dbc55121e46dd3b05954b9a6eb01bb31a53d9eef483fd9154dde4c0",
+    "apply.json": "0956e491048ada2ad7782f7216a8473003df3c290b261c5b4449dbc0c7ae4953",
+    "OrderedSix.unitypackage": "5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+  }
+}

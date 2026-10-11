@@ -1,0 +1,92 @@
+{
+  "instruction_id": "HOLMES-20261011-02",
+  "apply": "PASS",
+  "evidence": "DIAGNOSTIC_ONLY",
+  "standard_confirm": "NOT_RUN",
+  "export": "NOT_RUN",
+  "render": "NOT_RUN",
+  "blender_version": "5.2.1 LTS",
+  "original_unchanged": "PASS",
+  "package_payload": "PASS",
+  "normal_import": "PASS",
+  "actual_receiver_occurrence": "PASS",
+  "actual_receipt": "PASS",
+  "source_binding": "UNPROVEN_FOR_PRODUCT",
+  "diagnostic_source_relation": "Exact package/FBX revision and actual import receipt plus independent raw/native/Blender corner joins; no root binding injected",
+  "actual_providers": "PASS",
+  "before_sha256": "5f9eaf11a80323fb9172176a9188a0c6af407e15f4e0704eaa87d44d707bd987",
+  "after_sha256": "5f9eaf11a80323fb9172176a9188a0c6af407e15f4e0704eaa87d44d707bd987",
+  "independent_mesh": true,
+  "object_linked_slots": true,
+  "copy_faces": [
+    {
+      "blender_polygon": 0,
+      "raw_polygon": 0,
+      "slot": 0,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      }
+    },
+    {
+      "blender_polygon": 1,
+      "raw_polygon": 1,
+      "slot": 1,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      }
+    },
+    {
+      "blender_polygon": 2,
+      "raw_polygon": 2,
+      "slot": 2,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000"
+      }
+    },
+    {
+      "blender_polygon": 3,
+      "raw_polygon": 3,
+      "slot": 3,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000"
+      }
+    },
+    {
+      "blender_polygon": 4,
+      "raw_polygon": 4,
+      "slot": 0,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      }
+    },
+    {
+      "blender_polygon": 5,
+      "raw_polygon": 5,
+      "slot": 1,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      }
+    }
+  ],
+  "original_slots": 2,
+  "copy_slots": 4,
+  "receipt_scope": {
+    "model_uid": 768679554,
+    "geometry_uid": 799089120,
+    "fbx_sha256": "d9b6b443af0aafbd175b7ed05ab804f78c76f589378d5b83e1c7af26b562c506",
+    "asset_guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+    "package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+  }
+}

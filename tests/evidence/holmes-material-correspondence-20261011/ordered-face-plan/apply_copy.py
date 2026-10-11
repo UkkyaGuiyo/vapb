@@ -1,0 +1,162 @@
+"""Explicit diagnostic-only copy assignment after independent holdout agreement."""
+import argparse
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import sys
+
+sys.dont_write_bytecode=True
+
+def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+def digest(value):return hashlib.sha256(repr(value).encode('utf8')).hexdigest()
+
+def material_ref(mat):
+    return dict(source_package_id=str(mat.get('unity_source_package_id','')),guid=str(mat.get('unity_material_guid','')).lower(),
+        file_id=str(mat.get('unity_material_file_id','')))
+
+def plain(value):
+    if isinstance(value,(str,int,float,bool)) or value is None:return value
+    if hasattr(value,'to_dict'):return {k:plain(v) for k,v in value.to_dict().items()}
+    if hasattr(value,'to_list'):return [plain(v) for v in value.to_list()]
+    if hasattr(value,'as_pointer'):return ('DATABLOCK',value.as_pointer())
+    try:return [plain(v) for v in value]
+    except TypeError:return repr(value)
+
+def props(block):return sorted((k,plain(block[k])) for k in block.keys())
+
+def material_state(mat):
+    nodes=[]
+    if mat.node_tree:
+        nodes=[(n.name,n.type,[(s.name,plain(getattr(s,'default_value',None))) for s in n.inputs]) for n in mat.node_tree.nodes]
+        links=[(l.from_node.name,l.from_socket.name,l.to_node.name,l.to_socket.name) for l in mat.node_tree.links]
+    else:links=[]
+    return (mat.as_pointer(),props(mat),tuple(mat.diffuse_color),mat.use_nodes,nodes,links)
+
+def original_state(obj,materials):
+    mesh=obj.data
+    return digest((obj.as_pointer(),mesh.as_pointer(),props(obj),props(mesh),
+        tuple(tuple(row) for row in obj.matrix_world),
+        [(tuple(v.co),tuple(v.normal)) for v in mesh.vertices],[tuple(e.vertices) for e in mesh.edges],
+        [(tuple(p.vertices),p.material_index,p.use_smooth) for p in mesh.polygons],
+        [(l.vertex_index,l.edge_index) for l in mesh.loops],
+        [(uv.name,[tuple(c.uv) for c in uv.data]) for uv in mesh.uv_layers],
+        [(s.link,s.material.as_pointer() if s.material else None) for s in obj.material_slots],
+        [material_state(m) for m in materials]))
+
+def face_join(obj,raw,cover):
+    layer=obj.data.uv_layers.active
+    if layer is None:raise ValueError('actual Blender UV layer missing')
+    matched={p['polygon']:[] for p in raw['polygons']};map_faces={}
+    for face in obj.data.polygons:
+        uv=[tuple(layer.data[loop].uv) for loop in face.loop_indices]
+        candidates=[p for p in raw['polygons'] if set(uv)<={tuple(c) for c in p['uv']}]
+        if len(candidates)!=1:raise ValueError('actual Blender face identity not unique')
+        p=candidates[0];matched[p['polygon']].append(uv);map_faces[face.index]=p['polygon']
+    for p in raw['polygons']:cover(p['uv'],matched[p['polygon']])
+    return map_faces
+
+
+def select_receipt_candidate(objects,record,context_id,validator):
+    raw=record['raw'];guid=record['creation']['mesh']['guid'];fbxhash=record['asset_sha256']['OrderedSix.fbx']
+    candidates=[o for o in objects if o.type=='MESH' and validator(o)
+        and o.get('unity_source_package_id')==record['package_id'] and o.get('_vapb_root_context_id')==context_id
+        and o.get('_vapb_fbx_source_asset_guid')==guid and o.get('_vapb_fbx_source_asset_sha256')==fbxhash
+        and str(o.get('_vapb_fbx_model_uid'))==str(raw['model_uid']) and str(o.get('_vapb_fbx_geometry_uid'))==str(raw['geometry_uid'])]
+    if len(candidates)!=1:raise ValueError('actual root-scoped receipt-selected Object/Mesh count='+str(len(candidates)))
+    return candidates[0]
+
+def main():
+    import bpy
+    ap=argparse.ArgumentParser()
+    for name in ('repo','work'):ap.add_argument('--'+name,type=Path,required=True)
+    ap.add_argument('--attempt',choices=['1','2'],default='1')
+    args=ap.parse_args(sys.argv[sys.argv.index('--')+1:]);work=args.work
+    suffix='' if args.attempt=='1' else '-02';storage=work/('blender-sources'+suffix)
+    record=json.loads((work/'create/input-and-predictions.json').read_text(encoding='utf-8-sig'))
+    judgment=json.loads((work/'judgment.json').read_text(encoding='utf-8-sig'))
+    result=dict(instruction_id='HOLMES-20261011-02',apply='NOT_RUN',evidence='DIAGNOSTIC_ONLY',standard_confirm='NOT_RUN',
+        export='NOT_RUN',render='NOT_RUN',blender_version=bpy.app.version_string,original_unchanged='NOT_RUN')
+    before=None;source=None;materials=[];protected_materials=[]
+    try:
+        if judgment['hypotheses']['PAIR_FIRST']!='SUPPORTED_IN_THIS_FIXTURE' or judgment['supplemental_revision_binding']!='PASS':
+            raise ValueError('independent candidate/native agreement or revision gate missing')
+        package=work/'create/OrderedSix.unitypackage'
+        if sha(package)!=record['package_sha256']:raise ValueError('package revision changed')
+        spec=importlib.util.spec_from_file_location('unitypackage_blender_importer',args.repo/'__init__.py',submodule_search_locations=[str(args.repo)])
+        addon=importlib.util.module_from_spec(spec);sys.modules[spec.name]=addon;spec.loader.exec_module(addon);addon.register()
+        from unitypackage_blender_importer.unity.package_reader import UnityPackageReader
+        from unitypackage_blender_importer.blender.fbx_receipt import validate_persistent_receipt
+        extraction=UnityPackageReader(package).extract(work/('package-check'+suffix))
+        if extraction.errors:raise ValueError('existing package reader rejected payload')
+        payload={}
+        for asset in extraction.assets:
+            payload[asset.extracted_path.name]=sha(asset.extracted_path)
+            if asset.meta_path:payload[asset.meta_path.name]=sha(asset.meta_path)
+        if payload!=record['asset_sha256']:raise ValueError('package payload differs from frozen assets')
+        result['package_payload']='PASS'
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        if bpy.ops.import_scene.unitypackage(filepath=str(package),import_mode='RECONSTRUCT',prefab_choice='AUTO',
+            source_storage_directory=str(storage))!={'FINISHED'}:raise ValueError('normal package Import not finished')
+        result['normal_import']='PASS'
+        raw=record['raw'];fbxhash=record['asset_sha256']['OrderedSix.fbx'];guid=record['creation']['mesh']['guid']
+        occurrence=record['plan']['receiver'];actual_records=[]
+        for root in bpy.data.objects:
+            encoded=root.get('_vapb_renderer_occurrences')
+            if encoded:
+                for r in json.loads(encoded).get('records',[]):
+                    if r.get('root_package_id')==record['package_id'] and r.get('source_key')==occurrence['source_key'] and r.get('root_revision_sha256')==occurrence['root_revision_sha256']:
+                        actual_records.append(r)
+        if len(actual_records)!=1 or any(actual_records[0]['mesh'].get(k)!=v for k,v in occurrence['mesh'].items()):
+            raise ValueError('normal Import actual receiver occurrence/revision not uniquely connected')
+        if actual_records[0]['mesh'].get('source_sha256',fbxhash)!=fbxhash:raise ValueError('actual receiver source FBX revision differs')
+        result['actual_receiver_occurrence']='PASS'
+        source=select_receipt_candidate(bpy.data.objects,record,actual_records[0]['root_context_id'],validate_persistent_receipt)
+        result['actual_receipt']='PASS'
+        result['source_binding']='UNPROVEN_FOR_PRODUCT'
+        result['diagnostic_source_relation']='Exact package/FBX revision and actual import receipt plus independent raw/native/Blender corner joins; no root binding injected'
+        for index in range(4):
+            reference=occurrence['materials'][str(index)]
+            wanted=dict(source_package_id=reference['source_package_id'],guid=reference['guid'].lower(),file_id=str(reference['file_id']))
+            candidates=[m for m in bpy.data.materials if material_ref(m)==wanted]
+            if len(candidates)!=1:raise ValueError('actual Material provider missing/ambiguous')
+            mat=candidates[0];provider=occurrence['providers'][index]
+            if mat.get('_vapb_source_material_sha256')!=provider['revision_sha256'] or sha(mat.get('unity_source_material',''))!=provider['revision_sha256']:
+                raise ValueError('actual Material provider revision differs')
+            materials.append(mat)
+        result['actual_providers']='PASS'
+        sys.path.insert(0,str(Path(__file__).parent.parent/'topology-boundary'))
+        from judge import cover
+        join=face_join(source,raw,cover)
+        protected_materials=list(bpy.data.materials);before=original_state(source,protected_materials)
+        source_files={str(p):sha(p) for p in storage.rglob('*') if p.is_file()}
+        copy=source.copy();copy.data=source.data.copy();bpy.context.collection.objects.link(copy)
+        # Copied product binding/receipt claims are stripped; no witness/EXACT metadata is fabricated.
+        for block in (copy,copy.data):
+            for key in list(block.keys()):
+                if key.startswith('_vapb_'):del block[key]
+        copy['holmes_evidence']='DIAGNOSTIC_ONLY'
+        copy.data.materials.clear()
+        for mat in materials:copy.data.materials.append(mat)
+        for i,mat in enumerate(materials):copy.material_slots[i].link='OBJECT';copy.material_slots[i].material=mat
+        plan={r['polygon']:r for r in record['plan']['faces']}
+        for face in copy.data.polygons:face.material_index=plan[join[face.index]]['group']
+        after_join=face_join(copy,raw,cover);native={r['polygon']:r for r in judgment['actual_faces']};rows=[]
+        for face in copy.data.polygons:
+            p=after_join[face.index];reference=material_ref(copy.material_slots[face.material_index].material)
+            if reference!=native[p]['material']:raise ValueError('copy actual face provider differs from independent native judgment')
+            rows.append(dict(blender_polygon=face.index,raw_polygon=p,slot=face.material_index,material=reference))
+        after=original_state(source,protected_materials)
+        if before!=after or source.data is copy.data or source_files!={str(p):sha(p) for p in storage.rglob('*') if p.is_file()}:
+            raise ValueError('original Object/Mesh/Materials/source files changed')
+        result.update(apply='PASS',original_unchanged='PASS',before_sha256=before,after_sha256=after,
+            independent_mesh=True,object_linked_slots=True,copy_faces=rows,original_slots=len(source.material_slots),copy_slots=len(copy.material_slots),
+            receipt_scope=dict(model_uid=raw['model_uid'],geometry_uid=raw['geometry_uid'],fbx_sha256=fbxhash,asset_guid=guid,package_id=record['package_id']))
+    except Exception as error:
+        # Missing actual connection blocks only copy application, not native/source evidence.
+        result['blocked_connection']=type(error).__name__+': '+str(error)
+        if before is not None and source is not None:result['original_unchanged']='PASS' if original_state(source,protected_materials)==before else 'UNDETERMINED'
+    with (work/('apply'+suffix+'.json')).open('x',encoding='utf8') as stream:json.dump(result,stream,indent=2)
+    print('HOLMES_DIAGNOSTIC_COPY',result['apply'],result.get('blocked_connection',''))
+
+if __name__=='__main__':main()

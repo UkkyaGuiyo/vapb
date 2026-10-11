@@ -1,0 +1,38 @@
+{
+    "exposed": "Imported Mesh/Model Renderer/Prefab Renderer/Material asset identities; fixed four references; importer policy",
+    "withheld": "Native groups, topology, face/index order, UV, vertices, normals; no GetIndices/GetTriangles/GetTopology/subMeshCount used in creation",
+    "mesh": {
+        "guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+        "file_id": "-7487798873075540560"
+    },
+    "model_renderer": {
+        "guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+        "file_id": "-7511558181221131132"
+    },
+    "receiver_renderer": {
+        "guid": "983dd9d36c5824d488269d7d6d6f0434",
+        "file_id": "9090392177786753814"
+    },
+    "prefab": {
+        "guid": "983dd9d36c5824d488269d7d6d6f0434",
+        "file_id": "3717565062898049783"
+    },
+    "materials": [
+        {
+            "guid": "afd253dd071f7e5469e24392cdbf181c",
+            "file_id": "2100000"
+        },
+        {
+            "guid": "70c1cb3bd3a723141a677eca237e252c",
+            "file_id": "2100000"
+        },
+        {
+            "guid": "242d369718abeb942873ec054737cf94",
+            "file_id": "2100000"
+        },
+        {
+            "guid": "4d7af3be41387054c9f86b68e180d9e7",
+            "file_id": "2100000"
+        }
+    ]
+}

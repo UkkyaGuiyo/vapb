@@ -1,0 +1,7 @@
+*.fbx -text -diff
+*.meta -text -diff
+*.unitypackage -text -diff
+*.json -text
+*.prefab -text
+*.mat -text
+*.txt -text

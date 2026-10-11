@@ -1,0 +1,390 @@
+{
+  "instruction_id": "HOLMES-20261011-02",
+  "hypotheses": {
+    "PAIR_FIRST": "SUPPORTED_IN_THIS_FIXTURE",
+    "PAIR_RUN": "FALSIFIED",
+    "UID_FIRST": "FALSIFIED"
+  },
+  "comparisons": {
+    "PAIR_FIRST": [
+      {
+        "polygon": 0,
+        "predicted_group": 0,
+        "actual_group": 0,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 1,
+        "predicted_group": 1,
+        "actual_group": 1,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 2,
+        "predicted_group": 2,
+        "actual_group": 2,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 3,
+        "predicted_group": 3,
+        "actual_group": 3,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 4,
+        "predicted_group": 0,
+        "actual_group": 0,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 5,
+        "predicted_group": 1,
+        "actual_group": 1,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "match": true
+      }
+    ],
+    "PAIR_RUN": [
+      {
+        "polygon": 0,
+        "predicted_group": 0,
+        "actual_group": 0,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 1,
+        "predicted_group": 1,
+        "actual_group": 1,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 2,
+        "predicted_group": 2,
+        "actual_group": 2,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 3,
+        "predicted_group": 3,
+        "actual_group": 3,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 4,
+        "predicted_group": 4,
+        "actual_group": 0,
+        "predicted_material": null,
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "match": false
+      },
+      {
+        "polygon": 5,
+        "predicted_group": 5,
+        "actual_group": 1,
+        "predicted_material": null,
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "match": false
+      }
+    ],
+    "UID_FIRST": [
+      {
+        "polygon": 0,
+        "predicted_group": 0,
+        "actual_group": 0,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 1,
+        "predicted_group": 2,
+        "actual_group": 1,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "match": false
+      },
+      {
+        "polygon": 2,
+        "predicted_group": 1,
+        "actual_group": 2,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "match": false
+      },
+      {
+        "polygon": 3,
+        "predicted_group": 3,
+        "actual_group": 3,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 4,
+        "predicted_group": 0,
+        "actual_group": 0,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "match": true
+      },
+      {
+        "polygon": 5,
+        "predicted_group": 2,
+        "actual_group": 1,
+        "predicted_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "actual_material": {
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "match": false
+      }
+    ]
+  },
+  "actual_faces": [
+    {
+      "polygon": 0,
+      "group": 0,
+      "topology": "Triangles",
+      "raw_uid": 26834720,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      },
+      "winding": -1
+    },
+    {
+      "polygon": 1,
+      "group": 1,
+      "topology": "Quads",
+      "raw_uid": 505943850,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      },
+      "winding": -1
+    },
+    {
+      "polygon": 2,
+      "group": 2,
+      "topology": "Quads",
+      "raw_uid": 26834720,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000"
+      },
+      "winding": -1
+    },
+    {
+      "polygon": 3,
+      "group": 3,
+      "topology": "Triangles",
+      "raw_uid": 505943850,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000"
+      },
+      "winding": -1
+    },
+    {
+      "polygon": 4,
+      "group": 0,
+      "topology": "Triangles",
+      "raw_uid": 26834720,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      },
+      "winding": -1
+    },
+    {
+      "polygon": 5,
+      "group": 1,
+      "topology": "Quads",
+      "raw_uid": 505943850,
+      "material": {
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      },
+      "winding": -1
+    }
+  ],
+  "native_membership": "PASS",
+  "native_group_count": 4,
+  "receiver_reference_count": 4,
+  "winding": [
+    -1,
+    -1,
+    -1,
+    -1,
+    -1,
+    -1
+  ],
+  "position_comparison": "NOT_RUN",
+  "render": "NOT_RUN",
+  "product_guard_changed": false,
+  "product_automatic_restore": "NOT_IMPLEMENTED",
+  "supplemental_revision_binding": "PASS",
+  "supplement_utc": "2026-10-11T09:03:07.9446888Z",
+  "supplement_scope": "Material/meta/receiver Mesh revisions verified later; not claimed contemporaneous with first face capture",
+  "input_prediction_sha256": "b78e0eca16cd06406821bffee7d0eac8a48f584a3c9a8c43870530f2accab6ae",
+  "native_sha256": "e729f666ebb9a6f9b51d670be34e3d55e2294ee43472d607c25711c85eb3a51a"
+}

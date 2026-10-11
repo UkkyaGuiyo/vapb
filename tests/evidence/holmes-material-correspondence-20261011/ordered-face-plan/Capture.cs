@@ -1,0 +1,99 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Security.Cryptography;
+using UnityEditor;
+using UnityEngine;
+
+// Self-authored assets in a new owned folder; create and holdout are separate runs.
+public static class HolmesOrderedCapture
+{
+    const string Folder="Assets/HolmesOrderedFacePlan";
+    const string Model=Folder+"/OrderedSix.fbx", Prefab=Folder+"/Receiver.prefab";
+    [Serializable] class Ref { public string guid,file_id; }
+    [Serializable] class Group { public string topology;public int index_count,base_vertex;public int[] indices; }
+    [Serializable] class Creation { public string exposed,withheld;public Ref mesh,model_renderer,receiver_renderer,prefab;public Ref[] materials; }
+    [Serializable] class HashRow { public string name,sha256; }
+    [Serializable] class Supplement { public string phase,utc,policy;public Ref receiver_mesh;public Ref[] materials;public HashRow[] asset_hashes; }
+    [Serializable] class Snapshot
+    {
+        public string unity_version,fbx_sha256,fbx_sha256_after,meta_sha256,meta_sha256_after,policy,prefab_sha256;
+        public bool keep_quads,apply_base_vertex;
+        public Ref mesh,renderer,receiver_renderer,prefab;
+        public Ref[] materials,model_materials;
+        public Group[] groups;public Vector2[] uv;public Vector3[] vertices,normals;
+    }
+    static string Hash(string path) { using(var sha=SHA256.Create())return BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(path))).Replace("-","").ToLowerInvariant(); }
+    static Ref Reference(UnityEngine.Object obj)
+    {
+        if(obj==null)return new Ref{guid="",file_id="NULL"};
+        if(!AssetDatabase.TryGetGUIDAndLocalFileIdentifier(obj,out string guid,out long id))throw new Exception("identity unavailable");
+        return new Ref{guid=guid,file_id=id.ToString(System.Globalization.CultureInfo.InvariantCulture)};
+    }
+    static void Exclusive(string path,string content) { using(var s=new FileStream(path,FileMode.CreateNew,FileAccess.Write))using(var w=new StreamWriter(s))w.Write(content); }
+    public static void Run()
+    {
+        var args=Environment.GetCommandLineArgs();string work=args[Array.IndexOf(args,"-orderedWork")+1];
+        string phase=args[Array.IndexOf(args,"-orderedPhase")+1];
+        try
+        {
+            AssetDatabase.ImportAsset(Model,ImportAssetOptions.ForceSynchronousImport);
+            var importer=(ModelImporter)AssetImporter.GetAtPath(Model);
+            if(!importer.keepQuads)throw new Exception("Keep Quads ON declaration not effective");
+            var model=AssetDatabase.LoadAssetAtPath<GameObject>(Model);
+            var renderer=model.GetComponentsInChildren<MeshRenderer>(true).Single();
+            var mesh=renderer.GetComponent<MeshFilter>().sharedMesh;
+            if(phase=="create")
+            {
+                // Fixed author-specified receiver array. No Mesh face/topology/count queries here.
+                var materials=new Material[4];
+                for(int i=0;i<4;i++) { materials[i]=new Material(Shader.Find("Standard"));AssetDatabase.CreateAsset(materials[i],Folder+"/R"+i+".mat"); }
+                var go=new GameObject("Receiver");go.AddComponent<MeshFilter>().sharedMesh=mesh;
+                go.AddComponent<MeshRenderer>().sharedMaterials=materials;
+                PrefabUtility.SaveAsPrefabAsset(go,Prefab);UnityEngine.Object.DestroyImmediate(go);AssetDatabase.SaveAssets();
+                var receiver=AssetDatabase.LoadAssetAtPath<GameObject>(Prefab).GetComponent<MeshRenderer>();
+                Exclusive(Path.Combine(work,"creation.json"),JsonUtility.ToJson(new Creation{
+                    exposed="Imported Mesh/Model Renderer/Prefab Renderer/Material asset identities; fixed four references; importer policy",
+                    withheld="Native groups, topology, face/index order, UV, vertices, normals; no GetIndices/GetTriangles/GetTopology/subMeshCount used in creation",
+                    mesh=Reference(mesh),model_renderer=Reference(renderer),receiver_renderer=Reference(receiver),
+                    prefab=Reference(AssetDatabase.LoadAssetAtPath<GameObject>(Prefab)),materials=receiver.sharedMaterials.Select(Reference).ToArray()},true));
+                string[] assets=new[]{Model,Prefab}.Concat(Enumerable.Range(0,4).Select(i=>Folder+"/R"+i+".mat")).ToArray();
+                AssetDatabase.ExportPackage(assets,Path.Combine(work,"OrderedSix.unitypackage"),ExportPackageOptions.Default);
+                Directory.CreateDirectory(Path.Combine(work,"frozen"));
+                foreach(string asset in assets)foreach(string path in new[]{asset,asset+".meta"})File.Copy(path,Path.Combine(work,"frozen",Path.GetFileName(path)),false);
+            }
+            else if(phase=="verify")
+            {
+                // Supplement only omitted revision/receiver-Mesh bindings. No face API calls.
+                var receiver=AssetDatabase.LoadAssetAtPath<GameObject>(Prefab).GetComponent<MeshRenderer>();
+                string[] assets=new[]{Model,Prefab}.Concat(Enumerable.Range(0,4).Select(i=>Folder+"/R"+i+".mat")).ToArray();
+                var rows=assets.SelectMany(asset=>new[]{asset,asset+".meta"}).Select(path=>new HashRow{name=Path.GetFileName(path),sha256=Hash(path)}).ToArray();
+                var supplement=new Supplement{phase="METADATA_ONLY",utc=DateTime.UtcNow.ToString("o"),policy=EditorJsonUtility.ToJson(importer),
+                    receiver_mesh=Reference(receiver.GetComponent<MeshFilter>().sharedMesh),materials=receiver.sharedMaterials.Select(Reference).ToArray(),asset_hashes=rows};
+                foreach(var row in rows)if(Hash(Folder+"/"+row.name)!=row.sha256)throw new Exception("supplement bytes changed during read");
+                Exclusive(Path.Combine(work,"supplement.json"),JsonUtility.ToJson(supplement,true));
+            }
+            else if(phase=="capture")
+            {
+                var receiver=AssetDatabase.LoadAssetAtPath<GameObject>(Prefab).GetComponent<MeshRenderer>();
+                var snapshot=new Snapshot{unity_version=Application.unityVersion,fbx_sha256=Hash(Model),meta_sha256=Hash(Model+".meta"),
+                    policy=EditorJsonUtility.ToJson(importer),keep_quads=importer.keepQuads,apply_base_vertex=true,
+                    mesh=Reference(mesh),renderer=Reference(renderer),receiver_renderer=Reference(receiver),
+                    prefab=Reference(AssetDatabase.LoadAssetAtPath<GameObject>(Prefab)),prefab_sha256=Hash(Prefab),
+                    materials=receiver.sharedMaterials.Select(Reference).ToArray(),model_materials=renderer.sharedMaterials.Select(Reference).ToArray(),
+                    uv=mesh.uv,vertices=mesh.vertices,normals=mesh.normals,
+                    groups=Enumerable.Range(0,mesh.subMeshCount).Select(sub=>{
+                        int bv=(int)mesh.GetBaseVertex(sub);int[] indices=mesh.GetIndices(sub,true);
+                        if(!indices.SequenceEqual(mesh.GetIndices(sub,false).Select(index=>index+bv)))throw new Exception("baseVertex crosscheck differs");
+                        return new Group{topology=mesh.GetTopology(sub).ToString(),indices=indices,index_count=(int)mesh.GetIndexCount(sub),base_vertex=bv};
+                    }).ToArray()};
+                snapshot.fbx_sha256_after=Hash(Model);snapshot.meta_sha256_after=Hash(Model+".meta");
+                if(snapshot.fbx_sha256!=snapshot.fbx_sha256_after || snapshot.meta_sha256!=snapshot.meta_sha256_after)throw new Exception("input changed during capture");
+                Exclusive(Path.Combine(work,"native.json"),JsonUtility.ToJson(snapshot,true));
+            }
+            else throw new Exception("unknown phase");
+            EditorApplication.Exit(0);
+        }
+        catch(Exception e){Exclusive(Path.Combine(work,"native-error.txt"),e.ToString());EditorApplication.Exit(1);}
+    }
+}
