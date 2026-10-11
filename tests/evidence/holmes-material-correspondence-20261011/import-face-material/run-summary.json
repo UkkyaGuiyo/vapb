@@ -1,0 +1,36 @@
+{
+  "instruction_id": "HOLMES-20261011-03",
+  "instruction_source": "APPROVED_CHAT_ONLY",
+  "instruction_commit": null,
+  "base": "b8e2d11e2618e77dcd77959988139b1ca8525a24",
+  "source_sha256": {
+    "blender/fbx_receipt.py": "aa83b3716d14436f0e606694b3c9a88d8f015fb100a9e5406c20d35c2e8aefdc",
+    "operators/renderer_binding.py": "11064a91b3ef3ac364772845918475d31a712ddb6d194ad2b7ba0d0b518dffa4",
+    "tests/evidence/holmes-material-correspondence-20261011/import-face-material/verify_confirm.py": "a79dc8ed9fdfd52b2466454a97babe3e33d23aa5630a71b66eea0327380a21d4"
+  },
+  "importer_sha256": "262127c8e6af3e748d696d81070366f39e449aa73e6bc1d9463092b5cbf86741",
+  "final_native_exit_code": 0,
+  "owned_children_absent": true,
+  "final_exit_utc": "2026-10-11T10:01:17.2420396Z",
+  "mutex_released": true,
+  "actual_free_gib": 4.844490051269531,
+  "focused_unit_tests": {
+    "run": 30,
+    "skipped": 1,
+    "result": "PASS"
+  },
+  "red_checks": [
+    "missing_actual_material_receipt",
+    "standard_confirm_distinct_guard",
+    "provider_meta_guid accepted"
+  ],
+  "unit_setup_corrections": [
+    "namespace bootstrap for checkout directory name",
+    "tempfile directory bound to writable task workspace"
+  ],
+  "instruction_02_evidence": "Existing immutable ordered-face-plan native/judgment/supplement; no Unity rerun",
+  "uv_correspondence_consumed": false,
+  "save_reopen": "NOT_RUN",
+  "unity_return_finalizer": "NOT_RUN",
+  "render": "NOT_RUN"
+}

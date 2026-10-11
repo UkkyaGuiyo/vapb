@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import re
+from pathlib import Path
 
 import bpy
 
@@ -147,7 +149,96 @@ class VAPB_OT_confirm_skin_binding(bpy.types.Operator):
         return {"FINISHED"}
 
 
-def _material_plan(record, mesh_obj):
+def _proven_material_faces(record, mesh_obj, plan, root):
+    from ..blender.fbx_receipt import (validate_persistent_receipt, material_geometry_sha,
+                                       source_sha256)
+    from ..unity.prefab_parser import parse_prefab
+    from ..unity.yaml_parser import _parse_document_body, parse_unity_yaml
+    def reject():
+        raise BindingError('Material face correspondence is unresolved')
+    def signed(value):
+        text = str(value)
+        return bool(re.fullmatch(r'-?[1-9][0-9]*', text)) and -(2**63) <= int(text) < 2**63
+    try:
+        if (root is None or record['renderer_class_id'] != 23 or record['instance_edge_path']
+                or record['source_key']['source_kind'] != 'PREFAB_LOCAL'
+                or mesh_obj.data.users != 1 or mesh_obj.modifiers or mesh_obj.data.shape_keys
+                or not validate_persistent_receipt(mesh_obj)):
+            reject()
+        receipt = json.loads(mesh_obj['_vapb_fbx_material_receipt'])
+        source = Path(mesh_obj['unity_source_fbx'])
+        if (receipt['schema'] != 'vapb-fbx-material-write-1'
+                or receipt['fbx_sha256'] != record['mesh']['source_sha256']
+                or receipt['fbx_sha256'] != source_sha256(source)
+                or receipt['meta_sha256'] != source_sha256(Path(str(source) + '.meta'))
+                or receipt['asset_guid'] != record['mesh']['mesh_guid']
+                or str(receipt['geometry_uid']) != str(mesh_obj['_vapb_fbx_geometry_uid'])
+                or receipt['geometry_sha256'] != material_geometry_sha(mesh_obj.data)
+                or not signed(record['mesh']['mesh_file_id'])
+                or not signed(record['source_key']['renderer_file_id'])):
+            reject()
+        prefab_path = Path(root['unity_source_prefab'])
+        if source_sha256(prefab_path) != record['root_revision_sha256']:
+            reject()
+        prefab = parse_prefab(prefab_path)
+        renderers = [doc for doc in prefab.documents if doc.class_id == 23
+                     and doc.file_id == int(record['source_key']['renderer_file_id'])]
+        if len(renderers) != 1:
+            reject()
+        renderer = renderers[0].data
+        filters = [doc.data for doc in prefab.documents if doc.class_id == 33
+                   and doc.data.get('m_GameObject') == renderer.get('m_GameObject')]
+        if (len(filters) != 1 or filters[0]['m_Mesh']['guid'] != record['mesh']['mesh_guid']
+                or str(filters[0]['m_Mesh']['fileID']) != str(record['mesh']['mesh_file_id'])):
+            reject()
+        refs = renderer['m_Materials']
+        if len(refs) != len(plan) or any(mat is None for mat in plan):
+            reject()
+        for index, mat in enumerate(plan):
+            ref = record['materials'].get(str(index), record['materials'].get(index))
+            provider_path = Path(mat['unity_source_material'])
+            provider_meta = _parse_document_body(Path(str(provider_path)+'.meta').read_text(encoding='utf-8-sig'))
+            material_docs = [doc for doc in parse_unity_yaml(provider_path.read_text(encoding='utf-8-sig')) if doc.class_id == 21]
+            if (not ref or not signed(ref['file_id']) or not re.fullmatch('[0-9a-f]{32}', ref['guid'])
+                    or ref['source_package_id'] != record['root_package_id']
+                    or mat.get('unity_source_package_id') != ref['source_package_id']
+                    or refs[index].get('guid') != ref['guid']
+                    or str(refs[index].get('fileID')) != str(ref['file_id'])
+                    or provider_meta.get('guid') != ref['guid']
+                    or len(material_docs) != 1 or str(material_docs[0].file_id) != str(ref['file_id'])
+                    or source_sha256(provider_path) != mat.get('_vapb_source_material_sha256')):
+                reject()
+        if receipt['links'] != [slot.link for slot in mesh_obj.material_slots]:
+            reject()
+        slots = []
+        for slot in mesh_obj.material_slots:
+            mat = slot.material
+            if mat is None or mat.get('_vapb_fbx_material_source_sha256') != receipt['fbx_sha256']:
+                reject()
+            uid = mat.get('_vapb_fbx_material_uid')
+            matches = [m for m in bpy.data.materials if m.get('_vapb_fbx_material_uid') == uid
+                       and m.get('_vapb_fbx_material_source_sha256') == receipt['fbx_sha256']]
+            if len(matches) != 1:
+                reject()
+            slots.append(int(uid))
+        if slots != receipt['slots'] or len(receipt['faces']) != len(mesh_obj.data.polygons):
+            reject()
+        groups, indices = [], []
+        for face, row in zip(mesh_obj.data.polygons, receipt['faces']):
+            pair = (row['uid'], row['topology'])
+            if row['uid'] != slots[face.material_index] or row['topology'] != len(face.vertices):
+                reject()
+            if pair not in groups:
+                groups.append(pair)
+            indices.append(groups.index(pair))
+        if len(groups) != len(plan):
+            reject()
+        return indices
+    except (KeyError, TypeError, ValueError, OSError, IndexError, AttributeError) as exc:
+        raise BindingError('Material face correspondence is unresolved') from exc
+
+
+def _material_plan(record, mesh_obj, face_indices=None, root=None):
     if record.get("material_status") != "EXACT":
         raise BindingError("Material mapping is unresolved")
     count = record.get("material_slot_count")
@@ -184,15 +275,16 @@ def _material_plan(record, mesh_obj):
         if len(matches) != 1:
             raise BindingError(f"Material slot {index} has no unique scoped material")
         plan.append(matches[0])
-    # Renderer identity does not prove Unity submesh to Blender face order.
-    # A uniform assignment is permutation-independent; distinct identities need
-    # a proven face correspondence, which this confirmation route lacks.
+    # Uniform assignments are permutation-independent. Distinct identities
+    # require the bounded actual-import proof; all other inputs retain refusal.
     if plan and any(material is not plan[0] for material in plan):
-        raise BindingError('Material face correspondence is unresolved')
+        if face_indices is None:
+            raise BindingError('Material face correspondence is unresolved')
+        face_indices.extend(_proven_material_faces(record, mesh_obj, plan, root))
     # Uniform nonnull references are permutation-independent only when every
     # actually used face slot is covered. Otherwise confirmation clears used
     # slots to None without proving which source faces had the reference.
-    if plan and plan[0] is not None and any(
+    if not face_indices and plan and plan[0] is not None and any(
             face.material_index >= count for face in mesh_obj.data.polygons):
         raise BindingError('Material face correspondence is unresolved: used face slot is uncovered')
     return plan
@@ -243,13 +335,16 @@ class VAPB_OT_confirm_renderer_binding(bpy.types.Operator):
             return {"CANCELLED"}
         try:
             link = validate_binding(record, root, mesh, bpy.data.objects)
-            plan = _material_plan(record, mesh)
+            face_indices = []
+            plan = _material_plan(record, mesh, face_indices, root)
         except (BindingError, TypeError, ValueError) as exc:
             self.report({"ERROR"}, _display_error(exc))
             return {"CANCELLED"}
         original_count = len(mesh.data.materials)
         original_slots = [(slot.link, slot.material) for slot in mesh.material_slots]
         original_link = mesh.get("_vapb_renderer_binding")
+        original_faces = [face.material_index for face in mesh.data.polygons]
+        original_receipt = mesh.get('_vapb_fbx_material_receipt')
         try:
             while len(mesh.data.materials) < len(plan):
                 mesh.data.materials.append(None)
@@ -258,6 +353,8 @@ class VAPB_OT_confirm_renderer_binding(bpy.types.Operator):
                 slot = mesh.material_slots[index]
                 slot.link = "OBJECT"
                 slot.material = material
+            for face, index in zip(mesh.data.polygons, face_indices):
+                face.material_index = index
             mesh["_vapb_renderer_binding"] = json.dumps(link, sort_keys=True)
         except Exception as exc:
             for index, (link_type, material) in enumerate(original_slots):
@@ -266,6 +363,10 @@ class VAPB_OT_confirm_renderer_binding(bpy.types.Operator):
                 slot.material = material
             while len(mesh.data.materials) > original_count:
                 mesh.data.materials.pop(index=len(mesh.data.materials) - 1)
+            for face, index in zip(mesh.data.polygons, original_faces):
+                face.material_index = index
+            if original_receipt is not None:
+                mesh['_vapb_fbx_material_receipt'] = original_receipt
             if original_link is None:
                 if "_vapb_renderer_binding" in mesh:
                     del mesh["_vapb_renderer_binding"]

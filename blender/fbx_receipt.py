@@ -400,6 +400,34 @@ def import_with_receipts(
     shape_supported = (callable(original_shapes) and tuple(inspect.signature(original_shapes).parameters)
                        == ('fbx_tmpl', 'fbx_data', 'objects', 'me', 'scene'))
 
+    # Observe actual creator returns and the actual material-layer write. No
+    # names, UV fingerprints or guessed source/Blender face-number joins.
+    original_material = native_importer.blen_read_material
+    original_layer = native_importer.blen_read_geom_layer_material
+    material_supported = (
+        tuple(inspect.signature(original_material).parameters) == ('fbx_tmpl', 'fbx_obj', 'settings')
+        and tuple(inspect.signature(original_layer).parameters) == ('fbx_obj', 'mesh'))
+    material_handles, material_layers = {}, {}
+
+    def material_hook(fbx_tmpl, fbx_obj, settings):
+        result = original_material(fbx_tmpl, fbx_obj, settings)
+        material_handles[result.as_pointer()] = int(fbx_obj.props[0])
+        return result
+
+    def material_layer_hook(fbx_obj, mesh):
+        result = original_layer(fbx_obj, mesh)
+        layers = [item for item in fbx_obj.elems if item.id == b'LayerElementMaterial']
+        if len(layers) == 1:
+            layer = layers[0]
+            mapping = native_importer.elem_prop_first(native_importer.elem_find_first(layer, b'MappingInformationType'))
+            reference = native_importer.elem_prop_first(native_importer.elem_find_first(layer, b'ReferenceInformationType'))
+            raw = native_importer.elem_prop_first(native_importer.elem_find_first(layer, b'Materials'))
+            if mapping == b'ByPolygon' and reference == b'IndexToDirect' and raw is not None:
+                written = material_face_state(mesh)
+                if list(raw) == written['indices'] and len(raw) == len(mesh.polygons):
+                    material_layers[mesh.as_pointer()] = (int(fbx_obj.props[0]), written)
+        return result
+
     def shape_hook(fbx_tmpl, fbx_data, objects, me, scene):
         result = original_shapes(fbx_tmpl, fbx_data, objects, me, scene)
         if result:
@@ -456,6 +484,9 @@ def import_with_receipts(
             helper_type.build_hierarchy = hierarchy_hook
         if shape_supported:
             native_importer.blen_read_shapes = shape_hook
+        if material_supported:
+            native_importer.blen_read_material = material_hook
+            native_importer.blen_read_geom_layer_material = material_layer_hook
         if bone_supported:
             helper_type.build_skeleton = bone_hook
             helper_type.set_pose_matrix_and_custom_props = pose_hook
@@ -466,6 +497,9 @@ def import_with_receipts(
             helper_type.build_hierarchy = original_hierarchy
         if shape_supported:
             native_importer.blen_read_shapes = original_shapes
+        if material_supported:
+            native_importer.blen_read_material = original_material
+            native_importer.blen_read_geom_layer_material = original_layer
         if bone_supported:
             helper_type.build_skeleton = original_bone
             helper_type.set_pose_matrix_and_custom_props = original_pose
@@ -477,7 +511,75 @@ def import_with_receipts(
             continue
         receipt = make_receipt(model_uid, geometry_uid, source_asset_guid, sha256)
         persist_receipt(obj, receipt)
+        if getattr(obj, 'type', None) == 'MESH':
+            persist_material_receipt(obj, path, sha256, geometry_uid, semantic,
+                                     material_handles, material_layers, native_importer, bpy_module)
         if getattr(obj, 'type', None) == 'MESH' and id(obj.data) in shape_captures:
             persist_shape_receipts(obj.data, sha256, geometry_uid, shape_captures[id(obj.data)])
         receipts.append(receipt)
     return receipts
+
+
+def material_face_state(mesh):
+    """Actual polygon-loop incidence and material-layer output, without UV."""
+    return dict(starts=[p.loop_start for p in mesh.polygons],
+                loops=[loop.vertex_index for loop in mesh.loops],
+                indices=[p.material_index for p in mesh.polygons])
+
+
+def material_geometry_sha(mesh):
+    state = material_face_state(mesh)
+    state['positions'] = [list(vertex.co) for vertex in mesh.vertices]
+    return hashlib.sha256(json.dumps(state, sort_keys=True).encode()).hexdigest()
+
+
+def persist_material_receipt(obj, path, sha, geometry_uid, semantic, handles, layers, importer, bpy):
+    """Bounded static, single Geometry/Model receipt; absence retains refusal."""
+    from io_scene_fbx.parse_fbx import parse
+    root, _ = parse(str(path), use_namedtuple=True)
+    objects = next((item for item in root.elems if item.id == b'Objects'), None)
+    if objects is None:
+        return
+    geometries = [item for item in objects.elems if item.id == b'Geometry']
+    if (len(geometries) != 1 or any(item.id == b'Deformer' for item in objects.elems)
+            or len(semantic.links) != 1 or obj.modifiers or obj.data.shape_keys):
+        return
+    capture = layers.get(obj.data.as_pointer())
+    if capture is None or capture[0] != geometry_uid or capture[1] != material_face_state(obj.data):
+        return  # Mesh.validate()/material-index clamping invalidated the write.
+    slots = [handles.get(slot.material.as_pointer()) if slot.material else None for slot in obj.material_slots]
+    indices = capture[1]['indices']
+    if (not slots or None in slots or len(set(slots)) != len(slots)
+            or set(indices) != set(range(len(slots)))
+            or any(len(p.vertices) not in (3, 4) for p in obj.data.polygons)):
+        return
+    # KeepQuads support is deliberately restricted to exact axis-planar quads.
+    for face in obj.data.polygons:
+        if len(face.vertices) == 4:
+            points = [obj.data.vertices[i].co for i in face.vertices]
+            if not any(len({point[axis] for point in points}) == 1 for axis in range(3)):
+                return
+    importer_sha = hashlib.sha256(Path(importer.__file__).read_bytes()).hexdigest()
+    if bpy.app.version != (5, 2, 1) or importer_sha != '262127c8e6af3e748d696d81070366f39e449aa73e6bc1d9463092b5cbf86741':
+        return
+    from ..unity.yaml_parser import _parse_document_body
+    meta = Path(str(path) + '.meta')
+    if not meta.is_file():
+        return
+    parsed = _parse_document_body(meta.read_text(encoding='utf-8-sig'))
+    policy = parsed.get('ModelImporter', {})
+    meshes = policy.get('meshes', {})
+    if (meshes.get('keepQuads') != 1 or meshes.get('meshCompression') != 0
+            or meshes.get('weldVertices') != 1 or meshes.get('meshOptimizationFlags') != -1
+            or policy.get('materials', {}).get('materialImportMode') != 2):
+        return
+    for slot, uid in zip(obj.material_slots, slots):
+        slot.material['_vapb_fbx_material_uid'] = str(uid)
+        slot.material['_vapb_fbx_material_source_sha256'] = sha
+    table = dict(schema='vapb-fbx-material-write-1', fbx_sha256=sha, geometry_uid=geometry_uid,
+                 meta_sha256=source_sha256(meta), asset_guid=parsed.get('guid'),
+                 importer_sha256=importer_sha, slots=slots,
+                 faces=[dict(uid=slots[p.material_index], topology=len(p.vertices)) for p in obj.data.polygons],
+                 geometry_sha256=material_geometry_sha(obj.data),
+                 links=[slot.link for slot in obj.material_slots])
+    obj['_vapb_fbx_material_receipt'] = json.dumps(table, sort_keys=True)

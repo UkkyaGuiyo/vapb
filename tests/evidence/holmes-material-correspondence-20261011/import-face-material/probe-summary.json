@@ -1,0 +1,61 @@
+{
+  "instruction_id": "HOLMES-20261011-03",
+  "version": "5.2.1 LTS",
+  "importer_sha256": "262127c8e6af3e748d696d81070366f39e449aa73e6bc1d9463092b5cbf86741",
+  "standard_import": [
+    "FINISHED"
+  ],
+  "material_creator_return_and_layer_write": [
+    {
+      "geometry_uid": 329684292,
+      "mapping": "ByPolygon",
+      "reference": "IndexToDirect",
+      "slots_actual_uid": [
+        943593828,
+        504963197,
+        123443898
+      ],
+      "actual_material_indices": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0
+      ],
+      "actual_layer_write_preserved": true
+    },
+    {
+      "geometry_uid": 329684292,
+      "mapping": "ByPolygon",
+      "reference": "IndexToDirect",
+      "slots_actual_uid": [
+        943593828,
+        504963197,
+        123443898
+      ],
+      "actual_material_indices": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0
+      ],
+      "actual_layer_write_preserved": true
+    }
+  ],
+  "source_scope": "ThreeSlotSource skinned: feasibility only, no product Confirm permission"
+}
