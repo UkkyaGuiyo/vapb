@@ -8,4 +8,4 @@ Approved goal: one new asymmetric box final-state Geometry/Transform/Normal/Mate
 4. Independently judge A face Material, B world corners/coverage, C inverse-transpose normal, D outward winding. Four minimal captured-data negatives.
 5. Independent whole-case review; normal purpose commits/push and remote bytes readback. No main/dev/force/Release.
 Preserve original frozen assets, previous evidence and product sources. Atlas remains explicitly read-only. Reuse existing guarded launchers, no new framework. Render/culling NOT_RUN.
-Checkpoint: Blender prepare/reopen/export, fresh Unity Import/compile/reload/Finalizer, independent A/B/C/D and four negatives complete; independent review KEEP. Normal Git persistence/readback next. No product defect observed; no repair.
+Checkpoint: Blender prepare/reopen/export, fresh Unity Import/compile/reload/Finalizer, independent A/B/C/D and four negatives complete; independent review KEEP. Runtime evidence commit a5ff57d32303b2489cc4ce9036579e914ca11b42 pushed and all17 files read back exactly; final report completion follows. HOLMES07 runtime scope DONE. No product defect observed; no repair.
