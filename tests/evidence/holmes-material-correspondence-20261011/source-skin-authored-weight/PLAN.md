@@ -1,0 +1,10 @@
+# HOLMES-20261012-03 — authored Skin weight return
+
+User-authorized 2026-10-11 23:21:42 UTC autonomous mode. Product base feature/holmes-source-skin-cp-witness-20261012 / b0ff93ce5b1a18bd5c399f9566653a9b99962def. Work branch feature/holmes-source-skin-authored-weight-20261012 begins from ef907112e8259324e801bfae977ce70e89a172dc; product files exactly match b0ff93c, only existing workflow configuration/evidence differs. No same-ID branch or saved evidence found; existing worktrees/dirty remain protected.
+
+1. Reuse an owned copy of preserved B Blend, source package and prior raw observation. Prove the chosen exported CP and Bone identity via existing geometry/realization receipts and raw/stamped CP witness, not names/vertex index/approximate position alone. Change only its two Bone weights0.75/0.25 to0.625/0.375, keeping other3CP/geometry/UV/Material/Bone/rest/bindpose/Transform/diagonal unchanged. Save, exit normally and reopen in another process.
+2. Normal source-model Skin Export. Freeze raw/expected bits, CP/Bone joins, revisions and hashes before Unity observation. Reuse prepare_export_weight_witness, staging, existing Capture and independent judge; no new tracking framework or expected-value revision after observation.
+3. Fresh actual ownership/PID/start/RAM/lease/mutex/lock checks before owned Unity2022.3.22f1 normal import/reload/explicit packaged Apply/repeat. Observe exact edited CP bits and invariant other CP/geometry/material/rig/Variant/source originals. No observer weight rewriting. Reuse saved unedited B control, one-bit corrupted witness refusal only; no old25-control rerun. Deformation/rendering NOT_RUN unless measured.
+4. Fix only demonstrated defects with RED/GREEN, limited regression and necessary independent review. Normal commit/push/exact readback. Then fresh Holmes inference and execute its most valuable authorized next minimum; do not end the whole project on03 completion.
+
+Verdicts: VERIFIED_IN_SCOPE / FALSIFIED_IN_SCOPE / UNDETERMINED / BLOCKED. This is one owned no-Prefab Skin,4CP/2Bone/1Material/noShape/noCloth; not general Avatar/Animation/VRC/distribution acceptance.
