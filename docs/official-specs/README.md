@@ -8,7 +8,7 @@
 
 1. [適用バージョン](VERSIONS.md)を確認する。最新版とVRC対応版とVAPB実測版を混同しない。
 2. Materialの直接課題は [接続方向・識別子・面対応](UNITY-MATERIAL-MESH.md)から読む。
-3. [Unity往復](UNITY-ROUNDTRIP.md)、[Blender](BLENDER.md)、[VRChat](VRCHAT.md)で保存対象と変換境界を確認する。
+3. 頂点数差・CP/face/skin対応は [頂点対応とimport policy](VERTEX-CORRESPONDENCE.md)。[Unity往復](UNITY-ROUNDTRIP.md)、[Blender](BLENDER.md)、[VRChat](VRCHAT.md)で保存対象と変換境界を確認する。
 4. [課題への適用と未証明項目](VAPB-BOUNDARIES.md)で、一般仕様が実データの成功を証明しているかを確認する。
 5. [公式出典索引](SOURCES.md)のIDから原典の見出しへ戻る。各主張の対象版、根拠区分、取得状態を確認する。
 
@@ -35,7 +35,7 @@
 |Unity|Asset import / metadata / serialization / GUID・fileID / package|詳細、package内部schemaは未公開扱い|UNITY-ROUNDTRIP / U01–U08|
 |Unity|Prefab / Variant / nested / override / source chain|詳細|UNITY-ROUNDTRIP / U18–U22|
 |Unity|Renderer / Mesh / submesh / Material / Texture / Shader|詳細|UNITY-MATERIAL-MESH / U09–U17、U31–U32|
-|Unity|Skin / bone / bindpose / weights / blendshape / transforms / FBX rig|詳細、null boneのnative挙動は未確認|UNITY-ROUNDTRIP / U23–U30、U33–U38|
+|Unity|Skin / bone / bindpose / weights / blendshape / transforms / FBX rig / vertex split・weld|詳細、null bone・CP対応のnative挙動は未確認|UNITY-ROUNDTRIP / VERTEX-CORRESPONDENCE / U23–U30、U33–U45|
 |Unity|Animation / humanoid・generic / binding / Animator|詳細、完全retarget・curve変換は未実証|UNITY-ROUNDTRIP|
 |Unity|Rendering pipelines / lighting / VFX / particles / 2D / UI / audio|入口|U00の公式Manual体系|
 |Unity|Scripting / physics / navigation / networking / services / platforms / build / profiling / XR / packages|入口|U00。VAPB対象componentごとの適用は未調査|
@@ -52,6 +52,6 @@
 
 ## 監査可能な完了範囲
 
-初版はMaterial/Mesh/GUIDと版表・出典を先に保存し、第二段階でSkin/Animation/Blender/VRChatと全体索引を追加する。分野索引が全体を見渡すための範囲であり、「全APIを読んだ」「24 packageを再実測した」という主張はしない。今後の更新は、原典の版と取得日を更新してから行う。
+初版はMaterial/Mesh/GUIDと版表・出典を先にremote保存・本文読み戻し確認した。第二段階でSkin/Animation/Blender/VRChat、頂点対応と全体索引を追加した。分野索引が全体を見渡すための範囲であり、「全APIを読んだ」「24 packageを再実測した」という主張はしない。今後の更新は、原典の版と取得日を更新してから行う。
 
 調査はこの作業のWeb取得ツールと公開URLの読み取りだけで実施。通常ブラウザは使用していない。HTTP拒否は認証・UA変更等で迂回しない。公式source mirrorは公開された別種の根拠として区別する。

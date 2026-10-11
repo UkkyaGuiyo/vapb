@@ -20,7 +20,7 @@
 
 ## 既存資料との差
 
-`docs/CASE_B_PACKAGE_ONLY_MATERIAL_BOUNDARY.md` の3リンク（external map、GUID/fileID、materialName）は再取得する。前二者は今回API本文を確認済。既存資料の実測集計・私有データからの結論を新しい公式実測として扱わない。
+`docs/CASE_B_PACKAGE_ONLY_MATERIAL_BOUNDARY.md` の3リンク（external map、GUID/fileID、materialName）は全て再取得しAPI本文を確認した。既存資料の実測集計・私有データからの結論を新しい公式実測として扱わない。
 
 `docs/EXPORT_RESEARCH_CORRECTIONS.md` のgzip tar / GUID directory / asset・asset.meta・pathnameの分類は**LOCAL/EMPIRICALのまま**。U08 Manualはunitypackageが圧縮されたファイル集合・metadataを保持することを説明するが、内部tar member schemaの安定保証は説明しない。
 
