@@ -1,0 +1,98 @@
+{
+  "blender": {
+    "replace-run": {
+      "process": {
+        "actual_free_gib": 5.618415832519531,
+        "script_sha256": "6713AEF2FC3BA4057DB1F3201790B56F51BB91C80AB207CB1E90E30011078C6D",
+        "pid": 30972,
+        "start_utc": "2026-10-11T12:55:36.6531224Z",
+        "owner": "VAPB-HOLMES-20261011-06-replace"
+      },
+      "exited": {
+        "owned_children_absent": true,
+        "pid": 30972,
+        "exit_code": 0,
+        "exited_utc": "2026-10-11T12:55:40.1801046Z"
+      }
+    },
+    "diagnose-run": {
+      "process": {
+        "actual_free_gib": 5.6293792724609375,
+        "start_utc": "2026-10-11T12:56:54.5521269Z",
+        "script_sha256": "058F8D8E84B1828A5584F6A88A47A11C9917A696D366766DCD9F8403C48624D3",
+        "pid": 20116,
+        "owner": "VAPB-HOLMES-20261011-06-diagnose"
+      },
+      "exited": {
+        "owned_children_absent": true,
+        "exited_utc": "2026-10-11T12:56:57.9694133Z",
+        "exit_code": 0,
+        "pid": 20116
+      }
+    },
+    "replace-corrected-run": {
+      "process": {
+        "script_sha256": "9B2FCCEA850B60E72B1FDB2F78CD4CFAC3EBAAFCD46B176B767B59039B4C6AA8",
+        "start_utc": "2026-10-11T12:57:56.4252628Z",
+        "pid": 24732,
+        "owner": "VAPB-HOLMES-20261011-06-replace",
+        "actual_free_gib": 5.636325836181641
+      },
+      "exited": {
+        "exited_utc": "2026-10-11T12:57:59.9215062Z",
+        "exit_code": 0,
+        "pid": 24732,
+        "owned_children_absent": true
+      }
+    },
+    "export-run": {
+      "process": {
+        "actual_free_gib": 5.631767272949219,
+        "pid": 15900,
+        "owner": "VAPB-HOLMES-20261011-06-export",
+        "script_sha256": "9B2FCCEA850B60E72B1FDB2F78CD4CFAC3EBAAFCD46B176B767B59039B4C6AA8",
+        "start_utc": "2026-10-11T12:58:19.0381671Z"
+      },
+      "exited": {
+        "pid": 15900,
+        "exited_utc": "2026-10-11T12:58:22.2824520Z",
+        "owned_children_absent": true,
+        "exit_code": 0
+      }
+    }
+  },
+  "unity": {
+    "pid": 26856,
+    "startUtc": "2026-10-11T13:00:25.9913483Z",
+    "exitUtc": "2026-10-11T13:00:40.1615141Z",
+    "exitCode": 0,
+    "actual_free_gib": 5.118263244628906,
+    "release": {
+      "capturedUtc": "2026-10-11T13:00:40.2502609Z",
+      "owner": "VAPB-HOLMES-20261011-06",
+      "ownedChildrenAbsent": true,
+      "lockAbsent": true,
+      "normalExitCode": 0,
+      "releaseVerified": true
+    }
+  },
+  "resource_return": {
+    "capturedUtc": "2026-10-11T13:01:22.3706675Z",
+    "processCensusConflict": false,
+    "mutexAvailableAndProbeReleased": true,
+    "poolAllFree": true,
+    "freePhysicalMemoryGiB": 5.3522,
+    "newProjectLockAbsent": true
+  },
+  "product_source_sha256": {
+    "export/final_state_package.py": "8413dffbcb0c6de8a1e81ff6351b0198e5cfaa51c864c261dccdd2f31710dd59",
+    "unity_editor/Editor/VapbFinalStateFinalizer.cs": "b75c6a0e36be8e50c3f687bb289be58319b30852be7b91096e2e7a5c542bae11",
+    "unity_editor/Editor/VapbImportAssistant.cs": "236f6c7edecf4bf5e2971253db60628a628ada11d21d7153c20c2075e6fd47ad"
+  },
+  "executed_observer_sha256": "557c41420a941a496d4daaa37708b70e388d12aacb89df9675ee1fe680a55e23",
+  "public_observer_line_endings_only_normalized": true,
+  "product_code_changes": false,
+  "original_frozen_hashes_unchanged": 12,
+  "first_failure": "BLENDER_PROVENANCE observer assertion: RECONSTRUCT imports two Mesh objects, not one; no product defect",
+  "observer_correction": "Delete all imported Mesh objects/data in own working copy; select retained Materials by exact package/GUID/fileID, not old slot membership"
+}

@@ -1,0 +1,105 @@
+{
+  "instruction_id": "HOLMES-20261011-06",
+  "verdict": "VERIFIED_IN_SCOPE",
+  "H_A": "SUPPORTED_IN_SCOPE",
+  "H_B": "NOT_OBSERVED_IN_SCOPE",
+  "faces": [
+    {
+      "plane": "+X",
+      "expected_material": {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "fbx_triangles": 2,
+      "unity_triangles": 2,
+      "cover": "PASS",
+      "projected_winding": {
+        "fbx": 1,
+        "unity": -1
+      }
+    },
+    {
+      "plane": "+Y",
+      "expected_material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "fbx_triangles": 2,
+      "unity_triangles": 2,
+      "cover": "PASS",
+      "projected_winding": {
+        "fbx": 1,
+        "unity": -1
+      }
+    },
+    {
+      "plane": "+Z",
+      "expected_material": {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "fbx_triangles": 2,
+      "unity_triangles": 2,
+      "cover": "PASS",
+      "projected_winding": {
+        "fbx": 1,
+        "unity": -1
+      }
+    },
+    {
+      "plane": "-X",
+      "expected_material": {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "fbx_triangles": 2,
+      "unity_triangles": 2,
+      "cover": "PASS",
+      "projected_winding": {
+        "fbx": 1,
+        "unity": -1
+      }
+    },
+    {
+      "plane": "-Y",
+      "expected_material": {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "fbx_triangles": 2,
+      "unity_triangles": 2,
+      "cover": "PASS",
+      "projected_winding": {
+        "fbx": 1,
+        "unity": -1
+      }
+    },
+    {
+      "plane": "-Z",
+      "expected_material": {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000",
+        "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+      },
+      "fbx_triangles": 2,
+      "unity_triangles": 2,
+      "cover": "PASS",
+      "projected_winding": {
+        "fbx": 1,
+        "unity": -1
+      }
+    }
+  ],
+  "frame": "Blender = raw FBX local; native common corners = (-x/fileScale,y/fileScale,z/fileScale), captured bakeAxisConversion false",
+  "common_corner_exact": true,
+  "uv_used_for_correspondence": false,
+  "old_mesh_receipt_used": false,
+  "positions": "NOT_RUN for full transform/world fidelity",
+  "winding": "Projected local parity recorded; oriented/culling fidelity NOT_RUN",
+  "render": "NOT_RUN"
+}

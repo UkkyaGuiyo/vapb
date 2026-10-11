@@ -1,0 +1,512 @@
+{
+  "instruction_id": "HOLMES-20261011-06",
+  "phase": "export",
+  "blender_version": "5.2.1 LTS",
+  "status": "PASS",
+  "reopen": "PASS",
+  "standard_final_state_export": "PASS",
+  "state": {
+    "faces": [
+      {
+        "plane": "+X",
+        "normal": [
+          1.0,
+          -0.0,
+          0.0
+        ],
+        "corners": [
+          [
+            1.0,
+            1.0,
+            -1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.5
+          ],
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.625,
+            0.75
+          ],
+          [
+            0.375,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "+Y",
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "corners": [
+          [
+            -1.0,
+            1.0,
+            -1.0
+          ],
+          [
+            -1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.25
+          ],
+          [
+            0.625,
+            0.25
+          ],
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.375,
+            0.5
+          ]
+        ],
+        "material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "+Z",
+        "normal": [
+          0.0,
+          -0.0,
+          1.0
+        ],
+        "corners": [
+          [
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.875,
+            0.5
+          ],
+          [
+            0.875,
+            0.75
+          ],
+          [
+            0.625,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-X",
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "corners": [
+          [
+            -1.0,
+            -1.0,
+            -1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.0
+          ],
+          [
+            0.625,
+            0.0
+          ],
+          [
+            0.625,
+            0.25
+          ],
+          [
+            0.375,
+            0.25
+          ]
+        ],
+        "material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-Y",
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "corners": [
+          [
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.75
+          ],
+          [
+            0.625,
+            0.75
+          ],
+          [
+            0.625,
+            1.0
+          ],
+          [
+            0.375,
+            1.0
+          ]
+        ],
+        "material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-Z",
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "corners": [
+          [
+            -1.0,
+            1.0,
+            -1.0
+          ],
+          [
+            1.0,
+            1.0,
+            -1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.125,
+            0.5
+          ],
+          [
+            0.375,
+            0.5
+          ],
+          [
+            0.375,
+            0.75
+          ],
+          [
+            0.125,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      }
+    ],
+    "slots": [
+      {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      }
+    ],
+    "object_keys": [],
+    "mesh_keys": [],
+    "matrix_world": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "package_sha256": "ff8e0afc476227bbbbbf6ea161af3f2fa99a6bcf163787c7b1528b39790c6060",
+  "fbx_sha256": "032bf7a86f09db81fa48302a620dbb0a950b46916c301bbc261b6492ec80d053",
+  "manifest_sha256": "2d943cd105f61e100ad453995d5d69369574018dc349371efdd2be2b71ace069",
+  "task": {
+    "export_object_id": "VAPB-OBJ-8e607ed996c44df491c9fffb9baf0e1b",
+    "kind": "BUILD_EXPORTED_STATIC_V2",
+    "material_slots": [
+      {
+        "export_material_id": "VAPB-MAT-0ffc783e8b9c491cb000a9c7e2be8467",
+        "slot_index": "0"
+      },
+      {
+        "export_material_id": "VAPB-MAT-473342952ec44b16a1360dcb96754835",
+        "slot_index": "1"
+      },
+      {
+        "export_material_id": "VAPB-MAT-7901ef3d527d47bfa12ee64738e484d6",
+        "slot_index": "2"
+      },
+      {
+        "export_material_id": "VAPB-MAT-24ea02da9b374d02904c0dbc59a4035f",
+        "slot_index": "3"
+      }
+    ],
+    "material_transport_version": 2,
+    "materials": [
+      {
+        "asset_sha256": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467",
+        "export_material_id": "VAPB-MAT-0ffc783e8b9c491cb000a9c7e2be8467",
+        "file_id": "2100000",
+        "guid": "242d369718abeb942873ec054737cf94",
+        "shader": {
+          "classification": "UNITY_BUILTIN",
+          "file_id": "46",
+          "guid": "0000000000000000f000000000000000"
+        },
+        "textures": []
+      },
+      {
+        "asset_sha256": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999",
+        "export_material_id": "VAPB-MAT-473342952ec44b16a1360dcb96754835",
+        "file_id": "2100000",
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "shader": {
+          "classification": "UNITY_BUILTIN",
+          "file_id": "46",
+          "guid": "0000000000000000f000000000000000"
+        },
+        "textures": []
+      },
+      {
+        "asset_sha256": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71",
+        "export_material_id": "VAPB-MAT-7901ef3d527d47bfa12ee64738e484d6",
+        "file_id": "2100000",
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "shader": {
+          "classification": "UNITY_BUILTIN",
+          "file_id": "46",
+          "guid": "0000000000000000f000000000000000"
+        },
+        "textures": []
+      },
+      {
+        "asset_sha256": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41",
+        "export_material_id": "VAPB-MAT-24ea02da9b374d02904c0dbc59a4035f",
+        "file_id": "2100000",
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "shader": {
+          "classification": "UNITY_BUILTIN",
+          "file_id": "46",
+          "guid": "0000000000000000f000000000000000"
+        },
+        "textures": []
+      }
+    ],
+    "model_guid": "553e3f716f8d4021ac505801bb799770",
+    "model_sha256": "032bf7a86f09db81fa48302a620dbb0a950b46916c301bbc261b6492ec80d053",
+    "prefab_path": "Assets/VAPBExport/Generated_8e607ed996c44df491c9fffb9baf0e1b.prefab"
+  },
+  "assets": [
+    {
+      "guid": "242d369718abeb942873ec054737cf94",
+      "path": "Assets/VAPBExport/Receiver/Materials/Receiver_R2.mat",
+      "asset_sha256": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467",
+      "meta_sha256": "428010a87586d7166f0eda8cf6df8aac5120a66f9174c71d3a404e7ef9264145"
+    },
+    {
+      "guid": "4d7af3be41387054c9f86b68e180d9e7",
+      "path": "Assets/VAPBExport/Receiver/Materials/Receiver_R3.mat",
+      "asset_sha256": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71",
+      "meta_sha256": "cba5bc9d04752cddec8c75d72346a18918c40575c1a62bdb801072a3e55484ff"
+    },
+    {
+      "guid": "553e3f716f8d4021ac505801bb799770",
+      "path": "Assets/VAPBExport/Generated_8e607ed996c44df491c9fffb9baf0e1b.fbx",
+      "asset_sha256": "032bf7a86f09db81fa48302a620dbb0a950b46916c301bbc261b6492ec80d053",
+      "meta_sha256": "59d6b5727ab4040eb732039be4d82d4aa4784344ddd3477df42773a7e89542a7"
+    },
+    {
+      "guid": "70c1cb3bd3a723141a677eca237e252c",
+      "path": "Assets/VAPBExport/Receiver/Materials/Receiver_R1.mat",
+      "asset_sha256": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41",
+      "meta_sha256": "a6d65eae11ec70040bdc311f4f48c2afcb5892fedb68b3ba43545847652a701e"
+    },
+    {
+      "guid": "afd253dd071f7e5469e24392cdbf181c",
+      "path": "Assets/VAPBExport/Receiver/Materials/Receiver_R0.mat",
+      "asset_sha256": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999",
+      "meta_sha256": "796c5cd00368ccf62599c950e697d4a1a13c8b76317dda98464bf86bf2881c78"
+    },
+    {
+      "guid": "b336eab55f53cbe47e82eece8dbae291",
+      "path": "Assets/VAPBExport/manifest.json",
+      "asset_sha256": "2d943cd105f61e100ad453995d5d69369574018dc349371efdd2be2b71ace069",
+      "meta_sha256": "e716d1d23a67fe4b5382185b1e28944eb2dd0bfe5f2dd8e99e03e0dad33f7abf"
+    },
+    {
+      "guid": "d288eb889dab0f52376b211c4f875134",
+      "path": "Assets/VAPBExport/VapbExportObjectMarker.cs",
+      "asset_sha256": "01e692ecda93ed309f284c743e32caa6c46f94d6b81c51ca91d5a94495b41eb1",
+      "meta_sha256": "b4690a54d3e7939549f49a604fc3f1cadca557d6aca540c789a96316d2f2bad2"
+    },
+    {
+      "guid": "e5be0cf984636e0046423986603840e8",
+      "path": "Assets/VAPBExport/Editor/VapbFinalStateFinalizer.cs",
+      "asset_sha256": "b75c6a0e36be8e50c3f687bb289be58319b30852be7b91096e2e7a5c542bae11",
+      "meta_sha256": "f1ba8f3c9bfff338cb0997b87a629ecbb4fbe411d08d0b341aa20700afde40ba"
+    },
+    {
+      "guid": "f8d79524935995afa312c6faf909c2d4",
+      "path": "Assets/VAPBExport/Editor/VapbImportAssistant.cs",
+      "asset_sha256": "236f6c7edecf4bf5e2971253db60628a628ada11d21d7153c20c2075e6fd47ad",
+      "meta_sha256": "d0014389ae6a34ff1f81010b612e60ea99f28088bdee7916d42764663b4202b8"
+    }
+  ],
+  "original_preservation": "PASS"
+}

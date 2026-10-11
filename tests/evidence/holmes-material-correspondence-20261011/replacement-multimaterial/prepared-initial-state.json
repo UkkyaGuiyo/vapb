@@ -1,0 +1,31 @@
+{
+  "owned_new_project": true,
+  "status": "PREPARED_NOT_RUN",
+  "inventory": [
+    {
+      "path": "Packages/manifest.json",
+      "sha256": "f972d66bc1074b387eec09937afdc8bb825bc3a01e81adb85c301efcdd6378aa"
+    },
+    {
+      "path": "ProjectSettings/ProjectVersion.txt",
+      "sha256": "ab5cfddd31138282622595b82dc38f4aaa640c6d43f40232716feec558fb2aa5"
+    },
+    {
+      "path": "Assets/HolmesReplacementConsumer/Editor/Capture.cs",
+      "sha256": "557c41420a941a496d4daaa37708b70e388d12aacb89df9675ee1fe680a55e23"
+    }
+  ],
+  "package_sha256": "ff8e0afc476227bbbbbf6ea161af3f2fa99a6bcf163787c7b1528b39790c6060",
+  "library_absent": true,
+  "product_paths_absent": [
+    "Assets/VAPBExport/Receiver/Materials/Receiver_R2.mat",
+    "Assets/VAPBExport/Receiver/Materials/Receiver_R3.mat",
+    "Assets/VAPBExport/Generated_8e607ed996c44df491c9fffb9baf0e1b.fbx",
+    "Assets/VAPBExport/Receiver/Materials/Receiver_R1.mat",
+    "Assets/VAPBExport/Receiver/Materials/Receiver_R0.mat",
+    "Assets/VAPBExport/manifest.json",
+    "Assets/VAPBExport/VapbExportObjectMarker.cs",
+    "Assets/VAPBExport/Editor/VapbFinalStateFinalizer.cs",
+    "Assets/VAPBExport/Editor/VapbImportAssistant.cs"
+  ]
+}

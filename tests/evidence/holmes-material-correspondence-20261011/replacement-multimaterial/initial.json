@@ -1,0 +1,12 @@
+{
+  "asset_paths": [
+    "Assets",
+    "Assets/HolmesReplacementConsumer/Editor/Capture.cs",
+    "Assets/HolmesReplacementConsumer",
+    "Assets/HolmesReplacementConsumer/Editor"
+  ],
+  "vapb_named_assemblies": [],
+  "finalizer_available": false,
+  "model_finalizer_available": false,
+  "assistant_available": false
+}

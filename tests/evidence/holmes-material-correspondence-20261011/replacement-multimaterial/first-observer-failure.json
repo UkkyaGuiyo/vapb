@@ -1,0 +1,22 @@
+{
+  "first_attempt": {
+    "instruction_id": "HOLMES-20261011-06",
+    "phase": "replace",
+    "blender_version": "5.2.1 LTS",
+    "status": "FAIL",
+    "first_failure": "BLENDER_PROVENANCE",
+    "error": "AssertionError: "
+  },
+  "diagnostic_attempt": {
+    "instruction_id": "HOLMES-20261011-06",
+    "phase": "replace",
+    "blender_version": "5.2.1 LTS",
+    "status": "FAIL",
+    "first_failure": "BLENDER_PROVENANCE",
+    "error": "AssertionError: "
+  },
+  "observed_failing_expression": "assert len(imported) == 1",
+  "actual_reconstruct_mesh_count": 2,
+  "category": "Observation precondition error, not a product defect",
+  "correction": "All imported Meshes removed only inside owned copy; retained canonical Materials selected by package/GUID/signed fileID"
+}

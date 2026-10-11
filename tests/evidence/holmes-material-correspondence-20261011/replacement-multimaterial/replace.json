@@ -1,0 +1,445 @@
+{
+  "instruction_id": "HOLMES-20261011-06",
+  "phase": "replace",
+  "blender_version": "5.2.1 LTS",
+  "status": "PASS",
+  "imported_mesh_count": 2,
+  "old_slot_guids": [
+    [
+      "",
+      ""
+    ],
+    [
+      "",
+      ""
+    ]
+  ],
+  "available_unity_materials": [
+    {
+      "guid": "afd253dd071f7e5469e24392cdbf181c",
+      "file_id": "2100000",
+      "package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+    },
+    {
+      "guid": "70c1cb3bd3a723141a677eca237e252c",
+      "file_id": "2100000",
+      "package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+    },
+    {
+      "guid": "242d369718abeb942873ec054737cf94",
+      "file_id": "2100000",
+      "package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+    },
+    {
+      "guid": "4d7af3be41387054c9f86b68e180d9e7",
+      "file_id": "2100000",
+      "package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+    }
+  ],
+  "old_receipt_present_before_delete": [
+    true,
+    true
+  ],
+  "standard_import": "PASS",
+  "providers": [
+    {
+      "guid": "afd253dd071f7e5469e24392cdbf181c",
+      "file_id": "2100000",
+      "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+      "asset_sha256": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999",
+      "meta_sha256": "796c5cd00368ccf62599c950e697d4a1a13c8b76317dda98464bf86bf2881c78"
+    },
+    {
+      "guid": "70c1cb3bd3a723141a677eca237e252c",
+      "file_id": "2100000",
+      "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+      "asset_sha256": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41",
+      "meta_sha256": "a6d65eae11ec70040bdc311f4f48c2afcb5892fedb68b3ba43545847652a701e"
+    },
+    {
+      "guid": "242d369718abeb942873ec054737cf94",
+      "file_id": "2100000",
+      "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+      "asset_sha256": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467",
+      "meta_sha256": "428010a87586d7166f0eda8cf6df8aac5120a66f9174c71d3a404e7ef9264145"
+    },
+    {
+      "guid": "4d7af3be41387054c9f86b68e180d9e7",
+      "file_id": "2100000",
+      "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+      "asset_sha256": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71",
+      "meta_sha256": "cba5bc9d04752cddec8c75d72346a18918c40575c1a62bdb801072a3e55484ff"
+    }
+  ],
+  "imported_mesh_object_and_data_deleted": true,
+  "state": {
+    "faces": [
+      {
+        "plane": "+X",
+        "normal": [
+          1.0,
+          -0.0,
+          0.0
+        ],
+        "corners": [
+          [
+            1.0,
+            1.0,
+            -1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.5
+          ],
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.625,
+            0.75
+          ],
+          [
+            0.375,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "+Y",
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "corners": [
+          [
+            -1.0,
+            1.0,
+            -1.0
+          ],
+          [
+            -1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            1.0,
+            1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.25
+          ],
+          [
+            0.625,
+            0.25
+          ],
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.375,
+            0.5
+          ]
+        ],
+        "material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "+Z",
+        "normal": [
+          0.0,
+          -0.0,
+          1.0
+        ],
+        "corners": [
+          [
+            1.0,
+            1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.875,
+            0.5
+          ],
+          [
+            0.875,
+            0.75
+          ],
+          [
+            0.625,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-X",
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "corners": [
+          [
+            -1.0,
+            -1.0,
+            -1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.0
+          ],
+          [
+            0.625,
+            0.0
+          ],
+          [
+            0.625,
+            0.25
+          ],
+          [
+            0.375,
+            0.25
+          ]
+        ],
+        "material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-Y",
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "corners": [
+          [
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.75
+          ],
+          [
+            0.625,
+            0.75
+          ],
+          [
+            0.625,
+            1.0
+          ],
+          [
+            0.375,
+            1.0
+          ]
+        ],
+        "material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-Z",
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "corners": [
+          [
+            -1.0,
+            1.0,
+            -1.0
+          ],
+          [
+            1.0,
+            1.0,
+            -1.0
+          ],
+          [
+            1.0,
+            -1.0,
+            -1.0
+          ],
+          [
+            -1.0,
+            -1.0,
+            -1.0
+          ]
+        ],
+        "uv": [
+          [
+            0.125,
+            0.5
+          ],
+          [
+            0.375,
+            0.5
+          ],
+          [
+            0.375,
+            0.75
+          ],
+          [
+            0.125,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      }
+    ],
+    "slots": [
+      {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      }
+    ],
+    "object_keys": [],
+    "mesh_keys": [],
+    "matrix_world": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  },
+  "blend_sha256": "c915668cd27b32001173054e03b87f329bcd3a8533ea150bac4bb5f78706c1d1",
+  "original_preservation": "PASS"
+}
