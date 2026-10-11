@@ -51,7 +51,11 @@ public static class RealDependencyBootstrap
             if (Hash(Source) != "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5" ||
                 Hash(Source + ".meta") != "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d")
                 throw new Exception("staged original revision differs");
-            foreach (string name in new[] { "R", "A", "B" })
+            int selection = Array.IndexOf(args, "-vapbHolmesCases");
+            string[] names = selection < 0 ? new[] { "R", "A", "B" } : args[selection + 1].Split(',');
+            if (names.Distinct().Count() != names.Length || names.Any(name => !new[] { "R", "A", "B", "E" }.Contains(name)))
+                throw new Exception("unsupported or duplicate case selection");
+            foreach (string name in names)
             {
                 var r = new Context();
                 string input = Path.Combine(Work, "cases", name + ".fbx");

@@ -188,6 +188,7 @@ def main():
     ap.add_argument('--native', type=Path)
     ap.add_argument('--blender', type=Path)
     ap.add_argument('--output', type=Path, required=True)
+    ap.add_argument('--select-cases', nargs='+', choices=['R','A','B','E'], default=['R','A','B'])
     args = ap.parse_args()
     if args.output.exists():
         raise ValueError('occupied report')
@@ -203,7 +204,9 @@ def main():
     report = dict(scope='pinned self-authored twelve unique-UV triangles only; no product mapping',
                   original_fbx_sha256=helper.PIN_FBX, meta_sha256=helper.PIN_META, fbx_version=version, cases={})
     geometry_path = (b'',b'Objects',b'Geometry')
-    for case in ['R','A','B']:
+    if len(set(args.select_cases)) != len(args.select_cases):
+        raise ValueError('duplicate case selection')
+    for case in args.select_cases:
         root, actual_version = parser.parse(str(args.cases/(case+'.fbx')), use_namedtuple=True)
         raw, slots, edges = decode(root)
         if actual_version != version or edges != original_edges:
@@ -212,12 +215,28 @@ def main():
         if any(a['uid'] != b['uid'] or a['cps'] != b['cps'] or a['corners'] != b['corners'] or a['normals'] != b['normals'] or a['uv'] != b['uv'] for a,b,_,_ in pairs):
             raise ValueError('face semantic meaning changed')
         omit = []
-        if case == 'A':
+        if case in {'A','E'}:
             omit = [geometry_path+(b'PolygonVertexIndex',), geometry_path+(b'Edges',),
                     geometry_path+(b'LayerElementUV',b'UVIndex'), geometry_path+(b'LayerElementNormal',b'NormalsIndex'),
                     geometry_path+(b'LayerElementMaterial',b'Materials')]
-            if slots != UIDS or [r['uid'] for r in raw] != [UIDS[1]]*4+[UIDS[0]]*2+[UIDS[2]]*6:
-                raise ValueError('A declared order mismatch')
+            expected = [UIDS[1]]*4+[UIDS[0]]*2+[UIDS[2]]*6 if case == 'A' else [UIDS[i] for i in [1,0,2,1,2,0,2,1,2,1,2,2]]
+            if slots != UIDS or [r['uid'] for r in raw] != expected:
+                raise ValueError('declared face record order mismatch')
+            if case == 'E':
+                # Independent comparison to saved A, not the generator's order helper.
+                a_path=args.repo/'tests/evidence/holmes-material-correspondence-20261011/cases/A.fbx'
+                saved_generation=json.loads((a_path.parent/'generation.json').read_text())
+                if helper.sha256(a_path) != saved_generation['cases']['A']['fbx_sha256']:
+                    raise ValueError('saved A revision differs')
+                a_tree,a_version=parser.parse(str(a_path),use_namedtuple=True)
+                a_rows,a_slots,a_edges=decode(a_tree)
+                if a_version != version or a_slots != slots or a_edges != edges or Counter(r['uid'] for r in a_rows) != Counter(r['uid'] for r in raw):
+                    raise ValueError('E/A fixed conditions differ')
+                first=lambda rows:list(dict.fromkeys(r['uid'] for r in rows))
+                if first(a_rows) != first(raw):
+                    raise ValueError('E/A first encounter order differs')
+                if canonical(a_tree,omit) != canonical(root,omit):
+                    raise ValueError('E/A undeclared semantic changes')
         if case == 'B':
             omit = [geometry_path+(b'LayerElementMaterial',b'Materials'), (b'',b'Connections')]
             if slots != [UIDS[2],UIDS[0],UIDS[1]] or raw != [{**a,'slot': slots.index(a['uid'])} for a in original]:

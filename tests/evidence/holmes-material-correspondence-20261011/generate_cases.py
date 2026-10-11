@@ -1,4 +1,4 @@
-"""Bounded R/A/B copies of the pinned self-authored fixture. No application launch."""
+"""Bounded R/A/B/E copies of the pinned self-authored fixture. No application launch."""
 import argparse
 import array
 import copy
@@ -38,6 +38,7 @@ def main():
     ap.add_argument('--repo', type=Path, required=True)
     ap.add_argument('--addon', type=Path, required=True)
     ap.add_argument('--output', type=Path, required=True)
+    ap.add_argument('--select-cases', nargs='+', choices=['R','A','B','E'], default=['R','A','B'])
     args = ap.parse_args()
     out = args.output.resolve()
     out.mkdir(exist_ok=False)  # fresh owned directory; never overwrite an earlier run
@@ -76,7 +77,9 @@ def main():
                     meta_sha256=helper.PIN_META, fbx_version=version,
                     encoder_sha256=helper.sha256(args.addon / 'encode_bin.py'),
                     parser_sha256=helper.sha256(args.addon / 'parse_fbx.py'), cases={})
-    for case in ['R', 'A', 'B']:
+    if len(set(args.select_cases)) != len(args.select_cases):
+        raise ValueError('duplicate case selection')
+    for case in args.select_cases:
         root = copy.deepcopy(original)
         objects = child(root, b'Objects')
         geometries = [n for n in objects.elems if n.id == b'Geometry' and n.props[0] == 329684292]
@@ -89,11 +92,19 @@ def main():
         materials = child(child(g, b'LayerElementMaterial'), b'Materials')
         if list(materials.props[0]) != [2]*6 + [1]*4 + [0]*2:
             raise ValueError('pinned material records changed')
-        if case == 'A':
+        if case in {'A','E'}:
             # Refuse extra layers: otherwise an unhandled polygon-addressed stream could change meaning.
             if sorted(n.id for n in g.elems if n.id.startswith(b'LayerElement')) != [b'LayerElementMaterial', b'LayerElementNormal', b'LayerElementUV']:
                 raise ValueError('unsupported extra geometry layer')
-            order = [i for slot in [1, 0, 2] for i, value in enumerate(materials.props[0]) if value == slot]
+            if case == 'A':
+                order = [i for slot in [1, 0, 2] for i, value in enumerate(materials.props[0]) if value == slot]
+            else:
+                # Same first UID order/counts as A; only the contiguous runs change.
+                sequence = [1,0,2,1,2,0,2,1,2,1,2,2]
+                remaining = {slot:[i for i,value in enumerate(materials.props[0]) if value == slot] for slot in [0,1,2]}
+                order = [remaining[slot].pop(0) for slot in sequence]
+                if any(remaining.values()) or sorted(order) != list(range(12)):
+                    raise ValueError('E is not a twelve-face permutation')
             loops = [i*3+j for i in order for j in range(3)]
             inverse = {old: new for new, old in enumerate(loops)}
             for layer_name, array_name in [(b'LayerElementUV', b'UVIndex'), (b'LayerElementNormal', b'NormalsIndex')]:
@@ -135,7 +146,7 @@ def main():
         raise ValueError('original changed')
     with (out / 'generation.json').open('x', encoding='utf-8') as stream:
         json.dump(manifest, stream, indent=2)
-    print('R/A/B copies generated; independent judgment still required')
+    print('Selected copies generated; independent judgment still required:', args.select_cases)
 
 
 if __name__ == '__main__':

@@ -19,12 +19,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', type=Path, required=True)
     ap.add_argument('--work', type=Path, required=True)
+    ap.add_argument('--select-cases', nargs='+', choices=['R','A','B','E'], default=['R','A','B'])
     args = ap.parse_args(sys.argv[sys.argv.index('--')+1:])
     spec = importlib.util.spec_from_file_location('unitypackage_blender_importer', args.repo/'__init__.py', submodule_search_locations=[str(args.repo)])
     addon = importlib.util.module_from_spec(spec); sys.modules[spec.name] = addon; spec.loader.exec_module(addon); addon.register()
     capture = load('holmes_existing_capture', args.repo/'tests/evidence/inbound-material-face-membership-20261007/capture_inbound_material_faces.py')
     manifest = json.loads((args.work/'cases/generation.json').read_text())
-    for case in ['R','A','B']:
+    if len(set(args.select_cases)) != len(args.select_cases):
+        raise ValueError('duplicate case selection')
+    for case in args.select_cases:
         output = args.work/(case+'-blender.json')
         if output.exists():
             raise ValueError('occupied capture')

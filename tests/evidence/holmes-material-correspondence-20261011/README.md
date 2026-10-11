@@ -2,6 +2,16 @@
 
 自作 ThreeSlotSource の12面を使い、Unityのsubmesh順とBlenderのMaterial slot順が異なることを実測した。製品コードは変更していない。既存の面対応未確定ガードは保持する。
 
+R/A/Bの実行sourceと記録は保存commit `c76d3bd8380247b75ff4c0b5716c3cad97613ec6` の当該pathに固定される。後続Eのcase選択追加をR/A/Bで再実行したという主張はしない。過去の実行hash・記録は変更していない。
+
+## 後続E：raw検査のみ完了、実機NOT_RUN
+
+承認済みの非連続run一例を生成した。Aと同じ初出順1,0,2とUID別2/4/6面を固定し、record順を `1,0,2,1,2,0,2,1,2,1,2,2` にする。Aの3連続runに対しEは11run。12面のMaterial UID、oriented CP/位置/UV/normal、edge endpoint、Material接続、その他treeは保持され、保存済みAのhashを確認した独立judgeで比較した。生成側・判定側のE差分レビューはいずれもSOL/medium、KEEP。
+
+実FBX/packageは `cases/E.fbx` と `cases/E.unitypackage`、生成hashとpackage member比較は `cases/generation-E.json` / `cases/package-copy-check-E.json`、独立raw検査は `observations/E-raw-judgment.json`、実行source hashと状態は `observations/E-source-summary.json`。派生packageの変更memberはFBX assetのみ。
+
+EのUnity/Blenderは **NOT_RUN**。共有排他枠を別の承認済み修復へ渡す指示に従い、新しいEditorを起動していない。次の最小作業は枠の返却後、実lease/mutex/RAMを再確認してEだけを実測すること。初出順・面数を固定した場合のnative partitionがAと一致するかを判定する。H6の設定切替、未使用slot、同一Material重複などは未実測であり、一般化・製品guard解除は行わない。
+
 基準製品source: `79a28a92328dded08e8004ee014f9af3d34946e2`。Unity 2022.3.22f1、Blender 5.2.1 LTS。生成と独立判定は別の GPT-6.1 SOL / medium コンテキストで実行前レビューし、KEEP。判定レビューで指摘された実効import policy比較漏れを修正後、再確認した。
 
 ## 条件と結果
@@ -77,6 +87,6 @@ UnityとBlenderは別々にglobal mutexと実RAMを確認して実行し、exit 
 python judge_faces.py --repo <checkout> --addon <installed io_scene_fbx> --cases cases --native observations --blender observations --output <fresh output.json>
 ```
 
-`CaptureNative.cs` と `runtime/VapbHolmesCoordinateProbe.cs` は実際にcompile・実行した自作捕捉source。probeは既存座標probeを再利用し、出力path引数と複数case呼出しのための終了方式だけ変更した。所有Projectの配置・復元には既存runnerを再利用した。
+`CaptureNative.cs` のR/A/B実行版は上記保存commitで確認できる。現行版にはEだけを選択する引数を追加した。`runtime/VapbHolmesCoordinateProbe.cs` はR/A/Bで実際にcompile・実行した自作捕捉sourceで、Eにも同じbytesを使う。probeは既存座標probeを再利用し、出力path引数と複数case呼出しのための終了方式だけ変更した。所有Projectの配置・復元には既存runnerを再利用した。
 
 全製品完成・一般Avatar対応・実購入corpusでの面対応・GUI/client確認・最新ZIP反映は、この資料では主張しない。

@@ -1,0 +1,15 @@
+{
+  "package_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "original_fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+  "meta_sha256": "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d",
+  "fbx_version": 7400,
+  "encoder_sha256": "a9211f2d40c31587cf96b6f3bb000e600c9f729585c9af3b00132f65c2a3e82c",
+  "parser_sha256": "96fe3f11b5c9b2950d9c434857e3b0db1a1b558510e2ad360b767643a69c2047",
+  "cases": {
+    "E": {
+      "fbx_sha256": "e4ac91f4f4af2cbcdcce68befd6c45bc91842d3ad728972f149c79a58f02074a",
+      "meta_sha256": "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d",
+      "writer_semantic_readback_equal": true
+    }
+  }
+}
