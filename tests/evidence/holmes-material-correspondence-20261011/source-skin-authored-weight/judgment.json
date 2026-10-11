@@ -1,0 +1,32 @@
+{
+  "instruction_id": "HOLMES-20261012-03",
+  "status": "VERIFIED_IN_SCOPE",
+  "pre_observation_commit": "5d4850269e8b3dad0eab9c1898e3e902daef2c27",
+  "cp0_weights": "0.625/0.375",
+  "native_cp_bone_expected_bits": "EXACT_BITWISE",
+  "other3CP": "UNCHANGED",
+  "geometry_uv_normals_face_diagonal": "UNCHANGED_CP_CANONICAL",
+  "bone_root_bindpose_source_ancestry_material_guid_signed_fileid": "EXACT",
+  "variant": "EDITED_SHARED_MESH_EXACT",
+  "apply_repeat": "PASS",
+  "one_bit_refusal": "PASS_ORIGINAL_MANIFEST_VARIANT_UNCHANGED",
+  "original_preservation": [
+    {
+      "guid": "75f6b54b17e02744598ae3ba28ab8047",
+      "asset_bytes_exact": true,
+      "meta_bytes_exact": true,
+      "path": "Assets/VAPBExport/Unassigned/Materials/SourceMaterial.mat"
+    },
+    {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "asset_bytes_exact": true,
+      "meta_bytes_exact": true,
+      "path": "Assets/HolmesSource/Source.fbx"
+    }
+  ],
+  "saved_original_inputs": "HASH_IDENTICAL",
+  "weight_observations": 3,
+  "deformation": "NOT_RUN",
+  "rendering": "NOT_RUN",
+  "product_source_changes": false
+}

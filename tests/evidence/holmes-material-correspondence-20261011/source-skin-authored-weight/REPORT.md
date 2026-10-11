@@ -1,6 +1,6 @@
 # HOLMES-20261012-03 — authored weight return
 
-STATUS: IN_PROGRESS_PREPARATION. H-A exact final authored weight return and H-B original-value/CP/numeric misapplication are both unconfirmed. No experiment result is claimed.
+STATUS: VERIFIED_IN_SCOPE. H-A is confirmed and H-B refuted for this one observed case. CONTINUATION: ACTIVE — result save/readback then fresh Holmes and next authorized product action;03 completion is not whole-project termination.
 
 Authority: explicit user VAPB AUTONOMOUS CONTINUOUS MODE request dated2026-10-11 23:21:42 UTC, delivered directly through delegated instructions. Public-safe operative request is preserved in this PLAN and project AGENTS; no private transcript/identifier or purchased asset is published. The fixed instruction branch is parent-owned, read separately and not the product base; this task has not updated that file.
 
@@ -9,3 +9,17 @@ Baseline product SHA b0ff93ce5b1a18bd5c399f9566653a9b99962def; work start ef9071
 NEXT_ACTION: prove chosen CP/Bone join and prepare one-point authored-weight copy, save/reopen and normal export with pre-observation fixed expectations. CONTINUATION: active approved development, not waiting for per-cycle human permission.
 
 Pre-Unity checkpoint: owned CP0 bound by realization/Geometry identity, exact full raw FBX point/polygon-corner/UV streams and Bone receipt/UID joins. Only CP0 changed to0.625/0.375; other3CP and recorded geometry/UV/Material/rig/rest/Transform exact. Separate-process saved Blend reopening and normal Export PASS. Original asset/meta bytes preserved. Expected raw/Unity bits and all revisions/hashes are frozen in pre-observation.json before Unity. Initial private launcher path substitution failed before edit; first process quit and census confirmed none, second attempt preflight blocked before process start. Literal path/hash verification corrected that harness issue; no product defect or guard relaxation. Prior failed logs are preserved privately. Unity observation remains NOT_RUN.
+
+## Actual result
+
+Blender5.2.1 saved the1CP edit and exited normally; a different process reopened the exact state and normally exported the package. Source producer/consumer are unchanged from product base b0ff93ce5b1a18bd5c399f9566653a9b99962def. Source/witness/observer hashes, raw/expected CP rows and package hashes were fixed and remotely verified before observation at5d4850269e8b3dad0eab9c1898e3e902daef2c27. No expectations changed after Unity.
+
+Owned Unity2022.3.22f1 normally imported, compiled/reloaded and explicitly ran the packaged Finalizer. Apply and reApply both returned true; CP0 raw/expected/native Lower/Upper weight bits are1059061760/1052770304 (0.625/0.375), all other3CP values unchanged. All3 independently captured stamped-weight observations pass CP marker/Bone receipt/expected-bit joins. The existing independent fixture oracle was adapted only for one authored CP and saved unedited B control; it does not compare the edited CP against original numeric values.
+
+Geometry/normals/UV and per-Material triangle/changed-diagonal semantics remain exact under canonical CP mapping. Variant.sharedMesh is the edited Mesh; native Bone/root/source ancestry, bindposes, Material GUID/signed fileID and source placement are preserved. Existing0.001 source/edited matrix policy remains distinct from exact weight bits. Source FBX/meta and Material/meta are byte-exact both in output and installed Project; saved old B/old output/source archives are hash-identical. Public raw observations, preservation and judgment are adjacent files.
+
+One expected-witness-bit corruption (1059061760 XOR1) was submitted to the real Apply through an owned temporary manifest. Apply returned false with EXPORTED_WEIGHT_DATA_INVALID, and the valid manifest and already-created Variant remained byte-identical. The control asset was removed through AssetDatabase after capture. Old25 controls were not rerun. No native observer repaired any weights. Skin deformation/rendering are NOT_RUN; this is bitwise transport/rig/material/geometry acceptance, not visual or whole Avatar/VRC acceptance.
+
+Unity exited0 at2026-10-11 23:39:45 UTC, owned children and project lock absent, owned mutex released; initial free RAM4.82GiB. No other Editor stopped or lock removed. First product failure: NONE. Initial private launch-path errors were harness-only, preserved and corrected by exact literal path/hash preflight; no guard weakened and no product source fix. Necessary independent code review: NOT_REQUIRED for unchanged product implementation; upcoming Holmes inference is a separate role.
+
+NEXT_ACTION: save and exactly read back03 results, then fresh Holmes with fixed code/raw evidence/spec and continuous-development role; validate and execute the highest-value remaining authorized minimum. Cross-session automatic restart remains NOT_CONFIGURED, in-turn compaction available. No fixed iteration cap or per-item permission wait is restored.

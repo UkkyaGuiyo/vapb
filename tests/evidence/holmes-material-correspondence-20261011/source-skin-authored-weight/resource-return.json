@@ -1,0 +1,19 @@
+{
+  "owner": "VAPB-HOLMES-20261012-03",
+  "project": "owned private Project copy of prior B-finalProject configuration",
+  "unity_version": "2022.3.22f1",
+  "actual_free_gib": 4.820842742919922,
+  "start_utc": "2026-10-11T23:39:15.0925817Z",
+  "exit_utc": "2026-10-11T23:39:45.6527879Z",
+  "normal_exit_code": 0,
+  "owned_children_absent": true,
+  "lock_absent": true,
+  "release_verified": true,
+  "mutex_guard_used": true,
+  "pool_all_free_checked": true,
+  "post_return_mutex_acquire_release": true,
+  "post_return_pool_all_free": true,
+  "post_return_blender_absent": true,
+  "post_return_owned_editor_absent": true,
+  "post_return_checked_utc": "2026-10-11T23:47:19.7419054Z"
+}

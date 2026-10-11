@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "control": "expected_weight_one_bit",
+  "first_rejection": "VAPB_MODEL_SKIN_VARIANT_REJECTED=EXPORTED_WEIGHT_DATA_INVALID",
+  "manifest_before_sha256": "5e25fb927aeecb2937b6348587d25e84b34ca6171f343f50d6a523af163bbf11",
+  "manifest_after_sha256": "5e25fb927aeecb2937b6348587d25e84b34ca6171f343f50d6a523af163bbf11",
+  "accepted": false,
+  "variant_unchanged": true,
+  "source_manifest_unchanged": true
+}
