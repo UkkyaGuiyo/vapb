@@ -52,4 +52,4 @@ Every Blender/Unity phase records actual PID/start/exit/RAM. All owned processes
 
 Global AGENTS SHA256 `9BE8886133EEE50F5E24A5A183AF086EACDFEE41EBCF3D5AB0510907D34D6918` reread. Relevant Atlas lessons read directly; inherited read-only Atlas restriction retained. Knowledge candidate will be recorded without claiming Atlas persistence. Primary model/reasoning actual setting unavailable; independent review requested SOL/medium. Latest formal remaining92%; no reset/5% stop threshold hit.
 
-Save state: local evidence only until normal feature commit/push and exact remote readback; result commit link recorded afterward. No merge, Release, main/dev or force.
+Save state: [runtime evidence commit 96f4a86e407d4bbea8b24d00c83471b0cad099c9](https://github.com/UkkyaGuiyo/vapb/commit/96f4a86e407d4bbea8b24d00c83471b0cad099c9) normally pushed to `feature/holmes-source-skin-layout-boundary-20261012`; all21 files retrieved by exact commit through GitHub API and equal their Git blobs at `2026-10-11T16:03:24.057133+00:00`. This completion record refers to that verified evidence commit. No merge, Release, main/dev or force.
