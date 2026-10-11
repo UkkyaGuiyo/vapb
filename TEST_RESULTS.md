@@ -522,3 +522,53 @@ A cross-package combination then assigned a registered Unity Material from a dif
 - Unity 2022.3.22f1 normal import and explicit product Finalizer accept the whole manifest and create one linked separate Prefab Variant containing three Renderers. The exact edited target is realized once, with 6,160 native vertices. On that target, ordered Material GUID/localID references are exact and equal the inherited originals, and Bone/rootBone links are non-null. Original Prefab, original FBX/meta and imported manifest remain unchanged. Pointwise geometry, bitwise weights, deformation and Shape/rendering fidelity were not measured.
 - Two Material slots on the observed edited target use unavailable Shaders, so complete rendered Material restoration is not established. Native results do not claim exact Material/Bone validation for every other Renderer. The validation Variant is removed during owned Project restoration; the new edited package and private observations remain local.
 - Editor normal exit is verified. All protected Project files are unchanged; no unexpected files or owned children/Project lock remain. Lease/mutex are returned. No product source fix or dependency installation was performed; these aggregate records contain no purchased asset data or private identities.
+
+### Remaining real-input ordinary paths and static partial return (2026-10-11)
+
+- Five previously unfinished real-input paths now complete ordinary current-source import/save-reopen and a bounded local-X +0.01 edit in separate new copies. The selected scopes contain eight Skin meshes, fifteen Skin meshes, one static Mesh, and two mixed groups of thirty-one Meshes respectively. Original input archives, vertex-group weights and polygon topology remain unchanged. The two Skin groups refuse unavailable source Material package identity; the mixed groups refuse the unsupported mixed static/Skin selection. No package, Finalizer or Variant is claimed for these refusals.
+- For each mixed group, a separate fresh import uses the existing supported model-Skin selection preconditions within the same complete root scope. Twenty-three Skin meshes are selected; eight static meshes remain unselected and unedited. One existing non-Shape Skin receives the bounded edit (4,160 and 1,743 Blender vertices). Import/save-reopen and source/weight/topology preservation pass; ordinary export refuses unavailable source Material package identity in both cases. This new supported-selection observation does not weaken the earlier refusal or delete source references.
+- The one-static-Mesh input selects one of thirty-nine root scopes and edits 122 Blender vertices. The existing static final-state v2 export succeeds with one source Material. Unity 2022.3.22f1 normal import and explicit VapbFinalStateFinalizer.Apply return accepted=false and PARTIAL: a Regular Prefab is generated, not a linked Variant. The result has one Renderer and 462 native vertices; exact marker and source Material GUID/localID checks pass, and Material/meta plus manifest hashes remain unchanged. One exact declared Shader dependency is EXTERNAL_DEPENDENCY_REQUIRED. Full rendered restoration and the separate edited-Variant goal are not established.
+- The static owned Editor exits normally with code one. Initial restoration detects five importer-generated Material/meta files outside the private cleanup allowlist, while all 3,041 preexisting protected files are unchanged. Their exact owned generation paths and non-preexisting status are verified, private backups are hash-checked, and only those files plus the resulting empty owned directory are removed. Independent final inventory confirms 3,041 protected files unchanged and no unexpected files. Lease/mutex are returned. The initial cleanup discrepancy and product PARTIAL remain recorded separately; no repeat native run is used to rewrite the result.
+- Read-only source inspection of the eight-Skin input and both twenty-three-Skin selections finds inherited FBX Prefab instances with no selected-root Material overrides and empty model externalObjects. Existing Mesh/Bone witness identity does not provide the missing embedded Material source/consumer identity. No guessed GUID/fileID, Material assignment, source mutation or new witness schema is introduced.
+- Private original packages, edited scenes, witness data, provider metadata, identifiers and raw logs remain local. Production source is unchanged. These are bounded stage observations, not complete real-asset, Skin, rendered Material, animation or product acceptance.
+
+### Exact provider discovery, partial consumer proof and bounded Skin selection (2026-10-11)
+
+- The fifteen-Skin input's selected serialized Prefab contains nine distinct Material identities, each with one existing private Material-package provider. Archive revision, Material class/localID, payload and meta GUID are verified. Normal provider import on a separate retained-edit copy succeeds, but exact selected slot binding is initially zero of seventeen; export is not called.
+- Existing one-model source witness runs in the assigned Unity 2022.3.22f1 Project. All fifteen Meshes/SkinnedRenderers pass with 299 unique Model UID markers, no missing Skin Bone markers, equivalent noop/witness/restored observations and unchanged source FBX/meta revision. The existing validator promotes v2 without changing its schema. Editor exit zero and full Project restoration are verified: 3,041 protected files unchanged, no unexpected files, no owned children or Project lock, lease/mutex returned.
+- A new ordinary Blender import uses that exact sidecar and the verified existing provider package. Fourteen of seventeen selected slots now have exact Material GUID/localID/provider/consumer-state bindings. The same exact source non-Shape Skin has 690 vertices and receives local X +0.01 in this new copy; weights/topology, old edited checkpoint and both raw archives remain unchanged. Three slots on two Meshes remain unproven. The private adapter labels its assertion failure REFUSED, but this is an observer precondition before product export, not a product-export refusal. No output is produced by that attempt.
+- The independently supported subset consists of thirteen existing model Skin meshes, all thirteen of their slots proven, including the edited target. The two unproven meshes and their original references remain retained and unselected. An initial private observer expected fourteen slots by including one bound slot on an excluded Mesh; it stops before calling export. The observation is preserved and only this expected count is corrected in a separate work directory. No product guard or source code changes.
+- Normal SELECTED export of the thirteen-Skin/thirteen-slot subset is then called and formally refuses unresolved selected Material Texture dependencies. Two exact non-null Texture identities have no candidate in the existing twenty-four-input catalogs. No output package, native Finalizer or Variant is produced. No guessed assignment, reference deletion, Texture substitution or dependency installation is performed. This partial consumer proof does not establish the whole fifteen-Skin composition or complete rendered Material restoration.
+
+### Existing twenty-four-input stage boundaries (2026-10-11)
+
+These rows retain previous observations and incorporate the newly executed ordinary paths above. A refusal applies to its observed selection; no unchanged failed operation is rerun to inflate coverage. The private per-input report links actual stage records and next minimum actions. Six inputs have produced output packages, four are dependency-only, and fourteen have an observed export boundary. Native linked-Variant evidence is limited to inputs 23 and 24; static input 06 is a separate PARTIAL Regular-Prefab result.
+
+| Input | Latest bounded output/native stage | Remaining dependency or next minimum |
+|---|---|---|
+| 01 | Package; native Script refusal, no Variant | Exact missing Script providers |
+| 02 | Texture export refusal | Exact selected Texture providers |
+| 03 | No Mesh; dependency-only | Provider use only |
+| 04 | Static export precondition refusal | Static UV support/precondition; no invented UV |
+| 05 | Texture export refusal | Exact selected Texture providers |
+| 06 | Static package; native PARTIAL Regular Prefab | Exact declared Shader provider; Variant remains unproved |
+| 07 | Eight-Skin root: source Material unavailable | Proven embedded Material consumer/source identity |
+| 08 | No Mesh; dependency-only | Provider use only |
+| 09 | Thirteen proven Skin slots: Texture refusal | Two exact Texture providers; separate two-Mesh consumer proof |
+| 10 | No Mesh; dependency-only | Verified existing Material provider for input 09 |
+| 11 | Signed localID range refusal | Explicit null Bone semantics remain unapproved |
+| 12 | Seven exact Material slots: Texture refusal | Exact already-observed Texture provider |
+| 13 | No Mesh; dependency-only | Verified existing Material provider for input 12 |
+| 14 | Texture export refusal | Exact selected Texture providers |
+| 15 | Texture export refusal | Exact already-observed Texture provider |
+| 16 | Texture export refusal | Exact selected Texture providers |
+| 17 | Package; native Script refusal, no Variant | Exact missing Script providers |
+| 18 | Edited five-Skin package; native Script refusal | Exact missing Script providers |
+| 19 | Twenty-three-Skin subset: source Material unavailable | Proven embedded Material consumer/source identity |
+| 20 | Twenty-three-Skin subset: source Material unavailable | Proven embedded Material consumer/source identity |
+| 21 | Static Texture export refusal | Exact already-observed Texture provider |
+| 22 | Unused-slot export refusal | Approved preservation semantics; no reference deletion |
+| 23 | Limited edited three-Skin linked Variant | Exact Shader providers and unmeasured parity/rendering |
+| 24 | Limited edited/mixed linked Variant | Preserve incident hold; remaining parity/Action/rendering |
+
+No production defect was established in these new observations, so production code remains unchanged. Full real-asset roundtrip, strict Skin numeric transport, deformation/rendering, edited Animation return and human GUI are not established by this stage inventory.
