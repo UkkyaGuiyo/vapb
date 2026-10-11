@@ -49,6 +49,21 @@ The measured path resolves the existing two-Bone manifest; its actual after-run 
 
 Retained CASE0024 first/repeat native output is byte-exact for measured positions, weights, bindposes and identities, with the intended Material identity and available target shader retained. Source has 11,602 vertices / 13,602 positive influences; edited has 10,992 / 12,992. Independent correspondence is missing, so these differences do not establish lost vertices/influences or safe loss. Bindpose comparison observes 235 changed float components, maximum absolute difference 2.8461217880249023e-6; no epsilon PASS. Missing-shader/texture and deformation cases beyond the retained observations are not promoted to PASS. See the retained [CASE0024 record](../TEST_RESULTS.md).
 
+## P1-3 minimum existing-resource CP inspection
+
+One new offline inspection reads a fresh exact copy of the already-successful real direct-Skin output package and source FBX bytes recovered by exact GUID/hash from the existing protected input archives. It reuses the pinned installed FBX parser; no new export, Unity session, Apply, asset edit or production source/test change. Source archives, checkpoints and retained captures are unchanged. Purchased FBX copies, identifiers, raw geometry/influences and the private inspection script remain local; only aggregate findings are recorded here.
+
+- Source and output raw FBX each contain **9,044 control points**, with no duplicate raw CP positions. Source polygon corners: 35,736; triangulated output corners: 53,400. These are observed structures, not correspondence or fidelity proof.
+- Both raw UV layers use ByPolygonVertex/IndexToDirect. **Zero corners** have the existing diagnostic CP-marker pattern (integer x >= 1, y exactly 0.375). This checks that particular existing marker route, not every possible derivation.
+- Retained native source: 11,602 vertices / 9,044 distinct float32 position groups; native output: 10,992 / 9,044. Neither capture contains CP labels, UV capture or effective native import-policy observation. Native splits do not by themselves rule out a many-to-one CP join when raw CP positions are unique.
+- The output package contains the existing weight-policy JSON matching the exact generated model revision. Payload presence proves no effective importer setting or expected Unity influence representation. No frame was fitted, native index reused, epsilon accepted or Material assignment changed.
+
+**Result: strict comparison remains UNSUPPORTED.** Missing relationships are source raw CP -> native original vertex, Blender final-state CP -> generated raw CP -> native output vertex, and an independently validated coordinate/import-policy/numeric representation scope for expected positions and positive influences. Existing marker-based numeric tools need those fields; the retained checkpoint/native captures cannot supply them. Counts, unchanged Apply output and unique raw positions do not fill these relationships. This inspection identifies missing evidence; it neither proves loss nor establishes a product defect.
+
+Within the existing 24-input resources and current operators, no additional independent ordinary real-data step was identified: remaining Texture/Script cases need exact providers absent from the inspected catalog; embedded-Material/extra-slot cases need identity/face proof or specified meaning. The successful existing edited Variant remains available for the separate human GUI/render acceptance gate. Edited Animation return remains unimplemented. This bounded inspection does not prohibit a newly authorized supported route or declare absence outside the inspected catalog.
+
+Independent review: GPT-6.1 SOL, medium, separate read-only context: **KEEP** the current-evidence UNSUPPORTED conclusion. The report preserves the possible many-to-one join and identifies missing validated frame/numeric conversion, group correspondence and expected influence representation; no product defect or new runtime/framework step is justified.
+
 ## Official evidence applied to code
 
 Read the three applicable summaries at official-document checkpoint `ca8fdf6912fd63594c019f27661000700a5b5e0b`: UNITY-MATERIAL-MESH, VERTEX-CORRESPONDENCE and BLENDER-SUPPLEMENT. They distinguish documented API, official source, inference and unavailable pages.
