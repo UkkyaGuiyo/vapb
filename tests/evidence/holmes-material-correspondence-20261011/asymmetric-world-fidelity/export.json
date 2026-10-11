@@ -1,0 +1,1723 @@
+{
+  "instruction_id": "HOLMES-20261011-07",
+  "phase": "export",
+  "blender_version": "5.2.1 LTS",
+  "status": "PASS",
+  "reopen": "PASS",
+  "standard_final_state_export": "PASS",
+  "state": {
+    "faces": [
+      {
+        "plane": "+X",
+        "normal": [
+          1.0,
+          -0.0,
+          0.0
+        ],
+        "vertex_order": [
+          6,
+          7,
+          5,
+          4
+        ],
+        "world_normal": [
+          0.663413941860199,
+          0.5566703677177429,
+          0.5000000596046448
+        ],
+        "world_corners": [
+          [
+            3.3886539936065674,
+            0.9204140901565552,
+            2.48290753364563
+          ],
+          [
+            2.3380773067474365,
+            -3.3096914291381836,
+            8.586389541625977
+          ],
+          [
+            3.4406135082244873,
+            -4.224575996398926,
+            8.14209270477295
+          ],
+          [
+            4.491189956665039,
+            0.005529284477233887,
+            2.0386102199554443
+          ]
+        ],
+        "corners": [
+          [
+            0.5,
+            1.0,
+            -2.5
+          ],
+          [
+            0.5,
+            1.0,
+            2.5
+          ],
+          [
+            0.5,
+            -1.0,
+            2.5
+          ],
+          [
+            0.5,
+            -1.0,
+            -2.5
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.5
+          ],
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.625,
+            0.75
+          ],
+          [
+            0.375,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "+Y",
+        "normal": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "vertex_order": [
+          2,
+          3,
+          7,
+          6
+        ],
+        "world_normal": [
+          -0.735024094581604,
+          0.6099231839179993,
+          0.29619818925857544
+        ],
+        "world_corners": [
+          [
+            2.5593864917755127,
+            0.22457611560821533,
+            1.8579075336456299
+          ],
+          [
+            1.5088099241256714,
+            -4.005529403686523,
+            7.961389541625977
+          ],
+          [
+            2.3380773067474365,
+            -3.3096914291381836,
+            8.586389541625977
+          ],
+          [
+            3.3886539936065674,
+            0.9204140901565552,
+            2.48290753364563
+          ]
+        ],
+        "corners": [
+          [
+            -0.5,
+            1.0,
+            -2.5
+          ],
+          [
+            -0.5,
+            1.0,
+            2.5
+          ],
+          [
+            0.5,
+            1.0,
+            2.5
+          ],
+          [
+            0.5,
+            1.0,
+            -2.5
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.25
+          ],
+          [
+            0.625,
+            0.25
+          ],
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.375,
+            0.5
+          ]
+        ],
+        "material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "+Z",
+        "normal": [
+          0.0,
+          -0.0,
+          1.0
+        ],
+        "vertex_order": [
+          7,
+          3,
+          1,
+          5
+        ],
+        "world_normal": [
+          -0.14007684588432312,
+          -0.5640140175819397,
+          0.8137977123260498
+        ],
+        "world_corners": [
+          [
+            2.3380773067474365,
+            -3.3096914291381836,
+            8.586389541625977
+          ],
+          [
+            1.5088099241256714,
+            -4.005529403686523,
+            7.961389541625977
+          ],
+          [
+            2.6113460063934326,
+            -4.920413970947266,
+            7.517092704772949
+          ],
+          [
+            3.4406135082244873,
+            -4.224575996398926,
+            8.14209270477295
+          ]
+        ],
+        "corners": [
+          [
+            0.5,
+            1.0,
+            2.5
+          ],
+          [
+            -0.5,
+            1.0,
+            2.5
+          ],
+          [
+            -0.5,
+            -1.0,
+            2.5
+          ],
+          [
+            0.5,
+            -1.0,
+            2.5
+          ]
+        ],
+        "uv": [
+          [
+            0.625,
+            0.5
+          ],
+          [
+            0.875,
+            0.5
+          ],
+          [
+            0.875,
+            0.75
+          ],
+          [
+            0.625,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-X",
+        "normal": [
+          -1.0,
+          -0.0,
+          0.0
+        ],
+        "vertex_order": [
+          0,
+          1,
+          3,
+          2
+        ],
+        "world_normal": [
+          -0.663413941860199,
+          -0.5566703677177429,
+          -0.5000000596046448
+        ],
+        "world_corners": [
+          [
+            3.6619226932525635,
+            -0.690308690071106,
+            1.4136102199554443
+          ],
+          [
+            2.6113460063934326,
+            -4.920413970947266,
+            7.517092704772949
+          ],
+          [
+            1.5088099241256714,
+            -4.005529403686523,
+            7.961389541625977
+          ],
+          [
+            2.5593864917755127,
+            0.22457611560821533,
+            1.8579075336456299
+          ]
+        ],
+        "corners": [
+          [
+            -0.5,
+            -1.0,
+            -2.5
+          ],
+          [
+            -0.5,
+            -1.0,
+            2.5
+          ],
+          [
+            -0.5,
+            1.0,
+            2.5
+          ],
+          [
+            -0.5,
+            1.0,
+            -2.5
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.0
+          ],
+          [
+            0.625,
+            0.0
+          ],
+          [
+            0.625,
+            0.25
+          ],
+          [
+            0.375,
+            0.25
+          ]
+        ],
+        "material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-Y",
+        "normal": [
+          0.0,
+          -1.0,
+          0.0
+        ],
+        "vertex_order": [
+          4,
+          5,
+          1,
+          0
+        ],
+        "world_normal": [
+          0.735024094581604,
+          -0.6099231839179993,
+          -0.29619818925857544
+        ],
+        "world_corners": [
+          [
+            4.491189956665039,
+            0.005529284477233887,
+            2.0386102199554443
+          ],
+          [
+            3.4406135082244873,
+            -4.224575996398926,
+            8.14209270477295
+          ],
+          [
+            2.6113460063934326,
+            -4.920413970947266,
+            7.517092704772949
+          ],
+          [
+            3.6619226932525635,
+            -0.690308690071106,
+            1.4136102199554443
+          ]
+        ],
+        "corners": [
+          [
+            0.5,
+            -1.0,
+            -2.5
+          ],
+          [
+            0.5,
+            -1.0,
+            2.5
+          ],
+          [
+            -0.5,
+            -1.0,
+            2.5
+          ],
+          [
+            -0.5,
+            -1.0,
+            -2.5
+          ]
+        ],
+        "uv": [
+          [
+            0.375,
+            0.75
+          ],
+          [
+            0.625,
+            0.75
+          ],
+          [
+            0.625,
+            1.0
+          ],
+          [
+            0.375,
+            1.0
+          ]
+        ],
+        "material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      },
+      {
+        "plane": "-Z",
+        "normal": [
+          0.0,
+          0.0,
+          -1.0
+        ],
+        "vertex_order": [
+          2,
+          6,
+          4,
+          0
+        ],
+        "world_normal": [
+          0.14007684588432312,
+          0.5640140175819397,
+          -0.8137977123260498
+        ],
+        "world_corners": [
+          [
+            2.5593864917755127,
+            0.22457611560821533,
+            1.8579075336456299
+          ],
+          [
+            3.3886539936065674,
+            0.9204140901565552,
+            2.48290753364563
+          ],
+          [
+            4.491189956665039,
+            0.005529284477233887,
+            2.0386102199554443
+          ],
+          [
+            3.6619226932525635,
+            -0.690308690071106,
+            1.4136102199554443
+          ]
+        ],
+        "corners": [
+          [
+            -0.5,
+            1.0,
+            -2.5
+          ],
+          [
+            0.5,
+            1.0,
+            -2.5
+          ],
+          [
+            0.5,
+            -1.0,
+            -2.5
+          ],
+          [
+            -0.5,
+            -1.0,
+            -2.5
+          ]
+        ],
+        "uv": [
+          [
+            0.125,
+            0.5
+          ],
+          [
+            0.375,
+            0.5
+          ],
+          [
+            0.375,
+            0.75
+          ],
+          [
+            0.125,
+            0.75
+          ]
+        ],
+        "material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000",
+          "source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf"
+        }
+      }
+    ],
+    "slots": [
+      {
+        "guid": "242d369718abeb942873ec054737cf94",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "file_id": "2100000"
+      },
+      {
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "file_id": "2100000"
+      }
+    ],
+    "object_keys": [],
+    "mesh_keys": [],
+    "matrix_world": [
+      [
+        0.8292674422264099,
+        -0.5512681007385254,
+        -0.21011531352996826,
+        3.0
+      ],
+      [
+        0.6958379745483398,
+        0.45744240283966064,
+        -0.8460210561752319,
+        -2.0
+      ],
+      [
+        0.625,
+        0.222148597240448,
+        1.2206964492797852,
+        5.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "vertices": [
+      [
+        -0.5,
+        -1.0,
+        -2.5
+      ],
+      [
+        -0.5,
+        -1.0,
+        2.5
+      ],
+      [
+        -0.5,
+        1.0,
+        -2.5
+      ],
+      [
+        -0.5,
+        1.0,
+        2.5
+      ],
+      [
+        0.5,
+        -1.0,
+        -2.5
+      ],
+      [
+        0.5,
+        -1.0,
+        2.5
+      ],
+      [
+        0.5,
+        1.0,
+        -2.5
+      ],
+      [
+        0.5,
+        1.0,
+        2.5
+      ]
+    ],
+    "world_vertices": [
+      [
+        3.6619226932525635,
+        -0.690308690071106,
+        1.4136102199554443
+      ],
+      [
+        2.6113460063934326,
+        -4.920413970947266,
+        7.517092704772949
+      ],
+      [
+        2.5593864917755127,
+        0.22457611560821533,
+        1.8579075336456299
+      ],
+      [
+        1.5088099241256714,
+        -4.005529403686523,
+        7.961389541625977
+      ],
+      [
+        4.491189956665039,
+        0.005529284477233887,
+        2.0386102199554443
+      ],
+      [
+        3.4406135082244873,
+        -4.224575996398926,
+        8.14209270477295
+      ],
+      [
+        3.3886539936065674,
+        0.9204140901565552,
+        2.48290753364563
+      ],
+      [
+        2.3380773067474365,
+        -3.3096914291381836,
+        8.586389541625977
+      ]
+    ],
+    "rotation_mode": "XYZ",
+    "rotation_euler": [
+      0.3490658402442932,
+      -0.5235987901687622,
+      0.6981316804885864
+    ],
+    "scale": [
+      1.25,
+      0.75,
+      1.5
+    ],
+    "material_datablocks": [
+      {
+        "name": "R2",
+        "properties": {
+          "unity_source_material": "(private provider path omitted)",
+          "unity_material_guid": "242d369718abeb942873ec054737cf94",
+          "unity_material_file_id": "2100000",
+          "unity_material_path": "Assets/HolmesOrderedFacePlan/R2.mat",
+          "unity_source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "unity_material_name": "R2",
+          "_vapb_source_material_sha256": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467",
+          "unity_shader_guid": "0000000000000000f000000000000000",
+          "unity_shader_name": "Standard",
+          "unity_shader_family": "standard",
+          "unity_shader_variant": "",
+          "unity_props": "{\"colors\": {\"_Color\": [1.0, 1.0, 1.0, 1.0], \"_EmissionColor\": [0.0, 0.0, 0.0, 1.0]}, \"floats\": {\"_BumpScale\": 1.0, \"_Cutoff\": 0.5, \"_DetailNormalMapScale\": 1.0, \"_DstBlend\": 0.0, \"_GlossMapScale\": 1.0, \"_Glossiness\": 0.5, \"_GlossyReflections\": 1.0, \"_Metallic\": 0.0, \"_Mode\": 0.0, \"_OcclusionStrength\": 1.0, \"_Parallax\": 0.02, \"_SmoothnessTextureChannel\": 0.0, \"_SpecularHighlights\": 1.0, \"_SrcBlend\": 1.0, \"_UVSec\": 0.0, \"_ZWrite\": 1.0, \"roughness\": 0.5, \"smoothness\": 0.5}, \"ints\": {}, \"invalid_keywords\": [], \"keywords\": [], \"normalized_extras\": {\"standard\": {\"alpha_clip\": false, \"mode\": 0, \"surface\": 0}}, \"render_queue\": -1, \"textures\": {\"_BumpMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_BumpMap\", \"scale\": [1.0, 1.0]}, \"_DetailAlbedoMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailAlbedoMap\", \"scale\": [1.0, 1.0]}, \"_DetailMask\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailMask\", \"scale\": [1.0, 1.0]}, \"_DetailNormalMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailNormalMap\", \"scale\": [1.0, 1.0]}, \"_EmissionMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_EmissionMap\", \"scale\": [1.0, 1.0]}, \"_MainTex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MainTex\", \"scale\": [1.0, 1.0]}, \"_MetallicGlossMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MetallicGlossMap\", \"scale\": [1.0, 1.0]}, \"_OcclusionMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_OcclusionMap\", \"scale\": [1.0, 1.0]}, \"_ParallaxMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_ParallaxMap\", \"scale\": [1.0, 1.0]}}, \"warnings\": []}",
+          "unity_normalized": "{\"alpha_cutoff\": 0.5, \"alpha_mode\": \"opaque\", \"base_color\": [1.0, 1.0, 1.0, 1.0], \"base_color_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MainTex\", \"scale\": [1.0, 1.0]}, \"cull_backface\": true, \"emission_color\": [0.0, 0.0, 0.0, 1.0], \"emission_strength\": 1.0, \"emission_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_EmissionMap\", \"scale\": [1.0, 1.0]}, \"extras\": {\"standard\": {\"alpha_clip\": false, \"mode\": 0, \"surface\": 0}}, \"family\": \"standard\", \"lighting\": \"pbr\", \"material_guid\": \"242d369718abeb942873ec054737cf94\", \"material_path\": \"Assets/HolmesOrderedFacePlan/R2.mat\", \"metallic\": 0.0, \"metallic_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MetallicGlossMap\", \"scale\": [1.0, 1.0]}, \"name\": \"R2\", \"normal_strength\": 1.0, \"normal_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_BumpMap\", \"scale\": [1.0, 1.0]}, \"roughness\": 0.5, \"shader_guid\": \"0000000000000000f000000000000000\", \"shader_name\": \"Standard\", \"warnings\": []}",
+          "_vapb_material_owner_usage": "[{\"material_file_id\": \"2100000\", \"material_guid\": \"242d369718abeb942873ec054737cf94\", \"material_sha256\": \"3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467\", \"occurrence_id\": \"e340820f96f1774a1712ec9ca2468a1b7d45155aa39f8910f48fb7136fbcc6ca\", \"owner_label\": \"Receiver\", \"provider_package_id\": \"sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf\", \"root_asset_guid\": \"983dd9d36c5824d488269d7d6d6f0434\", \"root_member_id\": \"983dd9d36c5824d488269d7d6d6f0434\", \"root_package_id\": \"sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf\", \"root_revision_sha256\": \"80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104\", \"source_revision_sha256\": \"80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104\"}]"
+        },
+        "diffuse_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "use_nodes": true,
+        "nodes": [
+          {
+            "name": "Principled BSDF",
+            "type": "ShaderNodeBsdfPrincipled",
+            "inputs": [
+              {
+                "name": "Base Color",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Metallic",
+                "value": 0.0
+              },
+              {
+                "name": "Roughness",
+                "value": 0.5
+              },
+              {
+                "name": "IOR",
+                "value": 1.5
+              },
+              {
+                "name": "Alpha",
+                "value": 1.0
+              },
+              {
+                "name": "Thin Wall",
+                "value": false
+              },
+              {
+                "name": "Normal",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Diffuse Roughness",
+                "value": 0.0
+              },
+              {
+                "name": "Subsurface Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Subsurface Radius",
+                "value": [
+                  1.0,
+                  0.20000000298023224,
+                  0.10000000149011612
+                ]
+              },
+              {
+                "name": "Subsurface Scale",
+                "value": 0.004999999888241291
+              },
+              {
+                "name": "Subsurface IOR",
+                "value": 1.399999976158142
+              },
+              {
+                "name": "Subsurface Anisotropy",
+                "value": 0.0
+              },
+              {
+                "name": "Specular IOR Level",
+                "value": 0.5
+              },
+              {
+                "name": "Specular Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Anisotropic",
+                "value": 0.0
+              },
+              {
+                "name": "Anisotropic Rotation",
+                "value": 0.0
+              },
+              {
+                "name": "Tangent",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Transmission Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Coat Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Coat Roughness",
+                "value": 0.029999999329447746
+              },
+              {
+                "name": "Coat IOR",
+                "value": 1.5
+              },
+              {
+                "name": "Coat Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Coat Normal",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Sheen Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Sheen Roughness",
+                "value": 0.5
+              },
+              {
+                "name": "Sheen Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Emission Color",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Emission Strength",
+                "value": 1.0
+              },
+              {
+                "name": "Thin Film Thickness",
+                "value": 0.0
+              },
+              {
+                "name": "Thin Film IOR",
+                "value": 1.3300000429153442
+              }
+            ]
+          },
+          {
+            "name": "Material Output",
+            "type": "ShaderNodeOutputMaterial",
+            "inputs": [
+              {
+                "name": "Displacement",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Thickness",
+                "value": 0.0
+              }
+            ]
+          }
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "R0",
+        "properties": {
+          "unity_source_material": "(private provider path omitted)",
+          "unity_material_guid": "afd253dd071f7e5469e24392cdbf181c",
+          "unity_material_file_id": "2100000",
+          "unity_material_path": "Assets/HolmesOrderedFacePlan/R0.mat",
+          "unity_source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "unity_material_name": "R0",
+          "_vapb_source_material_sha256": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999",
+          "unity_shader_guid": "0000000000000000f000000000000000",
+          "unity_shader_name": "Standard",
+          "unity_shader_family": "standard",
+          "unity_shader_variant": "",
+          "unity_props": "{\"colors\": {\"_Color\": [1.0, 1.0, 1.0, 1.0], \"_EmissionColor\": [0.0, 0.0, 0.0, 1.0]}, \"floats\": {\"_BumpScale\": 1.0, \"_Cutoff\": 0.5, \"_DetailNormalMapScale\": 1.0, \"_DstBlend\": 0.0, \"_GlossMapScale\": 1.0, \"_Glossiness\": 0.5, \"_GlossyReflections\": 1.0, \"_Metallic\": 0.0, \"_Mode\": 0.0, \"_OcclusionStrength\": 1.0, \"_Parallax\": 0.02, \"_SmoothnessTextureChannel\": 0.0, \"_SpecularHighlights\": 1.0, \"_SrcBlend\": 1.0, \"_UVSec\": 0.0, \"_ZWrite\": 1.0, \"roughness\": 0.5, \"smoothness\": 0.5}, \"ints\": {}, \"invalid_keywords\": [], \"keywords\": [], \"normalized_extras\": {\"standard\": {\"alpha_clip\": false, \"mode\": 0, \"surface\": 0}}, \"render_queue\": -1, \"textures\": {\"_BumpMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_BumpMap\", \"scale\": [1.0, 1.0]}, \"_DetailAlbedoMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailAlbedoMap\", \"scale\": [1.0, 1.0]}, \"_DetailMask\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailMask\", \"scale\": [1.0, 1.0]}, \"_DetailNormalMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailNormalMap\", \"scale\": [1.0, 1.0]}, \"_EmissionMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_EmissionMap\", \"scale\": [1.0, 1.0]}, \"_MainTex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MainTex\", \"scale\": [1.0, 1.0]}, \"_MetallicGlossMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MetallicGlossMap\", \"scale\": [1.0, 1.0]}, \"_OcclusionMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_OcclusionMap\", \"scale\": [1.0, 1.0]}, \"_ParallaxMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_ParallaxMap\", \"scale\": [1.0, 1.0]}}, \"warnings\": []}",
+          "unity_normalized": "{\"alpha_cutoff\": 0.5, \"alpha_mode\": \"opaque\", \"base_color\": [1.0, 1.0, 1.0, 1.0], \"base_color_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MainTex\", \"scale\": [1.0, 1.0]}, \"cull_backface\": true, \"emission_color\": [0.0, 0.0, 0.0, 1.0], \"emission_strength\": 1.0, \"emission_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_EmissionMap\", \"scale\": [1.0, 1.0]}, \"extras\": {\"standard\": {\"alpha_clip\": false, \"mode\": 0, \"surface\": 0}}, \"family\": \"standard\", \"lighting\": \"pbr\", \"material_guid\": \"afd253dd071f7e5469e24392cdbf181c\", \"material_path\": \"Assets/HolmesOrderedFacePlan/R0.mat\", \"metallic\": 0.0, \"metallic_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MetallicGlossMap\", \"scale\": [1.0, 1.0]}, \"name\": \"R0\", \"normal_strength\": 1.0, \"normal_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_BumpMap\", \"scale\": [1.0, 1.0]}, \"roughness\": 0.5, \"shader_guid\": \"0000000000000000f000000000000000\", \"shader_name\": \"Standard\", \"warnings\": []}",
+          "_vapb_material_owner_usage": "[{\"material_file_id\": \"2100000\", \"material_guid\": \"afd253dd071f7e5469e24392cdbf181c\", \"material_sha256\": \"3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999\", \"occurrence_id\": \"e340820f96f1774a1712ec9ca2468a1b7d45155aa39f8910f48fb7136fbcc6ca\", \"owner_label\": \"Receiver\", \"provider_package_id\": \"sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf\", \"root_asset_guid\": \"983dd9d36c5824d488269d7d6d6f0434\", \"root_member_id\": \"983dd9d36c5824d488269d7d6d6f0434\", \"root_package_id\": \"sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf\", \"root_revision_sha256\": \"80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104\", \"source_revision_sha256\": \"80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104\"}]"
+        },
+        "diffuse_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "use_nodes": true,
+        "nodes": [
+          {
+            "name": "Principled BSDF",
+            "type": "ShaderNodeBsdfPrincipled",
+            "inputs": [
+              {
+                "name": "Base Color",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Metallic",
+                "value": 0.0
+              },
+              {
+                "name": "Roughness",
+                "value": 0.5
+              },
+              {
+                "name": "IOR",
+                "value": 1.5
+              },
+              {
+                "name": "Alpha",
+                "value": 1.0
+              },
+              {
+                "name": "Thin Wall",
+                "value": false
+              },
+              {
+                "name": "Normal",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Diffuse Roughness",
+                "value": 0.0
+              },
+              {
+                "name": "Subsurface Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Subsurface Radius",
+                "value": [
+                  1.0,
+                  0.20000000298023224,
+                  0.10000000149011612
+                ]
+              },
+              {
+                "name": "Subsurface Scale",
+                "value": 0.004999999888241291
+              },
+              {
+                "name": "Subsurface IOR",
+                "value": 1.399999976158142
+              },
+              {
+                "name": "Subsurface Anisotropy",
+                "value": 0.0
+              },
+              {
+                "name": "Specular IOR Level",
+                "value": 0.5
+              },
+              {
+                "name": "Specular Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Anisotropic",
+                "value": 0.0
+              },
+              {
+                "name": "Anisotropic Rotation",
+                "value": 0.0
+              },
+              {
+                "name": "Tangent",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Transmission Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Coat Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Coat Roughness",
+                "value": 0.029999999329447746
+              },
+              {
+                "name": "Coat IOR",
+                "value": 1.5
+              },
+              {
+                "name": "Coat Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Coat Normal",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Sheen Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Sheen Roughness",
+                "value": 0.5
+              },
+              {
+                "name": "Sheen Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Emission Color",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Emission Strength",
+                "value": 1.0
+              },
+              {
+                "name": "Thin Film Thickness",
+                "value": 0.0
+              },
+              {
+                "name": "Thin Film IOR",
+                "value": 1.3300000429153442
+              }
+            ]
+          },
+          {
+            "name": "Material Output",
+            "type": "ShaderNodeOutputMaterial",
+            "inputs": [
+              {
+                "name": "Displacement",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Thickness",
+                "value": 0.0
+              }
+            ]
+          }
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "R3",
+        "properties": {
+          "unity_source_material": "(private provider path omitted)",
+          "unity_material_guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "unity_material_file_id": "2100000",
+          "unity_material_path": "Assets/HolmesOrderedFacePlan/R3.mat",
+          "unity_source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "unity_material_name": "R3",
+          "_vapb_source_material_sha256": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71",
+          "unity_shader_guid": "0000000000000000f000000000000000",
+          "unity_shader_name": "Standard",
+          "unity_shader_family": "standard",
+          "unity_shader_variant": "",
+          "unity_props": "{\"colors\": {\"_Color\": [1.0, 1.0, 1.0, 1.0], \"_EmissionColor\": [0.0, 0.0, 0.0, 1.0]}, \"floats\": {\"_BumpScale\": 1.0, \"_Cutoff\": 0.5, \"_DetailNormalMapScale\": 1.0, \"_DstBlend\": 0.0, \"_GlossMapScale\": 1.0, \"_Glossiness\": 0.5, \"_GlossyReflections\": 1.0, \"_Metallic\": 0.0, \"_Mode\": 0.0, \"_OcclusionStrength\": 1.0, \"_Parallax\": 0.02, \"_SmoothnessTextureChannel\": 0.0, \"_SpecularHighlights\": 1.0, \"_SrcBlend\": 1.0, \"_UVSec\": 0.0, \"_ZWrite\": 1.0, \"roughness\": 0.5, \"smoothness\": 0.5}, \"ints\": {}, \"invalid_keywords\": [], \"keywords\": [], \"normalized_extras\": {\"standard\": {\"alpha_clip\": false, \"mode\": 0, \"surface\": 0}}, \"render_queue\": -1, \"textures\": {\"_BumpMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_BumpMap\", \"scale\": [1.0, 1.0]}, \"_DetailAlbedoMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailAlbedoMap\", \"scale\": [1.0, 1.0]}, \"_DetailMask\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailMask\", \"scale\": [1.0, 1.0]}, \"_DetailNormalMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailNormalMap\", \"scale\": [1.0, 1.0]}, \"_EmissionMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_EmissionMap\", \"scale\": [1.0, 1.0]}, \"_MainTex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MainTex\", \"scale\": [1.0, 1.0]}, \"_MetallicGlossMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MetallicGlossMap\", \"scale\": [1.0, 1.0]}, \"_OcclusionMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_OcclusionMap\", \"scale\": [1.0, 1.0]}, \"_ParallaxMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_ParallaxMap\", \"scale\": [1.0, 1.0]}}, \"warnings\": []}",
+          "unity_normalized": "{\"alpha_cutoff\": 0.5, \"alpha_mode\": \"opaque\", \"base_color\": [1.0, 1.0, 1.0, 1.0], \"base_color_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MainTex\", \"scale\": [1.0, 1.0]}, \"cull_backface\": true, \"emission_color\": [0.0, 0.0, 0.0, 1.0], \"emission_strength\": 1.0, \"emission_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_EmissionMap\", \"scale\": [1.0, 1.0]}, \"extras\": {\"standard\": {\"alpha_clip\": false, \"mode\": 0, \"surface\": 0}}, \"family\": \"standard\", \"lighting\": \"pbr\", \"material_guid\": \"4d7af3be41387054c9f86b68e180d9e7\", \"material_path\": \"Assets/HolmesOrderedFacePlan/R3.mat\", \"metallic\": 0.0, \"metallic_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MetallicGlossMap\", \"scale\": [1.0, 1.0]}, \"name\": \"R3\", \"normal_strength\": 1.0, \"normal_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_BumpMap\", \"scale\": [1.0, 1.0]}, \"roughness\": 0.5, \"shader_guid\": \"0000000000000000f000000000000000\", \"shader_name\": \"Standard\", \"warnings\": []}",
+          "_vapb_material_owner_usage": "[{\"material_file_id\": \"2100000\", \"material_guid\": \"4d7af3be41387054c9f86b68e180d9e7\", \"material_sha256\": \"58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71\", \"occurrence_id\": \"e340820f96f1774a1712ec9ca2468a1b7d45155aa39f8910f48fb7136fbcc6ca\", \"owner_label\": \"Receiver\", \"provider_package_id\": \"sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf\", \"root_asset_guid\": \"983dd9d36c5824d488269d7d6d6f0434\", \"root_member_id\": \"983dd9d36c5824d488269d7d6d6f0434\", \"root_package_id\": \"sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf\", \"root_revision_sha256\": \"80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104\", \"source_revision_sha256\": \"80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104\"}]"
+        },
+        "diffuse_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "use_nodes": true,
+        "nodes": [
+          {
+            "name": "Principled BSDF",
+            "type": "ShaderNodeBsdfPrincipled",
+            "inputs": [
+              {
+                "name": "Base Color",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Metallic",
+                "value": 0.0
+              },
+              {
+                "name": "Roughness",
+                "value": 0.5
+              },
+              {
+                "name": "IOR",
+                "value": 1.5
+              },
+              {
+                "name": "Alpha",
+                "value": 1.0
+              },
+              {
+                "name": "Thin Wall",
+                "value": false
+              },
+              {
+                "name": "Normal",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Diffuse Roughness",
+                "value": 0.0
+              },
+              {
+                "name": "Subsurface Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Subsurface Radius",
+                "value": [
+                  1.0,
+                  0.20000000298023224,
+                  0.10000000149011612
+                ]
+              },
+              {
+                "name": "Subsurface Scale",
+                "value": 0.004999999888241291
+              },
+              {
+                "name": "Subsurface IOR",
+                "value": 1.399999976158142
+              },
+              {
+                "name": "Subsurface Anisotropy",
+                "value": 0.0
+              },
+              {
+                "name": "Specular IOR Level",
+                "value": 0.5
+              },
+              {
+                "name": "Specular Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Anisotropic",
+                "value": 0.0
+              },
+              {
+                "name": "Anisotropic Rotation",
+                "value": 0.0
+              },
+              {
+                "name": "Tangent",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Transmission Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Coat Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Coat Roughness",
+                "value": 0.029999999329447746
+              },
+              {
+                "name": "Coat IOR",
+                "value": 1.5
+              },
+              {
+                "name": "Coat Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Coat Normal",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Sheen Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Sheen Roughness",
+                "value": 0.5
+              },
+              {
+                "name": "Sheen Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Emission Color",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Emission Strength",
+                "value": 1.0
+              },
+              {
+                "name": "Thin Film Thickness",
+                "value": 0.0
+              },
+              {
+                "name": "Thin Film IOR",
+                "value": 1.3300000429153442
+              }
+            ]
+          },
+          {
+            "name": "Material Output",
+            "type": "ShaderNodeOutputMaterial",
+            "inputs": [
+              {
+                "name": "Displacement",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Thickness",
+                "value": 0.0
+              }
+            ]
+          }
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      },
+      {
+        "name": "R1",
+        "properties": {
+          "unity_source_material": "(private provider path omitted)",
+          "unity_material_guid": "70c1cb3bd3a723141a677eca237e252c",
+          "unity_material_file_id": "2100000",
+          "unity_material_path": "Assets/HolmesOrderedFacePlan/R1.mat",
+          "unity_source_package_id": "sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf",
+          "unity_material_name": "R1",
+          "_vapb_source_material_sha256": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41",
+          "unity_shader_guid": "0000000000000000f000000000000000",
+          "unity_shader_name": "Standard",
+          "unity_shader_family": "standard",
+          "unity_shader_variant": "",
+          "unity_props": "{\"colors\": {\"_Color\": [1.0, 1.0, 1.0, 1.0], \"_EmissionColor\": [0.0, 0.0, 0.0, 1.0]}, \"floats\": {\"_BumpScale\": 1.0, \"_Cutoff\": 0.5, \"_DetailNormalMapScale\": 1.0, \"_DstBlend\": 0.0, \"_GlossMapScale\": 1.0, \"_Glossiness\": 0.5, \"_GlossyReflections\": 1.0, \"_Metallic\": 0.0, \"_Mode\": 0.0, \"_OcclusionStrength\": 1.0, \"_Parallax\": 0.02, \"_SmoothnessTextureChannel\": 0.0, \"_SpecularHighlights\": 1.0, \"_SrcBlend\": 1.0, \"_UVSec\": 0.0, \"_ZWrite\": 1.0, \"roughness\": 0.5, \"smoothness\": 0.5}, \"ints\": {}, \"invalid_keywords\": [], \"keywords\": [], \"normalized_extras\": {\"standard\": {\"alpha_clip\": false, \"mode\": 0, \"surface\": 0}}, \"render_queue\": -1, \"textures\": {\"_BumpMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_BumpMap\", \"scale\": [1.0, 1.0]}, \"_DetailAlbedoMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailAlbedoMap\", \"scale\": [1.0, 1.0]}, \"_DetailMask\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailMask\", \"scale\": [1.0, 1.0]}, \"_DetailNormalMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_DetailNormalMap\", \"scale\": [1.0, 1.0]}, \"_EmissionMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_EmissionMap\", \"scale\": [1.0, 1.0]}, \"_MainTex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MainTex\", \"scale\": [1.0, 1.0]}, \"_MetallicGlossMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MetallicGlossMap\", \"scale\": [1.0, 1.0]}, \"_OcclusionMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_OcclusionMap\", \"scale\": [1.0, 1.0]}, \"_ParallaxMap\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_ParallaxMap\", \"scale\": [1.0, 1.0]}}, \"warnings\": []}",
+          "unity_normalized": "{\"alpha_cutoff\": 0.5, \"alpha_mode\": \"opaque\", \"base_color\": [1.0, 1.0, 1.0, 1.0], \"base_color_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MainTex\", \"scale\": [1.0, 1.0]}, \"cull_backface\": true, \"emission_color\": [0.0, 0.0, 0.0, 1.0], \"emission_strength\": 1.0, \"emission_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_EmissionMap\", \"scale\": [1.0, 1.0]}, \"extras\": {\"standard\": {\"alpha_clip\": false, \"mode\": 0, \"surface\": 0}}, \"family\": \"standard\", \"lighting\": \"pbr\", \"material_guid\": \"70c1cb3bd3a723141a677eca237e252c\", \"material_path\": \"Assets/HolmesOrderedFacePlan/R1.mat\", \"metallic\": 0.0, \"metallic_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_MetallicGlossMap\", \"scale\": [1.0, 1.0]}, \"name\": \"R1\", \"normal_strength\": 1.0, \"normal_tex\": {\"file_id\": 0, \"guid\": \"\", \"offset\": [0.0, 0.0], \"property_name\": \"_BumpMap\", \"scale\": [1.0, 1.0]}, \"roughness\": 0.5, \"shader_guid\": \"0000000000000000f000000000000000\", \"shader_name\": \"Standard\", \"warnings\": []}",
+          "_vapb_material_owner_usage": "[{\"material_file_id\": \"2100000\", \"material_guid\": \"70c1cb3bd3a723141a677eca237e252c\", \"material_sha256\": \"bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41\", \"occurrence_id\": \"e340820f96f1774a1712ec9ca2468a1b7d45155aa39f8910f48fb7136fbcc6ca\", \"owner_label\": \"Receiver\", \"provider_package_id\": \"sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf\", \"root_asset_guid\": \"983dd9d36c5824d488269d7d6d6f0434\", \"root_member_id\": \"983dd9d36c5824d488269d7d6d6f0434\", \"root_package_id\": \"sha256:5492475a7231ba21d6f4c20308e2db84865df7e08770aa5c4bd9fd84f7064dcf\", \"root_revision_sha256\": \"80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104\", \"source_revision_sha256\": \"80d1362d24b338645a77fa475b00c9e7dea4afa63b54dc5b699c63fdadcbe104\"}]"
+        },
+        "diffuse_color": [
+          1.0,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "use_nodes": true,
+        "nodes": [
+          {
+            "name": "Principled BSDF",
+            "type": "ShaderNodeBsdfPrincipled",
+            "inputs": [
+              {
+                "name": "Base Color",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Metallic",
+                "value": 0.0
+              },
+              {
+                "name": "Roughness",
+                "value": 0.5
+              },
+              {
+                "name": "IOR",
+                "value": 1.5
+              },
+              {
+                "name": "Alpha",
+                "value": 1.0
+              },
+              {
+                "name": "Thin Wall",
+                "value": false
+              },
+              {
+                "name": "Normal",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Diffuse Roughness",
+                "value": 0.0
+              },
+              {
+                "name": "Subsurface Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Subsurface Radius",
+                "value": [
+                  1.0,
+                  0.20000000298023224,
+                  0.10000000149011612
+                ]
+              },
+              {
+                "name": "Subsurface Scale",
+                "value": 0.004999999888241291
+              },
+              {
+                "name": "Subsurface IOR",
+                "value": 1.399999976158142
+              },
+              {
+                "name": "Subsurface Anisotropy",
+                "value": 0.0
+              },
+              {
+                "name": "Specular IOR Level",
+                "value": 0.5
+              },
+              {
+                "name": "Specular Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Anisotropic",
+                "value": 0.0
+              },
+              {
+                "name": "Anisotropic Rotation",
+                "value": 0.0
+              },
+              {
+                "name": "Tangent",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Transmission Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Coat Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Coat Roughness",
+                "value": 0.029999999329447746
+              },
+              {
+                "name": "Coat IOR",
+                "value": 1.5
+              },
+              {
+                "name": "Coat Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Coat Normal",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Sheen Weight",
+                "value": 0.0
+              },
+              {
+                "name": "Sheen Roughness",
+                "value": 0.5
+              },
+              {
+                "name": "Sheen Tint",
+                "value": [
+                  1.0,
+                  1.0,
+                  1.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Emission Color",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0,
+                  1.0
+                ]
+              },
+              {
+                "name": "Emission Strength",
+                "value": 1.0
+              },
+              {
+                "name": "Thin Film Thickness",
+                "value": 0.0
+              },
+              {
+                "name": "Thin Film IOR",
+                "value": 1.3300000429153442
+              }
+            ]
+          },
+          {
+            "name": "Material Output",
+            "type": "ShaderNodeOutputMaterial",
+            "inputs": [
+              {
+                "name": "Displacement",
+                "value": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              {
+                "name": "Thickness",
+                "value": 0.0
+              }
+            ]
+          }
+        ],
+        "links": [
+          [
+            "Principled BSDF",
+            "BSDF",
+            "Material Output",
+            "Surface"
+          ]
+        ]
+      }
+    ]
+  },
+  "package_sha256": "7c6aff2b7f6fd57749a93b508873d7a37188ba8c8cb5aae938af50c5ed3db277",
+  "fbx_sha256": "a41a24086a8e505c7fa9f19e98b3221a470eab647107f4bf4ccdfec916580232",
+  "manifest_sha256": "7f2b2ead902fc5e84c050da34ee09367ec5a2e83088256864580ae7559456cad",
+  "task": {
+    "export_object_id": "VAPB-OBJ-16112287257f4691824818a90144cfec",
+    "kind": "BUILD_EXPORTED_STATIC_V2",
+    "material_slots": [
+      {
+        "export_material_id": "VAPB-MAT-e205ab1e97f34e47adb542255ae06d1e",
+        "slot_index": "0"
+      },
+      {
+        "export_material_id": "VAPB-MAT-9b136f9cb35b4e099767b3898dc00050",
+        "slot_index": "1"
+      },
+      {
+        "export_material_id": "VAPB-MAT-daa64ef9e8f54dfbb4116a31de06bd9e",
+        "slot_index": "2"
+      },
+      {
+        "export_material_id": "VAPB-MAT-89c74b009d564e4990c1e00c497e7ade",
+        "slot_index": "3"
+      }
+    ],
+    "material_transport_version": 2,
+    "materials": [
+      {
+        "asset_sha256": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467",
+        "export_material_id": "VAPB-MAT-e205ab1e97f34e47adb542255ae06d1e",
+        "file_id": "2100000",
+        "guid": "242d369718abeb942873ec054737cf94",
+        "shader": {
+          "classification": "UNITY_BUILTIN",
+          "file_id": "46",
+          "guid": "0000000000000000f000000000000000"
+        },
+        "textures": []
+      },
+      {
+        "asset_sha256": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999",
+        "export_material_id": "VAPB-MAT-9b136f9cb35b4e099767b3898dc00050",
+        "file_id": "2100000",
+        "guid": "afd253dd071f7e5469e24392cdbf181c",
+        "shader": {
+          "classification": "UNITY_BUILTIN",
+          "file_id": "46",
+          "guid": "0000000000000000f000000000000000"
+        },
+        "textures": []
+      },
+      {
+        "asset_sha256": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71",
+        "export_material_id": "VAPB-MAT-daa64ef9e8f54dfbb4116a31de06bd9e",
+        "file_id": "2100000",
+        "guid": "4d7af3be41387054c9f86b68e180d9e7",
+        "shader": {
+          "classification": "UNITY_BUILTIN",
+          "file_id": "46",
+          "guid": "0000000000000000f000000000000000"
+        },
+        "textures": []
+      },
+      {
+        "asset_sha256": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41",
+        "export_material_id": "VAPB-MAT-89c74b009d564e4990c1e00c497e7ade",
+        "file_id": "2100000",
+        "guid": "70c1cb3bd3a723141a677eca237e252c",
+        "shader": {
+          "classification": "UNITY_BUILTIN",
+          "file_id": "46",
+          "guid": "0000000000000000f000000000000000"
+        },
+        "textures": []
+      }
+    ],
+    "model_guid": "4da78cf39cdc49ca93ca14a127b43dbe",
+    "model_sha256": "a41a24086a8e505c7fa9f19e98b3221a470eab647107f4bf4ccdfec916580232",
+    "prefab_path": "Assets/VAPBExport/Generated_16112287257f4691824818a90144cfec.prefab"
+  },
+  "assets": [
+    {
+      "guid": "242d369718abeb942873ec054737cf94",
+      "path": "Assets/VAPBExport/Receiver/Materials/Receiver_R2.mat",
+      "asset_sha256": "3b23130dc46f8b659c8391eea2b4d410c138674e5a5c23ae8472a8488ff63467",
+      "meta_sha256": "428010a87586d7166f0eda8cf6df8aac5120a66f9174c71d3a404e7ef9264145"
+    },
+    {
+      "guid": "4d7af3be41387054c9f86b68e180d9e7",
+      "path": "Assets/VAPBExport/Receiver/Materials/Receiver_R3.mat",
+      "asset_sha256": "58bdb05a61fb9093aae86d8bb02ab5ec8bd2b9c573e07d87d039bef4f40c2f71",
+      "meta_sha256": "cba5bc9d04752cddec8c75d72346a18918c40575c1a62bdb801072a3e55484ff"
+    },
+    {
+      "guid": "4da78cf39cdc49ca93ca14a127b43dbe",
+      "path": "Assets/VAPBExport/Generated_16112287257f4691824818a90144cfec.fbx",
+      "asset_sha256": "a41a24086a8e505c7fa9f19e98b3221a470eab647107f4bf4ccdfec916580232",
+      "meta_sha256": "6c5b5b549bb923cf1161cd728979f3f08816b9ad4a6e86bffcfcaf0db83bee1d"
+    },
+    {
+      "guid": "70c1cb3bd3a723141a677eca237e252c",
+      "path": "Assets/VAPBExport/Receiver/Materials/Receiver_R1.mat",
+      "asset_sha256": "bd7ef2ea0ee32cc5d07dd4cb223de3a2b5fa32f8b342339e939beeb68bc6ac41",
+      "meta_sha256": "a6d65eae11ec70040bdc311f4f48c2afcb5892fedb68b3ba43545847652a701e"
+    },
+    {
+      "guid": "afd253dd071f7e5469e24392cdbf181c",
+      "path": "Assets/VAPBExport/Receiver/Materials/Receiver_R0.mat",
+      "asset_sha256": "3589e54bafa01d60d5da3e119049f59eea6a94ffcbf6213127e5a0bb4970c999",
+      "meta_sha256": "796c5cd00368ccf62599c950e697d4a1a13c8b76317dda98464bf86bf2881c78"
+    },
+    {
+      "guid": "b336eab55f53cbe47e82eece8dbae291",
+      "path": "Assets/VAPBExport/manifest.json",
+      "asset_sha256": "7f2b2ead902fc5e84c050da34ee09367ec5a2e83088256864580ae7559456cad",
+      "meta_sha256": "e716d1d23a67fe4b5382185b1e28944eb2dd0bfe5f2dd8e99e03e0dad33f7abf"
+    },
+    {
+      "guid": "d288eb889dab0f52376b211c4f875134",
+      "path": "Assets/VAPBExport/VapbExportObjectMarker.cs",
+      "asset_sha256": "01e692ecda93ed309f284c743e32caa6c46f94d6b81c51ca91d5a94495b41eb1",
+      "meta_sha256": "b4690a54d3e7939549f49a604fc3f1cadca557d6aca540c789a96316d2f2bad2"
+    },
+    {
+      "guid": "e5be0cf984636e0046423986603840e8",
+      "path": "Assets/VAPBExport/Editor/VapbFinalStateFinalizer.cs",
+      "asset_sha256": "b75c6a0e36be8e50c3f687bb289be58319b30852be7b91096e2e7a5c542bae11",
+      "meta_sha256": "f1ba8f3c9bfff338cb0997b87a629ecbb4fbe411d08d0b341aa20700afde40ba"
+    },
+    {
+      "guid": "f8d79524935995afa312c6faf909c2d4",
+      "path": "Assets/VAPBExport/Editor/VapbImportAssistant.cs",
+      "asset_sha256": "236f6c7edecf4bf5e2971253db60628a628ada11d21d7153c20c2075e6fd47ad",
+      "meta_sha256": "d0014389ae6a34ff1f81010b612e60ea99f28088bdee7916d42764663b4202b8"
+    }
+  ],
+  "original_preservation": "PASS"
+}

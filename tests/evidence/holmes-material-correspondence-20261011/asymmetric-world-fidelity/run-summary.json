@@ -1,0 +1,71 @@
+{
+  "blender": {
+    "replace": {
+      "process": {
+        "actual_free_gib": 5.486915588378906,
+        "owner": "VAPB-HOLMES-20261011-07-replace",
+        "start_utc": "2026-10-11T14:02:58.5814454Z",
+        "pid": 21132,
+        "script_sha256": "7AA254EDB698372B32D6E95FEB08011A243BDDD4B2046D599AFD0383FE89C26F"
+      },
+      "exited": {
+        "exit_code": 0,
+        "pid": 21132,
+        "owned_children_absent": true,
+        "exited_utc": "2026-10-11T14:03:02.1992154Z"
+      }
+    },
+    "export": {
+      "process": {
+        "script_sha256": "E007BF3BF2737FEE1F1AD5B692C9D2A54D735557E281B212E0A09E2242AB97C1",
+        "actual_free_gib": 5.496177673339844,
+        "start_utc": "2026-10-11T14:03:34.8603333Z",
+        "pid": 31616,
+        "owner": "VAPB-HOLMES-20261011-07-export"
+      },
+      "exited": {
+        "exited_utc": "2026-10-11T14:03:38.2954212Z",
+        "exit_code": 0,
+        "owned_children_absent": true,
+        "pid": 31616
+      }
+    }
+  },
+  "unity": {
+    "pid": 29960,
+    "startUtc": "2026-10-11T14:05:01.5778585Z",
+    "exitUtc": "2026-10-11T14:05:15.8058741Z",
+    "exitCode": 0,
+    "actual_free_gib": 5.022083282470703,
+    "release": {
+      "capturedUtc": "2026-10-11T14:05:15.9009672Z",
+      "owner": "VAPB-HOLMES-20261011-07",
+      "ownedChildrenAbsent": true,
+      "lockAbsent": true,
+      "normalExitCode": 0,
+      "releaseVerified": true
+    }
+  },
+  "resource_return": {
+    "capturedUtc": "2026-10-11T14:07:07.8210412Z",
+    "processCensusConflict": false,
+    "mutexAvailableAndProbeReleased": true,
+    "poolAllFree": true,
+    "freePhysicalMemoryGiB": 5.269752502441406,
+    "newProjectLockAbsent": true,
+    "blenderAbsent": true
+  },
+  "product_source_sha256": {
+    "export/final_state_package.py": "8413dffbcb0c6de8a1e81ff6351b0198e5cfaa51c864c261dccdd2f31710dd59",
+    "export/fbx_export.py": "e4a81ee7e0851eb1da30967b5480bc7d7d3b320582ae3ca424c09eb5f602f1d4",
+    "unity_editor/Editor/VapbFinalStateFinalizer.cs": "b75c6a0e36be8e50c3f687bb289be58319b30852be7b91096e2e7a5c542bae11",
+    "unity_editor/Editor/VapbImportAssistant.cs": "236f6c7edecf4bf5e2971253db60628a628ada11d21d7153c20c2075e6fd47ad"
+  },
+  "executed_observer_sha256": "cffa22361a4b5f27083d38d4f25152321afcdece3db99e652995f8d2f54f2563",
+  "original_frozen_hashes_unchanged": 12,
+  "product_code_changes": false,
+  "oracle_frozen_sha256": "49926016fb5bcf7b43b80793b6737a32a7127d295d757130a24f66cfb2417941",
+  "pre_consumer_freeze_utc": "2026-10-11T14:04:33.972511+00:00",
+  "public_blender_line_endings_only_normalized": true,
+  "blender_observer_phase_difference": "replace material links represented as Python tuples; export uses lists to compare reopened JSON arrays. Serialized frozen state is identical. Both executed script SHA256 values preserved in process records."
+}

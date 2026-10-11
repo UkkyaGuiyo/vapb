@@ -1,0 +1,311 @@
+{
+  "instruction_id": "HOLMES-20261011-07",
+  "verdict": "VERIFIED_IN_SCOPE",
+  "H_A": "SUPPORTED_IN_SCOPE",
+  "H_B": "NOT_OBSERVED_IN_SCOPE",
+  "first_failed_stage": null,
+  "positive": {
+    "A_material": {
+      "status": "PASS"
+    },
+    "B_world": {
+      "status": "PASS",
+      "max_component_error": 5.21540641784668e-07,
+      "coverage": [
+        {
+          "plane": "+X",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "+Y",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "+Z",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "-X",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "-Y",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        },
+        {
+          "plane": "-Z",
+          "triangles": 2,
+          "boundary_and_internal_diagonal": "PASS"
+        }
+      ],
+      "tolerance": 6.550895477630547e-05
+    },
+    "C_normal": {
+      "status": "PASS",
+      "max_component_error": 1.495826100761377e-07,
+      "tolerance": 3.0517578125e-05
+    },
+    "D_winding": {
+      "status": "PASS",
+      "minimum_outward_dot": 0.999999999999976,
+      "dot_minimum": 0.999999,
+      "basis_determinant": -1,
+      "unity_front": "clockwise relative to camera",
+      "render_culling": "NOT_RUN"
+    }
+  },
+  "negative_controls": {
+    "one_face_material_swap": {
+      "expected_rejection": "A_material",
+      "result": {
+        "A_material": {
+          "status": "FAIL",
+          "reason": "Actual face Material GUID/signedfileID differs"
+        },
+        "B_world": {
+          "status": "PASS",
+          "max_component_error": 5.21540641784668e-07,
+          "coverage": [
+            {
+              "plane": "+X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            }
+          ],
+          "tolerance": 6.550895477630547e-05
+        },
+        "C_normal": {
+          "status": "PASS",
+          "max_component_error": 1.495826100761377e-07,
+          "tolerance": 3.0517578125e-05
+        },
+        "D_winding": {
+          "status": "PASS",
+          "minimum_outward_dot": 0.999999999999976,
+          "dot_minimum": 0.999999,
+          "basis_determinant": -1,
+          "unity_front": "clockwise relative to camera",
+          "render_culling": "NOT_RUN"
+        }
+      }
+    },
+    "world_axis_swap": {
+      "expected_rejection": "B_world",
+      "result": {
+        "A_material": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence"
+        },
+        "B_world": {
+          "status": "FAIL",
+          "reason": "missing/duplicate face or incompatible topology",
+          "max_component_error": null,
+          "coverage": [
+            {
+              "plane": "+X",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "+Y",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "+Z",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-X",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-Y",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-Z",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            }
+          ],
+          "tolerance": 6.550895477630547e-05
+        },
+        "C_normal": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence",
+          "max_component_error": null,
+          "tolerance": 3.0517578125e-05
+        },
+        "D_winding": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence",
+          "minimum_outward_dot": null,
+          "dot_minimum": 0.999999,
+          "basis_determinant": -1,
+          "unity_front": "clockwise relative to camera",
+          "render_culling": "NOT_RUN"
+        }
+      }
+    },
+    "translation_loss": {
+      "expected_rejection": "B_world",
+      "result": {
+        "A_material": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence"
+        },
+        "B_world": {
+          "status": "FAIL",
+          "reason": "missing/duplicate face or incompatible topology",
+          "max_component_error": null,
+          "coverage": [
+            {
+              "plane": "+X",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "+Y",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "+Z",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-X",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-Y",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            },
+            {
+              "plane": "-Z",
+              "coverage": "FAIL",
+              "reason": "missing/duplicate face or incompatible topology"
+            }
+          ],
+          "tolerance": 6.550895477630547e-05
+        },
+        "C_normal": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence",
+          "max_component_error": null,
+          "tolerance": 3.0517578125e-05
+        },
+        "D_winding": {
+          "status": "UNDETERMINED",
+          "reason": "No independent geometric correspondence",
+          "minimum_outward_dot": null,
+          "dot_minimum": 0.999999,
+          "basis_determinant": -1,
+          "unity_front": "clockwise relative to camera",
+          "render_culling": "NOT_RUN"
+        }
+      }
+    },
+    "triangle_winding_reverse": {
+      "expected_rejection": "D_winding",
+      "result": {
+        "A_material": {
+          "status": "PASS"
+        },
+        "B_world": {
+          "status": "PASS",
+          "max_component_error": 5.21540641784668e-07,
+          "coverage": [
+            {
+              "plane": "+X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "+Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-X",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Y",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            },
+            {
+              "plane": "-Z",
+              "triangles": 2,
+              "boundary_and_internal_diagonal": "PASS"
+            }
+          ],
+          "tolerance": 6.550895477630547e-05
+        },
+        "C_normal": {
+          "status": "PASS",
+          "max_component_error": 1.495826100761377e-07,
+          "tolerance": 3.0517578125e-05
+        },
+        "D_winding": {
+          "status": "FAIL",
+          "reason": "Native front winding points inward",
+          "minimum_outward_dot": -0.999999999999976,
+          "dot_minimum": 0.999999,
+          "basis_determinant": -1,
+          "unity_front": "clockwise relative to camera",
+          "render_culling": "NOT_RUN"
+        }
+      }
+    }
+  },
+  "world_capture_recalculation_error": 2.0669492428737612e-07,
+  "normal_capture_recalculation_error": 8.044292920672547e-08,
+  "uv_used_for_correspondence": false,
+  "old_receipt_used": false,
+  "render_culling": "NOT_RUN"
+}

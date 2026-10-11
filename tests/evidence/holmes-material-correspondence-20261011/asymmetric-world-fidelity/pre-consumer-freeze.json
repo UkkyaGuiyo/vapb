@@ -1,0 +1,41 @@
+{
+  "captured_before_consumer_utc": "2026-10-11T14:04:33.972511+00:00",
+  "oracle_sha256": "49926016fb5bcf7b43b80793b6737a32a7127d295d757130a24f66cfb2417941",
+  "package_sha256": "7c6aff2b7f6fd57749a93b508873d7a37188ba8c8cb5aae938af50c5ed3db277",
+  "blender_saved_state_sha256": "aa884a128801555e93e04f074f1a05e546a29c05e8c382309b16751c67ae90e0",
+  "convention_sha256": "ceeb0a1e00f9db86ac2e41d26d550d4b65997713f30c84d80f8ee321403a25bf",
+  "previous06_control": {
+    "source": "replacement-multimaterial/native.json read-only; no rerun",
+    "sha256": "8f33d41408061abe3d2cf5f791f582b0e24e66e888dd0c453051e657d53d79b3",
+    "renderer_matrix": [
+      100.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.1920928955078125e-05,
+      -99.99999237060547,
+      0.0,
+      0.0,
+      99.99999237060547,
+      -1.1920928955078125e-05,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "first_vertex": {
+      "x": 0.009999999776482582,
+      "y": -0.009999999776482582,
+      "z": -0.009999999776482582
+    }
+  },
+  "product_source_sha256": {
+    "export/final_state_package.py": "8413dffbcb0c6de8a1e81ff6351b0198e5cfaa51c864c261dccdd2f31710dd59",
+    "export/fbx_export.py": "e4a81ee7e0851eb1da30967b5480bc7d7d3b320582ae3ca424c09eb5f602f1d4",
+    "unity_editor/Editor/VapbFinalStateFinalizer.cs": "b75c6a0e36be8e50c3f687bb289be58319b30852be7b91096e2e7a5c542bae11",
+    "unity_editor/Editor/VapbImportAssistant.cs": "236f6c7edecf4bf5e2971253db60628a628ada11d21d7153c20c2075e6fd47ad"
+  },
+  "executed_observer_sha256": "cffa22361a4b5f27083d38d4f25152321afcdece3db99e652995f8d2f54f2563"
+}
