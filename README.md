@@ -2,7 +2,13 @@
 
 ## Current handoff
 
-Current installable WIP snapshot: `vapb-c5585a6.zip`, code commit `c5585a669320faece2133cab80470ca65104fa09`, SHA-256 `9c71fb2dd8cff24615e15245efc7da7b6dd5deed4c411d353f786b53de30f04c`. Rebuild from this checkout with:
+Current audit source: [`feature/material-safety-audit-20261011`](https://github.com/UkkyaGuiyo/vapb/tree/feature/material-safety-audit-20261011), based on `e675fe6432d8e085af8aa392ec6fd3d4a8a969f7`. See [the classified findings, measurements and limits](docs/2026-10-11-material-safety-audit.md). This source removes name-only Material assignment, preserves other Assistant entries on individual cancellation, and skips provider preflight for remembered prompts while retaining fresh display/Apply validation.
+
+Locally checked installation ZIP retained before this audit: source `7727a7dfb14c54a59e3beb461ea0186641e5eb99`, SHA-256 `1b236ba739a5f4383a8f39c0fbab7f658e02c2060ac9dcedf7557c3dced6ca53`. This local ZIP is not a Release asset and does not include these audit fixes. No new ZIP was built in this audit.
+
+The newest listed [Experimental / Alpha prerelease](https://github.com/UkkyaGuiyo/vapb/releases/tag/v0.4.0-alpha.20260930.7d21318) targets `7d21318444c4d422565fe54f373ac1af8444a0ee`; its add-on ZIP SHA-256 is `8080c4c49883a2c1962cc5de2497ca032b8b95bf4481e8f5cf3dae91ec369c47`. The default branch `feature/multi-package-identity` still points its handoff at an older development checkpoint. Use the audit source link above for these fixes; default-branch integration remains pending.
+
+Historical installable WIP snapshot: `vapb-c5585a6.zip`, code commit `c5585a669320faece2133cab80470ca65104fa09`, SHA-256 `9c71fb2dd8cff24615e15245efc7da7b6dd5deed4c411d353f786b53de30f04c`. Rebuild that historical snapshot with:
 
 ```powershell
 python tools/build_distribution_zip.py --repo . --revision c5585a669320faece2133cab80470ca65104fa09 --output vapb-c5585a6.zip

@@ -1,5 +1,7 @@
 # VAPB development handoff
 
+Current audit: [`feature/material-safety-audit-20261011`](https://github.com/UkkyaGuiyo/vapb/tree/feature/material-safety-audit-20261011), based on `e675fe6432d8e085af8aa392ec6fd3d4a8a969f7`. Read [Material safety findings](docs/2026-10-11-material-safety-audit.md) for the current source fixes, exact test/performance scope and remaining proof gaps. Source, local installation ZIP and published prerelease are different revisions; [README](README.md#current-handoff) identifies them separately. Older checkpoints below remain historical evidence.
+
 Latest supported user flow: [README → 対応範囲のPackage → Blender編集 → Unity復帰](README.md). Normal input does not require a Unity preprocessing project. After output import and compilation, use the automatic VAPB confirmation Window and explicit Apply; reopen it from Tools → VAPB → 編集内容を確認. Source-model Skin creates a separate Variant; the static final-state route creates a new Prefab.
 
 Latest named source-model Skin: [unoccupied-Project placement](tests/evidence/remapped_model_replacement_export_20261008/named-material-placement-unity-summary.json), with original bytes/GUIDs and preexisting files preserved. Earlier path-collision evidence remains separate.
