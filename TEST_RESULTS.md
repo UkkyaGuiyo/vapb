@@ -572,3 +572,23 @@ These rows retain previous observations and incorporate the newly executed ordin
 | 24 | Limited edited/mixed linked Variant | Preserve incident hold; remaining parity/Action/rendering |
 
 No production defect was established in these new observations, so production code remains unchanged. Full real-asset roundtrip, strict Skin numeric transport, deformation/rendering, edited Animation return and human GUI are not established by this stage inventory.
+
+### Concrete residual dependencies and existing witness limits (2026-10-11)
+
+This follow-up reads existing saved observations; it does not repeat failed product import/export or native Finalizer runs. Private product names, paths, raw identifiers and payloads remain local.
+
+- For inputs 07, 19 and 20, the existing witness schema/probe supplies Mesh/Renderer/Bone subasset identity, not embedded Material GUID/localID or slot semantics. The selected source records have no Material overrides and empty model externalObjects. The current consumer therefore has no exact Material assignment to recover. Repeating the same native witness cannot fill those absent fields; no schema extension, name-based choice or synthetic provenance is applied.
+- For input 09, all fifteen serialized Mesh references join the existing exact native witness. Read-only saved-scene inspection separates the remaining three slots: one Mesh has two Blender slots but only one serialized Renderer slot, leaving the extra slot without a proven source assignment; another Mesh has two distinct serialized Material identities. The current witness consumer and confirmation Material plan explicitly require order-independent assignments and reject distinct identities without native face-to-slot correspondence. The existing witness does not supply that correspondence. No null assignment, slot deletion or guard change is inferred.
+- Same-session receipt continuity is false for all fifteen Meshes after reopening, as its documented contract requires; this is not a corruption finding. Persistent occurrence and object/Mesh receipt IDs match on the two inspected objects. The saved projection also records fifteen SKIN_SOURCE_FRAME_MISMATCH diagnostics, so partial Material binding is not proof of complete Bone/pose restoration. The inspection never saves or exports the source scene; its file hash is unchanged.
+- Read-only Texture lookup reuses the original first-visible-root selection algorithm and verifies its recorded Mesh count. Actual selected Material assets yield the following unresolved identities; every exact GUID has zero candidate in the existing twenty-four-input catalogs. The saved scenes remain byte-unchanged. This is catalog-scope evidence, not complete environment or ownership absence.
+
+| Input | Observed Mesh selection | Missing Texture identities / property references | Properties |
+|---|---:|---:|---|
+| 02 | 34 | 1 / 3 | MatCap and MatCap2nd |
+| 05 | 10 | 4 / 29 | Shade maps, Normal, Outline, Rim |
+| 14 | 26 | 8 / 20 | Base maps, Fur masks, MatCap, Outline-width, Rim-shade |
+| 16 | 26 | 7 / 18 | Fur masks, MatCap, Outline-width, Rim-shade |
+
+- The static partial-return input 06 has one exact declared Shader identity with no provider in those catalogs. The static Texture-boundary input 21 has one missing non-null Texture identity with no catalog provider. Input 23's two observed unavailable-Shader slots reference one distinct Shader identity, also without a catalog provider. No provider install, substitute or unchanged failed run follows these lookups.
+- Input 24's most advanced already-measured result is the edited/mixed linked Variant with the intentional exact donor Material and zero unavailable Shader observations on its one measured target. The prior inherited-Material edited result remains separate. Zero unavailable Shaders does not establish exact Shader identity or rendered appearance. Geometry/weight/deformation/rendering parity and edited Animation restoration remain unproved; the private incident hold remains intact.
+- No independently runnable ordinary continuation was identified for these residual dependencies within the current inputs and existing operators. Exact missing assets outside this catalog require an explicitly permitted owned provider scope. Embedded Material semantics, the extra slot and native face-to-slot proof need an approved meaning/consumer path; they are not solved by more of the existing Mesh/Bone witness. No concrete production defect was established and no source fix or new verification framework was introduced.
