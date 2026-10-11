@@ -2,171 +2,188 @@
 
 ## 現在の指示
 
-- Instruction ID: `HOLMES-20261011`
+- Instruction ID: `HOLMES-20261011-02`
 - Status: `READY`
-- 作成: 2026-10-11 JST。発行時刻・指示版はこのファイルを更新したGitHub commitで特定する。
-- 作業名: **Materialの初登場順だけで十分か――Keep Quadsによる面区分の分岐を調べ、入力側の適用条件をコードで切り分ける。**
-- 実行開始: **次の日次実行を待たず、未実行なら本書を読んで着手する。** ユーザーから「早速。ワトソンが止まっている」と即時指示の依頼があった。
+- 作成日: 2026-10-11 JST。発行時刻・正確な指示版は本ファイルの更新commitで特定する。
+- 作業名: **Material×面種別の初出順から、面→受信RendererのMaterial参照という候補プランを作り、未観測の6面で反証する。**
 - Repository: `UkkyaGuiyo/vapb`
-- 確認した開発branch: `feature/holmes-material-correspondence-20261011`
-- 確認した開発SHA: `842067fb1aa29eeb4b9f3a4560ac6d529a21f50a`
-- 推奨作業branch: `feature/holmes-topology-boundary-20261011`。開始時に既存branchと作業中の差分を確認し、衝突しない隔離作業先を使う。既存branchをresetしない。
-- 前回の指示ファイル: [受け渡し初期設定 d136832](https://github.com/UkkyaGuiyo/vapb/blob/d13683253453c33ab00e8c52450813e480fcdd7b/HOLMES_TO_WATSON.md)。技術指示未発行だった初期状態を、本書のREADYで置き換える。
-- 引き継ぐ結果: [HOLMES最終報告・固定版](https://github.com/UkkyaGuiyo/vapb/blob/842067fb1aa29eeb4b9f3a4560ac6d529a21f50a/tests/evidence/holmes-material-correspondence-20261011/FINAL_REPORT.md)。R/A/B/E/U/D/Hの既存結果は保持し、理由なく再測定しない。
+- 確認済み実開発branch: `feature/holmes-topology-boundary-20261011`
+- 確認済み実開発SHA: `e09c2ee31b83e22a8fc77dd850961e9fe1be7c76`
+- 推奨作業branch: `feature/holmes-ordered-face-plan-20261011`。既存作業と衝突しない隔離先を確認して使用する。既存branchをresetしない。
+- 開始: 本書が最新のREADYで未実行なら、日次時刻を待たず着手してよい。共有実機の所有・資源制約は維持する。
+- この指示専用branchは製品sourceの最新版でも実装用checkoutでもない。
 
-**今回の完了条件は、後述する新規の一組の比較と、通常入力だけで評価できる適用条件候補を、実行可能な診断コード・証拠とともに残すこと。全FBXの普遍則の証明でも、既存のDEFER報告の書き直しでもない。製品の自動割当guard解除は今回の作業に含めない。**
+### 前回指示の扱い
 
-## 1. ホームズの推理：今回は何が新しいか
+前回 `HOLMES-20261011` は、指定されたKeep Quads OFF/ON比較・source-only診断の範囲で完了と判断した。再実行しない。本書は訂正による再試験ではなく、その結果を受けた次の作業である。
 
-既存実験は、三つのMaterialを使う12三角形が中心だった。元metaの`meshes.keepQuads`は0。H実験で変えたのはポリゴン最適化であり、四角形保持の検証ではない。
+- [前回指示94c1f11](https://github.com/UkkyaGuiyo/vapb/blob/94c1f11fb1fac73aadafd6de2d41a3297c0322f1/HOLMES_TO_WATSON.md)
+- [ワトソンの結果REPORT・e09c2ee固定版](https://github.com/UkkyaGuiyo/vapb/blob/e09c2ee31b83e22a8fc77dd850961e9fe1be7c76/tests/evidence/holmes-material-correspondence-20261011/topology-boundary/REPORT.md)
+- 実測source/証拠commit: `c3cc3ab14abe9266489ee4505129e2845d65c621`。報告commit: `e09c2ee31b83e22a8fc77dd850961e9fe1be7c76`。
+- ホームズは今回REPORT、保存されたON観測、診断・raw読取・判定コード、製品側のMaterial plan、製品仕様、変更ファイル一覧を確認した。Unity/Blenderの実験自体は再実行していない。製品復元完了とは判定していない。
 
-新たに確認したUnity 2022.3公式マニュアルには、Keep Quadsを有効にして三角形と四角形が混在する場合、両者を分けるsubmeshが作られるという説明がある。これは**Materialの実体だけでなく、面の種類も区分のキーになり得る**という具体的な競合説明である。複数Material時の正確な個数・並び・Renderer参照の扱いまでは、この記述から決めつけない。
+## 1. 証拠から更新した推理
 
-さらに、既存`judge_faces.py`の`decode()`は12三角形専用で、`native_rows()`はindex数が3の倍数なら三角形として読む。一般の新規入力で、index数だけから面の種類を決めることはできない。例えば12個のindexは四角形3面でもあり得る。これは旧三角形実験を否定する発見ではなく、**新しい実験に旧判定器を無変更で流用できない理由**である。
+前回の同一FBXはOFFで2群、ONで4群。ONの実群順は `A/Triangles, B/Quads, A/Quads, B/Triangles`、実Material参照は `[A,B,A,B]` だった。したがって、この条件では「Material UID一つ→native一群」は反証された。全面triangleの既存H1まで否定されたわけではない。
 
-今回の問いは「一つのMaterialは常に一つのnative groupか。それともMaterial×面の種類などで分かれるか」。結果は、入力解析でH1候補から何を除外すべきか、将来の対応表を一対一の配列にしてよいかを変える。単に成功例を一個増やす作業ではない。
+次の有力仮説は、**対象Model/Geometry内で、(raw Material UID, 有効topology)という組の初登場順に群を作り、同じ組の再登場は既存の群へ戻す**というもの。ただし前回の4面は四つの組が一度ずつしか現れない。その結果だけでは、組を全体でまとめる方式と、出現runごとに別群にする方式を区別できない。
 
-### 読んでから使う根拠
+もう一つ重要な点がある。PrefabのRendererが四つの群に別々のUnity Materialを指定すれば、同じraw Material Aのtriangleとquadに別の最終Materialが必要になり得る。**二つのBlenderスロットを並べ替えるだけでは表せず、面単位の割当候補が必要**という推論である。これはまだ今回の実測結果ではない。
 
-- [既存の元meta](https://github.com/UkkyaGuiyo/vapb/blob/842067fb1aa29eeb4b9f3a4560ac6d529a21f50a/tests/evidence/holmes-material-correspondence-20261011/cases/original.fbx.meta)
-- [旧判定器](https://github.com/UkkyaGuiyo/vapb/blob/842067fb1aa29eeb4b9f3a4560ac6d529a21f50a/tests/evidence/holmes-material-correspondence-20261011/judge_faces.py)
-- [PRODUCT_SPEC・入力とMaterialの責任分担](https://github.com/UkkyaGuiyo/vapb/blob/842067fb1aa29eeb4b9f3a4560ac6d529a21f50a/PRODUCT_SPEC.md)
-- [Unity 2022.3 Model tab / Geometry / Keep Quads](https://docs.unity3d.com/2022.3/Documentation/Manual/FBXImporter-Model.html)
-- [ModelImporter.keepQuads](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-keepQuads.html)
-- [Mesh.GetIndices](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Mesh.GetIndices.html)
-- [Mesh.GetBaseVertex](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Mesh.GetBaseVertex.html)
-- [Renderer.sharedMaterials](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Renderer-sharedMaterials.html)
+現在 `topology-boundary/diagnose.py` はunordered候補と `group_order=UNDETERMINED` まで。`operators/renderer_binding.py::_material_plan` は複数の異なるMaterialを未証明として拒否する。本書ではそのguardを迂回せず、手前に必要な対応プランを実験コードとして具体化する。
 
-公式資料は面種別による区分やAPIの意味の根拠であり、H1全般や特定順序の保証ではない。ホームズ自身は今回Unity/Blenderを起動しておらず、以下の結果はまだ得られていない。
+## 2. 今回の成果物・非対象
 
-## 2. 開始と作業範囲
+主作業は一つ：**通常入力から順序付きの面→Material参照候補を生成し、競合規則で答えが分かれる6面の入力一件に対して独立検証する。** 群数だけを確認する実験ではない。
 
-1. 正規remote、最新開発head、未保存差分、root/対象pathのAGENTS、PRODUCT_SPECと既存の知識集・共有実機ルールを確認する。本書作成後に同じ課題が処理されていれば、結果を読んで重複実行しない。
-2. 指示専用branchを作業baseにしない。実開発SHAを確認した隔離作業先を使い、他の作業や原本を退避なしで上書きしない。
-3. 今回は**小さな自作入力一つ、同じFBXに対するKeep Quads OFF/ONの二条件**に絞る。既存の専用Unity環境・Blender・parser・runnerを再利用する。新しいSDK、課金サービス、別の管理基盤は導入しない。
-4. 許可する変更は、この実験に必要な小さな生成/捕捉/判定コード、source-only診断関数、テストと結果記録。原則`tests/`内に置く。製品Import/Confirm/Export、witness schema、AGENTS、PRODUCT_SPEC、Releaseには手を入れない。
-5. 前回報告の「追加起動不要」は前回の検討範囲についての判断。本書は公式仕様に基づく別の競合予測を指定する。ただし共有資源・権限・原本保護の制約は引き続き守る。
+成果は次の三点を一つの小さな検証として残す。
 
-## 3. 入力一つを用意し、予測を固定する
+1. native観測を読まない、入力専用の順序付きpartition候補と面割当プランのコード。
+2. 未観測の6面に対する固定予測と、raw面→実native群→実Prefab Material参照の独立比較。
+3. 一致した場合、使い捨てBlenderコピーへの明示的な実験適用で、同じraw UIDから異なる最終Materialへの面割当を確認する。標準Import対応とは区別する。
 
-互いに重ならない平面上の小さな面を四つ作り、二つの異なるMaterial実体A/Bに次のように割り当てる。
+製品Import/Confirm/Export、production witness schema、AGENTS、PRODUCT_SPEC、Release、既定branchは変更しない。実験コード・自作fixture・結果は既存evidence階層内に置く。大規模なresolver基盤や新parserは作らない。原本・既存Scene・共有Materialを変更しない。
+
+## 3. 再利用する入口
+
+確認SHA以下の既存コードを先に読む。
+
+- `tests/evidence/holmes-material-correspondence-20261011/topology-boundary/read_input.py`：Model/Geometry/Material UID、active Layer、polygon/cornerの読取。
+- 同 `diagnose.py`：宣言keepQuadsと対象外判定。
+- 同 `judge.py`：`native_faces`、`membership`、`cover`。明示topology、exact UV corner、外周・内部辺の多重度による独立照合。
+- 同 `Capture.cs`、`generate_fixture.py`：自作入力と実native取得。
+- `unity/prefab_parser.py`、`unity/effective_prefab.py`、`unity/occurrence_projection.py`：serialized参照と対象occurrence。新しい簡易Prefab parserで置き換えない。
+- `operators/renderer_binding.py::_material_plan`：将来の接続点の読取のみ。現行guardを変更・monkeypatchしない。
+- `blender/fbx_receipt.py` と既存Material providerの識別処理：既に証明済みのModel/Geometry/実ObjectやMaterial identityだけを再利用する。
+
+旧実測ファイルの意味・hashを変えない。必要な小関数は新しい小さなadapterから再利用し、変更が本当に必要なら旧実験を固定commit参照のまま保つ。完了済みレビューやアプリ測定を再実行しない。
+
+## 4. まず入力専用の候補プランを作る
+
+関数名の例：`predict_ordered_partitions(raw, meshes_meta)` と `plan_receiver_materials(partitions, occurrence)`。名前は役割が明確なら既存慣例に合わせてよい。
+
+### partition予測
+
+対象は当面、既存decoderが確認できる単一static Model/Geometry、unique Material接続、active Layer0、対応済みMaterial layer、triangle/凸平面quad、小さなindex範囲のみ。Skin/Shape/Animation、raw接続重複、複数layer、n-gon、空/null/overlay、大きなindex範囲を今回の対応に混ぜない。
+
+- `keepQuads=0`：有効topology候補をTrianglesとする。元quadとそのcornerは保持し、三角形化後index順や対角線を予言しない。
+- `keepQuads=1`：元triangleはTriangles、元quadはQuads。
+- キーはこのModel/Geometryに属する `(Material UID, 有効topology)`。順序付き辞書相当で最初の出現時だけ群を作る。
+- 各群には予測ordinal、topology、raw UID、元polygonの集合・多重度を残す。同じUIDが複数の群に現れることを許す。
+- 設定欠落、不正な参照、対象外入力は理由付きで拒否。metaの宣言を任意Unity環境の実効policy証明にしない。
+
+**結果はCANDIDATE。`EXACT`や製品PASSにしない。** 既存MixedFour OFF/ON保存観測とのoffline照合は校正・回帰として利用できるが、新しい独立実証とは呼ばない。
+
+### Material参照への結合
+
+対象occurrenceの順序付き有効Material参照を既存解析から読み、予測群ordinalに対応する参照を取る。Material identityはpackage/GUID/signed fileIDで保持し、raw UIDとUnity GUIDを名前や数値の一致で同一視しない。
+
+- 入力FBX/metaのrevision、対象Mesh/Renderer/occurrenceのidentity・revisionを別々に保持する。
+- source bindingが未証明なら、その状態を残す。単一候補だから結び付けたことにしない。
+- 参照長不一致、null、provider欠落、競合するscopeは個別の未解決理由にする。余分な参照を削除・末尾補完しない。
+- 出力は少なくとも `raw polygon identity → candidate native group → exact serialized Material reference`。raw→groupが候補であることと、参照そのものが正確なことを混同しない。
+- `ready_to_apply=false`、`partition_evidence=CANDIDATE` を保持し、native観測や実験用UVの判定を製品witnessに偽装しない。
+
+予測関数と候補プランにはnative JSON、GetIndices結果、観測済み群順を引数として渡さない。観測ファイルがない作業場所でも実行できることを対照試験に含める。
+
+## 5. 一件だけの新規入力で対立予測を分ける
+
+新しい自作staticモデルを、次の六つの独立した平面faceで用意する。元MixedFourは変更しない。A/Bは説明用ラベルで、判定には書き出された実UIDを使う。
 
 ```text
-face p0: Material A、三角形
-face p1: Material B、凸の平面四角形
-face p2: Material A、凸の平面四角形
-face p3: Material B、三角形
+p0 A triangle
+p1 B quad
+p2 A quad
+p3 B triangle
+p4 A triangle  # p0と同じ組が離れて再登場
+p5 B quad      # p1と同じ組が離れて再登場
 ```
 
-Skin・Shape・Animation・Nested Prefab・未使用Material・null・重複接続・重ね描き・大きなindex範囲は今回は入れない。Material A/Bという名前は説明ラベル。実際の追跡には書き出されたFBXのUIDと接続を使う。
+位置とUV fingerprintを互いに重ねず、UVは小さな二進分数の一意cornerにする。自作fixtureの照合条件であり、通常製品入力への必須UV仕様ではない。実FBXをdecodeし、六面・接続・active layer・実際の出現順を確認する。exporterが順を変えた場合は実bytesから予測を作る。識別力を失った入力はnative測定前に検出し、意図した入力を作れなければ該当工程を未判定にする。
 
-既存Blender/FBX出力機能で自作の新規FBXを生成する。四角形を保存できたこと、二つのMaterialと面割当、UV・頂点・接続を**書き出した実bytesから独立して確認**する。元HOLMES fixtureを壊して四角形を捏造しない。既存の固定12面generator/parserの制約を黙って外さない。
+今回はKeep Quads ON一条件。前回のOFF/ON一組は再実行しない。次の予測をnativeの面結果を見る前に固定する。
 
-比較用UVは、各元polygon/cornerを一意に照合できる、小さく正確に表現可能な二進分数の座標にする。面のUV領域は重ねない。UVは独立判定用の指紋であって、製品が全入力へ要求する条件ではない。
+| 仮説 | 上の実順が保存された場合の予測 |
+|---|---|
+| 組の初出順で全体を集約 | 4群：A/T={p0,p4}, B/Q={p1,p5}, A/Q={p2}, B/T={p3} |
+| 組の連続runごとに分割 | 6群。離れたp4,p5は新しい群 |
+| UIDを先にまとめ、その中でtopology初出 | 4群：A/T, A/Q, B/Q, B/T。群数は同じだが順序が異なる |
 
-exporterが面や接続の順を変えたら、生成前の配列を正解にせず、実FBXの並びを記録する。主目的の「Materialだけか、面種類でも分かれるか」を識別できるなら、それ以上の並べ替え作業はしない。細かい順序仮説が同じ予測になった場合は識別不能と記録する。
+### 受信側も固定する
 
-Unity観測前に次を保存し固定する。
+このモデルを参照する**単一の直接Prefab**を自作し、RendererのMaterial配列を四つの異なる外部Material参照 `[R0,R1,R2,R3]` にする。Materialは自作の単純なものとし、名前類似や見た目ではなく実GUID/fileIDを保存する。既存の自作fixture生成・package組立経路を使う。
 
-- 入力FBX hash、ノード/Geometry/Material UID、全polygonのcorner数と使用Material、元の順序。
-- **P_UID:** 使用Material UIDの初出だけでgroupを作る予測。この四面なら二群。
-- **P_UID_TOPOLOGY:** Keep Quads ONでは同じMaterialでもTriangles/Quadsが別groupになり得る予測。実際のgroup順は未確認。複数の順序候補を比べるなら、その候補も観測前に固定する。
-- OFFでは四角形が三角形化されるが、どの対角線が選ばれるかやnative index順を予測に埋め込まない。
+この配列は観測前に決めた作者の指定。native群数を見て伸縮したり、観測されたfaceに合わせて並べ替えたりしない。nativeが6群を作れば不一致も記録する。Material名に組の正解を埋め込み、その名前を判定器が読むことも禁止。
 
-この予測を作る診断関数は、raw FBX/metaなど入力情報だけを受け取る。Unityの観測JSONを読み込んで予測を後付けする関数にしない。
+Unityは開発fixture作成・答え合わせに使用できるが、通常Importの前処理として要求しない。fixture作成時にUnity APIで正当なMesh/Prefab/Material identityを得ることと、native face順を読んで予測を作ることを区別する。受信配列の作成にGetIndices/GetTrianglesや予測した面集合を使わない。
 
-## 4. 同じFBXをOFF/ONで観測する
+Package、FBX、meta、Prefab、Materialの実bytes・hashとsource-only候補を、独立native面観測の前に凍結する。作成工程で既に得た情報とholdoutとして伏せた面観測の範囲を記録する。
 
-既存の所有・隔離されたUnity 2022.3.22f1環境で、同じ新規作業assetのFBX bytesを維持し、`keepQuads=false`と`true`を比較する。二条件で一つの比較とする。Material生成・読み取り・最適化等の他の**実効設定**は固定し、両条件で捕捉して照合する。
+## 6. 独立判定と、条件付きの使い捨て適用
 
-ModelImporterがmetaを正規化して書き直した場合、metaの字面の差と実効設定の差を分ける。比較用コピー以外は変更しない。別の実効設定まで変わっていたら単独要因比較として採用せず、差を解消できる範囲で修正する。
+既存の所有・共有資源ルール内で新入力を観測する。Unity版と実効Importer設定、Mesh/Renderer identity、全topology/index/baseVertex、UV、モデルと対象Prefabの順序付きMaterial参照を捕捉する。native群を候補プランに合わせて並べ替えない。
 
-各条件で最低限捕捉するもの:
+独立judgeはraw face fingerprintから実native群を求め、その群の実Prefab Material参照を読む。予測関数をimportして正解を作らず、group数だけでなく各元polygonの参照まで比較する。
 
-- FBX/meta hash、Unityの実version、実効Importer設定。
-- 対象の実Mesh GUID/signed local fileID、Renderer、subMeshCount。
-- **全submeshのtopology、indexCount、baseVertex、全index、必要なUV/頂点。** `GetTopology`または`GetSubMesh(...).topology`で面種別を読み、`GetIndices`を使う。`applyBaseVertex`の扱いを記録し、二重にoffsetを加えない。
-- Trianglesは3 index、Quadsは4 indexとして扱う。`GetTriangles`や`len(indices)%3==0`だけで判定しない。未対応topologyを三角形へ読み替えない。
-- 実Rendererの`sharedMaterials`の順序付きGUID/fileID。重複、null、配列長とsubmesh数の不一致もそのまま残し、観測を都合よく合わせない。
+組の初出仮説なら予測される最終参照は `p0/p4→R0, p1/p5→R1, p2→R2, p3→R3`。これは予測であり、判定器に埋め込む正解ではない。
 
-この段階は**モデルImporterの区分規則の検証**である。Prefabを合成してMaterial配列を変更する必要はない。Prefab occurrenceの上書きまで調べたことにしない。元Materialを改名・変更してnative側の並びを誘導しない。
+- nativeの観測が成立して予測と違えばFALSIFIED。原記録を保存し、そのまま次回へ返す。別入力を次々作って仮説に合わせない。
+- 個数だけ一致して面・順序・参照が違えば不一致。名前、面数、位置の近似で修復しない。
+- 対応に必要なidentityやcornerが足りなければUNDETERMINED。欠けた接続だけを列挙する。
 
-既存の`CaptureNative.cs`、`CaptureBoundary.cs`、`runtime/VapbHolmesCoordinateProbe.cs`から、環境捕捉・hash・public API取得を必要範囲で再利用する。ただし三角形専用部分はそのまま流用しない。新規条件専用の小さなadapterでよく、旧実験の意味や保存schemaを変更しない。
+**候補と独立native観測が全対象面で一致し、対象Blender faceとproviderのidentityも実験として一意に照合できた場合だけ**、通常Importから得た対象の使い捨てコピーで明示的な試験適用を行う。共有Meshはコピー側で独立させ、原本Object/mesh/Materialの状態を保つ。
 
-## 5. 元の四面を独立して照合する
+コピーへの試験は、既存の安全なObject-linked素材設定等を再利用し、最終参照の異なる面には別slotとpolygon.material_indexを割り当てる。二つの元slotの単なる並べ替えで済ませない。実際の各faceが持つpackage/GUID/fileIDを独立judgeと照合し、未適用原本のsnapshot不変も確認する。
 
-生成側とは分離した判定を使い、raw FBXの面→nativeの実face/group→実Material参照を観測する。予測のP_UIDやP_UID_TOPOLOGYを正解ラベルとして使わない。
+これは**診断用の明示的適用**であり、標準Confirmをmonkeypatchしたり、未証明receipt/EXACT属性を注入したりしない。実験でUV照合を使ったなら、その対応はDIAGNOSTIC_ONLYとし通常入力にも存在すると主張しない。Blender側の対応が得られなければコピー適用だけをNOT_RUNとし、source-onlyプランとnative判定を捨てない。
 
-OFFでは元四角形一面が二三角形に分かれるため、rawとnativeのtriangle数の単純一致を要求しない。既知の凸平面四角形に限り、UV corner対応と外周辺の多重度、内部対角線の対消去、重複/欠落の有無から、同じ元polygonを覆うことを判定する。面の所属とwindingを別に記録する。対角線の違いだけを誤割当としない一方、面積の合計だけで重なりや穴を見逃さない。対応にnativeから未知の新規cornerが必要になったら、勝手な近似をせずそのケースを未判定にする。
+## 7. 必要な対照・完了条件
 
-ONではquadの四cornerを保ったまま照合し、観測前に勝手に三角形へ変換して区分の差を消さない。
+今回増やしたコードに対して、離れた同一組の再利用、同一UIDで異なるtopology、同じ群数のラベル交換、元faceの欠落/重複、宣言外topology、受信配列長不一致・null/provider欠落・違うrevisionを確認する。既存対照の再利用を優先する。結果に合わせたepsilon変更はしない。面所属、winding、位置、描画は別判定。
 
-最小の判定器対照は、欠落face、重複face、quadをtriangleと偽るtopology、誤ったMaterial/groupへのラベル交換。正しい対照が通り、不正対照を拒否することをnativeの製品判断前に確認する。新しい許容誤差を結果に合わせて設定しない。
+完了条件：
 
-必要なら元FBXをBlenderで一度だけ読み、その四面/slotと照合する。meta二条件だけのために同じBlender実験を重複起動しない。Importやsource-only予測に開発用Unity観測を注入しない。
+- 入力だけで順序付きの候補プランが出る実行コードと、根拠・未証明箇所が保存されている。
+- 新しい6面のnative所属と受信Material参照を独立比較し、三つの予測を分類できた。または具体的なblocked/未判定理由を残した。
+- 一致時は上記条件内のコピー適用を確認するか、その接続だけが未実施の理由を明示した。
+- 「一般保証がない」だけで終わらず、次の製品patchに必要な最小差分を挙げる。今回の結果を全入力保証にしない一方、無限の全入力証明も要求しない。
 
-## 6. 観測を、通常入力から読める適用条件候補へ変える
+今後の製品用対応は、検証された入力scopeとrevision/policy、source→実Object/face接続を満たす範囲に限定する必要がある。今回の候補やdiagnostic witnessだけで標準guardを解除しない。nativeで正しい割当が存在すること、候補が一致すること、標準VAPBで自動復元できることを三つの別の到達点として報告する。
 
-実験結果と合わせて、raw polygon種別とmetaを読む小さな**source-only診断関数**を残す。既存parsed node/metaを入力に使い、新しいFBX parserやproduction witness schemaを作らない。診断は最低限次を区別する。
+## 8. 保全・既存作業・停止
 
-- 全面triangle: `TRIANGLE_ONLY_CANDIDATE`。
-- quadを含みkeepQuadsが明示OFF: `TRIANGULATION_BOUNDARY_UNVERIFIED`。
-- keepQuadsが明示ONでtriangle/quad混在: `MIXED_TOPOLOGY_REQUIRES_PARTITION_RULE`。
-- 設定欠落・不正なlayer/参照・今回対象外のpolygon/topology: `UNKNOWN_SCOPE`と具体的理由。
+開始時に最新remote/head、同IDの実行結果、未保存差分、対象AGENTS/PRODUCT_SPEC、既存の知識集・実機制約を確認する。既に同じ作業が完了/進行していれば重複実行しない。別途ユーザー指示があれば本書との差を報告し、競合させない。
 
-これは**適用候補や除外理由**であり、`EXACT`、復元`PASS`、全triangle対応済みという証拠ではない。metaの記載値を、任意の外部Unity環境の実効設定を証明する値に昇格させない。ファイルhashの許可リストで自作fixtureだけを「対応済み」にする実装も禁止。
+新SDK、課金サービス、共有Editorの強制終了、lock削除、無断merge/Release/force-pushは行わない。原本Package/FBX/meta/Prefab/Material/Sceneと旧証拠は保護する。private/commercial素材、個人path、秘密、生ログを公開しない。
 
-今回のpure診断と予測にはUnity観測ファイルの場所を渡さず、入力だけで結果が出ることをテストする。独立judgeがその予測とnative観測を照合する。これにより「正解がないので何も作れない」と「観測を盗み見て予測した」をどちらも避ける。
+実機枠が空かない場合はnative工程だけBLOCKEDとし、input-onlyコードや対照など独立した作業を進める。宣言外のfixture変更、成否不明の復旧、第三者更新、scope外入力は該当工程を止めて記録。復旧は所有資源の終了確認後、今回の自作配置に限る。仮説が外れたための自動scope拡大はしない。
 
-## 7. 結果ごとの判断
+## 9. 結果保存と報告
 
-- ONで同じraw Material UIDが複数topology/groupへ分かれれば、**Material UIDだけの一対一対応をこの条件で反証**し、どの元面がどのgroup/実Material参照へ入ったかを示す。既存の全triangle実験のH1まで否定しない。
-- OFFでP_UIDと面所属が一致すれば、この入力・設定での支持とする。全quad/n-gonや別producerまで対応済みにしない。
-- ONでもP_UIDと同じ区分なら、公式記述の対象、実際のraw polygon、keepQuadsの実効値、native topologyを確認し、不一致の所在を報告する。期待どおりの結果を作るまでモデルを変え続けない。
-- 予測と異なるが判定器が有効なら反例。生成・環境・照合が成立しないなら未判定。`FALSIFIED`と試験器自体の`FAIL`を混ぜない。
+保存先の候補：
+`tests/evidence/holmes-material-correspondence-20261011/ordered-face-plan/`
 
-最終的に「いずれも一般保証なし」だけで終えず、**どの読み取り可能な条件が増え、どの候補を除外でき、次の製品実装が一対一か一対多かをどう考え直すか**を明記する。今回の範囲が終わったら無制限の追加matrixへ進まない。
+既存の近接する適切な保存先があれば再利用し、別管理基盤は作らない。実行用の入力専用コード、固定予測、実fixture、native観測、独立judge、コピー適用の可否、REPORTを必要最小限で保存する。
 
-## 8. 製品への反映条件と非対象
+REPORTには指示ID `HOLMES-20261011-02`、取得した指示commit、開始branch/SHA、実source hash、対象入力hash、各仮説の支持/反証/未判定、元face→予測群→実群→実Material参照の比較、PASS/FAIL/NOT_RUN/BLOCKED、原本保全、review、製品変更有無、残る最小の接続課題を記載する。実際のmodel/reasoningは確認できた範囲だけ記載する。
 
-今回、製品のguardを外さず、通常Importの挙動を変えない。成果は限定規則・反例・入力条件を扱える診断コードである。独立した通常入力への適用根拠が得られたら、次回の製品patchに必要な最小の変更点と検証条件を提案する。証拠の強さを変えず、既存carrierに無い情報を有ることにしない。
+生成・予測側とnative判定側を独立review contextで確認する。完了済みの旧reviewをやり直さず、今回追加した部分を対象にする。目的別commit/push後にGitHubから対象commitと主要本文を読戻し、結果branch/path/commit URLを報告する。
 
-無関係なlegacy ordinal経路、Bone Action、Skin数値一致、Shader、配布ZIPの修正は混ぜない。通常ImportのUnity前処理必須化、手動Material貼り直しの標準化、GUID/fileIDの置換、仕様縮小、課金・新SDK導入、無断merge/Releaseは禁止。将来の製品実装へ無限の全入力証明を要求することもしない。まず識別可能な対応範囲と具体的な反例を扱う。
+ホームズの今回の書込はこの指示ファイルだけ。指示の保存commitをワトソンの実験開始・完了証拠にしない。
 
-## 9. 安全・停止・復旧
+## 公式仕様の確認先
 
-共有Unity/Blenderの実行枠・メモリ・lock・所有権は既存ルールに従う。他のEditorを停止したりlockを削除したりしない。空きがなければnative実行だけ`BLOCKED`とし、入力作成・source-only診断・判定器対照など独立して可能な範囲を進める。日次時刻まで待つ必要はないが、共有資源を奪ってよいという意味でもない。
+- Unity 2022.3 Model tab / Keep Quads・index format: https://docs.unity3d.com/2022.3/Documentation/Manual/FBXImporter-Model.html
+- RendererのMaterial参照配列: https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Renderer-sharedMaterials.html
+- topologyに従うindex取得: https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Mesh.GetIndices.html
 
-原本Package、既存FBX/meta/Prefab/Material、保存済みScene、過去の観測は変更しない。使い捨て作業assetだけを所有pathに配置し、元hash・既存ファイル一覧を記録。復旧は所有資源の終了確認後に今回の配置だけへ行う。成否が不明な復旧を成功扱いしない。
+公式説明はtopology分離とAPIの意味を支持する。組の初出順という採番アルゴリズム自体の公式保証とは扱わない。
 
-不正fixture、宣言外の意味変更、独立した面照合の欠落、第三者更新、実効設定の意図しない差、権限不明があれば該当工程を止め、必要な不足を具体的に記録する。既存実験をやり直して代わりの成功にしない。購入素材、私的生ログ、ローカル個人path、秘密は公開しない。
+## 固定の受け渡し
 
-## 10. 保存と次回への報告
+最新指示正本：`docs/holmes-watson-handoff:HOLMES_TO_WATSON.md`
 
-既存階層の下に、本指示の結果をまとめる:
-
-`tests/evidence/holmes-material-correspondence-20261011/topology-boundary/`
-
-既存結果を上書きせず、必要な自作fixture、使用source、固定予測、raw/native観測、診断/判定器、結果要約をここへ保存する。巨大な新検証基盤を作らない。生成と独立judgeの変更を別のreview contextで確認し、今回変えた箇所と新証拠だけをレビューする。利用可能な実モデル設定を正直に記録する。
-
-結果の`REPORT.md`には次を含める:
-
-1. Instruction ID `HOLMES-20261011`、読んだ指示commit、実行branch/開始SHA/実際のsource。
-2. 新たな問い、固定した予測、入力と許可した差分、各hash。
-3. OFF/ONの全group一覧: topology、元polygon集合、raw Material UID、native Material GUID/fileID。欠落/重複も保持。
-4. 予測の支持・反証・未判定と根拠。面所属/winding/位置/描画は別判定。
-5. source-only診断関数のpath、呼出方法、入力だけで評価できる項目と不明な項目。
-6. PASS/FAIL/NOT_RUN/BLOCKED、保全・復旧・review結果、製品コード変更なし。
-7. 次の製品判断を変えた具体的事実と、残る最小の問い。
-8. 目的別commit/push後のGitHub readback、結果branch/path/commit URL。
-
-新指示発行commitとワトソンの実行結果commitは別物。ワトソンは結果を作業branchへ保存し、ホームズの指示branchには実装を混ぜない。無断merge・force-push・既存履歴削除をしない。本書の作業が未完了の間は同じIDを二重実行しない。
-
-## 固定の受け渡し方法
-
-- 指示正本: `docs/holmes-watson-handoff:HOLMES_TO_WATSON.md`
-- 固定URL: https://github.com/UkkyaGuiyo/vapb/blob/docs/holmes-watson-handoff/HOLMES_TO_WATSON.md
-- 指示branchは製品の最新版や実装用checkoutではない。未保存作業を切り替えず、正規remoteを確認して読み取る。
+https://github.com/UkkyaGuiyo/vapb/blob/docs/holmes-watson-handoff/HOLMES_TO_WATSON.md
 
 ```sh
 git remote get-url origin
@@ -174,4 +191,4 @@ git fetch origin docs/holmes-watson-handoff
 git show FETCH_HEAD:HOLMES_TO_WATSON.md
 ```
 
-READYかつ未実行のIDだけを対象にする。開始時の実装差分と既存作業を必ず再確認する。ホームズの仮説も検証する。結果はIDと指示commitを添えてGitHubへ戻す。ホームズは次回、その実ファイルから推理を更新する。指示公開そのものはCodexの自動起動や実験成功を意味しない。
+READYかつ未実行のIDだけを読み、指示branchへcheckoutせず実開発の最新差分を確認する。結果は指示IDと指示commitを添えて作業branchへ戻す。次回ホームズはその実ファイルを読む。指示公開はCodexの自動起動を意味しない。
