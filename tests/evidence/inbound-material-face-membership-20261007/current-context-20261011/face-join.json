@@ -1,0 +1,73 @@
+{
+  "status": "BOUNDED_UV_FACE_GROUP_JOIN_OBSERVED_PRODUCT_UNRESOLVED",
+  "package_sha256": "d6245d25c3cbd513c49b8d2e241b313a752331cd338563becab6eb7c819bfa0c",
+  "fbx_sha256": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+  "meta_sha256": "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d",
+  "unity_version": "2022.3.22f1",
+  "blender_version": "5.2.1 LTS",
+  "triangle_count": 12,
+  "unique_triangle_uv_signatures": 12,
+  "exact_corner_uv_correspondence": true,
+  "raw_material_indices": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0
+  ],
+  "blender_to_unity_submesh": {
+    "2": 0,
+    "1": 1,
+    "0": 2
+  },
+  "intended_material_refs_by_blender_slot": {
+    "2": {
+      "guid": "eb805efb35118044db5e74adc652673a",
+      "file_id": "2100000"
+    },
+    "1": {
+      "guid": "0318f358e4c29034aa90cc8c50b58a93",
+      "file_id": "2100000"
+    },
+    "0": {
+      "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+      "file_id": "2100000"
+    }
+  },
+  "raw_to_blender_orientations": {
+    "1": 12
+  },
+  "raw_to_unity_orientations": {
+    "-1": 12
+  },
+  "raw_to_blender_local_position_max_abs_difference": 0.0,
+  "declared_raw_to_unity_C": "0.01 * reflectX; observed differences, no tolerance PASS",
+  "raw_to_unity_local_position_max_abs_difference": 6.332993504609696e-10,
+  "controls": {
+    "duplicate_face": true,
+    "missing_face": true,
+    "duplicate_corner": true,
+    "winding_reversal_observed": true
+  },
+  "operator_result": [
+    "CANCELLED"
+  ],
+  "operator_error": "Error: \u9762\u3068\u7d20\u6750\u306e\u5bfe\u5fdc\u3092\u78ba\u8a8d\u3067\u304d\u307e\u305b\u3093\u3002\u5143\u306e\u7d20\u6750\u5272\u5f53\u306f\u5909\u66f4\u3055\u308c\u307e\u305b\u3093\n",
+  "mesh_unchanged": true,
+  "projection_source_kind": "PREFAB_LOCAL",
+  "source_renderer": {
+    "renderer_file_id": 3728717051629469441,
+    "source_asset_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+    "source_kind": "PREFAB_LOCAL"
+  },
+  "input_has_identity_name_table": false,
+  "input_has_external_remap": false,
+  "limits": "No production face witness was created or injected; existing ModelIdentityRow carries identities/skin/shape but no UV/submesh/Material face correspondence. This observation is development-only and cannot be required normal input preprocessing."
+}

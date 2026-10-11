@@ -17,3 +17,5 @@ Authority: latest explicit audit request, PRODUCT_SPEC.md, existing R2 face diag
 Results and proof limits: [classified audit](../../2026-10-11-material-safety-audit.md).
 
 Review focus: same-name unrelated assets; shared Material across package/occurrence scopes; null/missing/unused/ambiguous face partitions; another Assistant entry surviving cancellation; changed files never receiving stale authorization.
+
+- [x] P0-2 current-context follow-up: original ThreeSlotSource FBX/meta/Prefab/import policy pinned together; 12 unique UV face/corner joins observed. Ordinary product remains UNRESOLVED because existing production inputs/witness supply no native face partition. No production guard/schema change or repeated measurement. Public-safe observations and targeted independent review recorded in the audit.
