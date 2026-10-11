@@ -4,13 +4,15 @@
 
 R/A/Bの実行sourceと記録は保存commit `c76d3bd8380247b75ff4c0b5716c3cad97613ec6` の当該pathに固定される。後続Eのcase選択追加をR/A/Bで再実行したという主張はしない。過去の実行hash・記録は変更していない。
 
-## 後続E：raw検査のみ完了、実機NOT_RUN
+## 後続E：実機観測済み
 
-承認済みの非連続run一例を生成した。Aと同じ初出順1,0,2とUID別2/4/6面を固定し、record順を `1,0,2,1,2,0,2,1,2,1,2,2` にする。Aの3連続runに対しEは11run。12面のMaterial UID、oriented CP/位置/UV/normal、edge endpoint、Material接続、その他treeは保持され、保存済みAのhashを確認した独立judgeで比較した。生成側・判定側のE差分レビューはいずれもSOL/medium、KEEP。
+Aと同じ初出順1,0,2・UID別2/4/6面を固定し、record順を `1,0,2,1,2,0,2,1,2,1,2,2` とした。Aの3連続runに対しEは11run。書込後FBXの独立判定で全12面の意味と宣言外tree不変を確認し、生成・判定の別SOL mediumレビューKEEP後に実測した。
 
-実FBX/packageは `cases/E.fbx` と `cases/E.unitypackage`、生成hashとpackage member比較は `cases/generation-E.json` / `cases/package-copy-check-E.json`、独立raw検査は `observations/E-raw-judgment.json`、実行source hashと状態は `observations/E-source-summary.json`。派生packageの変更memberはFBX assetのみ。
+Unity 2022.3.22f1では3submeshのUID群順1,0,2。保存済みAとEのnative snapshotを12個の一意なexact UV面・cornerで直接joinし、全12面の所属submeshが一致した。11runを別々のsubmeshにする単純な規則にはこの例が反例となる。H1はR/A/B/Eの範囲で支持されるが、H7の他producer・未使用/重複slot、H6の設定依存は未確定である。
 
-EのUnity/Blenderは **NOT_RUN**。共有排他枠を別の承認済み修復へ渡す指示に従い、新しいEditorを起動していない。次の最小作業は枠の返却後、実lease/mutex/RAMを再確認してEだけを実測すること。初出順・面数を固定した場合のnative partitionがAと一致するかを判定する。H6の設定切替、未使用slot、同一Material重複などは未実測であり、一般化・製品guard解除は行わない。
+Blender 5.2.1 LTSではslot UID群順0,1,2、ConfirmはCANCELLEDで全snapshot不変。Unity・Blenderともexit0、保護3,041ファイルの差分0・予期しない追加0、所有lease/mutex返却。製品guardは維持し、通常ImportへUnity前処理や仮説を追加していない。
+
+実行sourceはcommit `5f5de6d187fd9a7435d0962bc698211128d137c2`。`observations/E-source-summary.json`は実行前のraw-only状態をそのまま保持し、実機結果は `E-run-summary.json` / `E-full-judgment.json` / `E-context.json` / `E-coordinate.json` / `E-blender.json` に記録した。FBX/packageと生成hashは既存 `cases/E.*` / `generation-E.json`。原本・過去R/A/B記録は変更しない。
 
 基準製品source: `79a28a92328dded08e8004ee014f9af3d34946e2`。Unity 2022.3.22f1、Blender 5.2.1 LTS。生成と独立判定は別の GPT-6.1 SOL / medium コンテキストで実行前レビューし、KEEP。判定レビューで指摘された実効import policy比較漏れを修正後、再確認した。
 
@@ -36,7 +38,7 @@ Rの各UV面→Unity submeshは、原本FBXの既存current-context実測と一�
 
 | 仮説 | 今回の判定 | 根拠／限界 |
 | --- | --- | --- |
-| H1 面recordで最初に現れるMaterial順 | この3例の範囲で支持 | Aの順変更、Bの接続変更への不変性。一般規則のVERIFIEDではない |
+| H1 面recordで最初に現れるMaterial順 | このR/A/B/Eの範囲で支持 | Aの順変更、Bの接続変更への不変性。一般規則のVERIFIEDではない |
 | H2 Material→Model接続順そのもの | 普遍的な順決定則として反証 | AとBのnative結果が予測と異なる |
 | H3 raw Material indexの昇順 | 普遍的な順決定則として反証 | Bのindexは接続の位置を参照する。H2と同じ予測になる範囲は区別できない |
 | H4 固定Material名の順だけ | 反証 | Aで名前を変えずnative順が変わる。任意の名前との条件分岐は未判定 |

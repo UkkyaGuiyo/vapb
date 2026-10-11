@@ -1,0 +1,55 @@
+{
+  "source_base_commit": "c76d3bd8380247b75ff4c0b5716c3cad97613ec6",
+  "raw_status": "WRITTEN_SEMANTICS_VERIFIED",
+  "unity_status": "OBSERVED",
+  "blender_status": "OBSERVED",
+  "product_mapping_status": "UNRESOLVED_GUARD_RETAINED",
+  "fbx_sha256": "e4ac91f4f4af2cbcdcce68befd6c45bc91842d3ad728972f149c79a58f02074a",
+  "first_material_uids": [
+    504963197,
+    943593828,
+    123443898
+  ],
+  "material_run_count": 11,
+  "source_sha256": {
+    "generate_cases.py": "9b8fa29db0166ef2d51befdd61499ee0781495a392c12dfeabc777dfa41b75c6",
+    "judge_faces.py": "9632ba3628bcb3ac20e0a112411a7b67ac536c3fe85aa9e2f530cbf46445d2b2",
+    "CaptureNative.cs": "df7568cef5862d422daa2c1d192fc2c7b3395ce12700ddca685ad8e8eb75d3b8",
+    "capture_blender.py": "c022e45555210c9a703cb2dcbd363b942df80bab63aaab74cc468c974aeababe",
+    "runtime/VapbHolmesCoordinateProbe.cs": "7d783d91128599c24cb3a074ad41c20f7e9cdbed3237fc38a8b67d3317e9af2d"
+  },
+  "independent_reviews": {
+    "generation": "KEEP",
+    "judgment": "KEEP",
+    "model": "GPT-6.1 SOL",
+    "reasoning": "medium"
+  },
+  "limits": "Finite self-authored fixture, one fixed effective importer policy. Noncontiguous runs do not create separate submeshes here. No general importer guarantee or new product mapping. Unused/duplicate slots and other producers remain unmeasured.",
+  "native_exit_code": 0,
+  "blender_exit_code": 0,
+  "native_free_ram_gib": 5.122650146484375,
+  "blender_free_ram_gib": 5.1112518310546875,
+  "protected_files": 3041,
+  "changed_files": 0,
+  "unexpected_files": 0,
+  "slot_released": true,
+  "global_mutex_released": true,
+  "project_lock_present": false,
+  "product_code_changed": false,
+  "E_A_unique_faces": 12,
+  "E_A_same_face_to_native_submesh": true,
+  "native_groups": {
+    "0": {
+      "504963197": 4
+    },
+    "1": {
+      "943593828": 2
+    },
+    "2": {
+      "123443898": 6
+    }
+  },
+  "H1": "SUPPORTED_ONLY_IN_PINNED_R_A_B_E",
+  "H7_noncontiguous_runs": "ELEVEN_RUNS_STILL_THREE_UNIQUE_UID_GROUPS",
+  "H6": "UNDETERMINED"
+}
