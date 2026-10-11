@@ -60,3 +60,20 @@ INDEX → search → relevant lessons only.
 - For a difficult unresolved issue, raise SOL reasoning stepwise only when the current level shows a concrete need; briefly report the reason for escalation.
 - Do not rerun completed reviews. Apply this policy to the next SOL call; do not interrupt a long-running call solely to change its model setting.
 - In each progress or completion report, state the actual model/reasoning settings used and their scope.
+
+
+## HOLMES-WATSON LOOP (2026-10-12)
+
+User-authorized bounded workflow; existing model split, Failure Atlas, safety and GitHub save contract remain in force. The configured inference agent is separate from independent code review. Its explicit user-requested SOL/xhigh setting applies only to Holmes inference; existing SOL/medium code-review policy is unchanged.
+
+A. WATSON performs the smallest authorized implementation, experiment and verification.
+B. EVIDENCE records results, failures, counterexamples and unverified points in the existing evidence hierarchy; normally commit/push allowed files and verify exact remote readback before requesting Holmes.
+C. HOLMES uses project `.codex/agents/holmes.toml` in a fresh read-only context. Pass fixed commit/files and product objective, avoiding Watson's reasoning or previous conclusions. Verify actual spawn, completion and effective read-only permissions; configuration text alone is not success. No recursive spawning. If unavailable, report BLOCKED; do not replace with Watson self-review.
+D. REVIEW: Watson independently checks the returned evidence and proposal. Necessary independent code review remains a separate gate. A proposal does not grant approval.
+E. NEXT: proceed with one clear action only if already authorized and grounded. Stop on insufficient evidence or conflicting authority. This configuration/dry run grants no new product scope.
+
+Initial maximum three cycles. Stop earlier for no new verifiable action, ongoing existing product work, the same problem repeated twice, insufficient evidence, Product Owner semantic decision needed, failed GitHub persistence, authentication/permission/device issues, budget boundary, Unity/Blender resource conflict or original-data risk. Preserve work and the restart point in the existing GitHub evidence. Formal remaining <=5% retains the save/handoff/stop rule; no restart without explicit user instruction.
+
+Keep original Package/FBX/Prefab/GUID/fileID/Material/Scene and existing evidence intact. Never publish purchased material, secrets or private logs. Parent owns next instruction/state persistence; Watson owns allowed work-branch source/evidence; Holmes reads only. Do not merge the instruction branch into the product branch. Check `docs/holmes-watson-handoff:HOLMES_TO_WATSON.md` and current chat authority: newer CHAT_FALLBACK supersedes stale GitHub READY, and completed/ongoing IDs are not rerun. Updating the fixed instruction file requires latest blob-SHA conflict detection and exact readback.
+
+After session end, reread actual AGENTS/spec, Git state and latest saved restart record; verify authority and completed instruction IDs before spawning. No background or scheduled loop is established. Parent live sandbox/approval overrides can supersede custom defaults: stop if effective read-only cannot be verified; never test by dangerous writes or bypass permissions.

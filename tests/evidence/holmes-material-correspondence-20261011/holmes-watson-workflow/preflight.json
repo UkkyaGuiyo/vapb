@@ -1,0 +1,47 @@
+{
+  "product_base": "b0ff93ce5b1a18bd5c399f9566653a9b99962def",
+  "previous_AGENTS_sha256": "ed9f3efa25bc733a88a0e3bb6dae0cea27225bc6f782b0d63aa1812441906fff",
+  "AGENTS_existing_bytes_preserved": true,
+  "new_AGENT_sha256": "9a3f7e758aa38d9fcd6dcf82c018170be6cd222e2c8899c51c8299953029eaf7",
+  "requested_reasoning": "xhigh",
+  "available_catalog": [
+    "low",
+    "medium",
+    "high",
+    "xhigh",
+    "max",
+    "ultra"
+  ],
+  "actual_runtime_settings": "UNVERIFIED",
+  "instruction_branch": "docs/holmes-watson-handoff",
+  "instruction_file": "HOLMES_TO_WATSON.md",
+  "instruction_blob": "8b47a2e9624c51ccac1b2b4cf595ef9fa92cea63",
+  "old_GitHub_READY": "HOLMES-20261011-02",
+  "newer_CHAT_FALLBACK": "HOLMES-20261012-02 completed and 2026-10-11 workflow request",
+  "instruction_file_updated": false,
+  "global_config_changed": false,
+  "cli_version": "0.162.0-alpha.17.2",
+  "native_spawn_tool_agent_type_selector": false,
+  "parent_actual_sandbox": "workspace-write",
+  "parent_actual_approval": "auto_review",
+  "holmes_config_settings": {
+    "name": "holmes",
+    "description": "VAPB\u306e\u4fdd\u5b58\u6e08\u307f\u5b9f\u88c5\u8a3c\u62e0\u304b\u3089\u3001\u72ec\u7acb\u6280\u8853\u8abf\u67fb\u3068\u6b21\u306e\u6700\u5c0f\u306e\u4e00\u624b\u3092\u63d0\u793a\u3059\u308b\u8aad\u307f\u53d6\u308a\u5c02\u7528\u62c5\u5f53\u3002\u30b3\u30fc\u30c9\u30ec\u30d3\u30e5\u30fc\u3068\u306f\u5225\u3002",
+    "model": "gpt-6.1-sol",
+    "model_reasoning_effort": "xhigh",
+    "sandbox_mode": "read-only",
+    "approval_policy": "never",
+    "agents": {
+      "enabled": false
+    }
+  },
+  "holmes_config_sha256": "00d2104da72cf958179322c4bee7290fc920206254d484b3944a1a184e2f525b",
+  "status": "AUTHORIZED_REVIEW_RETRY_PENDING",
+  "automatic_approval_rejected": true,
+  "dry_run_spawn": "NOT_RUN",
+  "read_only_runtime": "UNVERIFIED",
+  "configuration_commit_push": "NOT_EXECUTED",
+  "next_action": "Await explicit human authorization, then normal setup save/readback before fresh Holmes runtime permission verification",
+  "AGENTS_git_diff_append_only": true,
+  "human_authorization_evidence": "Direct request for configuration, minimal AGENTS addition, actual dry run and GitHub evidence saving; supplied after initial authorization-evidence refusal."
+}
