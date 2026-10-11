@@ -1,0 +1,50 @@
+{
+  "instruction_id": "HOLMES-20261011",
+  "instruction_commit": "94c1f11fb1fac73aadafd6de2d41a3297c0322f1",
+  "instruction_blob": "18e7c155561fe158166cc3bc292d7d99fa0d630b",
+  "branch": "feature/holmes-topology-boundary-20261011",
+  "start_sha": "842067fb1aa29eeb4b9f3a4560ac6d529a21f50a",
+  "source_sha256": {
+    "Capture.cs": "1e69f32c2189fc0e2cf2ea2b32dc0ed81a27fd77913b3dedfd8611da63407954",
+    "diagnose.py": "673b567c0315bb35ea84862919b502d7e0da7a08c0626a24372de6fc9b4dba5f",
+    "freeze_input.py": "1bb2e4b9d40ead1185209536de9f9481418d885f08eb05d9106a3289c4e1cc76",
+    "generate_fixture.py": "a13b820cb43b9579f81d1479e8dd4db198c14971a67f7714c3911c1f69e783ff",
+    "judge.py": "cdd81b4d9fa398e55f021da42836b98a3b341bec75398f04fd2cdf1d9befbab7",
+    "read_input.py": "b9150094c96f9fd745ac98ac5f8eab03ebde221015ee7a6b1b19d26d5b8e1adf",
+    "test_topology.py": "39944c79e40ef7c7dfa0f1d9a445b301801bc422bc29e750ee78f0798e909576"
+  },
+  "unity_version": "2022.3.22f1",
+  "blender_version": "5.2.1 LTS",
+  "native_exit_code": 0,
+  "blender_generation_exit_code": 0,
+  "native_completed_utc": "2026-10-11T08:17:19.4639831Z",
+  "blender_completed_utc": "2026-10-11T08:13:41.951829Z",
+  "native_free_ram_gib": 5.025474548339844,
+  "blender_free_ram_gib": 5.0514678955078125,
+  "protected_files": 3041,
+  "changed_files": 0,
+  "unexpected_files": 0,
+  "project_lock_present": false,
+  "owned_resources_absent": true,
+  "pool_release_result": "RELEASED",
+  "global_mutex_released": true,
+  "product_code_changed": false,
+  "production_guard_removed": false,
+  "focused_tests": "3 PASS; expected preimplementation missing-symbol RED, then GREEN",
+  "independent_judge": "PASS",
+  "generation_capture_review": "KEEP",
+  "judgment_source_review": "KEEP after two directed gates",
+  "review_model": "GPT-6.1 SOL",
+  "review_reasoning": "medium",
+  "primary_model_settings": "UNAVAILABLE",
+  "new_predicate_counterexample": "KeepQuads ON mixed triangle/quad splits each Material UID into two native groups",
+  "test_only_result": true,
+  "remaining": "No ordinary Import restoration, universal rule, render/GUI/Prefab override or Blender reimport claim",
+  "published_source_hash_difference": {
+    "freeze_input.py": {
+      "used_sha256": "1bb2e4b9d40ead1185209536de9f9481418d885f08eb05d9106a3289c4e1cc76",
+      "public_sha256": "2412314969cccb3ddc70166d695eed92ae2434c0b0866d216586d2fb7286209a",
+      "reason": "Only a private-name literal was removed from the privacy scan; input interpretation and frozen predictions unchanged. Native not rerun."
+    }
+  }
+}

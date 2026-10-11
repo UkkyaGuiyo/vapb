@@ -1,0 +1,110 @@
+{
+  "OFF": {
+    "status": "TRIANGULATION_BOUNDARY_UNVERIFIED",
+    "reason": "",
+    "declared_keep_quads": false,
+    "effective_policy_proven": false,
+    "P_UID": [
+      {
+        "uid": 519368633,
+        "polygons": [
+          0,
+          2
+        ]
+      },
+      {
+        "uid": 642757480,
+        "polygons": [
+          1,
+          3
+        ]
+      }
+    ],
+    "P_UID_TOPOLOGY_unordered": [
+      {
+        "uid": 519368633,
+        "topology": "Triangles",
+        "polygons": [
+          0
+        ]
+      },
+      {
+        "uid": 519368633,
+        "topology": "Quads",
+        "polygons": [
+          2
+        ]
+      },
+      {
+        "uid": 642757480,
+        "topology": "Triangles",
+        "polygons": [
+          3
+        ]
+      },
+      {
+        "uid": 642757480,
+        "topology": "Quads",
+        "polygons": [
+          1
+        ]
+      }
+    ],
+    "group_order": "UNDETERMINED",
+    "exact": false
+  },
+  "ON": {
+    "status": "MIXED_TOPOLOGY_REQUIRES_PARTITION_RULE",
+    "reason": "",
+    "declared_keep_quads": true,
+    "effective_policy_proven": false,
+    "P_UID": [
+      {
+        "uid": 519368633,
+        "polygons": [
+          0,
+          2
+        ]
+      },
+      {
+        "uid": 642757480,
+        "polygons": [
+          1,
+          3
+        ]
+      }
+    ],
+    "P_UID_TOPOLOGY_unordered": [
+      {
+        "uid": 519368633,
+        "topology": "Triangles",
+        "polygons": [
+          0
+        ]
+      },
+      {
+        "uid": 519368633,
+        "topology": "Quads",
+        "polygons": [
+          2
+        ]
+      },
+      {
+        "uid": 642757480,
+        "topology": "Triangles",
+        "polygons": [
+          3
+        ]
+      },
+      {
+        "uid": 642757480,
+        "topology": "Quads",
+        "polygons": [
+          1
+        ]
+      }
+    ],
+    "group_order": "UNDETERMINED",
+    "exact": false
+  }
+}

@@ -1,0 +1,282 @@
+{
+    "unity_version": "2022.3.22f1",
+    "fbx_sha256": "448cdbd785072d2c25be718a3ec8d9f0e64de404857094b97f09b0ed229302bd",
+    "fbx_sha256_after": "448cdbd785072d2c25be718a3ec8d9f0e64de404857094b97f09b0ed229302bd",
+    "meta_sha256": "d1334dbb444ac3d0d00ffd12a512de8fe1ea44d8795288aa2189f1b5e227db3b",
+    "meta_sha256_after": "d1334dbb444ac3d0d00ffd12a512de8fe1ea44d8795288aa2189f1b5e227db3b",
+    "policy": "{\"materials\":{\"m_SupportsEmbeddedMaterials\":true,\"m_MaterialImportMode\":2,\"m_MaterialName\":0,\"m_MaterialSearch\":1,\"m_MaterialLocation\":1,\"m_Materials\":[{\"type\":\"UnityEngine:Material\",\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"SyntheticMaterialA\"},{\"type\":\"UnityEngine:Material\",\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"SyntheticMaterialB\"}]},\"animations\":{\"m_LegacyGenerateAnimations\":4,\"m_BakeSimulation\":false,\"m_ResampleCurves\":true,\"m_OptimizeGameObjects\":false,\"m_RemoveConstantScaleCurves\":false,\"m_MotionNodeName\":\"\",\"m_RigImportErrors\":\"\",\"m_RigImportWarnings\":\"\",\"m_AnimationImportErrors\":\"\",\"m_AnimationImportWarnings\":\"\",\"m_AnimationRetargetingWarnings\":\"\",\"m_AnimationDoRetargetingWarnings\":false,\"m_ImportAnimatedCustomProperties\":false,\"m_ImportConstraints\":false,\"m_AnimationCompression\":1,\"m_AnimationRotationError\":0.5,\"m_AnimationPositionError\":0.5,\"m_AnimationScaleError\":0.5,\"m_AnimationWrapMode\":0,\"m_ExtraExposedTransformPaths\":[],\"m_ExtraUserProperties\":[],\"m_ClipAnimations\":[],\"m_IsReadable\":true},\"meshes\":{\"m_LODScreenPercentages\":[],\"m_GlobalScale\":1.0,\"m_MeshCompression\":0,\"m_AddColliders\":false,\"m_UseSRGBMaterialColor\":true,\"m_SortHierarchyByName\":true,\"m_ImportPhysicalCameras\":true,\"m_ImportVisibility\":true,\"m_ImportBlendShapes\":true,\"m_ImportCameras\":true,\"m_ImportLights\":true,\"m_NodeNameCollisionStrategy\":1,\"swapUVChannels\":false,\"generateSecondaryUV\":false,\"m_UseFileUnits\":true,\"keepQuads\":true,\"weldVertices\":true,\"bakeAxisConversion\":false,\"m_PreserveHierarchy\":false,\"skinWeightsMode\":1,\"maxBonesPerVertex\":255,\"minBoneWeight\":0.0010000000474974514,\"optimizeBones\":true,\"meshOptimizationFlags\":-1,\"indexFormat\":0,\"secondaryUVAngleDistortion\":8.0,\"secondaryUVAreaDistortion\":15.000000953674317,\"secondaryUVHardAngle\":88.0,\"secondaryUVMarginMethod\":1,\"secondaryUVMinLightmapResolution\":40.0,\"secondaryUVMinObjectScale\":1.0,\"secondaryUVPackMargin\":4.0,\"m_UseFileScale\":true,\"m_FileScale\":0.009999999776482582,\"m_FileScaleUnit\":\"cm\",\"m_FileScaleFactor\":0.009999999776482582,\"m_StrictVertexDataChecks\":false},\"tangentSpace\":{\"normalSmoothAngle\":60.0,\"normalImportMode\":0,\"tangentImportMode\":3,\"normalCalculationMode\":4,\"legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes\":false,\"blendShapeNormalImportMode\":1,\"normalSmoothingSource\":0},\"m_ImportedTakeInfos\":[],\"m_ImportedRoots\":[{\"fileID\":919132149155446097,\"guid\":\"ce412039a7b14c91af5e832bbcdec041\",\"type\":3}],\"m_HasExtraRoot\":false,\"m_HasEmbeddedTextures\":false,\"m_ReferencedClips\":[],\"m_ImportAnimation\":true,\"m_HumanDescription\":{\"serializedVersion\":\"3\",\"m_Human\":[],\"m_Skeleton\":[],\"m_ArmTwist\":0.5,\"m_ForeArmTwist\":0.5,\"m_UpperLegTwist\":0.5,\"m_LegTwist\":0.5,\"m_ArmStretch\":0.05000000074505806,\"m_LegStretch\":0.05000000074505806,\"m_FeetSpacing\":0.0,\"m_GlobalScale\":1.0,\"m_RootMotionBoneName\":\"\",\"m_HasTranslationDoF\":false,\"m_HasExtraRoot\":false,\"m_SkeletonHasParents\":true},\"m_LastHumanDescriptionAvatarSource\":{\"instanceID\":0},\"m_AutoGenerateAvatarMappingIfUnspecified\":true,\"m_AnimationType\":2,\"m_HumanoidOversampling\":1,\"m_AvatarSetup\":0,\"m_AddHumanoidExtraRootOnlyWhenUsingAvatar\":true,\"m_ImportBlendShapeDeformPercent\":true,\"m_RemapMaterialsIfMaterialImportModeIsNone\":false,\"m_AdditionalBone\":false,\"m_UserData\":\"\",\"m_AssetBundleName\":\"\",\"m_AssetBundleVariant\":\"\",\"ModelImporter\":{\"serializedVersion\":\"22200\",\"m_Name\":\"\",\"m_ExternalObjects\":[],\"m_UsedFileIDs\":[2109986408413221875,100100000,919132149155446097,2341414557577028177,9000000,6996873464266047000,-8679921383154817045,-7511558181221131132,-5754084199372789682]}}",
+    "keep_quads": true,
+    "apply_base_vertex": true,
+    "mesh": {
+        "guid": "ce412039a7b14c91af5e832bbcdec041",
+        "file_id": "6996873464266047000"
+    },
+    "renderer": {
+        "guid": "ce412039a7b14c91af5e832bbcdec041",
+        "file_id": "-7511558181221131132"
+    },
+    "materials": [
+        {
+            "guid": "ce412039a7b14c91af5e832bbcdec041",
+            "file_id": "2341414557577028177"
+        },
+        {
+            "guid": "ce412039a7b14c91af5e832bbcdec041",
+            "file_id": "2109986408413221875"
+        },
+        {
+            "guid": "ce412039a7b14c91af5e832bbcdec041",
+            "file_id": "2341414557577028177"
+        },
+        {
+            "guid": "ce412039a7b14c91af5e832bbcdec041",
+            "file_id": "2109986408413221875"
+        }
+    ],
+    "groups": [
+        {
+            "topology": "Triangles",
+            "index_count": 3,
+            "base_vertex": 0,
+            "indices": [
+                0,
+                1,
+                2
+            ]
+        },
+        {
+            "topology": "Quads",
+            "index_count": 4,
+            "base_vertex": 0,
+            "indices": [
+                3,
+                4,
+                5,
+                6
+            ]
+        },
+        {
+            "topology": "Quads",
+            "index_count": 4,
+            "base_vertex": 0,
+            "indices": [
+                7,
+                8,
+                9,
+                10
+            ]
+        },
+        {
+            "topology": "Triangles",
+            "index_count": 3,
+            "base_vertex": 0,
+            "indices": [
+                11,
+                12,
+                13
+            ]
+        }
+    ],
+    "uv": [
+        {
+            "x": 0.0,
+            "y": 0.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0625
+        },
+        {
+            "x": 0.0625,
+            "y": 0.0
+        },
+        {
+            "x": 0.25,
+            "y": 0.0
+        },
+        {
+            "x": 0.25,
+            "y": 0.0625
+        },
+        {
+            "x": 0.3125,
+            "y": 0.0625
+        },
+        {
+            "x": 0.3125,
+            "y": 0.0
+        },
+        {
+            "x": 0.5,
+            "y": 0.0
+        },
+        {
+            "x": 0.5,
+            "y": 0.0625
+        },
+        {
+            "x": 0.5625,
+            "y": 0.0625
+        },
+        {
+            "x": 0.5625,
+            "y": 0.0
+        },
+        {
+            "x": 0.75,
+            "y": 0.0
+        },
+        {
+            "x": 0.75,
+            "y": 0.0625
+        },
+        {
+            "x": 0.8125,
+            "y": 0.0
+        }
+    ],
+    "vertices": [
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.009999999776482582,
+            "z": 0.0
+        },
+        {
+            "x": -0.009999999776482582,
+            "y": 0.0,
+            "z": 0.0
+        },
+        {
+            "x": -0.029999999329447748,
+            "y": 0.0,
+            "z": 0.0
+        },
+        {
+            "x": -0.029999999329447748,
+            "y": 0.009999999776482582,
+            "z": 0.0
+        },
+        {
+            "x": -0.03999999910593033,
+            "y": 0.009999999776482582,
+            "z": 0.0
+        },
+        {
+            "x": -0.03999999910593033,
+            "y": 0.0,
+            "z": 0.0
+        },
+        {
+            "x": -0.05999999865889549,
+            "y": 0.0,
+            "z": 0.0
+        },
+        {
+            "x": -0.05999999865889549,
+            "y": 0.009999999776482582,
+            "z": 0.0
+        },
+        {
+            "x": -0.07000000029802323,
+            "y": 0.009999999776482582,
+            "z": 0.0
+        },
+        {
+            "x": -0.07000000029802323,
+            "y": 0.0,
+            "z": 0.0
+        },
+        {
+            "x": -0.08999999612569809,
+            "y": 0.0,
+            "z": 0.0
+        },
+        {
+            "x": -0.08999999612569809,
+            "y": 0.009999999776482582,
+            "z": 0.0
+        },
+        {
+            "x": -0.09999999403953552,
+            "y": 0.0,
+            "z": 0.0
+        }
+    ],
+    "normals": [
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        },
+        {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 1.0
+        }
+    ]
+}

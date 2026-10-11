@@ -1,0 +1,3 @@
+*.meta -text -diff
+*.json -text
+*.fbx -text
