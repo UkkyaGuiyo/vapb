@@ -7,6 +7,8 @@ Project VAPB, repository UkkyaGuiyo/vapb. Base branch
 `9343293f6c7f0d3101a3f160b14adba52a17636d`; work branch
 `feature/holmes-fresh-consumer-bootstrap-20261011`.
 Previous native result: `d502b2a88dce01eeb9dfb1536b373e12dc63bcd4`.
+HOLMES05 actual runtime source/evidence result:
+[6a8d44b22d212132a744710f6ff51d59c9c62a35](https://github.com/UkkyaGuiyo/vapb/commit/6a8d44b22d212132a744710f6ff51d59c9c62a35).
 Common AGENTS actual reread SHA256:
 `9BE8886133EEE50F5E24A5A183AF086EACDFEE41EBCF3D5AB0510907D34D6918`.
 
@@ -95,6 +97,11 @@ no product failure or guard bypass occurred. No new SDK, launcher, schema or
 automatic Apply feature was introduced. All 12 frozen original hashes and prior
 Blender files/package/FBX/manifest hashes still match. Old Scenes/settings and
 evidence were not edited. Private paths and raw logs are not included here.
+The observer actually executed has SHA256
+`8977a574a055a692e00b91fea4ebf6e52a3db9bf9442c958f4a3dbb7a988d924`,
+also in the prelaunch inventory and runtime evidence commit. The later report
+commit trims only trailing EOF whitespace in its public Capture.cs copy;
+the executed private Project source is unchanged.
 
 GUI, render, positions, oriented/culling fidelity, VRChat runtime and distinct
 edited Variant creation remain unverified. Reimport was unnecessary and NOT_RUN.
