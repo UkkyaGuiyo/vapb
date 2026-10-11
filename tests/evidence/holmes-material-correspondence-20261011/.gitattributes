@@ -1,0 +1,5 @@
+# Preserve the actual executed source and pinned fixture metadata bytes.
+*.py -text
+*.cs -text
+runtime/*.cs -text
+cases/*.meta -text -diff

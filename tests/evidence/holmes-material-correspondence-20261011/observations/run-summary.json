@@ -1,0 +1,34 @@
+{
+  "product_source_base_commit": "79a28a92328dded08e8004ee014f9af3d34946e2",
+  "unity_version": "2022.3.22f1",
+  "blender_version": "5.2.1 LTS",
+  "native_exit_code": 0,
+  "blender_exit_code": 0,
+  "native_completed_utc": "2026-10-11T03:33:55.2710257Z",
+  "blender_completed_utc": "2026-10-11T03:35:24.5796662Z",
+  "native_free_ram_gib": 5.1052398681640625,
+  "blender_free_ram_gib": 5.045345306396484,
+  "protected_files": 3041,
+  "changed_files": 0,
+  "unexpected_files": 0,
+  "slot_released": true,
+  "global_mutex_released": true,
+  "project_lock_present": false,
+  "product_code_changed": false,
+  "production_guard_removed": false,
+  "independent_reviews": {
+    "generation": "KEEP",
+    "judgment": "KEEP after effective policy comparison fix",
+    "model": "GPT-6.1 SOL",
+    "reasoning": "medium"
+  },
+  "source_sha256": {
+    "generate_cases.py": "1c84518b25f6069c07c6238545b7bfd310fc76c78144470007806a610b910b72",
+    "judge_faces.py": "2d628df4c789ba3efc1c7a5fc646bfe7c33cd2bfee91c4a8c30cb67a0cf91cce",
+    "CaptureNative.cs": "0ab6747a20476112928f5b2f0095ea4199f117a0cf40e6dbc8fea7956e9de6aa",
+    "capture_blender.py": "e644614e0d37f3ad4298ae52ce6f21a6d5cb95d3a4d78983b0676eb1282ec459",
+    "runtime/VapbHolmesCoordinateProbe.cs": "7d783d91128599c24cb3a074ad41c20f7e9cdbed3237fc38a8b67d3317e9af2d"
+  },
+  "baseline_coordinate_probe_sha256": "bd2a43e637dc1f5f86d14b1869af9667eb78e3a52ab897a653a622e7ad7d2845",
+  "limits": "Three finite synthetic cases; no general importer rule, no new product mapping, no real purchased corpus, no GUI/client evidence. Numeric residuals are diagnostic only."
+}

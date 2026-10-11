@@ -1,0 +1,55 @@
+{
+    "unity_version": "2022.3.22f1",
+    "fbx_sha": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+    "meta_sha": "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d",
+    "fbx_sha_after": "fbe25a43a81a066c443093a0788a05569a4ec54e2d673fe133bffa7f801309c5",
+    "meta_sha_after": "ed9bb63c5bbc23e8dc2fa01353a037fef0b907b2842992598c1e1db911c8240d",
+    "prefab_sha": "0d33eb041145f0c73cb69e61de720b580a33aa56e8d432ba04ce110618e50843",
+    "prefab_meta_sha": "1720036f85a858bbe7a98f7b0fd40ecbe75f48c9aca817512fc6d40300666df8",
+    "renderer_guid": "7cbdcbe81fde386408bcfb379e62b6bb",
+    "renderer_file_id": "3728717051629469441",
+    "error": "",
+    "mesh": {
+        "guid": "abcdefabcdefabcdefabcdefabcdefab",
+        "file_id": "3538053534738119282"
+    },
+    "materials": [
+        {
+            "guid": "eb805efb35118044db5e74adc652673a",
+            "file_id": "2100000"
+        },
+        {
+            "guid": "0318f358e4c29034aa90cc8c50b58a93",
+            "file_id": "2100000"
+        },
+        {
+            "guid": "64f92a1bd9b35a040bf9e2c6d200b34c",
+            "file_id": "2100000"
+        }
+    ],
+    "model_materials": [
+        {
+            "guid": "abcdefabcdefabcdefabcdefabcdefab",
+            "file_id": "-8647203009464526318"
+        },
+        {
+            "guid": "abcdefabcdefabcdefabcdefabcdefab",
+            "file_id": "-955998359835854038"
+        },
+        {
+            "guid": "abcdefabcdefabcdefabcdefabcdefab",
+            "file_id": "-5263939259403971604"
+        }
+    ],
+    "same_model_mesh": true,
+    "get_triangles_matches_mesh_data": true,
+    "weld_vertices": true,
+    "optimize_vertices": true,
+    "optimize_polygons": true,
+    "compression": "Off",
+    "index_format": "Auto",
+    "import_normals": "Import",
+    "import_tangents": "CalculateMikk",
+    "external_remaps": [],
+    "serialized_model_importer": "{\"materials\":{\"m_SupportsEmbeddedMaterials\":true,\"m_MaterialImportMode\":2,\"m_MaterialName\":0,\"m_MaterialSearch\":1,\"m_MaterialLocation\":1,\"m_Materials\":[{\"type\":\"UnityEngine:Material\",\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"Public fixture material 0\"},{\"type\":\"UnityEngine:Material\",\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"Public fixture material 1\"},{\"type\":\"UnityEngine:Material\",\"assembly\":\"UnityEngine.CoreModule\",\"name\":\"Public fixture material 2\"}]},\"animations\":{\"m_LegacyGenerateAnimations\":4,\"m_BakeSimulation\":false,\"m_ResampleCurves\":true,\"m_OptimizeGameObjects\":false,\"m_RemoveConstantScaleCurves\":false,\"m_MotionNodeName\":\"\",\"m_RigImportErrors\":\"\",\"m_RigImportWarnings\":\"\",\"m_AnimationImportErrors\":\"\",\"m_AnimationImportWarnings\":\"\",\"m_AnimationRetargetingWarnings\":\"\",\"m_AnimationDoRetargetingWarnings\":false,\"m_ImportAnimatedCustomProperties\":false,\"m_ImportConstraints\":false,\"m_AnimationCompression\":1,\"m_AnimationRotationError\":0.5,\"m_AnimationPositionError\":0.5,\"m_AnimationScaleError\":0.5,\"m_AnimationWrapMode\":0,\"m_ExtraExposedTransformPaths\":[],\"m_ExtraUserProperties\":[],\"m_ClipAnimations\":[],\"m_IsReadable\":true},\"meshes\":{\"m_LODScreenPercentages\":[],\"m_GlobalScale\":1.0,\"m_MeshCompression\":0,\"m_AddColliders\":false,\"m_UseSRGBMaterialColor\":true,\"m_SortHierarchyByName\":true,\"m_ImportPhysicalCameras\":true,\"m_ImportVisibility\":true,\"m_ImportBlendShapes\":true,\"m_ImportCameras\":true,\"m_ImportLights\":true,\"m_NodeNameCollisionStrategy\":1,\"swapUVChannels\":false,\"generateSecondaryUV\":false,\"m_UseFileUnits\":true,\"keepQuads\":false,\"weldVertices\":true,\"bakeAxisConversion\":false,\"m_PreserveHierarchy\":false,\"skinWeightsMode\":1,\"maxBonesPerVertex\":255,\"minBoneWeight\":0.0010000000474974514,\"optimizeBones\":true,\"meshOptimizationFlags\":-1,\"indexFormat\":0,\"secondaryUVAngleDistortion\":8.0,\"secondaryUVAreaDistortion\":15.000000953674317,\"secondaryUVHardAngle\":88.0,\"secondaryUVMarginMethod\":1,\"secondaryUVMinLightmapResolution\":40.0,\"secondaryUVMinObjectScale\":1.0,\"secondaryUVPackMargin\":4.0,\"m_UseFileScale\":true,\"m_FileScale\":0.009999999776482582,\"m_FileScaleUnit\":\"cm\",\"m_FileScaleFactor\":0.009999999776482582,\"m_StrictVertexDataChecks\":false},\"tangentSpace\":{\"normalSmoothAngle\":60.0,\"normalImportMode\":0,\"tangentImportMode\":3,\"normalCalculationMode\":4,\"legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes\":false,\"blendShapeNormalImportMode\":1,\"normalSmoothingSource\":0},\"m_ImportedTakeInfos\":[],\"m_ImportedRoots\":[{\"fileID\":919132149155446097,\"guid\":\"abcdefabcdefabcdefabcdefabcdefab\",\"type\":3}],\"m_HasExtraRoot\":true,\"m_HasEmbeddedTextures\":false,\"m_ReferencedClips\":[],\"m_ImportAnimation\":true,\"m_HumanDescription\":{\"serializedVersion\":\"3\",\"m_Human\":[],\"m_Skeleton\":[],\"m_ArmTwist\":0.5,\"m_ForeArmTwist\":0.5,\"m_UpperLegTwist\":0.5,\"m_LegTwist\":0.5,\"m_ArmStretch\":0.05000000074505806,\"m_LegStretch\":0.05000000074505806,\"m_FeetSpacing\":0.0,\"m_GlobalScale\":1.0,\"m_RootMotionBoneName\":\"\",\"m_HasTranslationDoF\":false,\"m_HasExtraRoot\":false,\"m_SkeletonHasParents\":true},\"m_LastHumanDescriptionAvatarSource\":{\"instanceID\":0},\"m_AutoGenerateAvatarMappingIfUnspecified\":true,\"m_AnimationType\":2,\"m_HumanoidOversampling\":1,\"m_AvatarSetup\":0,\"m_AddHumanoidExtraRootOnlyWhenUsingAvatar\":true,\"m_ImportBlendShapeDeformPercent\":true,\"m_RemapMaterialsIfMaterialImportModeIsNone\":false,\"m_AdditionalBone\":false,\"m_UserData\":\"\",\"m_AssetBundleName\":\"\",\"m_AssetBundleVariant\":\"\",\"ModelImporter\":{\"serializedVersion\":\"22200\",\"m_Name\":\"\",\"m_ExternalObjects\":[],\"m_UsedFileIDs\":[-61738223220265358,-955998359835854038,-2100777698329770883,8661219298608266647,100100000,3538053534738119282,919132149155446097,8657414443533101564,-8647203009464526318,-6523616069059946849,-5263939259403971604,9079160765045702354,3759516100936421520,9000000,-5463862177804661824,-8679921383154817045,-8950030324109560989]}}"
+}

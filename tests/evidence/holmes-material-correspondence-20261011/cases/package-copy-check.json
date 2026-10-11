@@ -1,0 +1,14 @@
+{
+  "R": {
+    "package_sha256": "81ac2152cdc6651c8eb86a3d362ef90c539a3767346d77f86393e581278f25c8",
+    "only_fbx_asset_changed": true
+  },
+  "A": {
+    "package_sha256": "b4f69aac766b751a7637ad9af89aa1e729090c53a2eaaf3f60d5faf1ffdb9df2",
+    "only_fbx_asset_changed": true
+  },
+  "B": {
+    "package_sha256": "099721c82b86cf12b96c61c779efc87ec33227e76fa4939d94d086418c923904",
+    "only_fbx_asset_changed": true
+  }
+}
