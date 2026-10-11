@@ -7,7 +7,7 @@ Authority: latest explicit audit request, PRODUCT_SPEC.md, existing R2 face diag
 - [x] Read actual global/repo instructions, source/specification and relevant Failure Atlas lessons; isolate from saved e675fe6.
 - [x] Trace semantic_graph, effective_prefab, occurrence_projection, material_mapping and material_owner_usage. Reuse exact package/asset/occurrence relations; no new reverse-reference framework.
 - [x] Reproduce the remaining name-only Material assignment with the actual helper; remove only that unsupported automatic assignment. Test explicit-reference and uniform-Material paths.
-- [x] Reproduce A/B cancellation with the actual Unity window handlers; keep individual cancellation from closing unrelated entries. Retain project-local persisted state and fresh Apply checks. Actual Editor restart remains NOT_RUN.
+- [x] Reproduce A/B cancellation with the actual Unity window handlers; keep individual cancellation from closing unrelated entries. Retain project-local persisted state and fresh Apply checks. Follow-up: one actual normal Editor restart verifies persisted B state and API-invoked rehydration; automatic startup/GUI clicks remain NOT_RUN.
 - [x] Replay the public ThreeSlotSource face diagnostic against current source. Preserve original historical results; distinct unproved correspondence remains unresolved.
 - [x] Measure existing manifest authorization reads/hash work and Assistant inspections. Adopt only remembered-prompt preflight reduction with native changed-file inspection proof; defer authorization caching.
 - [x] Retain CASE0024 source/edited/repeat observations; explicitly distinguish native repeated equality from missing cross-runtime per-CP correspondence.

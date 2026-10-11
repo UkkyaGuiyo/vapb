@@ -17,6 +17,66 @@ public static class VapbImportAssistantCancellationProbe
                     b_state_survives_window_recreation, last_entry_closes, state_restored;
         public string error;
     }
+    [Serializable] public class RestartResult
+    {
+        public bool a_cancelled, b_prompted, b_visible, a_visible, manual_reopen, restart_rehydrate;
+    }
+    // Two separate normal Editor processes, with the same isolated synthetic
+    // manifests and project-local state. The owning runner restores state/assets.
+    public static RestartResult BeforeRestart(string aPath, string bPath)
+    {
+        RegisterRestartProvider();
+        Type type = typeof(VapbImportAssistant);
+        object a = type.GetMethod("Inspect", Flags).Invoke(null, new object[] { aPath });
+        object b = type.GetMethod("Inspect", Flags).Invoke(null, new object[] { bPath });
+        var window = ScriptableObject.CreateInstance<VapbImportAssistant>();
+        IList entries = (IList)type.GetField("entries", Flags).GetValue(window);
+        entries.Add(a); entries.Add(b);
+        type.GetMethod("Remember", Flags).Invoke(null, new[] { a, "prompted" });
+        type.GetMethod("Remember", Flags).Invoke(null, new[] { b, "prompted" });
+        window.ShowUtility();
+        type.GetMethod("CancelEntry", Flags).Invoke(window, new[] { a });
+        bool survived = window != null && entries.Count == 1 && ReferenceEquals(entries[0], b);
+        if (!survived) throw new InvalidOperationException("B did not survive A cancellation");
+        window.Close();
+        VapbImportAssistant.Show(bPath); // Actual selected-manifest reopening path.
+        var result = RestartState(aPath, bPath);
+        result.manual_reopen = result.b_visible;
+        return result;
+    }
+    public static RestartResult AfterRestart(string aPath, string bPath)
+    {
+        // The owner registers the fixture provider and waits for a stable Editor.
+        var window = EditorWindow.GetWindow<VapbImportAssistant>(true);
+        typeof(VapbImportAssistant).GetMethod("RestoreDisplayedPrompt", Flags).Invoke(window, null);
+        var result = RestartState(aPath, bPath);
+        result.restart_rehydrate = result.b_visible;
+        return result;
+    }
+    public static void RegisterRestartProvider()
+    {
+        VapbImportAssistant.Register("vapb-assistant-restart-test", path =>
+            new VapbImportAssistant.Inspection { target = "Synthetic A/B", output = "",
+                changes = "Display only; no Apply", count = 0 }, path => false);
+    }
+    static RestartResult RestartState(string aPath, string bPath)
+    {
+        Type type = typeof(VapbImportAssistant);
+        object a = type.GetMethod("Inspect", Flags).Invoke(null, new object[] { aPath });
+        object b = type.GetMethod("Inspect", Flags).Invoke(null, new object[] { bPath });
+        Type entryType = a.GetType();
+        string aId = (string)entryType.GetField("identity", Flags | BindingFlags.Public).GetValue(a);
+        string bId = (string)entryType.GetField("identity", Flags | BindingFlags.Public).GetValue(b);
+        string[] lines = File.ReadAllLines((string)type.GetProperty("StatePath", Flags).GetValue(null));
+        bool bVisible = Resources.FindObjectsOfTypeAll<VapbImportAssistant>().Any(window =>
+            ((IList)type.GetField("entries", Flags).GetValue(window)).Cast<object>().Any(entry =>
+                (string)entryType.GetField("identity", Flags | BindingFlags.Public).GetValue(entry) == bId));
+        bool aVisible = Resources.FindObjectsOfTypeAll<VapbImportAssistant>().Any(window =>
+            ((IList)type.GetField("entries", Flags).GetValue(window)).Cast<object>().Any(entry =>
+                (string)entryType.GetField("identity", Flags | BindingFlags.Public).GetValue(entry) == aId));
+        return new RestartResult { a_cancelled = lines.Contains(aId + " cancelled"),
+            b_prompted = lines.Contains(bId + " prompted"), b_visible = bVisible, a_visible = aVisible };
+    }
     public static Result Observe()
     {
         var result = new Result();
