@@ -102,6 +102,14 @@ public sealed class VapbImportAssistant : EditorWindow
 
     private static Entry Inspect(string path)
     {
+        Entry entry = InspectManifest(path);
+        if (entry.error == null)
+            try { entry.inspection = entry.provider.inspect(path); }
+            catch (Exception error) { entry.error = error.Message; }
+        return entry;
+    }
+    private static Entry InspectManifest(string path)
+    {
         var entry = new Entry { path = path };
         try
         {
@@ -133,7 +141,6 @@ public sealed class VapbImportAssistant : EditorWindow
                     throw new InvalidOperationException("TASK_UNSUPPORTED:MIXED_PROVIDERS");
                 entry.provider = provider;
             }
-            entry.inspection = entry.provider.inspect(path);
         }
         catch (Exception error) { entry.error = error.Message; }
         return entry;
@@ -172,11 +179,14 @@ public sealed class VapbImportAssistant : EditorWindow
             paths.Sort(StringComparer.Ordinal);
             foreach (string path in paths)
             {
-                Entry entry = Inspect(path);
+                Entry entry = InspectManifest(path);
                 // Other JSON files aren't VAPB export manifests.
                 if (selected == null && !entry.recognized) continue;
                 bool known = remembered.TryGetValue(entry.identity ?? "", out string state);
                 if (restoreDisplayed ? !known || state != "prompted" : !manual && known) continue;
+                // Suppressed prompts need only a fresh manifest fingerprint.
+                // Displayed entries and Apply still perform full fresh inspection.
+                entry = Inspect(path);
                 Remember(entry, "prompted");
                 found.Add(entry);
             }
@@ -253,7 +263,9 @@ public sealed class VapbImportAssistant : EditorWindow
     private void CancelEntry(Entry entry)
     {
         try { Remember(entry, "cancelled"); } catch (Exception error) { Debug.LogWarning(error.GetType().Name); }
-        Close();
+        entries.Remove(entry);
+        if (entries.Count == 0) Close();
+        else Repaint();
     }
     private void ApplyEntry(Entry entry)
     {
