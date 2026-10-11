@@ -1,0 +1,356 @@
+{
+  "instruction_id": "HOLMES-20261011-05",
+  "status": "PASS",
+  "error": "",
+  "unity_version": "2022.3.22f1",
+  "package_sha256": "0ccf9cd8d4f507a8589c02631d8865ddc456bd8e2627394ae9a8549843118dc9",
+  "manifest_sha256": "b26d11116b63bef9e4e8c41d324eaa345ca6a6e14052be45640f024835358048",
+  "policy": {
+    "m_LODScreenPercentages": [],
+    "m_GlobalScale": 1.0,
+    "m_MeshCompression": 0,
+    "m_AddColliders": false,
+    "m_UseSRGBMaterialColor": true,
+    "m_SortHierarchyByName": true,
+    "m_ImportPhysicalCameras": true,
+    "m_ImportVisibility": true,
+    "m_ImportBlendShapes": true,
+    "m_ImportCameras": true,
+    "m_ImportLights": true,
+    "m_NodeNameCollisionStrategy": 1,
+    "swapUVChannels": false,
+    "generateSecondaryUV": false,
+    "m_UseFileUnits": true,
+    "keepQuads": true,
+    "weldVertices": true,
+    "bakeAxisConversion": false,
+    "m_PreserveHierarchy": false,
+    "skinWeightsMode": 1,
+    "maxBonesPerVertex": 255,
+    "minBoneWeight": 0.0010000000474974513,
+    "optimizeBones": true,
+    "meshOptimizationFlags": -1,
+    "indexFormat": 0,
+    "secondaryUVAngleDistortion": 8.0,
+    "secondaryUVAreaDistortion": 15.000000953674316,
+    "secondaryUVHardAngle": 88.0,
+    "secondaryUVMarginMethod": 1,
+    "secondaryUVMinLightmapResolution": 40.0,
+    "secondaryUVMinObjectScale": 1.0,
+    "secondaryUVPackMargin": 4.0,
+    "m_UseFileScale": true,
+    "m_FileScale": 0.009999999776482582,
+    "m_FileScaleUnit": "cm",
+    "m_FileScaleFactor": 0.009999999776482582,
+    "m_StrictVertexDataChecks": false
+  },
+  "fbx_sha256": "86511b3319fb83a9d18e2ee46740bb3037be8d8df8210b466a4b3c545b1f5087",
+  "fbx_sha256_after": "86511b3319fb83a9d18e2ee46740bb3037be8d8df8210b466a4b3c545b1f5087",
+  "meta_sha256": "abe596e605b91137f4f86eb5e5826a276b338c83e52e88cfb902d769af145c96",
+  "meta_sha256_after": "abe596e605b91137f4f86eb5e5826a276b338c83e52e88cfb902d769af145c96",
+  "prefab_sha256_before": "ce01b2bc1d793a4b0bed4aafe69edbeb73712ad0add8c630f15666287af59d22",
+  "prefab_sha256_after": "ce01b2bc1d793a4b0bed4aafe69edbeb73712ad0add8c630f15666287af59d22",
+  "import_completed": false,
+  "explicit_apply": true,
+  "apply_returned_true": true,
+  "apply_base_vertex": true,
+  "materials_exact": true,
+  "material_bytes_preserved": true,
+  "mesh": {
+    "guid": "d6f28bcc59f94dbeba9883a9c79a0e03",
+    "file_id": "-7713446866133851500"
+  },
+  "renderer": {
+    "guid": "983dd9d36c5824d488269d7d6d6f0434",
+    "file_id": "9090392177786753814"
+  },
+  "materials": [
+    {
+      "guid": "afd253dd071f7e5469e24392cdbf181c",
+      "file_id": "2100000"
+    },
+    {
+      "guid": "70c1cb3bd3a723141a677eca237e252c",
+      "file_id": "2100000"
+    },
+    {
+      "guid": "242d369718abeb942873ec054737cf94",
+      "file_id": "2100000"
+    },
+    {
+      "guid": "4d7af3be41387054c9f86b68e180d9e7",
+      "file_id": "2100000"
+    }
+  ],
+  "groups": [
+    {
+      "topology": "Triangles",
+      "index_count": 3,
+      "base_vertex": 0,
+      "indices": [
+        0,
+        1,
+        2
+      ]
+    },
+    {
+      "topology": "Triangles",
+      "index_count": 12,
+      "base_vertex": 0,
+      "indices": [
+        3,
+        4,
+        5,
+        3,
+        6,
+        4,
+        7,
+        8,
+        9,
+        7,
+        10,
+        8
+      ]
+    },
+    {
+      "topology": "Triangles",
+      "index_count": 9,
+      "base_vertex": 0,
+      "indices": [
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        14,
+        17,
+        15
+      ]
+    },
+    {
+      "topology": "Triangles",
+      "index_count": 3,
+      "base_vertex": 0,
+      "indices": [
+        18,
+        19,
+        20
+      ]
+    }
+  ],
+  "uv": [
+    {
+      "x": 0.0,
+      "y": 0.0
+    },
+    {
+      "x": 0.0,
+      "y": 0.03125
+    },
+    {
+      "x": 0.03125,
+      "y": 0.0
+    },
+    {
+      "x": 0.125,
+      "y": 0.0
+    },
+    {
+      "x": 0.15625,
+      "y": 0.03125
+    },
+    {
+      "x": 0.15625,
+      "y": 0.0
+    },
+    {
+      "x": 0.125,
+      "y": 0.03125
+    },
+    {
+      "x": 0.625,
+      "y": 0.0
+    },
+    {
+      "x": 0.65625,
+      "y": 0.03125
+    },
+    {
+      "x": 0.65625,
+      "y": 0.0
+    },
+    {
+      "x": 0.625,
+      "y": 0.03125
+    },
+    {
+      "x": 0.5,
+      "y": 0.0
+    },
+    {
+      "x": 0.5,
+      "y": 0.03125
+    },
+    {
+      "x": 0.53125,
+      "y": 0.0
+    },
+    {
+      "x": 0.25,
+      "y": 0.0
+    },
+    {
+      "x": 0.28125,
+      "y": 0.03125
+    },
+    {
+      "x": 0.28125,
+      "y": 0.0
+    },
+    {
+      "x": 0.25,
+      "y": 0.03125
+    },
+    {
+      "x": 0.375,
+      "y": 0.0
+    },
+    {
+      "x": 0.375,
+      "y": 0.03125
+    },
+    {
+      "x": 0.40625,
+      "y": 0.0
+    }
+  ],
+  "vertices": [
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": 0.0,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.009999999776482582,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.029999999329447746,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.03999999910593033,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.03999999910593033,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.029999999329447746,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.14999999105930328,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.1599999964237213,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.1599999964237213,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.14999999105930328,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.11999999731779099,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.11999999731779099,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.12999999523162842,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.05999999865889549,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.07000000029802322,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.07000000029802322,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.05999999865889549,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.08999999612569809,
+      "y": 0.0,
+      "z": 0.0
+    },
+    {
+      "x": -0.08999999612569809,
+      "y": 0.009999999776482582,
+      "z": 0.0
+    },
+    {
+      "x": -0.09999999403953552,
+      "y": 0.0,
+      "z": 0.0
+    }
+  ],
+  "prefab": {
+    "guid": "983dd9d36c5824d488269d7d6d6f0434",
+    "file_id": "3717565062898049783"
+  },
+  "manifest": {
+    "guid": "1c889fa3bb0bd4fd873fccad4b5cace6",
+    "file_id": "4900000"
+  },
+  "finalizer_script": {
+    "guid": "0f7218cf26f9b325a180107e8d120043",
+    "file_id": "11500000"
+  },
+  "finalizer_source_sha256": "8aaa4ab384a25a7872f295a1906cb47224313088cccd90b3372a4dd9c47f30ba",
+  "finalizer_assembly": "Assembly-CSharp-Editor",
+  "matching_realization_markers": 1,
+  "phase": "reopen",
+  "prefab_repeat_before": "ce01b2bc1d793a4b0bed4aafe69edbeb73712ad0add8c630f15666287af59d22",
+  "prefab_repeat_after": "ce01b2bc1d793a4b0bed4aafe69edbeb73712ad0add8c630f15666287af59d22",
+  "repeat_apply_returned_true": true,
+  "repeat_materials_unchanged": true,
+  "repeat_mesh_unchanged": true
+}

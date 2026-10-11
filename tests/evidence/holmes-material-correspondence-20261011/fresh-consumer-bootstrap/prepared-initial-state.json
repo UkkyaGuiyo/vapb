@@ -1,0 +1,43 @@
+{
+  "instruction_id": "HOLMES-20261011-05",
+  "status": "PREPARED_NOT_RUN",
+  "package_sha256": "0ccf9cd8d4f507a8589c02631d8865ddc456bd8e2627394ae9a8549843118dc9",
+  "owned_project_new": true,
+  "project_inventory": [
+    {
+      "path": "Packages/manifest.json",
+      "sha256": "311e81d48f21947365a3db4038b46fa0770c5ff75cd9d8f5ad7d87380814b85f"
+    },
+    {
+      "path": "ProjectSettings/ProjectVersion.txt",
+      "sha256": "ab5cfddd31138282622595b82dc38f4aaa640c6d43f40232716feec558fb2aa5"
+    },
+    {
+      "path": "Assets/HolmesFreshConsumer/Editor/Capture.cs",
+      "sha256": "8977a574a055a692e00b91fea4ebf6e52a3db9bf9442c958f4a3dbb7a988d924"
+    }
+  ],
+  "preinstalled_vapb_csharp": false,
+  "library_absent": true,
+  "target_package_paths_absent": [
+    "Assets/VAPBExport/Editor/VapbReferenceFinalizer.cs",
+    "Assets/VAPBExport/manifest.json",
+    "Assets/HolmesOrderedFacePlan/R2.mat",
+    "Assets/HolmesOrderedFacePlan/R3.mat",
+    "Assets/HolmesOrderedFacePlan/R1.mat",
+    "Assets/VAPBExport/Editor/VapbModelSkinFinalizer.cs",
+    "Assets/HolmesOrderedFacePlan/Receiver.prefab",
+    "Assets/VAPBExport/VapbRealizationMarker.cs",
+    "Assets/HolmesOrderedFacePlan/R0.mat",
+    "Assets/HolmesOrderedFacePlan/OrderedSix.fbx",
+    "Assets/VAPBExport/Editor/VapbActionClipFinalizer.cs",
+    "Assets/VAPBExport/Editor/VapbImportAssistant.cs"
+  ],
+  "modules": [
+    "animation",
+    "imgui",
+    "jsonserialize",
+    "physics"
+  ],
+  "dependency_origin": "Installed Unity built-in modules only; no SDK or third-party package"
+}

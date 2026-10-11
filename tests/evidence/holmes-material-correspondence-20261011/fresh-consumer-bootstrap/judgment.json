@@ -1,0 +1,188 @@
+{
+  "instruction_id": "HOLMES-20261011-05",
+  "verdict": "VERIFIED_IN_SCOPE",
+  "faces": {
+    "initial": [
+      {
+        "final_polygon": 0,
+        "expected_material": {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "groups": [
+          0
+        ],
+        "triangle_count": 1,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 1,
+        "expected_material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "groups": [
+          1
+        ],
+        "triangle_count": 2,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 2,
+        "expected_material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "groups": [
+          2
+        ],
+        "triangle_count": 2,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 3,
+        "expected_material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        },
+        "groups": [
+          3
+        ],
+        "triangle_count": 1,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 4,
+        "expected_material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "groups": [
+          2
+        ],
+        "triangle_count": 1,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 5,
+        "expected_material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "groups": [
+          1
+        ],
+        "triangle_count": 2,
+        "native_winding": -1,
+        "cover": "PASS"
+      }
+    ],
+    "reopen": [
+      {
+        "final_polygon": 0,
+        "expected_material": {
+          "guid": "afd253dd071f7e5469e24392cdbf181c",
+          "file_id": "2100000"
+        },
+        "groups": [
+          0
+        ],
+        "triangle_count": 1,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 1,
+        "expected_material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "groups": [
+          1
+        ],
+        "triangle_count": 2,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 2,
+        "expected_material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "groups": [
+          2
+        ],
+        "triangle_count": 2,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 3,
+        "expected_material": {
+          "guid": "4d7af3be41387054c9f86b68e180d9e7",
+          "file_id": "2100000"
+        },
+        "groups": [
+          3
+        ],
+        "triangle_count": 1,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 4,
+        "expected_material": {
+          "guid": "242d369718abeb942873ec054737cf94",
+          "file_id": "2100000"
+        },
+        "groups": [
+          2
+        ],
+        "triangle_count": 1,
+        "native_winding": -1,
+        "cover": "PASS"
+      },
+      {
+        "final_polygon": 5,
+        "expected_material": {
+          "guid": "70c1cb3bd3a723141a677eca237e252c",
+          "file_id": "2100000"
+        },
+        "groups": [
+          1
+        ],
+        "triangle_count": 2,
+        "native_winding": -1,
+        "cover": "PASS"
+      }
+    ]
+  },
+  "repeat_apply": "PASS",
+  "normal_reopen_retention": "PASS",
+  "initial_install": "PASS",
+  "unchanged_packaged_asset_and_meta_paths": [
+    "Assets/VAPBExport/Editor/VapbReferenceFinalizer.cs",
+    "Assets/VAPBExport/manifest.json",
+    "Assets/HolmesOrderedFacePlan/R2.mat",
+    "Assets/HolmesOrderedFacePlan/R3.mat",
+    "Assets/HolmesOrderedFacePlan/R1.mat",
+    "Assets/VAPBExport/Editor/VapbModelSkinFinalizer.cs",
+    "Assets/HolmesOrderedFacePlan/Receiver.prefab",
+    "Assets/VAPBExport/VapbRealizationMarker.cs",
+    "Assets/HolmesOrderedFacePlan/R0.mat",
+    "Assets/HolmesOrderedFacePlan/OrderedSix.fbx",
+    "Assets/VAPBExport/Editor/VapbActionClipFinalizer.cs",
+    "Assets/VAPBExport/Editor/VapbImportAssistant.cs"
+  ],
+  "package_sha256": "0ccf9cd8d4f507a8589c02631d8865ddc456bd8e2627394ae9a8549843118dc9",
+  "GUI": "NOT_RUN",
+  "render": "NOT_RUN",
+  "reimport": "NOT_RUN",
+  "distinct_variant": "NOT_ESTABLISHED"
+}

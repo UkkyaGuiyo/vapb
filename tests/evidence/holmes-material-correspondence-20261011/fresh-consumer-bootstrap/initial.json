@@ -1,0 +1,12 @@
+{
+  "asset_paths": [
+    "Assets",
+    "Assets/HolmesFreshConsumer/Editor/Capture.cs",
+    "Assets/HolmesFreshConsumer/Editor",
+    "Assets/HolmesFreshConsumer"
+  ],
+  "vapb_named_assemblies": [],
+  "finalizer_available": false,
+  "model_finalizer_available": false,
+  "assistant_available": false
+}

@@ -1,0 +1,36 @@
+{
+  "runs": {
+    "initial": {
+      "pid": 18048,
+      "startUtc": "2026-10-11T11:59:23.4898604Z",
+      "exitUtc": "2026-10-11T11:59:38.9057196Z",
+      "exitCode": 0,
+      "ownedChildrenAbsent": true,
+      "lockAbsent": true,
+      "executed_source_sha256": "6cc1ed38f324aa5e39ccaf40cc8f533617b9c8d36ea645de6d9b0d04ea649281"
+    },
+    "reopen": {
+      "pid": 8876,
+      "startUtc": "2026-10-11T12:00:14.1491330Z",
+      "exitUtc": "2026-10-11T12:00:18.9916835Z",
+      "exitCode": 0,
+      "ownedChildrenAbsent": true,
+      "lockAbsent": true,
+      "executed_source_sha256": "d60725a68a181e7650cebe27d98d9843a6103e6d3319378affc1d12ee4812fd3"
+    }
+  },
+  "resource_return": {
+    "capturedUtc": "2026-10-11T12:00:59.5871943Z",
+    "processCensusConflict": false,
+    "mutexAvailableAndProbeReleased": true,
+    "poolAllFree": true,
+    "freePhysicalMemoryGiB": 5.4232,
+    "newProjectLockAbsent": true
+  },
+  "lease": "No fixed-root pool lease; explicitly owned new off-pool Project",
+  "launch_gates": "Existing reviewed mutex/census/stability/pool/4GiB-RAM/journal/lock checks passed before each Start",
+  "launch_ram_value": "Not separately captured; threshold enforced by executed existing source",
+  "frozen_original_hashes_unchanged": 12,
+  "prior_blends_package_fbx_manifest_unchanged": true,
+  "product_code_changes": false
+}
