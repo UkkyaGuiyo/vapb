@@ -1,0 +1,169 @@
+{
+  "instruction_id": "HOLMES-20261012-01",
+  "verdict": "UNDETERMINED",
+  "A": "PASS_BOUNDED_RETURN",
+  "B_first_failure": "SOURCE_MODEL_INDEX_LAYOUT_CHANGED",
+  "B_blender_edit": "PASS_DIAGONAL_ONLY",
+  "B_raw_fbx_cp_weights": "EXACT_IN_RAW_CP_DOMAIN",
+  "B_native_geometry": "PASS_EXACT_QUAD_COVERAGE_ONLY",
+  "B_native_uv_and_skin_cp_identity": "UNDETERMINED",
+  "B_bindpose_array": "EXACT_ARRAY_NOT_BONE_JOIN",
+  "B_old_index_influence_comparator": false,
+  "reason": "No exported CP weight witness in this source-root context; native renumbering not joined to exported CP identity. Old index guard is first refusal, but later SameSkinInfluences would also fail. Therefore index-only causal isolation and full B Skin proof are not established.",
+  "source_coverage": {
+    "boundary": [
+      [
+        [
+          -0.009999999776482582,
+          0.0,
+          0.0
+        ],
+        [
+          -0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ]
+      ],
+      [
+        [
+          -0.009999999776482582,
+          0.0,
+          0.0
+        ],
+        [
+          0.009999999776482582,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          -0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ],
+        [
+          0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.009999999776482582,
+          0.0,
+          0.0
+        ],
+        [
+          0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ]
+      ]
+    ],
+    "internal": [
+      [
+        [
+          -0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ],
+        [
+          0.009999999776482582,
+          0.0,
+          0.0
+        ]
+      ]
+    ],
+    "multiplicities": [
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "triangles": 2
+  },
+  "edited_coverage": {
+    "boundary": [
+      [
+        [
+          -0.009999999776482582,
+          0.0,
+          0.0
+        ],
+        [
+          -0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ]
+      ],
+      [
+        [
+          -0.009999999776482582,
+          0.0,
+          0.0
+        ],
+        [
+          0.009999999776482582,
+          0.0,
+          0.0
+        ]
+      ],
+      [
+        [
+          -0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ],
+        [
+          0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ]
+      ],
+      [
+        [
+          0.009999999776482582,
+          0.0,
+          0.0
+        ],
+        [
+          0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ]
+      ]
+    ],
+    "internal": [
+      [
+        [
+          -0.009999999776482582,
+          0.0,
+          0.0
+        ],
+        [
+          0.009999999776482582,
+          0.019999999552965164,
+          0.0
+        ]
+      ]
+    ],
+    "multiplicities": [
+      1,
+      1,
+      1,
+      1,
+      2
+    ],
+    "triangles": 2
+  },
+  "negatives": {
+    "missing_triangle": "REJECTED_CAPTURED_DATA",
+    "changed_corner_uv": "REJECTED_CAPTURED_DATA",
+    "changed_influence": "REJECTED_CAPTURED_DATA",
+    "product_safety_negatives": "NOT_RUN_NO_PRODUCT_CHANGE"
+  },
+  "product_change": "NONE",
+  "next_minimum": "Reuse prepare_export_weight_witness for the existing source-model context without parent_transform_mapping, and let ValidateExportedWeightTransport validate its existing exact CP/realization/revision evidence; then retry only this preserved A/B and required safety controls before changing the index guard."
+}

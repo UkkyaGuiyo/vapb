@@ -1,0 +1,34 @@
+{
+  "pass": true,
+  "variant_ancestry": true,
+  "source_root_identity": true,
+  "source_bone_identity": true,
+  "source_parent_identity": true,
+  "edited_mesh_identity": true,
+  "materials_identity": true,
+  "assets_unchanged": true,
+  "root_source": {
+    "guid": "8d27441c691fdcb46b8a7a273827ebba",
+    "file_id": "-4316767471659242683"
+  },
+  "bone_sources": [
+    {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "file_id": "-4316767471659242683"
+    },
+    {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "file_id": "-450467519213620703"
+    }
+  ],
+  "parent_sources": [
+    {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "file_id": "8879528566716807029"
+    },
+    {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "file_id": "-4316767471659242683"
+    }
+  ]
+}

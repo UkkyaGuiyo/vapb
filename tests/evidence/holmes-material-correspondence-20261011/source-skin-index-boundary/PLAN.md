@@ -1,0 +1,5 @@
+# HOLMES-20261012-01
+Source CHAT_FALLBACK_NOT_SAVED_TO_GITHUB. Base feature/holmes-mirrored-transform-fidelity-20261011/c8147a2972729991c0fba3ccf5c8d24643c57f63.
+Goal: single source-model Skin A unchanged and B internal diagonal rotation; hypotheses initially unconfirmed. Preserve originals, UV/Material/Bone/Weight/rest identity. Use ordinary Import, Blender Edit Mode edge rotation, save/normal exit/different-process reopen, ordinary Export, fresh Unity Import and explicit packaged Finalizer. First prove A before B consumer. No source Mesh patch/GUID replacement, private corpus or prior runtime rerun. Product change only if all required independent evidence isolates old index guard, then RED/GREEN, negatives and fresh SOL review. Otherwise report concrete earliest loss and leave product unchanged.
+
+Checkpoint: A return PASS; B first rejects old index guard, later index-addressed Weight fallback also fails, native CP witness absent. UNDETERMINED, no product change. Independent review KEEP; purpose commit/push/readback next.

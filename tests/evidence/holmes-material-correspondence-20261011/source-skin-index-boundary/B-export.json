@@ -1,0 +1,272 @@
+{
+  "status": "PASS",
+  "state": {
+    "vertices": [
+      [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        2.0,
+        0.0
+      ],
+      [
+        -1.0,
+        2.0,
+        0.0
+      ]
+    ],
+    "faces": [
+      [
+        2,
+        3,
+        1
+      ],
+      [
+        3,
+        0,
+        1
+      ]
+    ],
+    "face_materials": [
+      0,
+      0
+    ],
+    "uv": [
+      [
+        1.0,
+        1.0
+      ],
+      [
+        0.0,
+        1.0
+      ],
+      [
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0
+      ]
+    ],
+    "corner_vertices": [
+      2,
+      3,
+      1,
+      3,
+      0,
+      1
+    ],
+    "weights": [
+      [
+        [
+          0,
+          0.75
+        ],
+        [
+          1,
+          0.25
+        ]
+      ],
+      [
+        [
+          0,
+          0.75
+        ],
+        [
+          1,
+          0.25
+        ]
+      ],
+      [
+        [
+          0,
+          0.25
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      [
+        [
+          0,
+          0.25
+        ],
+        [
+          1,
+          0.75
+        ]
+      ]
+    ],
+    "groups": [
+      "Lower",
+      "Upper"
+    ],
+    "matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        1.6292067073209182e-07,
+        0.0
+      ],
+      [
+        0.0,
+        -1.6292067073209182e-07,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "bones": [
+      {
+        "uid": "957849273",
+        "realization": "a9e2c2b6-3348-49fa-adb2-bd3c1ea84836",
+        "parent_uid": "",
+        "matrix": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "uid": "288813419",
+        "realization": "f3b30923-6ea2-4a62-af82-98b898113373",
+        "parent_uid": "957849273",
+        "matrix": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "guid": "75f6b54b17e02744598ae3ba28ab8047",
+        "file_id": "2100000"
+      }
+    ],
+    "shape_count": 0,
+    "model_uid": "549064506",
+    "geometry_uid": "808198139",
+    "receipt": {
+      "_vapb_fbx_receipt_version": "vapb_fbx_realization_receipt_v1",
+      "_vapb_fbx_object_receipt_id": "vapb-fbx-object:e2b96347ca8750c80a30e95d1c2b2d3d40767dea3645dbad030fa5d2a73c01a1",
+      "_vapb_fbx_mesh_receipt_id": "vapb-fbx-mesh:267267059dfca5172f876e85cb30e86247bc619362d6471f27c0b29d0338fcb6",
+      "_vapb_fbx_receipt_evidence": "OFFICIAL_IMPORTER_MODEL_HOOK",
+      "_vapb_fbx_realization_id": "5afbb767-0197-4da4-9d99-d3fe91598f7a"
+    }
+  },
+  "input_sha256": "3bdbab3790a4588f5712c931d085b6b513a6b106937548fbbfce6797e8f5a83d",
+  "output_sha256": "11376d7d5eaf8828d7eeab16ddf9c4b72aa1712adc78c5223ce4351d095a8299",
+  "fbx_sha256": "3e8cd46bdd133a8820f8be33a22052fa125c764e33b3e4d836897ab3d133dc10",
+  "source_assets_preserved": true,
+  "task": {
+    "bone_mappings": [
+      {
+        "edited_bone_realization_id": "f3b30923-6ea2-4a62-af82-98b898113373",
+        "source_model_uid": "288813419"
+      },
+      {
+        "edited_bone_realization_id": "a9e2c2b6-3348-49fa-adb2-bd3c1ea84836",
+        "source_model_uid": "957849273"
+      }
+    ],
+    "instance_edges": [],
+    "kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "material_bindings": [
+      {
+        "file_id": "2100000",
+        "guid": "75f6b54b17e02744598ae3ba28ab8047",
+        "transport_id": "VAPB-MAT-c1b1041c4106d475ed4e4c09881495e9"
+      }
+    ],
+    "model_guid": "d735f94eb694f06ff99c127bb3d9bbae",
+    "model_sha256": "3e8cd46bdd133a8820f8be33a22052fa125c764e33b3e4d836897ab3d133dc10",
+    "realization_id": "5afbb767-0197-4da4-9d99-d3fe91598f7a",
+    "source_geometry_uid": "808198139",
+    "source_model_guid": "8d27441c691fdcb46b8a7a273827ebba",
+    "source_model_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+    "source_model_uid": "549064506",
+    "source_model_uids": [
+      "528252550",
+      "549064506",
+      "957849273",
+      "288813419"
+    ],
+    "variant_path": "Assets/VAPBExport/EditedVariant_6289d2fe2c04d62e7bbfea58fad29b44fe133fb99a6be68959599b14641ae212.prefab",
+    "witness_noop_path": "Assets/VAPBExport/Witness_d735f94eb694f06ff99c127bb3d9bbae_Noop.bytes",
+    "witness_noop_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+    "witness_path": "Assets/VAPBExport/Witness_d735f94eb694f06ff99c127bb3d9bbae_Source.bytes",
+    "witness_sha256": "cffc9046ab8ea4ec701f1924d557bb9c92c4b8761d17b6541dde377c701afb69"
+  }
+}

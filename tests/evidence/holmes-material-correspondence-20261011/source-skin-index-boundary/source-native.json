@@ -1,0 +1,330 @@
+{
+  "instruction_id": "HOLMES-20261012-01",
+  "status": "PASS",
+  "error": "",
+  "unity_version": "2022.3.22f1",
+  "phase": "source",
+  "package_sha256": "3bdbab3790a4588f5712c931d085b6b513a6b106937548fbbfce6797e8f5a83d",
+  "finalizer_sha256": "",
+  "source": {
+    "mesh": {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "file_id": "-3781860745874542921"
+    },
+    "renderer": {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "file_id": "-3306160838877982759"
+    },
+    "root": {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "file_id": "-4316767471659242683"
+    },
+    "bones": [
+      {
+        "guid": "8d27441c691fdcb46b8a7a273827ebba",
+        "file_id": "-4316767471659242683"
+      },
+      {
+        "guid": "8d27441c691fdcb46b8a7a273827ebba",
+        "file_id": "-450467519213620703"
+      }
+    ],
+    "bone_parents": [
+      {
+        "guid": "8d27441c691fdcb46b8a7a273827ebba",
+        "file_id": "8879528566716807029"
+      },
+      {
+        "guid": "8d27441c691fdcb46b8a7a273827ebba",
+        "file_id": "-4316767471659242683"
+      }
+    ],
+    "materials": [
+      {
+        "guid": "75f6b54b17e02744598ae3ba28ab8047",
+        "file_id": "2100000"
+      }
+    ],
+    "vertices": [
+      {
+        "x": 0.009999999776482582,
+        "y": 0.0,
+        "z": 0.0
+      },
+      {
+        "x": -0.009999999776482582,
+        "y": 0.019999999552965164,
+        "z": 0.0
+      },
+      {
+        "x": -0.009999999776482582,
+        "y": 0.0,
+        "z": 0.0
+      },
+      {
+        "x": 0.009999999776482582,
+        "y": 0.019999999552965164,
+        "z": 0.0
+      }
+    ],
+    "normals": [
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      },
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      },
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      },
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      }
+    ],
+    "uv": [
+      {
+        "x": 0.0,
+        "y": 0.0
+      },
+      {
+        "x": 1.0,
+        "y": 1.0
+      },
+      {
+        "x": 1.0,
+        "y": 0.0
+      },
+      {
+        "x": 0.0,
+        "y": 1.0
+      }
+    ],
+    "groups": [
+      {
+        "topology": "Triangles",
+        "indices": [
+          0,
+          1,
+          2,
+          0,
+          3,
+          1
+        ]
+      }
+    ],
+    "bindposes": [
+      {
+        "values": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "values": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          -0.009999999776482582,
+          0.0,
+          1.0
+        ]
+      }
+    ],
+    "weights": [
+      {
+        "influences": [
+          {
+            "bone": 0,
+            "weight": 0.75,
+            "bits": 1061158912
+          },
+          {
+            "bone": 1,
+            "weight": 0.25,
+            "bits": 1048576000
+          }
+        ]
+      },
+      {
+        "influences": [
+          {
+            "bone": 1,
+            "weight": 0.75,
+            "bits": 1061158912
+          },
+          {
+            "bone": 0,
+            "weight": 0.25,
+            "bits": 1048576000
+          }
+        ]
+      },
+      {
+        "influences": [
+          {
+            "bone": 0,
+            "weight": 0.75,
+            "bits": 1061158912
+          },
+          {
+            "bone": 1,
+            "weight": 0.25,
+            "bits": 1048576000
+          }
+        ]
+      },
+      {
+        "influences": [
+          {
+            "bone": 1,
+            "weight": 0.75,
+            "bits": 1061158912
+          },
+          {
+            "bone": 0,
+            "weight": 0.25,
+            "bits": 1048576000
+          }
+        ]
+      }
+    ],
+    "matrix": [
+      100.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.1920928955078125e-05,
+      -99.99999237060547,
+      0.0,
+      0.0,
+      99.99999237060547,
+      -1.1920928955078125e-05,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "shapes": 0,
+    "cloth": false,
+    "realization": []
+  },
+  "post_import": {
+    "mesh": {
+      "guid": "",
+      "file_id": ""
+    },
+    "renderer": {
+      "guid": "",
+      "file_id": ""
+    },
+    "root": {
+      "guid": "",
+      "file_id": ""
+    },
+    "bones": [],
+    "bone_parents": [],
+    "materials": [],
+    "vertices": [],
+    "normals": [],
+    "uv": [],
+    "groups": [],
+    "bindposes": [],
+    "weights": [],
+    "matrix": [],
+    "shapes": 0,
+    "cloth": false,
+    "realization": []
+  },
+  "post_apply": {
+    "mesh": {
+      "guid": "",
+      "file_id": ""
+    },
+    "renderer": {
+      "guid": "",
+      "file_id": ""
+    },
+    "root": {
+      "guid": "",
+      "file_id": ""
+    },
+    "bones": [],
+    "bone_parents": [],
+    "materials": [],
+    "vertices": [],
+    "normals": [],
+    "uv": [],
+    "groups": [],
+    "bindposes": [],
+    "weights": [],
+    "matrix": [],
+    "shapes": 0,
+    "cloth": false,
+    "realization": []
+  },
+  "variant": {
+    "mesh": {
+      "guid": "",
+      "file_id": ""
+    },
+    "renderer": {
+      "guid": "",
+      "file_id": ""
+    },
+    "root": {
+      "guid": "",
+      "file_id": ""
+    },
+    "bones": [],
+    "bone_parents": [],
+    "materials": [],
+    "vertices": [],
+    "normals": [],
+    "uv": [],
+    "groups": [],
+    "bindposes": [],
+    "weights": [],
+    "matrix": [],
+    "shapes": 0,
+    "cloth": false,
+    "realization": []
+  },
+  "apply": false,
+  "source_bytes_preserved": false,
+  "repeat_apply": false,
+  "rejection": []
+}

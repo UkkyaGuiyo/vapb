@@ -1,0 +1,72 @@
+[
+  {
+    "case": "A",
+    "source_assets_preserved": true,
+    "source_assets": {
+      "75f6b54b17e02744598ae3ba28ab8047": {
+        "path": "Assets/HolmesSource/SourceMaterial.mat",
+        "asset_sha256": "f7ddb9a7625f3190498256c28444a6dab09ae3208a40bb90a0e63ae33a16179e",
+        "meta_sha256": "7fd5843c1bdb26a4583a56f0043a85e879b9478ae0833dc9fdd68c8c72cfa836"
+      },
+      "8d27441c691fdcb46b8a7a273827ebba": {
+        "path": "Assets/HolmesSource/Source.fbx",
+        "asset_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+        "meta_sha256": "6746b5c2b47d9cb1571c9f4709eb176ea1dbf9b1f1c29d9f98c8c5b3c4c07956"
+      }
+    },
+    "material_bindings": [
+      {
+        "file_id": "2100000",
+        "guid": "75f6b54b17e02744598ae3ba28ab8047",
+        "transport_id": "VAPB-MAT-c1b1041c4106d475ed4e4c09881495e9"
+      }
+    ],
+    "source_identity": {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "model_uid": "549064506",
+      "geometry_uid": "808198139"
+    },
+    "export_identity": {
+      "guid": "da83b4f0d56932d9afdbc2723946d811",
+      "realization": "209869c3-e547-48ce-ae10-8d8718429f6d",
+      "sha256": "c978e8b8440c6b4020ed47c8a7a7c36d391f788b6f5cc9dc5e07e3cd893e471b"
+    },
+    "weight_transport_present": false,
+    "parent_transform_mapping_present": false
+  },
+  {
+    "case": "B",
+    "source_assets_preserved": true,
+    "source_assets": {
+      "75f6b54b17e02744598ae3ba28ab8047": {
+        "path": "Assets/HolmesSource/SourceMaterial.mat",
+        "asset_sha256": "f7ddb9a7625f3190498256c28444a6dab09ae3208a40bb90a0e63ae33a16179e",
+        "meta_sha256": "7fd5843c1bdb26a4583a56f0043a85e879b9478ae0833dc9fdd68c8c72cfa836"
+      },
+      "8d27441c691fdcb46b8a7a273827ebba": {
+        "path": "Assets/HolmesSource/Source.fbx",
+        "asset_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+        "meta_sha256": "6746b5c2b47d9cb1571c9f4709eb176ea1dbf9b1f1c29d9f98c8c5b3c4c07956"
+      }
+    },
+    "material_bindings": [
+      {
+        "file_id": "2100000",
+        "guid": "75f6b54b17e02744598ae3ba28ab8047",
+        "transport_id": "VAPB-MAT-c1b1041c4106d475ed4e4c09881495e9"
+      }
+    ],
+    "source_identity": {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "model_uid": "549064506",
+      "geometry_uid": "808198139"
+    },
+    "export_identity": {
+      "guid": "d735f94eb694f06ff99c127bb3d9bbae",
+      "realization": "5afbb767-0197-4da4-9d99-d3fe91598f7a",
+      "sha256": "3e8cd46bdd133a8820f8be33a22052fa125c764e33b3e4d836897ab3d133dc10"
+    },
+    "weight_transport_present": false,
+    "parent_transform_mapping_present": false
+  }
+]

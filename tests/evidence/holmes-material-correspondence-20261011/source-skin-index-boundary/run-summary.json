@@ -1,0 +1,188 @@
+{
+  "runs": [
+    {
+      "kind": "Blender",
+      "phase": "source",
+      "pid": 21944,
+      "start_utc": "2026-10-11T15:46:46.5046255Z",
+      "free_gib": 5.518047332763672,
+      "executed_source_sha256": "b73f7724d41a76b4f94011dc961ba34b6d6448401ad06652165109d811d25ce5",
+      "exit": {
+        "pid": 21944,
+        "owned_children_absent": true,
+        "exited_utc": "2026-10-11T15:46:55.8103123Z",
+        "exit_code": 0
+      }
+    },
+    {
+      "kind": "Blender",
+      "phase": "A-save",
+      "pid": 31188,
+      "start_utc": "2026-10-11T15:49:17.1866608Z",
+      "free_gib": 5.4833831787109375,
+      "executed_source_sha256": "b73f7724d41a76b4f94011dc961ba34b6d6448401ad06652165109d811d25ce5",
+      "exit": {
+        "exited_utc": "2026-10-11T15:49:21.3069093Z",
+        "pid": 31188,
+        "exit_code": 0,
+        "owned_children_absent": true
+      }
+    },
+    {
+      "kind": "Blender",
+      "phase": "A-export",
+      "pid": 26656,
+      "start_utc": "2026-10-11T15:49:21.5270578Z",
+      "free_gib": 5.460136413574219,
+      "executed_source_sha256": "b73f7724d41a76b4f94011dc961ba34b6d6448401ad06652165109d811d25ce5",
+      "exit": {
+        "exited_utc": "2026-10-11T15:49:24.9835175Z",
+        "pid": 26656,
+        "exit_code": 0,
+        "owned_children_absent": true
+      }
+    },
+    {
+      "kind": "Blender",
+      "phase": "B-save",
+      "pid": 30232,
+      "start_utc": "2026-10-11T15:50:47.9854749Z",
+      "free_gib": 5.4776153564453125,
+      "executed_source_sha256": "b73f7724d41a76b4f94011dc961ba34b6d6448401ad06652165109d811d25ce5",
+      "exit": {
+        "owned_children_absent": true,
+        "exit_code": 0,
+        "pid": 30232,
+        "exited_utc": "2026-10-11T15:50:51.3482817Z"
+      }
+    },
+    {
+      "kind": "Blender",
+      "phase": "B-export",
+      "pid": 28544,
+      "start_utc": "2026-10-11T15:51:42.9352871Z",
+      "free_gib": 5.481792449951172,
+      "executed_source_sha256": "b73f7724d41a76b4f94011dc961ba34b6d6448401ad06652165109d811d25ce5",
+      "exit": {
+        "owned_children_absent": true,
+        "pid": 28544,
+        "exited_utc": "2026-10-11T15:51:46.2902556Z",
+        "exit_code": 0
+      }
+    },
+    {
+      "kind": "Unity",
+      "phase": "source",
+      "pid": 32600,
+      "start_utc": "2026-10-11T15:48:31.3798446Z",
+      "free_gib": 5.067447662353516,
+      "exit": {
+        "pid": 32600,
+        "startUtc": "2026-10-11T15:48:31.3798446Z",
+        "exitUtc": "2026-10-11T15:48:57.1925460Z",
+        "exitCode": 0
+      },
+      "release": {
+        "capturedUtc": "2026-10-11T15:48:57.2801716Z",
+        "owner": "VAPB-HOLMES-20261012-01",
+        "ownedChildrenAbsent": true,
+        "lockAbsent": true,
+        "normalExitCode": 0,
+        "releaseVerified": true
+      }
+    },
+    {
+      "kind": "Unity",
+      "phase": "A",
+      "pid": 12616,
+      "start_utc": "2026-10-11T15:49:51.6080222Z",
+      "free_gib": 4.955497741699219,
+      "exit": {
+        "pid": 12616,
+        "startUtc": "2026-10-11T15:49:51.6080222Z",
+        "exitUtc": "2026-10-11T15:50:07.7984540Z",
+        "exitCode": 0
+      },
+      "release": {
+        "capturedUtc": "2026-10-11T15:50:07.8855286Z",
+        "owner": "VAPB-HOLMES-20261012-01",
+        "ownedChildrenAbsent": true,
+        "lockAbsent": true,
+        "normalExitCode": 0,
+        "releaseVerified": true
+      }
+    },
+    {
+      "kind": "Unity",
+      "phase": "B",
+      "pid": 14404,
+      "start_utc": "2026-10-11T15:52:16.7229792Z",
+      "free_gib": 4.958095550537109,
+      "exit": {
+        "pid": 14404,
+        "startUtc": "2026-10-11T15:52:16.7229792Z",
+        "exitUtc": "2026-10-11T15:52:32.1675924Z",
+        "exitCode": 0
+      },
+      "release": {
+        "capturedUtc": "2026-10-11T15:52:32.2596130Z",
+        "owner": "VAPB-HOLMES-20261012-01",
+        "ownedChildrenAbsent": true,
+        "lockAbsent": true,
+        "normalExitCode": 0,
+        "releaseVerified": true
+      }
+    },
+    {
+      "kind": "Unity",
+      "phase": "A-ancestry-read-only",
+      "pid": 27612,
+      "start_utc": "2026-10-11T16:00:49.3676129Z",
+      "free_gib": 4.655651092529297,
+      "exit": {
+        "pid": 27612,
+        "startUtc": "2026-10-11T16:00:49.3676129Z",
+        "exitUtc": "2026-10-11T16:00:57.3041595Z",
+        "exitCode": 0
+      },
+      "release": {
+        "capturedUtc": "2026-10-11T16:00:57.4297211Z",
+        "owner": "VAPB-HOLMES-20261012-01",
+        "ownedChildrenAbsent": true,
+        "lockAbsent": true,
+        "normalExitCode": 0,
+        "releaseVerified": true
+      }
+    }
+  ],
+  "observer_sha256": "3644c80cbd70f76db6fb8512856a416f6b88c00dd214a6fbb31e317059b3a7a1",
+  "source_blender_sha256": "b73f7724d41a76b4f94011dc961ba34b6d6448401ad06652165109d811d25ce5",
+  "original_source_fbx_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+  "source_package_sha256": "3bdbab3790a4588f5712c931d085b6b513a6b106937548fbbfce6797e8f5a83d",
+  "A_package_sha256": "0d8d8f8befd9b3deb3fd2d8ae7080e56cda95e502de0d75549f1687fc11a704b",
+  "B_package_sha256": "11376d7d5eaf8828d7eeab16ddf9c4b72aa1712adc78c5223ce4351d095a8299",
+  "product_source_sha256": "3ae5665d71a128ddfd5f395381a80a5ab202e550ebc63644163356f2397b8232",
+  "ancestry_observer_sha256": "23ef6fcafe41fd9c812c4468cd63d795b1b32480f40e52c2b99dbb7082ff193a",
+  "publication_line_endings": {
+    "Capture.cs": {
+      "executed_sha256": "3644c80cbd70f76db6fb8512856a416f6b88c00dd214a6fbb31e317059b3a7a1",
+      "published_sha256": "aef47c5d06dd84233780a87def5d5336708db98b53d8371d8f76b117f493f1d9",
+      "only_crlf_to_lf": true
+    },
+    "ObserveReturnedAncestry.cs": {
+      "executed_sha256": "23ef6fcafe41fd9c812c4468cd63d795b1b32480f40e52c2b99dbb7082ff193a",
+      "published_sha256": "c9a108b3cff55284bef71f6b2255374acf5a1e1234f6b1122b7c510629a9050c",
+      "only_crlf_to_lf": true
+    },
+    "blender_case.py": {
+      "executed_sha256": "b73f7724d41a76b4f94011dc961ba34b6d6448401ad06652165109d811d25ce5",
+      "published_sha256": "97da14fab516bee94307d0528f12da95240ec5d7daec011b2c2e280e06256323",
+      "only_crlf_to_lf": true
+    },
+    "judge.py": {
+      "executed_sha256": "b9bd2492a1c8145aa23e438cf5ddc010599b8fe3db25d4226b7640c70be47d14",
+      "published_sha256": "a2fb3e73a8219c387350b116e88a5c6a8898e549528bbd3eddc4e902065f261a",
+      "only_crlf_to_lf": true
+    }
+  }
+}

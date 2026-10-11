@@ -1,0 +1,680 @@
+{
+  "parser_source_sha256": "96fe3f11b5c9b2950d9c434857e3b0db1a1b558510e2ad360b767643a69c2047",
+  "source": {
+    "sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+    "fbx_version": 7400,
+    "geometry_uid": "808198139",
+    "vertices": [
+      -1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      2.0,
+      0.0,
+      -1.0,
+      2.0,
+      0.0
+    ],
+    "polygon_vertex_index": [
+      0,
+      1,
+      -3,
+      0,
+      2,
+      -4
+    ],
+    "uv": [
+      {
+        "channel": 0,
+        "mapping": "ByPolygonVertex",
+        "reference": "IndexToDirect",
+        "values": [
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "indices": [
+          [
+            0,
+            1,
+            3,
+            0,
+            3,
+            2
+          ]
+        ]
+      }
+    ],
+    "material_layers": [
+      {
+        "mapping": "AllSame",
+        "values": [
+          [
+            0
+          ]
+        ]
+      }
+    ],
+    "clusters": [
+      {
+        "cluster_uid": "594268494",
+        "bone_model_uid": "957849273",
+        "bone_receipts": {},
+        "cp": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "weights": [
+          0.75,
+          0.75,
+          0.25,
+          0.25
+        ],
+        "transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "transform_link": [
+          [
+            100.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -100.0,
+            0.0,
+            0.0,
+            100.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "cluster_uid": "655777703",
+        "bone_model_uid": "288813419",
+        "bone_receipts": {},
+        "cp": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "weights": [
+          0.25,
+          0.25,
+          0.75,
+          0.75
+        ],
+        "transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "transform_link": [
+          [
+            100.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -100.0,
+            0.0,
+            0.0,
+            100.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -100.0,
+            1.0
+          ]
+        ]
+      }
+    ],
+    "models": [
+      {
+        "uid": "528252550",
+        "kind": "Null",
+        "receipt": {},
+        "parents": [
+          "0"
+        ]
+      },
+      {
+        "uid": "549064506",
+        "kind": "Mesh",
+        "receipt": {},
+        "parents": [
+          "0"
+        ]
+      },
+      {
+        "uid": "957849273",
+        "kind": "LimbNode",
+        "receipt": {},
+        "parents": [
+          "528252550",
+          "594268494"
+        ]
+      },
+      {
+        "uid": "288813419",
+        "kind": "LimbNode",
+        "receipt": {},
+        "parents": [
+          "957849273",
+          "655777703"
+        ]
+      }
+    ],
+    "unity_vertex_to_cp": "NOT_PROVEN_BY_THIS_RAW_CAPTURE"
+  },
+  "A": {
+    "sha256": "c978e8b8440c6b4020ed47c8a7a7c36d391f788b6f5cc9dc5e07e3cd893e471b",
+    "fbx_version": 7400,
+    "geometry_uid": "972703022",
+    "vertices": [
+      -1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      2.0,
+      0.0,
+      -1.0,
+      2.0,
+      0.0
+    ],
+    "polygon_vertex_index": [
+      0,
+      1,
+      -3,
+      0,
+      2,
+      -4
+    ],
+    "uv": [
+      {
+        "channel": 0,
+        "mapping": "ByPolygonVertex",
+        "reference": "IndexToDirect",
+        "values": [
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "indices": [
+          [
+            0,
+            1,
+            3,
+            0,
+            3,
+            2
+          ]
+        ]
+      }
+    ],
+    "material_layers": [
+      {
+        "mapping": "AllSame",
+        "values": [
+          [
+            0
+          ]
+        ]
+      }
+    ],
+    "clusters": [
+      {
+        "cluster_uid": "285102113",
+        "bone_model_uid": "548335574",
+        "bone_receipts": {
+          "_vapb_fbx_bone_realization_id": "3d8a4602-feba-4564-ba5f-9533921f65cb"
+        },
+        "cp": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "weights": [
+          0.75,
+          0.75,
+          0.25,
+          0.25
+        ],
+        "transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "transform_link": [
+          [
+            100.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.6292067812173627e-05,
+            -100.0,
+            0.0,
+            0.0,
+            100.0,
+            -1.6292067812173627e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "cluster_uid": "524731328",
+        "bone_model_uid": "311571047",
+        "bone_receipts": {
+          "_vapb_fbx_bone_realization_id": "149d37a4-4515-4e8e-8deb-5d8a587e8a97"
+        },
+        "cp": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "weights": [
+          0.25,
+          0.25,
+          0.75,
+          0.75
+        ],
+        "transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "transform_link": [
+          [
+            100.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.6292067812173627e-05,
+            -100.0,
+            0.0,
+            0.0,
+            100.0,
+            -1.6292067812173627e-05,
+            0.0,
+            0.0,
+            -1.6292067812173627e-05,
+            -100.0,
+            1.0
+          ]
+        ]
+      }
+    ],
+    "models": [
+      {
+        "uid": "444178816",
+        "kind": "Null",
+        "receipt": {},
+        "parents": [
+          "0"
+        ]
+      },
+      {
+        "uid": "291382266",
+        "kind": "Mesh",
+        "receipt": {
+          "_vapb_fbx_realization_id": "209869c3-e547-48ce-ae10-8d8718429f6d"
+        },
+        "parents": [
+          "0"
+        ]
+      },
+      {
+        "uid": "548335574",
+        "kind": "LimbNode",
+        "receipt": {
+          "_vapb_fbx_bone_realization_id": "3d8a4602-feba-4564-ba5f-9533921f65cb"
+        },
+        "parents": [
+          "444178816",
+          "285102113"
+        ]
+      },
+      {
+        "uid": "311571047",
+        "kind": "LimbNode",
+        "receipt": {
+          "_vapb_fbx_bone_realization_id": "149d37a4-4515-4e8e-8deb-5d8a587e8a97"
+        },
+        "parents": [
+          "548335574",
+          "524731328"
+        ]
+      }
+    ],
+    "unity_vertex_to_cp": "NOT_PROVEN_BY_THIS_RAW_CAPTURE"
+  },
+  "B": {
+    "sha256": "3e8cd46bdd133a8820f8be33a22052fa125c764e33b3e4d836897ab3d133dc10",
+    "fbx_version": 7400,
+    "geometry_uid": "841010117",
+    "vertices": [
+      -1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      2.0,
+      0.0,
+      -1.0,
+      2.0,
+      0.0
+    ],
+    "polygon_vertex_index": [
+      2,
+      3,
+      -2,
+      3,
+      0,
+      -2
+    ],
+    "uv": [
+      {
+        "channel": 0,
+        "mapping": "ByPolygonVertex",
+        "reference": "IndexToDirect",
+        "values": [
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0
+          ]
+        ],
+        "indices": [
+          [
+            3,
+            2,
+            1,
+            2,
+            0,
+            1
+          ]
+        ]
+      }
+    ],
+    "material_layers": [
+      {
+        "mapping": "AllSame",
+        "values": [
+          [
+            0
+          ]
+        ]
+      }
+    ],
+    "clusters": [
+      {
+        "cluster_uid": "450822804",
+        "bone_model_uid": "104635183",
+        "bone_receipts": {
+          "_vapb_fbx_bone_realization_id": "a9e2c2b6-3348-49fa-adb2-bd3c1ea84836"
+        },
+        "cp": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "weights": [
+          0.75,
+          0.75,
+          0.25,
+          0.25
+        ],
+        "transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "transform_link": [
+          [
+            100.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.6292067812173627e-05,
+            -100.0,
+            0.0,
+            0.0,
+            100.0,
+            -1.6292067812173627e-05,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "cluster_uid": "195726848",
+        "bone_model_uid": "519085899",
+        "bone_receipts": {
+          "_vapb_fbx_bone_realization_id": "f3b30923-6ea2-4a62-af82-98b898113373"
+        },
+        "cp": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "weights": [
+          0.25,
+          0.25,
+          0.75,
+          0.75
+        ],
+        "transform": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            1.0,
+            0.0,
+            0.0,
+            -1.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "transform_link": [
+          [
+            100.0,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.6292067812173627e-05,
+            -100.0,
+            0.0,
+            0.0,
+            100.0,
+            -1.6292067812173627e-05,
+            0.0,
+            0.0,
+            -1.6292067812173627e-05,
+            -100.0,
+            1.0
+          ]
+        ]
+      }
+    ],
+    "models": [
+      {
+        "uid": "886781133",
+        "kind": "Null",
+        "receipt": {},
+        "parents": [
+          "0"
+        ]
+      },
+      {
+        "uid": "762634510",
+        "kind": "Mesh",
+        "receipt": {
+          "_vapb_fbx_realization_id": "5afbb767-0197-4da4-9d99-d3fe91598f7a"
+        },
+        "parents": [
+          "0"
+        ]
+      },
+      {
+        "uid": "104635183",
+        "kind": "LimbNode",
+        "receipt": {
+          "_vapb_fbx_bone_realization_id": "a9e2c2b6-3348-49fa-adb2-bd3c1ea84836"
+        },
+        "parents": [
+          "886781133",
+          "450822804"
+        ]
+      },
+      {
+        "uid": "519085899",
+        "kind": "LimbNode",
+        "receipt": {
+          "_vapb_fbx_bone_realization_id": "f3b30923-6ea2-4a62-af82-98b898113373"
+        },
+        "parents": [
+          "104635183",
+          "195726848"
+        ]
+      }
+    ],
+    "unity_vertex_to_cp": "NOT_PROVEN_BY_THIS_RAW_CAPTURE"
+  }
+}
