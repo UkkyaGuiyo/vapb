@@ -1,6 +1,6 @@
 # HOLMES 最終報告（10項目）
 
-判定対象は保存済み実測commit `e66bff69bc2aec7bfe61ce0b036c7baa4bff23af` のR/A/B/E/U/D/Hと、その時点の製品source。追加実験・製品コード変更は行わない。**異なるMaterialの面対応の製品化はDEFER、既存guardはKEEP。** 本人指定の10項目の原文見出しは取得できていないため、以下は要求内容を10項目に整理した報告であり、原文見出しとの一致は未確認である。
+Project: VAPB。作業branch: `feature/holmes-material-correspondence-20261011`。判定対象は保存済み実測commit `e66bff69bc2aec7bfe61ce0b036c7baa4bff23af` のR/A/B/E/U/D/Hと、その時点の製品source。追加実験・製品コード変更は行わない。**異なるMaterialの面対応の製品化はDEFER、既存guardはKEEP。** 本人指定の10項目の原文見出しは取得できていないため、以下は要求内容を10項目に整理した報告であり、原文見出しとの一致は未確認である。
 
 ## 1. 目的・成立範囲
 
@@ -83,6 +83,20 @@ rawの同一Material UIDのOO接続行重複もNOT_RUN。行重複が独立slot�
 実測記録は [README](README.md)、[R/A/B判定](observations/full-judgment.json)、[E判定](observations/E-full-judgment.json)、[U/D/H判定](observations/boundary-full-judgment.json)、[U/D/H実行summary](observations/boundary-run-summary.json)。R/A/B保存commitは `c76d3bd8380247b75ff4c0b5716c3cad97613ec6`、E sourceは `5f5de6d187fd9a7435d0962bc698211128d137c2`、E実測は `0b69c2e7634ee34d182ee39a75c87d54013a5667`、U/D/H実測と実行sourceは冒頭e66。過去hashやNOT_RUN記録を変更しない。
 
 Unity/Blender exit0、保護3,041ファイル変更0・予期しない追加0。U/D/H終了直後のresource guardは初回cleanup/返却をWITHHELDとした。後のfresh資源不存在確認から自作配置だけを復元し、正確な所有lease/mutexを返却した。最初の保留をPASSへ書き換えず、他Editor停止・lock削除はしていない。購入素材・私的corpus・生ログは公開保存しない。
+
+既存実施済み証拠の試験結果要約（追加テストなし）：
+
+| 対象 | 結果 | 意味・履歴 |
+| --- | --- | --- |
+| R/A/B/E/U/D/H raw/native判定、実行したBlender観測 | PASS | 許可変更・入力hash・面join・記録整合の確認。HのBlender追加観測はNOT_RUN（不要） |
+| duplicate/missing face・duplicate corner等の判定対照 | PASS | 不正対照を期待どおり拒否。拒否自体を試験FAILとしない |
+| R/A/B/E/U/D RECONSTRUCT Import後のConfirm guard | PASS | 期待どおりCANCELLED、前後snapshot不変。これはguard試験成功であり、異なるMaterialの正しい面復元を伴う製品Import成功ではない |
+| U/D/H初回postflight cleanup/返却 | NOT_RUN（WITHHELD） | resource guardが保留。初回保全PASSとは扱わない |
+| fresh資源不存在確認後のU/D/H保全・返却 | PASS | `PASS_AFTER_FRESH_OWNED_RESOURCE_ABSENCE`。保護3,041ファイル変更0・追加0、所有lease/mutex返却 |
+| 上記HOLMES実施済み試験のFAIL | なし | 仮説のFALSIFIEDは仮説への反例であり、判定試験のFAILではない |
+| C_names / D_count / raw接続重複、H以外の設定・他producer、GUI/render/client・実購入corpus面対応 | NOT_RUN | 未実施をPASSへ昇格しない |
+
+独立Bone Actionの既存QAのPASSと未検証範囲は§10に分けて記載する。
 
 ## 10. 未完了と次の最小判断点
 
