@@ -1,5 +1,7 @@
 # HOLMES-WATSON workflow setup and bounded dry run
 
+Current authority: explicit user correction dated 2026-10-11 19:01:05 UTC. Mandatory read-only/custom-role startup gates below are historical and superseded; see the corrected policy/result at the end.
+
 User request dated 2026-10-11 17:43:39 UTC. Scope: configure and actually test one fresh Holmes inference; no new product work. Setup branch `feature/holmes-watson-workflow-20261012`, product base `b0ff93ce5b1a18bd5c399f9566653a9b99962def`. HOLMES-02 product result is separately VERIFIED_IN_SCOPE; its29 changed files were fetched from GitHub and matched Git blobs before this setup began. No ongoing product experiment remains.
 
 ## Configuration
@@ -46,3 +48,9 @@ The child stopped before examining product evidence, code/specification, previou
 **Next minimum / restart:** use an authorized same-session runtime that verifiably applies the custom Holmes role and effective read-only isolation, then retry the already-defined fixed packet once. If unavailable, retain BLOCKED and do not relax the gate, expand permissions, repeat the same failing spawn, launch a separate CLI workaround, rerun completed product tests, or automatically develop the product. Re-read actual instructions, authority and latest Git state at restart. Formal measured remaining89%; primary/runtime model bucket unavailable; no reset used.
 
 KNOWLEDGE_REPORT (anonymous; Atlas remains read-only): A custom-agent file's restrictive defaults and a matching task_name do not prove live child isolation. In this native spawn, the parent live workspace-write/auto-review profile remained effective, and no custom-agent selector was exposed. Verify runtime permissions and role injection before a read-only inference task; stop without a write probe if they cannot be established. Evidence: actual fresh-child preflight plus official documentation of live override inheritance. Limitation: this does not show that custom agents fail in runtimes exposing an actual agent-type selector. No Atlas write is claimed.
+
+## Corrected operating policy (2026-10-11 19:01:05 UTC)
+
+Explicit user correction allows inheriting parent workspace-write/auto_review without expanding live permissions. Holmes remains inference-only: no files edited, commit/push, implementation, application launch, escalation or recursive spawn. Custom-agent selection is preferred, not required: a fresh native subagent may receive the same role and fixed evidence. These are role restrictions, not technical write prevention. The prior BLOCKED result was accurate under the previous policy; it is no longer a current startup blocker. Existing original/dirty protection, no merge/force/Release, independent code-review separation, maximum3 cycles, repeated-problem/evidence/resource/budget stop rules remain.
+
+Configuration changes are limited to the two superseded AGENTS clauses and the corresponding Holmes role clause; restrictive TOML sandbox defaults remain preferences. The parent actual workspace-write/auto_review profile is unchanged. Current Git preflight was clean on setup branch at `db78ec7bf33cc882b96125a629dec1f40bb75a7b`, canonical origin matched, and no same-task agents were active. Formal remaining89%. Save corrected policy before one fresh inference attempt. Fixed raw evidence/code remains product commit `b0ff93ce5b1a18bd5c399f9566653a9b99962def`; no prior report/review conclusions are supplied.

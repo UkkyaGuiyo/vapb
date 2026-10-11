@@ -34,13 +34,13 @@
       "enabled": false
     }
   },
-  "holmes_config_sha256": "00d2104da72cf958179322c4bee7290fc920206254d484b3944a1a184e2f525b",
-  "status": "DRY_RUN_BLOCKED_EFFECTIVE_PERMISSIONS",
+  "holmes_config_sha256": "994471e9bef8d7a6e6b6d7485a8d267a2361d883d851d4e41a2ffca9daa77ff7",
+  "status": "CORRECTED_ROLE_POLICY_PENDING_SAVE_AND_FRESH_INFERENCE",
   "automatic_approval_rejected": true,
   "dry_run_spawn": "FRESH_NATIVE_HOLMES_STARTED_AND_COMPLETED_ONCE",
   "read_only_runtime": "NOT_APPLIED_EFFECTIVE_WORKSPACE_WRITE",
   "configuration_commit_push": "NORMAL_PUSH_AND_EXACT_4_FILE_READBACK_CONFIRMED",
-  "next_action": "Preserve this blocker; retry only after an authorized same-session runtime exposes verifiable read-only and actual custom-role application. Do not bypass using a separate CLI or relax the gate.",
+  "next_action": "Save/readback corrected policy, then fresh independent Holmes inference from fixed product commit b0ff93c; no file edits or escalation by Holmes",
   "AGENTS_git_diff_append_only": true,
   "human_authorization_evidence": "Direct request for configuration, minimal AGENTS addition, actual dry run and GitHub evidence saving; supplied after initial authorization-evidence refusal.",
   "configuration_commit": "96cfd872530dea8896dc538177dd03cb995f6c28",
@@ -52,10 +52,23 @@
   "child_actual_sandbox": "workspace-write",
   "child_actual_approval": "auto_review",
   "custom_role_automatically_injected": "UNVERIFIED",
-  "technical_inference": "NOT_RUN_PERMISSION_GATE_STOP",
+  "technical_inference": "PENDING_CORRECTED_POLICY_RETRY",
   "actual_runtime_model_reasoning": "UNVERIFIED",
   "child_scope": "READ_ONLY_ACTIONS_RUNTIME_PREFLIGHT_ONLY",
   "child_writes_escalations_tests_apps_recursive_spawns": false,
   "parent_checked_child_end": true,
-  "parent_verified_runtime_context_matches": true
+  "parent_verified_runtime_context_matches": true,
+  "previous_attempt": {
+    "status": "DRY_RUN_BLOCKED_EFFECTIVE_PERMISSIONS",
+    "dry_run_spawn": "FRESH_NATIVE_HOLMES_STARTED_AND_COMPLETED_ONCE",
+    "read_only_runtime": "NOT_APPLIED_EFFECTIVE_WORKSPACE_WRITE",
+    "technical_inference": "NOT_RUN_PERMISSION_GATE_STOP",
+    "child_actual_sandbox": "workspace-write",
+    "child_actual_approval": "auto_review"
+  },
+  "mandatory_read_only_startup_gate": false,
+  "custom_agent_selector_required": false,
+  "effective_parent_permissions_changed": false,
+  "holmes_inference_only_role": true,
+  "policy_correction_authority": "Explicit user correction dated 2026-10-11 19:01:05 UTC"
 }
