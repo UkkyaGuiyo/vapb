@@ -19,7 +19,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--repo', type=Path, required=True)
     ap.add_argument('--work', type=Path, required=True)
-    ap.add_argument('--select-cases', nargs='+', choices=['R','A','B','E'], default=['R','A','B'])
+    ap.add_argument('--select-cases', nargs='+', choices=['R','A','B','E','U','D'], default=['R','A','B'])
     args = ap.parse_args(sys.argv[sys.argv.index('--')+1:])
     spec = importlib.util.spec_from_file_location('unitypackage_blender_importer', args.repo/'__init__.py', submodule_search_locations=[str(args.repo)])
     addon = importlib.util.module_from_spec(spec); sys.modules[spec.name] = addon; spec.loader.exec_module(addon); addon.register()

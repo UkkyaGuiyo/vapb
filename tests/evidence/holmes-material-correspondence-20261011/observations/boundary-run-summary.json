@@ -1,0 +1,81 @@
+{
+  "source_base_commit": "0b69c2e7634ee34d182ee39a75c87d54013a5667",
+  "source_sha256": {
+    "judge_boundaries.py": "261d576b62d51eda2a2382d7445eb5b11bd428a69db544f72b2eeb55e5f15753",
+    "generate_cases.py": "0d1b1e29e2194651c8e54ed8aea874e2aa89de35cbca5d7c9266776faaa6bcd2",
+    "capture_blender.py": "8029adeff4647f92a16709ef0a64debc29619dcf5ef6b2698e8954d2f745e026",
+    "runtime/VapbHolmesCoordinateProbe.cs": "7d783d91128599c24cb3a074ad41c20f7e9cdbed3237fc38a8b67d3317e9af2d",
+    "CaptureBoundary.cs": "8a99f72843553e3563548b5481e7e3d1234c22dfb334be4ef6aa1317aa9eb50f",
+    "assemble_boundaries.py": "e891a7dc1f0cde63280e02f682cf17b4e6245a43a02dbdadcaae48e2db3c6fa6"
+  },
+  "unity_version": "2022.3.22f1",
+  "blender_version": "5.2.1 LTS",
+  "native_exit_code": 0,
+  "blender_exit_code": 0,
+  "native_completed_utc": "2026-10-11T04:25:18.4334868Z",
+  "blender_completed_utc": "2026-10-11T04:27:07.0309208Z",
+  "native_free_ram_gib": 5.1484375,
+  "blender_free_ram_gib": 5.167011260986328,
+  "protected_files": 3041,
+  "changed_files": 0,
+  "unexpected_files": 0,
+  "initial_postflight": "WITHHELD_RESOURCE_GUARD",
+  "followup_preservation": "PASS_AFTER_FRESH_OWNED_RESOURCE_ABSENCE; no process stop or lock removal",
+  "slot_released": true,
+  "global_mutex_released": true,
+  "project_lock_present": false,
+  "product_code_changed": false,
+  "production_guard_removed": false,
+  "independent_reviews": {
+    "generation": "KEEP",
+    "judgment": "KEEP after three minimum directed corrections",
+    "model": "GPT-6.1 SOL",
+    "reasoning": "medium"
+  },
+  "U": {
+    "native_groups": {
+      "0": {
+        "123443898": 8
+      },
+      "1": {
+        "504963197": 4
+      }
+    },
+    "blender_groups": {
+      "0": {},
+      "1": {
+        "504963197": 4
+      },
+      "2": {
+        "123443898": 8
+      }
+    },
+    "prefab_material_count": 3,
+    "model_material_count": 2,
+    "scope": "Unused raw slot0 remains connected but no native empty submesh retained. No rendered layering claim."
+  },
+  "D": {
+    "E_same_face_to_native_submesh": true,
+    "scope": "Duplicate effective Prefab Material reference [M0,M1,M0], not duplicate raw connection slots"
+  },
+  "H": {
+    "E_same_face_to_native_submesh": true,
+    "effective_policy_changes": [
+      [
+        [
+          "meshes",
+          "meshOptimizationFlags"
+        ],
+        -1,
+        -2
+      ]
+    ],
+    "meta_serialization_differences": [
+      "meshOptimizationFlags -1 to -2",
+      "minBoneWeight serialized 0 to 0.001; effective before/after unchanged at 0.001"
+    ],
+    "scope": "One optimization toggle only; other settings remain unmeasured"
+  },
+  "product_mapping_status": "UNRESOLVED_GUARD_RETAINED",
+  "limits": "Finite synthetic producer cases. No GUI/render/client/real purchased corpus/ZIP completion. No new product schema or mandatory Unity preprocessing."
+}

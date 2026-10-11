@@ -8,7 +8,7 @@ R/A/Bの実行sourceと記録は保存commit `c76d3bd8380247b75ff4c0b5716c3cad97
 
 Aと同じ初出順1,0,2・UID別2/4/6面を固定し、record順を `1,0,2,1,2,0,2,1,2,1,2,2` とした。Aの3連続runに対しEは11run。書込後FBXの独立判定で全12面の意味と宣言外tree不変を確認し、生成・判定の別SOL mediumレビューKEEP後に実測した。
 
-Unity 2022.3.22f1では3submeshのUID群順1,0,2。保存済みAとEのnative snapshotを12個の一意なexact UV面・cornerで直接joinし、全12面の所属submeshが一致した。11runを別々のsubmeshにする単純な規則にはこの例が反例となる。H1はR/A/B/Eの範囲で支持されるが、H7の他producer・未使用/重複slot、H6の設定依存は未確定である。
+Unity 2022.3.22f1では3submeshのUID群順1,0,2。保存済みAとEのnative snapshotを12個の一意なexact UV面・cornerで直接joinし、全12面の所属submeshが一致した。11runを別々のsubmeshにする単純な規則にはこの例が反例となる。H1はR/A/B/Eの範囲で支持されるが、H7の非連続runの単純分割則はこの例で反証される。後続U/D/Hは下記の限定条件を観測したが、他producer・他設定の一般則は未確定である。
 
 Blender 5.2.1 LTSではslot UID群順0,1,2、ConfirmはCANCELLEDで全snapshot不変。Unity・Blenderともexit0、保護3,041ファイルの差分0・予期しない追加0、所有lease/mutex返却。製品guardは維持し、通常ImportへUnity前処理や仮説を追加していない。
 
@@ -43,10 +43,10 @@ Rの各UV面→Unity submeshは、原本FBXの既存current-context実測と一�
 | H3 raw Material indexの昇順 | 普遍的な順決定則として反証 | Bのindexは接続の位置を参照する。H2と同じ予測になる範囲は区別できない |
 | H4 固定Material名の順だけ | 反証 | Aで名前を変えずnative順が変わる。任意の名前との条件分岐は未判定 |
 | H5 面数の順だけ | 反証 | Aで各UIDの2/4/6面を固定したまま順が変わる。他属性を使う則は未判定 |
-| H6 import設定による切替 | UNDETERMINED | 今回は同じ実効設定のみ。設定変更実験は未実施 |
-| H7 producer・空slot・非連続run等による則切替 | UNDETERMINED | 同じ自作FBXの3例のみ。非連続Material run、未使用/空/null/重複slot、他producerは未実測 |
+| H6 import設定による切替 | このpolygon最適化切替では所属不変 | Eと同じFBX・他実効設定を固定し、true→falseで12面の所属一致。他設定は未確定 |
+| H7 producer・空slot・非連続run等による則切替 | 限定境界を観測、一般則は未確定 | Eの非連続run、Uの未使用slot、Dの受信参照重複を観測。raw重複slot/null/他producer等は未実測 |
 
-H1を一般化して普通の入力へ適用する根拠は不足している。今回の結果を名前・候補数・ordinalの推測として製品へ挿入しない。次の最小反証は、面の初出順・UID別面数を固定したままMaterial runを非連続にする一例である。
+H1を一般化して普通の入力へ適用する根拠は不足している。今回の結果を名前・候補数・ordinalの推測として製品へ挿入しない。承認済みの最小識別E/U/D/Hは実測済み。成立範囲と製品反映不可の判定は後続節に記録する。
 
 ## 書き出し後の独立検査
 
@@ -92,3 +92,29 @@ python judge_faces.py --repo <checkout> --addon <installed io_scene_fbx> --cases
 `CaptureNative.cs` のR/A/B実行版は上記保存commitで確認できる。現行版にはEだけを選択する引数を追加した。`runtime/VapbHolmesCoordinateProbe.cs` はR/A/Bで実際にcompile・実行した自作捕捉sourceで、Eにも同じbytesを使う。probeは既存座標probeを再利用し、出力path引数と複数case呼出しのための終了方式だけ変更した。所有Projectの配置・復元には既存runnerを再利用した。
 
 全製品完成・一般Avatar対応・実購入corpusでの面対応・GUI/client確認・最新ZIP反映は、この資料では主張しない。
+
+## 後続U/D/H：限定境界の実測と製品反映判定
+
+生成側と判定側を別SOL mediumで実行前レビューした。指摘されたH開始時の全importer設定とEの比較、snapshot/contextのUnity版照合、固定原本packageからのD Prefab変更の独立導出を補い、実ファイルのraw判定後に実測した。既存R/A/B/Eの実行sourceや記録は変更しない。
+
+| case | 宣言した最小変更 | Unity native結果 | Blender結果 |
+| --- | --- | --- | --- |
+| U | 原本の最後2面のMaterial indexを0→2、slot0のnode/接続は残す | 2submesh、UID2:8面 / UID1:4面。model Materials2個、固定Prefab参照3個 | 3slot、slot0は空、slot1 UID1:4面 / slot2 UID2:8面 |
+| D | EのFBX bytes固定、受信Prefabのslot2参照だけM2→M0。参照列[M0,M1,M0] | Eと全12面の所属一致、同一Material参照が複数native groupに対応 | Eと同じraw group。ConfirmはCANCELLED、全snapshot不変 |
+| H | EのFBX bytes固定、使い捨てcopyのoptimizeMeshPolygonsだけtrue→false | Eと全12面の所属一致、全実効設定差はmeshes.meshOptimizationFlags -1→-2だけ | 実施不要。U/Dを製品Importへ通してguard検証 |
+
+Uは「接続Material数がnative submesh数を保証する」規則の反例である。空groupを省く判定は避け、全native submeshと全Blender slot ordinalをCounterで保持した。同一UIDの複数group・mixed UIDも許容し、代表UIDや全体bijective mappingへ潰さない。Uの3参照/2submeshを、描画済みの単一Material-face対応と同一視しない。layer描画は測定していない。
+
+Dは有効なPrefabの同一Material参照重複である。重複OO接続行を別slotと仮定する案は、アドレス意味が未確定なため実行しなかった。通常の同一Material参照の重複とraw接続重複を区別する。HのmetaにはminBoneWeightの0→0.001という書き直しもあったが、全実効設定のbefore/after値は0.001で不変だった。meta bytes差と設定差を分け、変更後hashをsnapshot/contextへ結び付けている。
+
+UnityとBlenderはexit0。Unity終了直後のresource guardは最初のcleanup/返却を保留したため、その段階をPASSとは扱わない。後のfresh照合で所有Editor/子process/Project lock不存在を確認し、今回の自作配置だけを復元/削除した。保護3,041ファイルの変更0・予期しない追加0、自分の正確なleaseを通常返却、共有mutexも返却。Editor停止やlock解除は行っていない。
+
+H1は測定済みの使用UID初出順という有限ケースで支持される。H6はこの1設定切替に限り所属不変。H7の他producer、raw重複slot、null等は未確定。通常unitypackage入力のface対応を保証する根拠は得られていないため、製品の異なるMaterial対応guardは解除しない。PRODUCT_SPECのUnity必須依存禁止、Renderer occurrence側の割当、Material identityと割当の区別を保持する。製品コード変更なし、全製品完成とは扱わない。
+
+実ファイルと使用source hashは `cases/generation-boundaries.json`、`cases/package-copy-check-boundaries.json`、`observations/boundary-{raw,full}-judgment.json`、`boundary-run-summary.json` と各U/D/H context/coordinate、U/D Blender captureに保存。D/HのFBXは既存Eと同一bytesなので重複保存しない。fresh出力を作る最小再生成は次の順序（アプリ起動は別途承認済み共有枠内のみ）:
+
+```text
+python generate_cases.py --repo <checkout> --addon <installed io_scene_fbx> --output <fresh cases> --select-cases U
+python assemble_boundaries.py --repo <checkout> --cases <fresh cases>
+python judge_boundaries.py --repo <checkout> --addon <installed io_scene_fbx> --cases <fresh cases> --output <fresh report.json>
+```

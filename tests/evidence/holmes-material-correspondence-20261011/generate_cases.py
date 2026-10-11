@@ -38,7 +38,7 @@ def main():
     ap.add_argument('--repo', type=Path, required=True)
     ap.add_argument('--addon', type=Path, required=True)
     ap.add_argument('--output', type=Path, required=True)
-    ap.add_argument('--select-cases', nargs='+', choices=['R','A','B','E'], default=['R','A','B'])
+    ap.add_argument('--select-cases', nargs='+', choices=['R','A','B','E','U'], default=['R','A','B'])
     args = ap.parse_args()
     out = args.output.resolve()
     out.mkdir(exist_ok=False)  # fresh owned directory; never overwrite an earlier run
@@ -132,6 +132,9 @@ def main():
                 connections.elems[i] = n
             lookup = {n.props[1]: i for i, n in enumerate(reordered)}
             replace_array(materials, [lookup[old[i].props[1]] for i in materials.props[0]])
+        if case == 'U':
+            # Leave all three nodes/connections present; only slot0 becomes unused.
+            replace_array(materials, [2]*6+[1]*4+[2]*2)
         path = out / (case + '.fbx')
         if path.exists():
             raise ValueError('occupied output')

@@ -1,0 +1,15 @@
+{
+  "U": {
+    "package_sha256": "b536aa11c450219447013f2b3e7e38c0025cb60f2fe95866b3eec95e734de2fc",
+    "changed_members": {
+      "abcdefabcdefabcdefabcdefabcdefab/asset": "bc13bbbba17a08bdd7986ffbb3cba6ec9917de765de8f190bee714990ea4b541"
+    }
+  },
+  "D": {
+    "package_sha256": "53e8ead4de129eca0ee86e4751f98529328874f3cbecc5d54cc350fdc717ac0b",
+    "changed_members": {
+      "7cbdcbe81fde386408bcfb379e62b6bb/asset": "398c92c376faa0da1b95cf384235ab8191416b9f4da81411736fbff9911518fb",
+      "abcdefabcdefabcdefabcdefabcdefab/asset": "e4ac91f4f4af2cbcdcce68befd6c45bc91842d3ad728972f149c79a58f02074a"
+    }
+  }
+}
