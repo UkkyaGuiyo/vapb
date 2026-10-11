@@ -6,6 +6,8 @@ Project VAPB, repository UkkyaGuiyo/vapb. Start branch
 `feature/holmes-fresh-consumer-bootstrap-20261011`, SHA
 `6c810a2bcaa9cf1589f5ddd596c2877fbe0a8f09`; isolated work branch
 `feature/holmes-replacement-multimaterial-20261011`.
+Actual runtime source/evidence result:
+[dcda2f0c954d54ced5c7df0d2425dc73fecd4be5](https://github.com/UkkyaGuiyo/vapb/commit/dcda2f0c954d54ced5c7df0d2425dc73fecd4be5).
 Global AGENTS actual reread SHA256:
 `9BE8886133EEE50F5E24A5A183AF086EACDFEE41EBCF3D5AB0510907D34D6918`.
 No HOLMES05 runtime or previous result review was rerun.
