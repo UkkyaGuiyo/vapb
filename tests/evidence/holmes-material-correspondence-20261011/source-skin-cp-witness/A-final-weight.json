@@ -1,0 +1,289 @@
+{
+  "skin": {
+    "mesh": {
+      "guid": "628203e8107c73e7915bc8813eca86bc",
+      "file_id": "-5319303658252339454"
+    },
+    "renderer": {
+      "guid": "628203e8107c73e7915bc8813eca86bc",
+      "file_id": "6125562472048960759"
+    },
+    "root": {
+      "guid": "628203e8107c73e7915bc8813eca86bc",
+      "file_id": "4983937924677288262"
+    },
+    "source_root": {
+      "guid": "",
+      "file_id": ""
+    },
+    "bones": [
+      {
+        "guid": "628203e8107c73e7915bc8813eca86bc",
+        "file_id": "4983937924677288262"
+      },
+      {
+        "guid": "628203e8107c73e7915bc8813eca86bc",
+        "file_id": "8518482615473282485"
+      }
+    ],
+    "bone_parents": [
+      {
+        "guid": "628203e8107c73e7915bc8813eca86bc",
+        "file_id": "-4128383740851021839"
+      },
+      {
+        "guid": "628203e8107c73e7915bc8813eca86bc",
+        "file_id": "4983937924677288262"
+      }
+    ],
+    "materials": [
+      {
+        "guid": "628203e8107c73e7915bc8813eca86bc",
+        "file_id": "-6961047615403118474"
+      }
+    ],
+    "source_bones": [
+      {
+        "guid": "",
+        "file_id": ""
+      },
+      {
+        "guid": "",
+        "file_id": ""
+      }
+    ],
+    "source_parents": [
+      {
+        "guid": "",
+        "file_id": ""
+      },
+      {
+        "guid": "",
+        "file_id": ""
+      }
+    ],
+    "vertices": [
+      {
+        "x": 0.009999999776482582,
+        "y": 0.0,
+        "z": 0.0
+      },
+      {
+        "x": -0.009999999776482582,
+        "y": 0.019999999552965164,
+        "z": 0.0
+      },
+      {
+        "x": -0.009999999776482582,
+        "y": 0.0,
+        "z": 0.0
+      },
+      {
+        "x": 0.009999999776482582,
+        "y": 0.019999999552965164,
+        "z": 0.0
+      }
+    ],
+    "normals": [
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      },
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      },
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      },
+      {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 1.0
+      }
+    ],
+    "uv": [
+      {
+        "x": 0.0,
+        "y": 0.0
+      },
+      {
+        "x": 1.0,
+        "y": 1.0
+      },
+      {
+        "x": 1.0,
+        "y": 0.0
+      },
+      {
+        "x": 0.0,
+        "y": 1.0
+      }
+    ],
+    "groups": [
+      {
+        "topology": "Triangles",
+        "indices": [
+          0,
+          1,
+          2,
+          0,
+          3,
+          1
+        ]
+      }
+    ],
+    "bindposes": [
+      {
+        "values": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      },
+      {
+        "values": [
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          0.0,
+          0.0,
+          -0.009999999776482582,
+          0.0,
+          1.0
+        ]
+      }
+    ],
+    "weights": [
+      {
+        "influences": [
+          {
+            "bone": 0,
+            "weight": 0.75,
+            "bits": 1061158912
+          },
+          {
+            "bone": 1,
+            "weight": 0.25,
+            "bits": 1048576000
+          }
+        ]
+      },
+      {
+        "influences": [
+          {
+            "bone": 1,
+            "weight": 0.75,
+            "bits": 1061158912
+          },
+          {
+            "bone": 0,
+            "weight": 0.25,
+            "bits": 1048576000
+          }
+        ]
+      },
+      {
+        "influences": [
+          {
+            "bone": 0,
+            "weight": 0.75,
+            "bits": 1061158912
+          },
+          {
+            "bone": 1,
+            "weight": 0.25,
+            "bits": 1048576000
+          }
+        ]
+      },
+      {
+        "influences": [
+          {
+            "bone": 1,
+            "weight": 0.75,
+            "bits": 1061158912
+          },
+          {
+            "bone": 0,
+            "weight": 0.25,
+            "bits": 1048576000
+          }
+        ]
+      }
+    ],
+    "matrix": [
+      100.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -3.5762786865234375e-05,
+      -100.0,
+      0.0,
+      0.0,
+      100.0,
+      -3.5762786865234375e-05,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "shapes": 0,
+    "cloth": false,
+    "realization": [
+      "{\"MonoBehaviour\":{\"m_Enabled\":true,\"m_EditorHideFlags\":0,\"m_Name\":\"\",\"m_EditorClassIdentifier\":\"\",\"realizationId\":\"\",\"boneRealizationId\":\"3d8a4602-feba-4564-ba5f-9533921f65cb\",\"sourceModelUid\":\"\"}}",
+      "{\"MonoBehaviour\":{\"m_Enabled\":true,\"m_EditorHideFlags\":0,\"m_Name\":\"\",\"m_EditorClassIdentifier\":\"\",\"realizationId\":\"\",\"boneRealizationId\":\"149d37a4-4515-4e8e-8deb-5d8a587e8a97\",\"sourceModelUid\":\"\"}}",
+      "{\"MonoBehaviour\":{\"m_Enabled\":true,\"m_EditorHideFlags\":0,\"m_Name\":\"\",\"m_EditorClassIdentifier\":\"\",\"realizationId\":\"209869c3-e547-48ce-ae10-8d8718429f6d\",\"boneRealizationId\":\"\",\"sourceModelUid\":\"\"}}"
+    ]
+  },
+  "cp_marker": [
+    {
+      "x": 1.0,
+      "y": 0.375
+    },
+    {
+      "x": 3.0,
+      "y": 0.375
+    },
+    {
+      "x": 2.0,
+      "y": 0.375
+    },
+    {
+      "x": 4.0,
+      "y": 0.375
+    }
+  ],
+  "bone_receipts": [
+    "3d8a4602-feba-4564-ba5f-9533921f65cb",
+    "149d37a4-4515-4e8e-8deb-5d8a587e8a97"
+  ],
+  "fbx_sha256": "4da3eb5551fa0df7aa3a3f3435075cce324b8e48ae56502d9f10d752c6c3859c"
+}

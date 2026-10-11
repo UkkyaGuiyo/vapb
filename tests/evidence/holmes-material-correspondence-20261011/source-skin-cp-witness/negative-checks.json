@@ -1,0 +1,113 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "control": "no_parent_weight_context",
+      "first_rejection": "ACCEPTED_VALID"
+    },
+    {
+      "control": "parent_present_context_regression",
+      "first_rejection": "ACCEPTED_VALID_CONTEXT_ONLY"
+    },
+    {
+      "control": "parent_present_missing_weight",
+      "first_rejection": "EXPORTED_WEIGHT_DATA_MISSING"
+    },
+    {
+      "control": "RESTORE_MODEL_SKIN_VARIANT_V1",
+      "first_rejection": "WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED"
+    },
+    {
+      "control": "RESTORE_DIRECT_SKIN_VARIANT_V1",
+      "first_rejection": "WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED"
+    },
+    {
+      "control": "cp_row_missing",
+      "first_rejection": "EXPORTED_WEIGHT_CONTEXT_UNSUPPORTED"
+    },
+    {
+      "control": "cp_row_duplicate",
+      "first_rejection": "EXPORTED_WEIGHT_DATA_INVALID"
+    },
+    {
+      "control": "cp_row_unknown",
+      "first_rejection": "EXPORTED_WEIGHT_DATA_INVALID"
+    },
+    {
+      "control": "expected_weight_one_bit",
+      "first_rejection": "EXPORTED_WEIGHT_DATA_INVALID"
+    },
+    {
+      "control": "bone_mapping_duplicate",
+      "first_rejection": "BONE_MAPPING_INVALID"
+    },
+    {
+      "control": "source_model_sha256",
+      "first_rejection": "SOURCE_HASH_OR_PATH_MISMATCH"
+    },
+    {
+      "control": "model_sha256",
+      "first_rejection": "SOURCE_HASH_OR_PATH_MISMATCH"
+    },
+    {
+      "control": "material_unknown_provider",
+      "first_rejection": "MATERIAL_TRANSPORT_UNRESOLVED"
+    },
+    {
+      "control": "material_guid_fileid_mix",
+      "first_rejection": "MATERIAL_TRANSPORT_UNRESOLVED"
+    },
+    {
+      "control": "root_bone_wrong",
+      "first_rejection": "EDITED_ROOT_INVALID"
+    },
+    {
+      "control": "unknown_component",
+      "first_rejection": "SOURCE_COMPONENT_SCOPE_UNSUPPORTED"
+    },
+    {
+      "control": "cloth",
+      "first_rejection": "CLOTH_INDEX_STATE_UNSUPPORTED"
+    },
+    {
+      "control": "shared_mesh_second_renderer",
+      "first_rejection": "SOURCE_RENDERER_SCOPE_UNSUPPORTED"
+    },
+    {
+      "control": "bindpose",
+      "first_rejection": "EDITED_REST_MISMATCH"
+    },
+    {
+      "control": "shape",
+      "first_rejection": "MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED"
+    },
+    {
+      "control": "cp_marker_missing",
+      "first_rejection": "EXPORTED_CP_MARKER_MISSING"
+    },
+    {
+      "control": "cp_marker_unknown",
+      "first_rejection": "EXPORTED_CP_MARKER_INVALID"
+    },
+    {
+      "control": "cp_marker_duplicate_lost_coverage",
+      "first_rejection": "EXPORTED_CP_COVERAGE_CHANGED"
+    },
+    {
+      "control": "native_weight_one_bit",
+      "first_rejection": "EXPORTED_WEIGHT_REPRESENTATION_CHANGED"
+    },
+    {
+      "control": "bone_receipt_swap",
+      "first_rejection": "EXPORTED_WEIGHT_REPRESENTATION_CHANGED"
+    },
+    {
+      "control": "occupied_spare_uv",
+      "first_rejection": "EXPORTED_WEIGHT_UV_OCCUPIED"
+    },
+    {
+      "control": "different_layout_no_witness",
+      "first_rejection": "SOURCE_MODEL_INDEX_LAYOUT_CHANGED"
+    }
+  ]
+}

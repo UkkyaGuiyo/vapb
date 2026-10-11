@@ -648,7 +648,7 @@ public static partial class VapbModelSkinFinalizer
         EditedIdentity edited = ResolveEdited(task, editedPath, mapping, source);
         if (sourceModel)
         {
-            if (!SameNormalSkinIndexLayout(mapping.sourceLayout, edited.mesh))
+            if (!SameNormalSkinIndexLayout(mapping.sourceLayout, edited.mesh) && task.weight_transport == null)
                 Reject("SOURCE_MODEL_INDEX_LAYOUT_CHANGED");
             if (source.sourceBoneUids.Length != edited.editedBoneUids.Length)
                 Reject("SOURCE_MODEL_BONE_ORDER_CHANGED");
@@ -660,6 +660,12 @@ public static partial class VapbModelSkinFinalizer
                 Reject("SOURCE_MODEL_WEIGHTS_CHANGED");
         }
         CheckSkinCompatibility(mapping, target, edited, source, direct);
+        if (sourceModel && !SameNormalSkinIndexLayout(mapping.sourceLayout, edited.mesh))
+        {
+            // Source-model replacement has its own bounded scope; Kind eligibility stays unchanged.
+            ValidateSourceModelReplacementScope(prefab, target);
+            ValidateSourceModelReplacementScope(AssetDatabase.LoadAssetAtPath<GameObject>(editedPath), edited.renderer);
+        }
         plan.requiresReplacementEligibility = RequiresReplacementEligibility(task.kind,
             mapping.sourceLayout, edited.mesh);
         plan.target = target;
@@ -672,7 +678,7 @@ public static partial class VapbModelSkinFinalizer
         ValidateActionRecipe(task);
         bool direct = task.kind == DirectKind;
         bool sourceModel = task.kind == SourceKind;
-        if (task.weight_transport != null && (!sourceModel || task.parent_transform_mapping == null)) Reject("WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED");
+        if (task.weight_transport != null && !sourceModel) Reject("WEIGHT_TRANSPORT_CONTEXT_UNSUPPORTED");
         if (sourceModel && task.parent_transform_mapping != null && task.weight_transport == null) Reject("EXPORTED_WEIGHT_DATA_MISSING");
         if (task.parent_transform_mapping != null)
         {
@@ -1398,7 +1404,7 @@ public static partial class VapbModelSkinFinalizer
     private static Dictionary<int, WeightPoint> ValidateWeightData(Task task)
     {
         WeightTransport data=task.weight_transport;
-        if (task.kind!=SourceKind || task.parent_transform_mapping==null || data==null || data.version!=1 ||
+        if (task.kind!=SourceKind || data==null || data.version!=1 ||
             data.unity_version!="2022.3.22f1" || Application.unityVersion!=data.unity_version ||
             data.control_point_count<=0 || data.control_point_count>=1<<24 || data.uv_channel<0 || data.uv_channel>=8 ||
             data.points==null || data.points.Length!=data.control_point_count)
@@ -1751,6 +1757,28 @@ public static partial class VapbModelSkinFinalizer
             Reject("SOURCE_COMPONENT_SCOPE_UNSUPPORTED");
         }
         if (skinCount != plans.Count) Reject("SOURCE_RENDERER_SCOPE_UNSUPPORTED");
+    }
+
+    private static void ValidateSourceModelReplacementScope(GameObject root, SkinnedMeshRenderer target)
+    {
+        if (root == null || target == null || target.sharedMesh == null)
+            Reject("SOURCE_MODEL_REPLACEMENT_SCOPE_UNSUPPORTED");
+        int skins = 0;
+        foreach (Component component in root.GetComponentsInChildren<Component>(true))
+        {
+            if (component == null) Reject("SOURCE_COMPONENT_SCOPE_UNSUPPORTED");
+            if (component is Transform || component is VapbRealizationMarker) continue;
+            if (component is Cloth) Reject("CLOTH_INDEX_STATE_UNSUPPORTED");
+            if (component is SkinnedMeshRenderer skin)
+            {
+                if (skin != target) Reject("SOURCE_RENDERER_SCOPE_UNSUPPORTED");
+                skins++;
+                continue;
+            }
+            // MeshFilter/other Renderers/Animator/custom components may retain index-dependent state.
+            Reject("SOURCE_COMPONENT_SCOPE_UNSUPPORTED");
+        }
+        if (skins != 1) Reject("SOURCE_RENDERER_SCOPE_UNSUPPORTED");
     }
 
     private static bool IsReviewedExportMarker(Component component)

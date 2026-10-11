@@ -1,0 +1,18 @@
+{
+  "A": {
+    "cp_weight": "EXACT_BITWISE_NATIVE_CP_JOIN",
+    "bone_rest": "EXACT_BOUND_SOURCE_UID_ORDER_AND_BINDPOSE",
+    "matrix": "EXISTING_0.001_POLICY",
+    "geometry_material": "EXACT_FIXTURE_SCOPE",
+    "apply": true,
+    "observations": 3
+  },
+  "B": {
+    "cp_weight": "EXACT_BITWISE_NATIVE_CP_JOIN",
+    "bone_rest": "EXACT_BOUND_SOURCE_UID_ORDER_AND_BINDPOSE",
+    "matrix": "EXISTING_0.001_POLICY",
+    "geometry_material": "EXACT_FIXTURE_SCOPE",
+    "apply": true,
+    "observations": 3
+  }
+}

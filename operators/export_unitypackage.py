@@ -518,7 +518,7 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
                             scale_options=scale_options, source_skin_only=True,
                             material_bindings=task['material_bindings'])
         weight_payloads = []
-        if source_model and task.get('parent_transform_mapping'):
+        if source_model:
             from ..blender.fbx_witness import prepare_export_weight_witness
             weight_noop, weight_stamp = folder / 'weight-noop.fbx', folder / 'weight-stamped.fbx'
             task['weight_transport'] = prepare_export_weight_witness(

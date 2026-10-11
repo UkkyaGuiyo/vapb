@@ -1,0 +1,12 @@
+{
+  "captured_utc": "2026-10-11T17:44:50.7768896Z",
+  "mutex_available_and_released": true,
+  "pool": "ALL_FOUR_FREE",
+  "free_ram_gib": 5.2451171875,
+  "owned_editors_absent": true,
+  "normal_exit_all_unity": true,
+  "A_final_original_cleanup_false": true,
+  "A_final_reconciliation": "AMD service predates Editor by more than two days; recycled parent PID is not an owned child.",
+  "other_processes_stopped": false,
+  "locks_deleted": false
+}

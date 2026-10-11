@@ -1,0 +1,45 @@
+{
+  "status": "PASS",
+  "source_assets": [
+    {
+      "case": "A",
+      "guid": "75f6b54b17e02744598ae3ba28ab8047",
+      "original_path": "Assets/HolmesSource/SourceMaterial.mat",
+      "actual_path": "Assets/VAPBExport/Unassigned/Materials/SourceMaterial.mat",
+      "asset_sha256": "f7ddb9a7625f3190498256c28444a6dab09ae3208a40bb90a0e63ae33a16179e",
+      "meta_sha256": "7fd5843c1bdb26a4583a56f0043a85e879b9478ae0833dc9fdd68c8c72cfa836"
+    },
+    {
+      "case": "A",
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "original_path": "Assets/HolmesSource/Source.fbx",
+      "actual_path": "Assets/HolmesSource/Source.fbx",
+      "asset_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+      "meta_sha256": "6746b5c2b47d9cb1571c9f4709eb176ea1dbf9b1f1c29d9f98c8c5b3c4c07956"
+    },
+    {
+      "case": "B",
+      "guid": "75f6b54b17e02744598ae3ba28ab8047",
+      "original_path": "Assets/HolmesSource/SourceMaterial.mat",
+      "actual_path": "Assets/VAPBExport/Unassigned/Materials/SourceMaterial.mat",
+      "asset_sha256": "f7ddb9a7625f3190498256c28444a6dab09ae3208a40bb90a0e63ae33a16179e",
+      "meta_sha256": "7fd5843c1bdb26a4583a56f0043a85e879b9478ae0833dc9fdd68c8c72cfa836"
+    },
+    {
+      "case": "B",
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "original_path": "Assets/HolmesSource/Source.fbx",
+      "actual_path": "Assets/HolmesSource/Source.fbx",
+      "asset_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+      "meta_sha256": "6746b5c2b47d9cb1571c9f4709eb176ea1dbf9b1f1c29d9f98c8c5b3c4c07956"
+    }
+  ],
+  "source_package_sha256": "3bdbab3790a4588f5712c931d085b6b513a6b106937548fbbfce6797e8f5a83d",
+  "source_package_same_as_prior": true,
+  "preserved_blends": {
+    "A": "57ec5d223173be64d4be2af9ccbcab4dda8e4d93866e2846cff5c35b0b8f2674",
+    "B": "f2f7f81cddf6af00d3dd1a02321b0a76a647ce5c61a40210624839a0b0d8ea32"
+  },
+  "A_B_final_asset_meta_exact": true,
+  "temporary_weight_copies_removed": true
+}

@@ -1,0 +1,12 @@
+{
+  "status": "OBSERVED",
+  "error": "",
+  "apply": false,
+  "weight_proof": false,
+  "weight_error": "EXPORTED_WEIGHT_CONTEXT_UNSUPPORTED",
+  "rejection": [
+    "VAPB_MODEL_SKIN_VARIANT_REJECTED=EXPORTED_WEIGHT_CONTEXT_UNSUPPORTED"
+  ],
+  "package_sha256": "b23214ae9be4b010fe57dbf0f492bb5ad611f27f90ca3b04346ff47341192da6",
+  "finalizer_sha256": "f3836f501d7ebdf60e36dd5df271d5c3c11285a19fdf6d1e33be613d45488a58"
+}
