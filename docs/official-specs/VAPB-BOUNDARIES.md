@@ -10,14 +10,14 @@
 |元FBX/meta保持、編集Mesh新identity|U01–U04、U21|新import後GUID/fileID、参照closure、別Variantの実Mesh割当。元identity再利用成功と推測しない|
 |embedded Material出所|U15–U17、U49|Unity生成Material fileIDとraw FBX Material UIDのjoin。空remap mapから外部Materialを推定しない|
 |Prefab Material overrideの受け手|U18–U22、U09|occurrence/source Renderer→native Object/slot対応。overrideが存在しても受け手joinは別|
-|native face-to-slot|U10–U14、B03–B04、B10|Unity submesh facesとBlender polygon corner/slotの独立対応。Material名・slot数・外観だけでは不足|
+|native face-to-slot|U10–U14、B03–B04、B10|B13のindex修正とB10の接続dedupを考慮。Unity submesh facesとBlender polygon corner/slotの独立対応。Material名・slot数・外観だけでは不足|
 |null/unused/repeated slot|U09、U13–U14、U17|nullや重複を圧縮しない。余剰Materialの最後submesh重ね描画を区別。全null描画条件は未実測|
 |signed localID|U02|longを保持。intへの切詰めや符号除去不可。FBX UIDと同値にしない|
 |nullBone / fileID0|U07、U23–U29|参照種別、元nullの意図、skin index、native処理。補完値を推定して成功にしない|
-|weight/bindpose/rest|U25–U27、B06–B07|vertex対応とbone identity、空間一致。influence総数やbone数だけでは不足|
+|weight/bindpose/rest|U25–U27、B06–B07|B16/B24/B10/B13のmode・deform・cluster経路も参照。空Clusterを不要boneとしない。vertex対応とbone identity、空間一致。influence総数やbone数だけでは不足|
 |頂点数が元/編集/Unityで違う|U12、U33、U40–U45、B10|[頂点対応](VERTEX-CORRESPONDENCE.md)のCP/corner/face/skinとimport-policy条件。差だけで不具合/正常を決めない|
 |Texture/Shader/Script不足|U05–U06、U31–U32、V11|参照存在とprovider availabilityを分離。missing referenceを色や名称で埋めない。Blender preview shaderとclient shaderも別|
-|編集Actionを独立Clipで返す|U34–U38、B08–B11、V08–V10|GUI割当、clip binding、rig、Controller/layers/Expressionsは別。Actionの存在だけでVRC動作成功不可|
+|編集Actionを独立Clipで返す|U34–U38、B08–B11、V08–V10|B20–B23のslot型互換/逆引きは元割当証明と別。GUI割当、clip binding、rig、Controller/layers/Expressionsは別。Actionの存在だけでVRC動作成功不可|
 |PhysBone/Collider/Contact/Constraint保持|V05–V07|bone/object reference closure、component version/space、build/client挙動。Blender previewは近似でありclient証拠ではない|
 |再Apply一致|U40–U42とvertex表現の境界|同一路線の再現性と元surface/skinへの対応は別。独立対応未証明を維持|
 |VRC復帰|V01–V16|Editor、SDK build、upload、client、remote clientを別判定。公式資料だけでVAPB成功としない|
@@ -49,7 +49,7 @@
 2. Unity最新stable/LTSの正確なpatch番号。6.6 Manualと6.3 LTS supportは確認済。
 3. Unity native FBX importerの全CP→vertex map、split/weld条件、fileID生成アルゴリズム、null boneの全挙動、binary formatの完全schema。
 4. FBX規格所有者Autodeskの全schema/APIとの照合。Blender実装をFBX規格そのものとしない。
-5. Blender全modifier、Action channel bag、NLA/driver/constraint/shapeとFBXの全相互作用、source commentの個別issue本文。
+5. Blender全modifier、Action channel bag、NLA/driver/constraint/shapeとFBXの全相互作用、source commentの個別issue本文。公式API解説sourceとP0の追加読取範囲は[補足](BLENDER-SUPPLEMENT.md)で確認可能。
 6. SDK sourceの全build processor、各componentの全serialized field、非公開client/server処理、platform別動作、第三者custom shader/scriptの仕様。
 7. World/Udon/音声/同期/Creator Economy/OSC等の全API。機能索引はあるが個別機能を詳細監査済としない。
 8. 24 packageの個別権利、全依存closure、元meshと編集meshの独立vertex/face/skin対応と全runtime検証。

@@ -8,7 +8,7 @@
 
 1. [適用バージョン](VERSIONS.md)を確認する。最新版とVRC対応版とVAPB実測版を混同しない。
 2. Materialの直接課題は [接続方向・識別子・面対応](UNITY-MATERIAL-MESH.md)から読む。
-3. 頂点数差・CP/face/skin対応は [頂点対応とimport policy](VERTEX-CORRESPONDENCE.md)。[Unity往復](UNITY-ROUNDTRIP.md)、[Blender](BLENDER.md)、[VRChat](VRCHAT.md)で保存対象と変換境界を確認する。
+3. 頂点数差・CP/face/skin対応は [頂点対応とimport policy](VERTEX-CORRESPONDENCE.md)。[Unity往復](UNITY-ROUNDTRIP.md)、[Blender](BLENDER.md)と[取得制限・P0補足](BLENDER-SUPPLEMENT.md)、[VRChat](VRCHAT.md)で保存対象と変換境界を確認する。
 4. [課題への適用と未証明項目](VAPB-BOUNDARIES.md)で、一般仕様が実データの成功を証明しているかを確認する。
 5. [公式出典索引](SOURCES.md)のIDから原典の見出しへ戻る。各主張の対象版、根拠区分、取得状態を確認する。
 
@@ -39,9 +39,9 @@
 |Unity|Animation / humanoid・generic / binding / Animator|詳細、完全retarget・curve変換は未実証|UNITY-ROUNDTRIP|
 |Unity|Rendering pipelines / lighting / VFX / particles / 2D / UI / audio|入口|U00の公式Manual体系|
 |Unity|Scripting / physics / navigation / networking / services / platforms / build / profiling / XR / packages|入口|U00。VAPB対象componentごとの適用は未調査|
-|Blender|ID / data users / ObjectとMesh / slots / face material|source詳細、5.2 API本文取得不能|BLENDER / B01–B04|
-|Blender|Depsgraph / originalとevaluated / modifier / armature / pose / vertex group|source概要、API本文取得不能|BLENDER / B04–B07|
-|Blender|Action slots・layers / NLA / FBX import・export|source詳細、全変換経路未調査|BLENDER / B08–B11|
+|Blender|ID / data users / ObjectとMesh / slots / face material|source詳細＋公式API解説source、生成API本文取得不能|BLENDER / BLENDER-SUPPLEMENT / B01–B04、B15–B17|
+|Blender|Depsgraph / originalとevaluated / modifier / armature / pose / vertex group|source＋公式解説詳細（該当範囲）、生成API本文取得不能|BLENDER / BLENDER-SUPPLEMENT / B04–B07、B16、B18–B19、B24|
+|Blender|Action slots・layers / NLA / FBX import・export|source詳細＋公式slot解説、全変換経路未調査|BLENDER / BLENDER-SUPPLEMENT / B08–B13、B20–B23|
 |Blender|Modeling / sculpt / UV / geometry nodes / shader nodes / render / compositing / tracking / video / Grease Pencil / simulation / asset library / UI / Python|入口、一部公式Manual取得不能|B00 / B12|
 |VRChat|SDK・Unity support / Public API / Avatar Descriptor|詳細|VRCHAT / V01–V04、V12–V13|
 |VRChat|PhysBone・Collider / Contact / Constraint / Animator layers / Expressions・parameters|詳細（公開説明範囲）|VRCHAT / V05–V10|
@@ -52,6 +52,6 @@
 
 ## 監査可能な完了範囲
 
-初版はMaterial/Mesh/GUIDと版表・出典を先にremote保存・本文読み戻し確認した。第二段階でSkin/Animation/Blender/VRChat、頂点対応と全体索引を追加した。分野索引が全体を見渡すための範囲であり、「全APIを読んだ」「24 packageを再実測した」という主張はしない。今後の更新は、原典の版と取得日を更新してから行う。
+初版はMaterial/Mesh/GUIDと版表・出典を先にremote保存・本文読み戻し確認した。第二段階でSkin/Animation/Blender/VRChat、頂点対応と全体索引を追加した。補足では取得失敗をURL別に記録し、公式API解説sourceと面/slot・weight・Action/FBXの部分実装調査を追加した。分野索引が全体を見渡すための範囲であり、「全APIを読んだ」「24 packageを再実測した」という主張はしない。今後の更新は、原典の版と取得日を更新してから行う。
 
 調査はこの作業のWeb取得ツールと公開URLの読み取りだけで実施。通常ブラウザは使用していない。HTTP拒否は認証・UA変更等で迂回しない。公式source mirrorは公開された別種の根拠として区別する。

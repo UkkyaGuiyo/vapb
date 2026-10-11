@@ -1,6 +1,6 @@
 # Blender: datablock・Material・Skin・Action・FBX
 
-対象: **v5.2.1公式source**、確認日2026-10-11 UTC。5.2 Manual/API本文の取得は拒否されたため、以下は**SRC**として記す。公開APIの安定契約・実行binaryの検証結果へ昇格しない。原典は[SOURCES](SOURCES.md)。
+対象: **v5.2.1公式source**、確認日2026-10-11 UTC。生成された5.2 Manual/APIサイト本文は取得不能。以下の初版説明は**SRC**として記す。公式repository内のAPI解説（DOC）と追加実装調査は[補足](BLENDER-SUPPLEMENT.md)へ分ける。公開APIの安定契約・実行binaryの検証結果へ昇格しない。原典は[SOURCES](SOURCES.md)。
 
 ## ID datablockとdependency graph
 
@@ -38,6 +38,6 @@
 
 ## FBX import / API / 未調査範囲
 
-legacy `io_scene_fbx` import/export sourceを確認した [B10–B11、B13]。ただしsourceを全関数監査してはいない。API/Manual本文が取れない項目はSRCからの補助説明に留める。新しいFBX経路との完全互換、全modifier、shape animation、material nodeの完全変換、texture色空間/packed file、library override、全operator context条件は未調査。
+legacy `io_scene_fbx` import/export sourceを確認した [B10–B11、B13]。ただしsourceを全関数監査してはいない。生成API/Manual本文が取れない項目はSRCまたは公式解説source DOCの範囲を明記する。補足ではMaterial index修正、Object slot override、Cluster/weight、Action slotの該当経路を追加読取した。新しいFBX経路との完全互換、全modifier、shape animation、material nodeの完全変換、texture色空間/packed file、library override、全operator context条件は未調査。
 
 Blender公式sourceのlicenseと、ユーザーが編集する素材のlicenseは別。sourceを読めることからSDKや購入素材を再配布できると推定しない。今回source本文をrepoにコピーせず、日本語要約とURLだけを保存する。

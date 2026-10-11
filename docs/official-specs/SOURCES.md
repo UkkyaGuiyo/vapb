@@ -73,11 +73,23 @@ Unity U01–U38、U40–U47、U49–U50はURLに固定された**2022.3系列**�
 |B07|[rna_pose.cc](https://github.com/blender/blender/blob/v5.2.1/source/blender/makesrna/intern/rna_pose.cc)|SRC/本文|PoseBone.matrix、constraint/driver適用後armature object space|
 |B08|[rna_action.cc](https://github.com/blender/blender/blob/v5.2.1/source/blender/makesrna/intern/rna_action.cc)|SRC/本文|Action slots/layers/use_frame_range。全channel bag API未監査|
 |B09|[rna_nla.cc](https://github.com/blender/blender/blob/v5.2.1/source/blender/makesrna/intern/rna_nla.cc)|SRC/本文|NlaStrip action/action_slot/action_slot_handle|
-|B10|[export_fbx_bin.py](https://github.com/blender/blender/blob/v5.2.1/scripts/addons_core/io_scene_fbx/export_fbx_bin.py)|SRC/本文|fbx_data_mesh_elements、PolygonVertexIndex、LayerElementUV/Normal/Material、normal dedup回避。全FBX規格でない|
-|B11|[io_scene_fbx/__init__.py](https://github.com/blender/blender/blob/v5.2.1/scripts/addons_core/io_scene_fbx/__init__.py)|SRC/本文|ImportFBX/ExportFBX option: NLA/All Actions/sampling/simplify/axis/custom normals。presetの無損失保証でない|
-|B12|[Download](https://www.blender.org/download/) / [LTS](https://www.blender.org/download/lts/)|REL/取得不能|Web取得は402、API本文直接取得は403。認証等の迂回なし。最新stable/LTS patch不明|
-|B13|[import_fbx.py](https://github.com/blender/blender/blob/v5.2.1/scripts/addons_core/io_scene_fbx/import_fbx.py)|SRC/部分読取|module header / helpers / name validation。material import本体・全対応変換は未調査|
+|B10|[export_fbx_bin.py](https://github.com/blender/blender/blob/v5.2.1/scripts/addons_core/io_scene_fbx/export_fbx_bin.py)|SRC/本文|fbx_data_mesh_elements、UV/Normal/Material、Object Material接続dedup、fbx_data_armature_elements、find_validate_action_slot。該当関数部分読取、全FBX規格でない|
+|B11|[io_scene_fbx/__init__.py](https://github.com/blender/blender/blob/v5.2.1/scripts/addons_core/io_scene_fbx/__init__.py)|SRC/本文|ImportFBX/ExportFBX option: NLA/All Actions/sampling/simplify/axis、modifier/shape注意、leaf/deform-only。実preset未確認|
+|B12|[Download](https://www.blender.org/download/) / [LTS](https://www.blender.org/download/lts/)|REL/取得不能|Download/LTSのWeb取得は402。最新stable/LTS patch不明。失敗URLごとの結果はBLENDER-SUPPLEMENT|
+|B13|[import_fbx.py](https://github.com/blender/blender/blob/v5.2.1/scripts/addons_core/io_scene_fbx/import_fbx.py)|SRC/部分読取|blen_read_geom_layer_material、blen_read_geom_array_mapped_polygon、Object slot割当/validate_material_indices、merge_weights/set_bone_weights。全変換未監査|
 |B14|[MeshPolygon API](https://docs.blender.org/api/5.2/bpy.types.MeshPolygon.html) / [ID API](https://docs.blender.org/api/5.2/bpy.types.ID.html)|API/取得不能|5.2本文未読。代替SRCをAPI本文確認済と表記しない|
+|B15|[info_gotchas_meshes.rst](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/rst/info_gotchas_meshes.rst)|DOC/本文|Modes and Mesh Access / N-Gons and Tessellation。mode別data、polygons/loop_triangles/BMFace|
+|B16|[info_gotchas_armatures_and_bones.rst](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/rst/info_gotchas_armatures_and_bones.rst)|DOC/本文|Bones & Armatures / Armature Mode Switching。EditBone/Bone/PoseBone区別|
+|B17|[Mesh Data example](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/examples/bpy.types.Mesh.0.py)|DOC/本文|Mesh Data。vertices/edges/loops/polygonsとcorner属性。旧属性名は全API保証にしない|
+|B18|[Evaluated ID example](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/examples/bpy.types.Depsgraph.1.py)|DOC/本文|Dependency graph: Evaluated ID example。graph取得とeval object、modifier結果|
+|B19|[Object.to_mesh example](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/examples/bpy.types.Depsgraph.4.py)|DOC/本文|Dependency graph: Object.to_mesh()。temporary lifetimeと永続Mesh経路|
+|B20|[ActionSlot data organization](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/examples/bpy.types.ActionSlot.1.py)|DOC/本文|Actionとslotの構成。例中リンクは5.1 Manual、リンク先5.2確認済とはしない|
+|B21|[Create Slot](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/examples/bpy.types.ActionSlot.2.py)|DOC/本文|Create Slot。target_id_type/identifier/name_display|
+|B22|[Assigning Slots](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/examples/bpy.types.ActionSlot.3.py)|DOC/本文|Assigning Slots。型互換とaction_suitable_slots、元identity証明ではない|
+|B23|[Finding Action Slot Users](https://github.com/blender/blender/blob/v5.2.1/doc/python_api/examples/bpy.types.ActionSlot.4.py)|DOC/本文|Finding Action Slot Users。slot.users()、Action domainの逆引き|
+|B24|[armature_deform.cc](https://github.com/blender/blender/blob/v5.2.1/source/blender/blenkernel/intern/armature_deform.cc)|SRC/本文|vertex group/envelope、pose channel name lookup、BONE_NO_DEFORM。該当経路部分読取|
+
+B15–B23は公式repositoryに収録されたAPI解説・例の本文（DOC）。生成されたAPIサイト本文や完全な安定API監査を取得した意味ではない。取得失敗のURL別記録と補足は[Blender補足](BLENDER-SUPPLEMENT.md)。
 
 ## VRChat・版確認
 
@@ -110,6 +122,6 @@ Unity U01–U38、U40–U47、U49–U50はURLに固定された**2022.3系列**�
 
 ## 取得状態の扱い
 
-Unity公式はWeb取得と公開URL本文読取で確認。Blender docs/APIとdownloadの一部は取得不能。公式source mirrorの固定tag本文は取得できたため**SRCとして**使う。VRCの直接HTTP取得は403だったが、この作業のWeb取得サービスでは公式Creation本文を取得できた。これは認証やアクセス設定を変更した結果ではない。本文取得できない頁を引用して詳細を断定しない。
+Unity公式はWeb取得と公開URL本文読取で確認。Blender docs/APIとdownloadの一部は取得不能。公式source mirrorの固定tag本文は取得できたため、処理実装を**SRC**、公式執筆のAPI解説sourceを**DOC**として区別して使う。VRCの直接HTTP取得は403だったが、この作業のWeb取得サービスでは公式Creation本文を取得できた。これは認証やアクセス設定を変更した結果ではない。本文取得できない頁を引用して詳細を断定しない。
 
 公式issue tracker（Unity: https://issuetracker.unity3d.com/、Blender: https://projects.blender.org/、VRC: https://feedback.vrchat.com/）は不具合照合の入口。今回まだ個別issueを読んでいない。source comment中のissue番号は、issue本文と同一の根拠として扱わない。
