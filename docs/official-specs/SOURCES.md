@@ -2,7 +2,7 @@
 
 確認日（全行）: **2026-10-11 UTC**。`本文` = 原典本文の該当箇所を取得し読んだ、`入口` = 分野への案内のみ、`取得不能` = 未読。DOC/API/REL/SRCは[README](README.md)の分類。
 
-Unity U01–U38、U40–U45、U49はURLに固定された**2022.3系列**（U29だけsource固定commit）。個別patchでの実行結果ではない。Blender SRCは公式GitHub mirrorの**v5.2.1**（ref SHAはVERSIONS）を使用。VRCは**取得日現在の公開Creation文書**であり、ページごとにSDK version条件がある。mutableな公式ページは将来更新される。
+Unity U01–U38、U40–U47、U49–U50はURLに固定された**2022.3系列**（U29だけsource固定commit）。個別patchでの実行結果ではない。Blender SRCは公式GitHub mirrorの**v5.2.1**（ref SHAはVERSIONS）を使用。VRCは**取得日現在の公開Creation文書**であり、ページごとにSDK version条件がある。mutableな公式ページは将来更新される。
 
 ## Unity
 
@@ -54,7 +54,10 @@ Unity U01–U38、U40–U45、U49はURLに固定された**2022.3系列**（U29�
 |U43|[importNormals](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-importNormals.html)|API/本文|normal import setting、詳細はU33|
 |U44|[importTangents](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-importTangents.html)|API/本文|tangent import setting、詳細はU33|
 |U45|[meshCompression](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-meshCompression.html)|API/本文|compressionとvertex data artifact|
+|U46|[Mesh.GetIndices](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Mesh.GetIndices.html)|API/本文|topology依存index layout、baseVertex。face集合へ順を捨てない|
+|U47|[Mesh.GetTopology](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/Mesh.GetTopology.html)|API/本文|submesh topology。U12 Winding order本文も確認済|
 |U49|[ModelImporter.materialName](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/ModelImporter-materialName.html)|API/本文|名前を生成して既存Materialを探す。identity証明とは別|
+|U50|[PropertyModification](https://docs.unity3d.com/2022.3/Documentation/ScriptReference/PropertyModification.html)|API/本文|target/propertyPath/value/objectReference。元とeffective参照の区別|
 
 ## Blender・版確認
 

@@ -59,3 +59,5 @@
 まずこのbranchのREADME→VERSIONS→課題表を読む。Material課題はUNITY-MATERIAL-MESH、数差/CP課題はVERTEX-CORRESPONDENCEへ進む。SOURCESの見出しとversionを原典で確認し、実測する場合は実測版と設定を別に記録する。公式記載、source実装、実測、推論を混ぜず、欠けたjoinはUNKNOWN/NOT PROVENのまま扱う。
 
 本資料を参照するために製品branchへcherry-pickする必要はない。製品実装、推測割当、guard解除、停止研究の再開はこのbranchの成果物ではない。
+
+通常ImportをUnity必須へ変更する指示ではない。今回のEditor public APIは「不足したidentityの橋渡しを確認できる観測場所」の説明であり、全ImportでEditor起動を要求する製品方針ではない。既存の証明が揃う経路と、追加証拠が必要な特定経路を区別する。

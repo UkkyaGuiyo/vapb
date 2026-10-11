@@ -49,6 +49,14 @@ Renderer slot 0 ─→ Material object
 
 raw FBXのMaterial UID / Model UIDと、Unity generated subasset fileIDの同一性や変換式は今回公式資料で確立していない。metaの名前表が空でもimport後objectは存在し得る。source情報欠落時、名前・suffix・順番・外観・候補数だけで両者を結ばない。
 
+## 元の参照と有効参照、sourceとoccurrence
+
+**API [U20、U50]**: PropertyModificationはtarget（変更されるobject）、propertyPath、value、objectReferenceを分けて持つ。object-reference値をstringのvalueと混同しない。元のsource RendererのMaterial配列、ModelImporter remap、Variant/nested instanceのMaterial overrideは別の場所にある証拠。
+
+**INFERENCE**: serialized `m_Materials`と`externalObjects`を見つけても、それらのraw fieldがそのまま選択occurrenceのeffective Renderer状態だと決めない。前者の保存ownerとsource/instance位置、後者のimporter remap対象を特定する。公開APIが保証するのはsharedMaterials、PropertyModification、ExternalObjectMap等の意味であり、raw backing field全schemaを固定する保証ではない。
+
+packageはcontainer、GUIDは対象asset file、fileIDはasset内object、source objectはPrefab chain内の対応元、occurrenceは選択階層内の一つの使用箇所。同じasset/sourceを使う複数occurrenceでoverrideは異なり得る。Material→Renderer→Mesh逆引きは、参照元を走査してこの向きの辺を集めてから反転する推論であり、単一候補だけで欠けた辺を追加する行為とは違う。
+
 ## Submeshとslot、native face
 
 **API [U10–U12]**: MeshのsubMeshCountはsubmeshの数。submeshはvertex index群を持ち、通常そのindexに対応するRenderer Materialを使う。GetTriangles(submesh)は3 indexずつのtriangle列、baseVertex補正の有無を指定できる。頂点は複数submeshで共有できる。頂点集合の一致だけではface集合の一致を意味しない。
@@ -58,6 +66,12 @@ raw FBXのMaterial UID / Model UIDと、Unity generated subasset fileIDの同一
 **API [U09]**: sharedMaterialsはarray copyを返すが、含まれるMaterial objectはshared。Material本体を変更すると他の利用objectやproject assetも変わる。配列要素を変更する場合は配列を設定し直す。読取調査で `.material` による意図しないinstance生成と混同しない。
 
 **INFERENCE**: `[A, null, B, A]` を `[A, B]` へ圧縮するとslot indexの意味が変わり得る。同じMaterialの重複、null、空面slot、余剰描画slotを別々に記録する。Blenderではpolygon.material_indexとObjectのslotを読む必要があり、FBX exporterがslotをremapする実装もある [B03–B04、B10]。名前や配列長だけで往復一致としない。
+
+### 面の頂点集合、重複、巻方向
+
+**DOC/API [U11–U12、U46–U47]**: indicesの解釈はsubmeshのMeshTopologyに依存する。triangleは3 index単位で、Unityは巻方向で表裏を判断しclockwiseをfrontとする。GetIndices/GetTopologyはtriangles以外のtopologyを区別する公開手段。baseVertex補正も保持する。
+
+**INFERENCE**: `(a,b,c)` と `(a,c,b)` はunordered vertex集合が同じでも巻方向は逆。集合への変換はduplicate faceの多重度も失う。coordinate frameの反転を含む往復では、対応づいたcorner順・orientation・submesh/slot所属・重複回数を含めた証拠が必要。同位置duplicate vertexはposition集合でも区別できない。空面のslotはfaceから逆引きできないが、宣言slot/override情報まで削除してよいという根拠にはならない。具体的な一意性証明はVAPB実測側に残り、今回公式資料だけで完成としない。
 
 ## Signed localID / fileID 0
 
