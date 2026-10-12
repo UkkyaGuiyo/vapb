@@ -27,7 +27,7 @@
     "lease": "HELD_PENDING_RESOURCE_RECONCILIATION",
     "next_unity_launch": "HELD_NO_GUARD_BYPASS_OR_MANUAL_LOCK_REMOVAL"
   },
-  "independent_code_review": "PENDING",
+  "independent_code_review": {"source_revision": "67cc2ae38fa5df7cbc2bc6cc280df00cf0cc92c3", "verdict": "KEEP", "must_fix_findings": 0, "requested_model": "gpt-6.1-sol", "requested_reasoning": "medium", "effective_runtime": "UNAVAILABLE", "completion_claims": "DEFER_PENDING_CORRECTED_NATIVE_COMPILE_TESTS_AND_REAL_RETURN"},
   "corrected_real_return": "NOT_RUN",
   "gui_render": "NOT_RUN",
   "old_atlas": "READ_ONLY_NO_FURTHER_PERSISTENCE",
