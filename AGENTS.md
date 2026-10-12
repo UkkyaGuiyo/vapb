@@ -10,8 +10,8 @@ Canonical local checkout:
 
 ### Before work
 
-1. If `.failure-atlas/.git` exists, update it to the latest version without using force.
-2. If it does not exist, clone `ai-dev-failure-atlas` from the currently authenticated GitHub account into `.failure-atlas/`.
+1. The old Failure Atlas is read-only reference. Do not clone, fetch, merge, edit, commit, or push there; do not delete, revert, or rewrite its existing history.
+2. Before knowledge persistence, verify the already-authorized destination and branch and complete an independent public-safety review. If either is unverified, defer writing.
 3. If GitHub CLI is available, obtain the current account when needed with `gh api user --jq .login`.
 4. Read `.failure-atlas/INDEX.md` first.
 5. Search only for lessons relevant to the current error text, tools/frameworks, operation, symptoms, components, or previously failed approaches; do not read every lesson.
@@ -20,7 +20,7 @@ Canonical local checkout:
 
 ### After work
 
-If this work yields reusable knowledge for other tasks, save it directly to the Failure Atlas. Examples include a non-obvious implementation failure, an incorrect initial hypothesis or diagnosis, problematic ChatGPT/Codex instructions or interpretation, a diagnosed build/test/import/export failure, an environment-specific issue, recurrence of an earlier problem, an API/SDK/Unity/Blender/Git constraint, an effective diagnostic procedure, or a reason not to use an apparently reasonable design.
+If this work yields reusable knowledge for other tasks, save it only to the verified authorized destination and branch after independent public-safety review. The explicit owner prohibition on old-Atlas writes overrides the synchronization and direct-save instructions below; otherwise defer knowledge persistence. Product work and evidence on the authorized VAPB feature branch continue. Examples include a non-obvious implementation failure, an incorrect initial hypothesis or diagnosis, problematic ChatGPT/Codex instructions or interpretation, a diagnosed build/test/import/export failure, an environment-specific issue, recurrence of an earlier problem, an API/SDK/Unity/Blender/Git constraint, an effective diagnostic procedure, or a reason not to use an apparently reasonable design.
 
 When saving:
 
