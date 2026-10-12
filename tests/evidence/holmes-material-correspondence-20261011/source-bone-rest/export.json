@@ -1,0 +1,156 @@
+{
+  "status": "PASS",
+  "existing13_state_exact": true,
+  "original_blend_hash": "5aacfea5e4424dfb10ae0bc686efacc816703ac8f632559a3a61a1dd04e825c1",
+  "source_preserved": true,
+  "source_package_sha256": "1a11686dad6de231c0703b24cdf854833d683d0fa1fa5d80683a29b14e832027",
+  "output_sha256": "28df1faeecab2e298200d66014acdf0a3b154ed7f0dd399e616054c397041156",
+  "export_fbx_sha256": "e29748f7f58713e7d1e1670fb9f628200564442ad9cd1492b67fcd1dd644dfcc",
+  "task": {
+    "bone_mappings": [
+      {
+        "edited_bone_realization_id": "0ca24a23-34c3-4ae9-81be-1c92466465cc",
+        "source_model_uid": "44496282"
+      },
+      {
+        "edited_bone_realization_id": "020a4574-4709-433e-bac7-fadeeb19bda7",
+        "source_model_uid": "529385132"
+      }
+    ],
+    "instance_edges": [],
+    "kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "material_bindings": [
+      {
+        "file_id": "2100000",
+        "guid": "54087153bffa4c988c7ae81c83b65429",
+        "transport_id": "VAPB-MAT-fcbec0fdf8327852740bbce8ba99df18"
+      }
+    ],
+    "model_guid": "761d4bad1b99454d14e45440afb0ae4c",
+    "model_sha256": "e29748f7f58713e7d1e1670fb9f628200564442ad9cd1492b67fcd1dd644dfcc",
+    "realization_id": "7ba1123b-4a60-449a-ac3b-ada0392169c0",
+    "source_geometry_uid": "436838756",
+    "source_model_guid": "8bc011b73df44966bf2864cfc7301700",
+    "source_model_sha256": "afa2d4f14b1688c1c3c8763a5dea9b318c3c4aa3d9e6a29f8f68fd58a184fa0c",
+    "source_model_uid": "805164505",
+    "source_model_uids": [
+      "805164505",
+      "998451891",
+      "44496282",
+      "529385132"
+    ],
+    "variant_path": "Assets/VAPBExport/EditedVariant_61163f6412c7af8e22538e3a26c9a2a1ce508931c0bc9577812123691c1219d4.prefab",
+    "weight_transport": {
+      "control_point_count": 8,
+      "noop_path": "Assets/VAPBExport/Witness_761d4bad1b99454d14e45440afb0ae4c_Weight_noop.bytes",
+      "noop_sha256": "e29748f7f58713e7d1e1670fb9f628200564442ad9cd1492b67fcd1dd644dfcc",
+      "points": [
+        {
+          "bone_realization_ids": [
+            "0ca24a23-34c3-4ae9-81be-1c92466465cc"
+          ],
+          "cp": 0,
+          "expected_bits": [
+            1065353216
+          ],
+          "raw_bits": [
+            1065353216
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "020a4574-4709-433e-bac7-fadeeb19bda7"
+          ],
+          "cp": 1,
+          "expected_bits": [
+            1065353216
+          ],
+          "raw_bits": [
+            1065353216
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "0ca24a23-34c3-4ae9-81be-1c92466465cc"
+          ],
+          "cp": 2,
+          "expected_bits": [
+            1065353216
+          ],
+          "raw_bits": [
+            1065353216
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "020a4574-4709-433e-bac7-fadeeb19bda7"
+          ],
+          "cp": 3,
+          "expected_bits": [
+            1065353216
+          ],
+          "raw_bits": [
+            1065353216
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "0ca24a23-34c3-4ae9-81be-1c92466465cc"
+          ],
+          "cp": 4,
+          "expected_bits": [
+            1065353216
+          ],
+          "raw_bits": [
+            1065353216
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "020a4574-4709-433e-bac7-fadeeb19bda7"
+          ],
+          "cp": 5,
+          "expected_bits": [
+            1065353216
+          ],
+          "raw_bits": [
+            1065353216
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "0ca24a23-34c3-4ae9-81be-1c92466465cc"
+          ],
+          "cp": 6,
+          "expected_bits": [
+            1065353216
+          ],
+          "raw_bits": [
+            1065353216
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "020a4574-4709-433e-bac7-fadeeb19bda7"
+          ],
+          "cp": 7,
+          "expected_bits": [
+            1065353216
+          ],
+          "raw_bits": [
+            1065353216
+          ]
+        }
+      ],
+      "stamped_path": "Assets/VAPBExport/Witness_761d4bad1b99454d14e45440afb0ae4c_Weight_stamped.bytes",
+      "stamped_sha256": "8bf700207ac7f45056e942b1e6b9b19566916b67b2fae6c51eb365470b95ac53",
+      "unity_version": "2022.3.22f1",
+      "uv_channel": 1,
+      "version": 1
+    },
+    "witness_noop_path": "Assets/VAPBExport/Witness_761d4bad1b99454d14e45440afb0ae4c_Noop.bytes",
+    "witness_noop_sha256": "afa2d4f14b1688c1c3c8763a5dea9b318c3c4aa3d9e6a29f8f68fd58a184fa0c",
+    "witness_path": "Assets/VAPBExport/Witness_761d4bad1b99454d14e45440afb0ae4c_Source.bytes",
+    "witness_sha256": "8d0df44539362b7eb2f285aabd2881ac7847efc5b9936bbb012f18b83ef170d2"
+  }
+}

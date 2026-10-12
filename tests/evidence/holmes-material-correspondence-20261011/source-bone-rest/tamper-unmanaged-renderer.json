@@ -1,0 +1,11 @@
+{
+    "control": "unmanaged-renderer",
+    "original_hash": "86B9C647606D76EC439FEED02C67E78C33455F584EC8C77451F98A948A49B57A",
+    "altered_hash": "9410B43213A90A460AFAC824499372FAA887C1AAFC7CBB53604B01FEF575D1C5",
+    "apply": false,
+    "altered_bytes_preserved": true,
+    "meta_preserved": true,
+    "rejection": [
+        "VAPB_MODEL_SKIN_VARIANT_REJECTED=VARIANT_MODIFICATION_UNKNOWN"
+    ]
+}

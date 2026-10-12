@@ -1,0 +1,11 @@
+{
+  "verdict": "KEEP",
+  "scope": "independent static safety/compatibility review",
+  "runtime_status_at_review": "NOT_RUN",
+  "reviewed_source_sha256": "62d34a43f44714c0edc758dc9297f4c6f25fced6430ba51c09c9cdb67e659698",
+  "requested_model": "gpt-6.1-sol",
+  "requested_reasoning": "medium",
+  "effective_model_reasoning": "unavailable",
+  "no_concrete_blocking_defect": true,
+  "native_green_restart_reapply_tamper_pending": true
+}

@@ -1,0 +1,11 @@
+{
+    "control": "managed-bone",
+    "original_hash": "86B9C647606D76EC439FEED02C67E78C33455F584EC8C77451F98A948A49B57A",
+    "altered_hash": "24C87F024D6FD9E7434AABE9A3662719B894C0422210632F9444136A8BEAACD7",
+    "apply": false,
+    "altered_bytes_preserved": true,
+    "meta_preserved": true,
+    "rejection": [
+        "VAPB_MODEL_SKIN_VARIANT_REJECTED=VARIANT_BONE_REST_CHANGED"
+    ]
+}

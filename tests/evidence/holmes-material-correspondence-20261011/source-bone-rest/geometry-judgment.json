@@ -1,0 +1,35 @@
+{
+  "status": "PASS",
+  "blender_to_BakeMesh_true": {
+    "status": "EXACT",
+    "maximum_distance": 3.453084893899103e-07,
+    "tolerance": 3e-05
+  },
+  "CPU_to_BakeMesh_true": {
+    "status": "EXACT",
+    "maximum_distance": 2.842839421323384e-07,
+    "tolerance": 3e-05
+  },
+  "position_tolerance_m": 3e-05,
+  "original_source_state_exact": true,
+  "prior_file_count": 85,
+  "prior_hashes_exact": true,
+  "linked_original_bone_root_identity": true,
+  "rest_locals_changed": true,
+  "weights_Shapes_defaults_preserved": true,
+  "duplicate_cp_capture_count": 12,
+  "cp_count": 8,
+  "native_vertices": 26,
+  "package_sha256": "28df1faeecab2e298200d66014acdf0a3b154ed7f0dd399e616054c397041156",
+  "consumer_sha256": "62d34a43f44714c0edc758dc9297f4c6f25fced6430ba51c09c9cdb67e659698",
+  "metric_sha256": "0064441a7b07db7f95b7e5c1786fd8014ca1ec32f5e0807cad536c9f75a4663c",
+  "axis_contract": [
+    "-x",
+    "-z",
+    "y"
+  ],
+  "restart_NOT_RUN": false,
+  "restart_native_geometry_bone_frames_exact": true,
+  "restart_bounds_exact": true,
+  "restart_existing_file_count": 91
+}

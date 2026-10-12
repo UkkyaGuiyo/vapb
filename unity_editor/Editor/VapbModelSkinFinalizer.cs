@@ -177,6 +177,14 @@ public static partial class VapbModelSkinFinalizer
         public string[] editedBoneUids;
         public string rootUid;
         public Material[] materials;
+        public SourceBoneRest[] sourceRest;
+    }
+    private sealed class SourceBoneRest
+    {
+        public Transform source;
+        public Vector3 position, scale;
+        public Quaternion rotation;
+        public Matrix4x4 world;
     }
     private sealed class Snapshot
     {
@@ -662,9 +670,10 @@ public static partial class VapbModelSkinFinalizer
                 Reject("SOURCE_MODEL_WEIGHTS_CHANGED");
         }
         CheckSkinCompatibility(mapping, target, edited, source, direct);
+        if (edited.sourceRest != null && task.action_clip != null) Reject("ACTION_LOCAL_REST_DIFFERS");
         if (sourceModel && (!SameNormalSkinIndexLayout(mapping.sourceLayout, edited.mesh) ||
             !SameBlendShapes(mapping.sourceLayout, edited.mesh) ||
-            !SameShapeDefaults(target, edited.renderer)))
+            !SameShapeDefaults(target, edited.renderer) || edited.sourceRest != null))
         {
             // Source-model replacement has its own bounded scope; Kind eligibility stays unchanged.
             ValidateSourceModelReplacementScope(prefab, target);
@@ -1363,6 +1372,7 @@ public static partial class VapbModelSkinFinalizer
             for (int i = 0; i < source.sourceBoneUids.Length; i++)
                 if (sourceSlots.ContainsKey(source.sourceBoneUids[i])) Reject("SOURCE_BONE_AMBIGUOUS");
                 else sourceSlots.Add(source.sourceBoneUids[i], i);
+        bool authoredRest = false;
         for (int i = 0; i < edited.editedBoneUids.Length; i++)
         {
             Matrix4x4 expected;
@@ -1379,10 +1389,67 @@ public static partial class VapbModelSkinFinalizer
                 Transform bone = source.bonesByUid[edited.editedBoneUids[i]];
                 expected = bone.worldToLocalMatrix * target.transform.localToWorldMatrix;
             }
-            if (!FiniteMatrix(mesh.bindposes[i]) || !FiniteMatrix(expected) ||
-                !SameMatrix(mesh.bindposes[i], expected, 0.001f)) Reject("EDITED_REST_MISMATCH");
+            if (!FiniteMatrix(mesh.bindposes[i]) || !FiniteMatrix(expected)) Reject("EDITED_REST_MISMATCH");
+            if (!SameMatrix(mesh.bindposes[i], expected, 0.001f))
+            {
+                if (direct || !source.sourceModel) Reject("EDITED_REST_MISMATCH");
+                authoredRest = true;
+            }
         }
+        edited.sourceRest = authoredRest ? PrepareSourceBoneRest(target, edited, source) : null;
         ValidateWeights(mesh, edited.editedBoneUids.Length);
+    }
+
+    // Ephemeral native frames, not a new package receipt. Original identity/rest remains verified.
+    private static bool InvertibleRestMatrix(Matrix4x4 value)
+    {
+        return FiniteMatrix(value) && FiniteMatrix(value.inverse) &&
+            SameMatrix(value * value.inverse, Matrix4x4.identity, 0.001f) &&
+            SameMatrix(value.inverse * value, Matrix4x4.identity, 0.001f);
+    }
+
+    private static SourceBoneRest[] PrepareSourceBoneRest(SkinnedMeshRenderer target,
+        EditedIdentity edited, SourceIdentity source)
+    {
+        Transform[] native = edited.renderer.bones;
+        Transform[] original = MappedTargetBones(edited, source);
+        if (original == null || native == null || original.Length != native.Length ||
+            Array.IndexOf(original, target.rootBone) < 0 ||
+            Array.IndexOf(native, edited.renderer.rootBone) < 0)
+            Reject("SOURCE_REST_ROOT_UNSUPPORTED");
+        Matrix4x4 sourceFrame = target.transform.localToWorldMatrix;
+        Matrix4x4 editedFrame = edited.renderer.transform.localToWorldMatrix;
+        if (!InvertibleRestMatrix(sourceFrame) || !InvertibleRestMatrix(editedFrame))
+            Reject("SOURCE_REST_FRAME_INVALID");
+        var rest = new SourceBoneRest[native.Length];
+        for (int i = 0; i < native.Length; i++)
+        {
+            if (native[i] == null || original[i] == null || target.transform.IsChildOf(original[i]))
+                Reject("SOURCE_REST_RENDERER_ANCESTRY_UNSUPPORTED");
+            if (!InvertibleRestMatrix(native[i].localToWorldMatrix) ||
+                !SameMatrix(edited.mesh.bindposes[i], native[i].worldToLocalMatrix * editedFrame, 0.001f))
+                Reject("EDITED_REST_MISMATCH");
+            Matrix4x4 world = sourceFrame * editedFrame.inverse * native[i].localToWorldMatrix;
+            if (!InvertibleRestMatrix(world)) Reject("SOURCE_REST_FRAME_INVALID");
+            rest[i] = new SourceBoneRest { source = original[i], world = world };
+        }
+        for (int i = 0; i < native.Length; i++)
+        {
+            int parent = Array.IndexOf(original, original[i].parent);
+            if (parent != Array.IndexOf(native, native[i].parent)) Reject("EDITED_BONE_PARENT_MISMATCH");
+            Matrix4x4 parentWorld = parent >= 0 ? rest[parent].world :
+                original[i].parent == null ? Matrix4x4.identity : original[i].parent.localToWorldMatrix;
+            if (!InvertibleRestMatrix(parentWorld)) Reject("SOURCE_REST_FRAME_INVALID");
+            Matrix4x4 local = parentWorld.inverse * rest[i].world;
+            if (!InvertibleRestMatrix(local)) Reject("SOURCE_REST_FRAME_INVALID");
+            rest[i].position = local.GetColumn(3);
+            rest[i].rotation = local.rotation;
+            rest[i].scale = local.lossyScale;
+            Matrix4x4 rebuilt = Matrix4x4.TRS(rest[i].position, rest[i].rotation, rest[i].scale);
+            if (!InvertibleRestMatrix(rebuilt) || !SameMatrix(local, rebuilt, 0.001f))
+                Reject("SOURCE_REST_TRS_UNREPRESENTABLE");
+        }
+        return rest;
     }
 
     private static int WeightBits(float value) { return BitConverter.ToInt32(BitConverter.GetBytes(value), 0); }
@@ -1937,6 +2004,14 @@ public static partial class VapbModelSkinFinalizer
         expanded.Encapsulate(rest.min); expanded.Encapsulate(rest.max);
         return expanded;
     }
+    private static Bounds SourceModelBounds(SkinnedMeshRenderer target, Mesh mesh,
+        Transform[] boneFrames, Bounds baseline)
+    {
+        if (!TryRestMeshBounds(target, mesh, boneFrames, out Bounds rest))
+            Reject("SOURCE_MODEL_BOUNDS_INVALID");
+        baseline.Encapsulate(rest.min); baseline.Encapsulate(rest.max);
+        return baseline;
+    }
     private static void SaveSourceModelBounds(SkinnedMeshRenderer target, Bounds bounds)
     {
         // Renderer.localBounds is a transient override in 2022.3. Persist the same
@@ -2107,14 +2182,24 @@ public static partial class VapbModelSkinFinalizer
                         }
                     if (bones[i] == null) Reject("VARIANT_BONE_MISSING");
                 }
+                if (plan.edited.sourceRest != null)
+                    for (int i = 0; i < bones.Length; i++)
+                    {
+                        SourceBoneRest rest = plan.edited.sourceRest[i];
+                        bones[i].localPosition = rest.position;
+                        bones[i].localRotation = rest.rotation;
+                        bones[i].localScale = rest.scale;
+                        PrefabUtility.RecordPrefabInstancePropertyModifications(bones[i]);
+                    }
                 target.sharedMesh = plan.edited.mesh;
                 if (plan.task.kind == SourceKind)
                     for (int i = 0; i < plan.edited.mesh.blendShapeCount; i++)
                         target.SetBlendShapeWeight(i, plan.edited.renderer.GetBlendShapeWeight(i));
                 target.bones = bones;
                 if (plan.task.kind == SourceKind)
-                    SaveSourceModelBounds(target, SourceModelBounds(plan.target, plan.edited.mesh,
-                        MappedTargetBones(plan.edited, plan.source)));
+                    SaveSourceModelBounds(target, plan.edited.sourceRest == null ?
+                        SourceModelBounds(plan.target, plan.edited.mesh, MappedTargetBones(plan.edited, plan.source)) :
+                        SourceModelBounds(target, plan.edited.mesh, bones, plan.target.localBounds));
                 if (plan.edited.materials != null) target.sharedMaterials = plan.edited.materials;
                 PrefabUtility.RecordPrefabInstancePropertyModifications(target);
             }
@@ -2148,6 +2233,26 @@ public static partial class VapbModelSkinFinalizer
         return false;
     }
 
+    private static SourceBoneRest ManagedSourceRest(List<PreparedTask> plans, Transform source)
+    {
+        SourceBoneRest found = null;
+        foreach (PreparedTask plan in plans)
+            if (plan.task.kind == SourceKind && plan.edited.sourceRest != null)
+                foreach (SourceBoneRest rest in plan.edited.sourceRest)
+                    if (rest.source == source)
+                    {
+                        if (found != null) Reject("VARIANT_BONE_AMBIGUOUS");
+                        found = rest;
+                    }
+        return found;
+    }
+    private static bool SourceRestModification(List<PreparedTask> plans, PropertyModification mod)
+    {
+        return mod.target is Transform bone && ManagedSourceRest(plans, bone) != null &&
+            mod.objectReference == null &&
+            Regex.IsMatch(mod.propertyPath, @"^m_Local(Position|Scale)\.[xyz]$|^m_LocalRotation\.[xyzw]$");
+    }
+
     private static void VerifyVariant(GameObject variant, GameObject original,
         List<PreparedTask> plans)
     {
@@ -2177,7 +2282,8 @@ public static partial class VapbModelSkinFinalizer
                   mod.propertyPath.StartsWith("m_Materials.Array.data[", StringComparison.Ordinal))));
             bool rootDefault = PrefabUtility.IsDefaultOverride(mod) &&
                 (mod.target == original || mod.target == original.transform);
-            if (!skinBinding && !rootDefault) Reject("VARIANT_MODIFICATION_UNKNOWN");
+            if (!skinBinding && !rootDefault && !SourceRestModification(plans, mod))
+                Reject("VARIANT_MODIFICATION_UNKNOWN");
         }
         Transform[] sourceTransforms = original.GetComponentsInChildren<Transform>(true);
         Transform[] variantTransforms = variant.GetComponentsInChildren<Transform>(true);
@@ -2185,11 +2291,19 @@ public static partial class VapbModelSkinFinalizer
         foreach (Transform transform in variantTransforms)
         {
             Transform corresponding = PrefabUtility.GetCorrespondingObjectFromSource(transform) as Transform;
-            if (corresponding == null || transform.localPosition != corresponding.localPosition ||
-                transform.localRotation != corresponding.localRotation ||
-                transform.localScale != corresponding.localScale ||
-                (transform != variant.transform && transform.name != corresponding.name))
+            if (corresponding == null || (transform != variant.transform && transform.name != corresponding.name))
                 Reject("VARIANT_TRANSFORM_CHANGED");
+            SourceBoneRest authored = ManagedSourceRest(plans, corresponding);
+            if (authored == null)
+            {
+                if (transform.localPosition != corresponding.localPosition ||
+                    transform.localRotation != corresponding.localRotation || transform.localScale != corresponding.localScale)
+                    Reject("VARIANT_TRANSFORM_CHANGED");
+            }
+            else if ((transform.parent == null ? null : PrefabUtility.GetCorrespondingObjectFromSource(transform.parent)) != corresponding.parent ||
+                transform.localPosition != authored.position || transform.localRotation != authored.rotation ||
+                transform.localScale != authored.scale || !SameMatrix(transform.localToWorldMatrix, authored.world, 0.001f))
+                Reject("VARIANT_BONE_REST_CHANGED");
         }
         Renderer[] sourceRenderers = original.GetComponentsInChildren<Renderer>(true);
         Renderer[] variantRenderers = variant.GetComponentsInChildren<Renderer>(true);
@@ -2219,8 +2333,9 @@ public static partial class VapbModelSkinFinalizer
                         if (skin.GetBlendShapeWeight(i) != plan.edited.renderer.GetBlendShapeWeight(i))
                             Reject("VARIANT_SHAPE_WEIGHT_CHANGED");
                 if (plan.task.kind == SourceKind &&
-                    (!SourceModelBoundsStored(skin, SourceModelBounds(plan.target, plan.edited.mesh,
-                        MappedTargetBones(plan.edited, plan.source))) ||
+                    (!SourceModelBoundsStored(skin, plan.edited.sourceRest == null ?
+                        SourceModelBounds(plan.target, plan.edited.mesh, MappedTargetBones(plan.edited, plan.source)) :
+                        SourceModelBounds(skin, plan.edited.mesh, skin.bones, plan.target.localBounds)) ||
                      !BoundsContainsRestMesh(skin, skin.sharedMesh, skin.bones, 0.001f)))
                     Reject("VARIANT_RENDERER_STATE_CHANGED");
                 if (plan.requiresReplacementEligibility && (skin.sharedMesh.blendShapeCount != 0 ||

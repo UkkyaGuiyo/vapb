@@ -1,0 +1,32 @@
+{
+    "instruction_id": "HOLMES-20261012-15-RESTART",
+    "status": "PASS",
+    "error": "",
+    "unity_version": "2022.3.22f1",
+    "apply": true,
+    "variant_bytes_unchanged": true,
+    "variant_meta_unchanged": true,
+    "variant_semantics_unchanged": true,
+    "all_existing_files_unchanged": true,
+    "protected_file_count": 91,
+    "bounds_center_before": {
+        "x": 0.0001698615960776806,
+        "y": 0.008459996432065964,
+        "z": 0.00008999998681247234
+    },
+    "bounds_extent_before": {
+        "x": 0.0023698611184954645,
+        "y": 0.011519994586706162,
+        "z": 0.002129999455064535
+    },
+    "bounds_center_after": {
+        "x": 0.0001698615960776806,
+        "y": 0.008459996432065964,
+        "z": 0.00008999998681247234
+    },
+    "bounds_extent_after": {
+        "x": 0.0023698611184954645,
+        "y": 0.011519994586706162,
+        "z": 0.002129999455064535
+    }
+}
