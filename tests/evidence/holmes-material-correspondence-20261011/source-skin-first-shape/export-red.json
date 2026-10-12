@@ -1,0 +1,415 @@
+{
+  "status": "PASS",
+  "stage": "normal_export",
+  "reopen_state_exact": true,
+  "source_preserved": true,
+  "source_package_sha256": "3bdbab3790a4588f5712c931d085b6b513a6b106937548fbbfce6797e8f5a83d",
+  "output_sha256": "ca7a87e4aea18fa91f458415c789a2413e3232b2bd0ea72c486ae0cd9a743054",
+  "export_fbx_sha256": "1d58eedafab4a3f709035dff2fac7d77fd9a4899f42466c4688eed92c978c06b",
+  "task": {
+    "bone_mappings": [
+      {
+        "edited_bone_realization_id": "48d4ed0d-cb27-46f2-8a17-143d418eb914",
+        "source_model_uid": "288813419"
+      },
+      {
+        "edited_bone_realization_id": "aa0af236-6a2c-4070-a611-54a4edf6f8f0",
+        "source_model_uid": "957849273"
+      }
+    ],
+    "instance_edges": [],
+    "kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+    "material_bindings": [
+      {
+        "file_id": "2100000",
+        "guid": "75f6b54b17e02744598ae3ba28ab8047",
+        "transport_id": "VAPB-MAT-c1b1041c4106d475ed4e4c09881495e9"
+      }
+    ],
+    "model_guid": "11fa1a1a5d0acef7189f95a4d60f01d0",
+    "model_sha256": "1d58eedafab4a3f709035dff2fac7d77fd9a4899f42466c4688eed92c978c06b",
+    "realization_id": "3714f13b-6a40-41e1-8fc6-aa3ba1fa8264",
+    "source_geometry_uid": "808198139",
+    "source_model_guid": "8d27441c691fdcb46b8a7a273827ebba",
+    "source_model_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+    "source_model_uid": "549064506",
+    "source_model_uids": [
+      "528252550",
+      "549064506",
+      "957849273",
+      "288813419"
+    ],
+    "variant_path": "Assets/VAPBExport/EditedVariant_0ae4bb034c6711fc9d84d9635cccc1c0d98c5aad5e2a3a6165bd894496b3dad3.prefab",
+    "weight_transport": {
+      "control_point_count": 4,
+      "noop_path": "Assets/VAPBExport/Witness_11fa1a1a5d0acef7189f95a4d60f01d0_Weight_noop.bytes",
+      "noop_sha256": "1d58eedafab4a3f709035dff2fac7d77fd9a4899f42466c4688eed92c978c06b",
+      "points": [
+        {
+          "bone_realization_ids": [
+            "aa0af236-6a2c-4070-a611-54a4edf6f8f0",
+            "48d4ed0d-cb27-46f2-8a17-143d418eb914"
+          ],
+          "cp": 0,
+          "expected_bits": [
+            1061158912,
+            1048576000
+          ],
+          "raw_bits": [
+            1061158912,
+            1048576000
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "aa0af236-6a2c-4070-a611-54a4edf6f8f0",
+            "48d4ed0d-cb27-46f2-8a17-143d418eb914"
+          ],
+          "cp": 1,
+          "expected_bits": [
+            1061158912,
+            1048576000
+          ],
+          "raw_bits": [
+            1061158912,
+            1048576000
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "aa0af236-6a2c-4070-a611-54a4edf6f8f0",
+            "48d4ed0d-cb27-46f2-8a17-143d418eb914"
+          ],
+          "cp": 2,
+          "expected_bits": [
+            1048576000,
+            1061158912
+          ],
+          "raw_bits": [
+            1048576000,
+            1061158912
+          ]
+        },
+        {
+          "bone_realization_ids": [
+            "aa0af236-6a2c-4070-a611-54a4edf6f8f0",
+            "48d4ed0d-cb27-46f2-8a17-143d418eb914"
+          ],
+          "cp": 3,
+          "expected_bits": [
+            1048576000,
+            1061158912
+          ],
+          "raw_bits": [
+            1048576000,
+            1061158912
+          ]
+        }
+      ],
+      "stamped_path": "Assets/VAPBExport/Witness_11fa1a1a5d0acef7189f95a4d60f01d0_Weight_stamped.bytes",
+      "stamped_sha256": "f8f9e0ba568d79e9809e1416cbc07c11e1bd5ba799812a02347494ee76bf0e86",
+      "unity_version": "2022.3.22f1",
+      "uv_channel": 1,
+      "version": 1
+    },
+    "witness_noop_path": "Assets/VAPBExport/Witness_11fa1a1a5d0acef7189f95a4d60f01d0_Noop.bytes",
+    "witness_noop_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+    "witness_path": "Assets/VAPBExport/Witness_11fa1a1a5d0acef7189f95a4d60f01d0_Source.bytes",
+    "witness_sha256": "cffc9046ab8ea4ec701f1924d557bb9c92c4b8761d17b6541dde377c701afb69"
+  },
+  "state": {
+    "vertices": [
+      [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        2.0,
+        0.0
+      ],
+      [
+        -1.0,
+        2.0,
+        0.0
+      ]
+    ],
+    "faces": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        0,
+        2,
+        3
+      ]
+    ],
+    "face_materials": [
+      0,
+      0
+    ],
+    "uv": [
+      [
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0
+      ],
+      [
+        1.0,
+        1.0
+      ],
+      [
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        1.0
+      ],
+      [
+        0.0,
+        1.0
+      ]
+    ],
+    "weights": [
+      [
+        [
+          0,
+          0.75
+        ],
+        [
+          1,
+          0.25
+        ]
+      ],
+      [
+        [
+          0,
+          0.75
+        ],
+        [
+          1,
+          0.25
+        ]
+      ],
+      [
+        [
+          0,
+          0.25
+        ],
+        [
+          1,
+          0.75
+        ]
+      ],
+      [
+        [
+          0,
+          0.25
+        ],
+        [
+          1,
+          0.75
+        ]
+      ]
+    ],
+    "groups": [
+      "Lower",
+      "Upper"
+    ],
+    "matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        1.6292067073209182e-07,
+        0.0
+      ],
+      [
+        0.0,
+        -1.6292067073209182e-07,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "rig_matrix": [
+      [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        1.0,
+        1.6292067073209182e-07,
+        0.0
+      ],
+      [
+        0.0,
+        -1.6292067073209182e-07,
+        1.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "bones": [
+      {
+        "uid": "957849273",
+        "realization": "aa0af236-6a2c-4070-a611-54a4edf6f8f0",
+        "parent_uid": "",
+        "matrix": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      },
+      {
+        "uid": "288813419",
+        "realization": "48d4ed0d-cb27-46f2-8a17-143d418eb914",
+        "parent_uid": "957849273",
+        "matrix": [
+          [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            1.0,
+            0.0,
+            1.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      }
+    ],
+    "materials": [
+      {
+        "guid": "75f6b54b17e02744598ae3ba28ab8047",
+        "file_id": "2100000"
+      }
+    ],
+    "channels": [
+      {
+        "name": "Basis",
+        "value": 1.0,
+        "relative": 0,
+        "points": [
+          [
+            -1.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            2.0,
+            0.0
+          ],
+          [
+            -1.0,
+            2.0,
+            0.0
+          ]
+        ]
+      },
+      {
+        "name": "Authored_First",
+        "value": 0.0,
+        "relative": 0,
+        "points": [
+          [
+            -1.0,
+            0.0,
+            0.03999999910593033
+          ],
+          [
+            1.0,
+            0.0,
+            0.0
+          ],
+          [
+            1.0,
+            2.0,
+            0.0
+          ],
+          [
+            -1.0,
+            2.0,
+            0.0
+          ]
+        ]
+      }
+    ],
+    "shape_receipt": null,
+    "shape_receipt_sha256": null,
+    "model_uid": "549064506",
+    "geometry_uid": "808198139",
+    "realization_id": "3714f13b-6a40-41e1-8fc6-aa3ba1fa8264"
+  }
+}
