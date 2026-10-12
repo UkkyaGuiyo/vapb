@@ -273,7 +273,9 @@ Manifestは`schema_version: 1`のJSONです。`materials`にExportされたMater
 
 Unity側で元の`.mat`を再利用するため、PropertyをJSONから再生成しません。元`.mat`をそのまま検索し、FBX ImporterのMaterial remapへ登録します。
 
-## Unity Restore Tool
+## FBX + Material Map 用の Unity Restore Tool
+
+この節は **FBX + Unity Material Map (.fbx)** の出力用です。通常の `.unitypackage` 往復は下の「通常 UnityPackage 往復」を使います。
 
 `unity_editor/Editor/UnityPackageBlenderMaterialRestore.cs`をUnity Projectの`Assets/Editor/`へコピーします。VRChat SDKは必要ありません。
 
@@ -336,7 +338,7 @@ for separate scene attachments retain their Empty representation.
 - Transparent / cutout / blend material visual pathは未検証です。
 - Unity Shaderの外観はBlender Principled BSDFによる近似です。
 - Multi-package identity foundationは実装済みです。異なるPackageの同一GUID/Asset Pathは検出・報告しますが、自動merge・自動置換は行いません。
-- UnityPackage exporterは未完成です。
+- UnityPackage exporterには限定的なMesh/Skin往復経路があります。通常手順と検証済み範囲は下の「通常 UnityPackage 往復」を参照してください。全Composition・Avatar・VRCを含む全面的な往復は未完成です。
 - File Browser cancel/re-run、任意Prefab手動選択、通常UI Undo-keyは未確認です。
 
 - Unityの座標系とFBXインポーターの変換差により、特殊なPrefabや複数の変換階層では位置・回転に微調整が必要な場合があります。
@@ -383,3 +385,19 @@ pose. The owned two-Bone source-model case passes native Unity Clip creation,
 repeat/collision controls and three sampled final-Variant Skin deformations.
 Human GUI assignment, general Avatar/retargeting and VRC runtime remain unverified.
 The installable ZIP builder includes the independent Clip consumer. Generate a source-revision ZIP with `python tools/build_distribution_zip.py --repo . --revision HEAD --output-dir dist`. Local ZIP delivery and standard installation checks are recorded separately from source/GitHub saves.
+
+## 通常 UnityPackage 往復 — 元モデル由来の Skin
+
+Blenderへ入れるアドオンZIPと、Unityへ戻す `.unitypackage` は別のファイルです。この経路では元FBX・meta・Materialを保持し、編集Meshを使う別の linked Prefab VariantをUnityへ作ります。
+
+1. アドオンを有効化し、UnityPackageをBlenderへImportします。元モデル由来のSkin Meshを編集して `.blend` を保存します。
+2. 対象Meshをアクティブにし、**File → Export → VAPB UnityPackage（Mesh / Skin）** を選びます。Prefabなしの元モデルSkinは1 Meshずつ出力します。他のMeshを選択から外すか、出力対象を **アクティブMeshのみ** にして `.unitypackage` を保存します。
+3. Unity Projectへその `.unitypackage` をImportし、Import・コンパイルの完了を待ちます。packageにはVAPB確認画面と復元helperが含まれます。旧FBX Material Restore手順への差し替えは不要です。
+4. VAPB確認画面で **対象・保存先・変更内容・警告** を確認します。画面が表示されない場合は **Tools → VAPB → 編集内容を確認** を開きます。適用可能な対象で **適用** を押します。
+5. 表示された保存先のPrefab Variantを開き、編集内容を確認します。元モデルは保持され、Variantは元のBone/root参照を使い、対応済みMaterialスロットを復元します。同じ入力への再適用の安定性と、異なる編集内容への既存Variant更新は別の条件です。
+
+確認済みなのは、自作の限定入力における形状・ウェイト・Shape Key編集、および骨UID/親関係を保持する2-Bone rest編集です。Shapeの名前・既存default・deltaの編集、追加、部分削除、全削除の通常save/reopen/export/Unity復帰が個別に確認されています。rest編集では一つの非zero Poseの実deformationも確認しています。これらを任意Avatar・骨階層変更・retargetingの保証へ一般化しません。rest基底が変わる編集とActionの同時復帰は拒否されます。独立Actionの既存対応範囲と手動割当は[Edited Bone Action return](#edited-bone-action-return-source-branch)を参照してください。
+
+既存Variantの保存状態が今回の期待と違う場合、適用は理由を示して拒否します。たとえば既存Variantに残るShape weightのoverrideが、全Shape削除後の期待に合わない場合です。元assetや既存Variantを削除・上書きして拒否を回避する手順は案内しません。Consoleの理由と保存先を確認し、既存状態を保持してください。新規Variantの成功は、既存Variantへの異なる編集内容の更新成功を意味しません。
+
+これらのnative確認はAPI/batchで行いました。人間のGUI操作、実購入素材でのこの経路、VRC runtime、製品全体の受入は未実施です。根拠: [source Bone rest復帰](tests/evidence/holmes-material-correspondence-20261011/source-bone-rest/REPORT.md)、[一つのPose比較](tests/evidence/holmes-material-correspondence-20261011/edited-rest-pose/REPORT.md)、[配布ZIPからのexport](tests/evidence/holmes-material-correspondence-20261011/installed-rest-export/REPORT.md)、[全Shape削除](tests/evidence/holmes-material-correspondence-20261011/source-skin-zero-shapes/REPORT.md)。
