@@ -1,0 +1,11 @@
+# HOLMES-20261012-04 — existing Shape delta normal return
+
+Authority: PRODUCT_SPEC final-state Shape authority (lines34,524–529), approved continuous development and fresh Holmes next proposal. Base abac53d7692733555dadab2bfe14de92017f6c9e; branch feature/holmes-source-skin-authored-shape-20261012. Parent instruction branch is not merged or edited.
+
+Target: owned no-Prefab source-model Skin, three existing single-frame channels, two Bones, one source Material. Reuse tests/blender_shape_identity_fixture.py and existing normal exporter, consumer and resource guards. Only one existing channel/CP delta changes; no new/reordered/deleted channel. Source package/FBX/meta/Material, basis, weights, Bone/rest/UV and other channel deltas remain protected. No purchased data, SDK, public private logs or new tracking framework.
+
+DONE_WHEN: normal package import -> receipt-proven original channel handle -> one authored delta -> saved Blend -> separate-process reopen -> normal export -> real Unity Apply creates separate linked Variant with authored Shape data, source Material/Bone/rest/original preservation and reApply invariance. Observe actual exported channel/CP joins rather than name-only inference. Initially unchanged code; only fix a reproduced requirement violation. Existing Cloth/unknown-component/identity/revision guards remain.
+
+Hypotheses: H-A existing route transports the edit, H-B normal route refuses or loses the edit. Neither assumed. Source reread shows SameBlendShapes compares names/frame structure, not delta values; therefore same-layout delta rejection is not established by that method. Changed-layout Shape rejection is explicit and will only be changed if this actual case reaches it.
+
+Current stage: prepare owned synthetic source and controlled Blender normal import/edit/save/reopen/export; Unity observation NOT_RUN. Coordinate shared Editor slot with user-authorized OnlyYou placement; no double launch or alteration of an already-running Editor. No per-cycle permission wait. Main runtime model/reasoning unavailable; requested independent Holmes SOL/xhigh applies only to inference.
