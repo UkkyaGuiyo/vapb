@@ -16,7 +16,7 @@ public static class HolmesShapeGuards
         public string[] rejection;
     }
     static string Hash(string path) {using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(File.ReadAllBytes(path))).Replace("-","");}
-    public static void ObserveVariantWeight(Type finalizer,string manifest,string variant,string work)
+    public static void ObserveVariantWeight(Type finalizer,string manifest,string variant,string work,int index=0)
     {
         byte[] original=File.ReadAllBytes(variant),meta=File.ReadAllBytes(variant+".meta");
         string baseline=Hash(variant),baselineMeta=Hash(variant+".meta");
@@ -26,9 +26,9 @@ public static class HolmesShapeGuards
             var root=PrefabUtility.LoadPrefabContents(variant);
             try {
                 var skin=root.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
-                r.baseline_weight=skin.GetBlendShapeWeight(0);
+                r.baseline_weight=skin.GetBlendShapeWeight(index);
                 r.changed_weight=r.baseline_weight==100f?0f:100f;
-                skin.SetBlendShapeWeight(0,r.changed_weight);
+                skin.SetBlendShapeWeight(index,r.changed_weight);
                 PrefabUtility.RecordPrefabInstancePropertyModifications(skin);
                 PrefabUtility.SaveAsPrefabAsset(root,variant);
             } finally {PrefabUtility.UnloadPrefabContents(root);}
@@ -43,9 +43,20 @@ public static class HolmesShapeGuards
             File.WriteAllBytes(variant,original);File.WriteAllBytes(variant+".meta",meta);
             AssetDatabase.ImportAsset(variant,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
             r.baseline_bytes_restored=Hash(variant)==baseline;r.baseline_meta_restored=Hash(variant+".meta")==baselineMeta;
-            File.WriteAllText(Path.Combine(work,"variant-weight-control.json"),JsonUtility.ToJson(r,true));
+            File.WriteAllText(Path.Combine(work,index==0?"variant-weight-control.json":"variant-added-weight-control.json"),JsonUtility.ToJson(r,true));
         }
     }
+    public static void CheckAddedDefault()
+    {
+        var args=Environment.GetCommandLineArgs();
+        string work=args[Array.IndexOf(args,"-freshWork")+1];
+        var manifest=UnityEngine.JsonUtility.FromJson<ControlManifest>(File.ReadAllText("Assets/VAPBExport/manifest.json"));
+        var f=AppDomain.CurrentDomain.GetAssemblies().Select(a=>a.GetType("VapbModelSkinFinalizer")).Single(t=>t!=null);
+        ObserveVariantWeight(f,"Assets/VAPBExport/manifest.json",manifest.reference_rebind_tasks.Single().variant_path,work,3);
+        EditorApplication.Exit(0);
+    }
+    [Serializable] class ControlTask { public string variant_path; }
+    [Serializable] class ControlManifest { public ControlTask[] reference_rebind_tasks; }
     static object Call(Type type, string method, params object[] args)
     { return type.GetMethod(method, BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, args); }
     public static string[] Run(Type finalizer, GameObject original, GameObject edited)

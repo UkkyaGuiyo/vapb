@@ -12,3 +12,5 @@ Resume correction: OnlyYou is stopped. All old OnlyYou placement/coordination/me
 Fresh Holmes after task04 is already completed at fixed8df46cda; do not respawn it or rerun task04. Its independent result confirms the bounded existing-delta return and selects this one additional key. Watson checked current spec and source: SameBlendShapes still compares source/final channel counts; normal-path refusal is a hypothesis until measured.
 
 Reuse existing source, observer and guards. No purchased input, SDK, private logs, new schema or infrastructure. Shared Atlas relevant lessons read only; synchronization/writes not performed. Requested primary LUNA/low; actual settings unavailable. Fresh inference requested SOL/xhigh, actual settings unavailable. Account remaining86% at start.
+
+CHECKPOINT: actual05 DONE_WHEN verified in bounded scope; source saved at6ba99e7ea4ac0bacdab137d9c52d9387524d00a0, final raw evidence pending save/readback, then fresh inference and next action.
