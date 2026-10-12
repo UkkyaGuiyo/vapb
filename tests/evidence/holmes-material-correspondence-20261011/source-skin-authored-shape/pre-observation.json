@@ -1,0 +1,21 @@
+{
+  "instruction_id": "HOLMES-20261012-04",
+  "status": "FROZEN_BEFORE_UNITY",
+  "source_revision": "2cf16e4abd9c49e2af86777485fe89a0499a313d",
+  "hypotheses": [
+    "existing route accepts/transports this edit",
+    "route rejects/loses this edit"
+  ],
+  "producer_sha256": "0d48703c9f1992aa26c7d343dd8d1cf9ccbcf025681855460a0a56d249fee69e",
+  "consumer_sha256": "da00c4c52f75312fd4aea42a4db141c0792320bfa345b08000669105ad15805d",
+  "observer_sha256": "6a431f1f8977644c48f94a4f8d31bb34cbefb9f7fe3f9cbd0ac3fbcde797e385",
+  "fixture_sha256": "13f8326b5def8862b26adac97ce88fccf4f0bd385d786cdfe48ab83186d660b1",
+  "expected": {
+    "normal_apply": true,
+    "edited_shape_delta": true,
+    "other_channels_basis_bones_weights_material_originals_preserved": true,
+    "repeat_variant_bytes_meta_semantics_unchanged": true
+  },
+  "normal_blender_stages": "PASS; separate-process reopen exact",
+  "unity_observation": "NOT_RUN"
+}

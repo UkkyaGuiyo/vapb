@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "channels": 3,
+  "bones": 2,
+  "source_fbx_sha256": "04c95bc9f798e5133870d614d609d58163bdac1f39830f673a79c77a97bbf8c9",
+  "source_package_sha256": "d7cb68b0f14bf0a403548198feed5f553ad9df89127da34a82e2a5082e834a63",
+  "template_preserved": true,
+  "template_sha256": "3bdbab3790a4588f5712c931d085b6b513a6b106937548fbbfce6797e8f5a83d",
+  "assets": [
+    {
+      "guid": "ee8db96667134549b12832a5e371549c",
+      "path": "Assets/HolmesSource/SourceMaterial.mat",
+      "asset_sha256": "f7ddb9a7625f3190498256c28444a6dab09ae3208a40bb90a0e63ae33a16179e",
+      "meta_sha256": "e4931b5bd13cf9a08879568d48a89ad93f4379b1f7aea6d31daa594e7db4ff52"
+    },
+    {
+      "guid": "5efd5442a1674395b06d02f4f2fb2c07",
+      "path": "Assets/HolmesSource/Source.fbx",
+      "asset_sha256": "04c95bc9f798e5133870d614d609d58163bdac1f39830f673a79c77a97bbf8c9",
+      "meta_sha256": "5ded63f93ace427f1c8924aac96bb1124ccb0e3ea4f1716387dbc720f785382a"
+    }
+  ]
+}
