@@ -43,7 +43,7 @@ public static class HolmesShapeGuards
             File.WriteAllBytes(variant,original);File.WriteAllBytes(variant+".meta",meta);
             AssetDatabase.ImportAsset(variant,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
             r.baseline_bytes_restored=Hash(variant)==baseline;r.baseline_meta_restored=Hash(variant+".meta")==baselineMeta;
-            File.WriteAllText(Path.Combine(work,index==0?"variant-weight-control.json":"variant-added-weight-control.json"),JsonUtility.ToJson(r,true));
+            File.WriteAllText(Path.Combine(work,index==0?"variant-weight-control.json":"variant-added-weight-control-"+index+".json"),JsonUtility.ToJson(r,true));
         }
     }
     public static void CheckAddedDefault()

@@ -1744,14 +1744,13 @@ public static partial class VapbModelSkinFinalizer
     {
         if (HasNoBlendShapesForReplacement(old, mesh)) return true;
         // Only the standalone source-model route: its scope checks reject Animator, Cloth
-        // and other components. Existing ordered channels remain; at most one channel is appended.
+        // and other components. Existing ordered channels remain; new channels are appended.
         // Uniform matching defaults require no label/index migration of source state.
         // Final delta buffers belong to the imported edited mesh, not source vertex indices.
         if (source == null || !source.sourceModel || target == null || target.sharedMesh == null ||
             editedRenderer == null || editedRenderer.sharedMesh == null ||
             old == null || old.shapeNames == null || old.shapeNames.Length == 0 ||
-            (mesh.blendShapeCount != old.shapeNames.Length &&
-             mesh.blendShapeCount != old.shapeNames.Length + 1) ||
+            mesh.blendShapeCount < old.shapeNames.Length ||
             editedRenderer.sharedMesh.blendShapeCount != mesh.blendShapeCount ||
             target.sharedMesh.blendShapeCount != old.shapeNames.Length) return false;
         float uniformWeight = target.GetBlendShapeWeight(0);
@@ -2098,10 +2097,11 @@ public static partial class VapbModelSkinFinalizer
                 }
                 target.sharedMesh = plan.edited.mesh;
                 if (plan.task.kind == SourceKind &&
-                    plan.edited.mesh.blendShapeCount == plan.target.sharedMesh.blendShapeCount + 1)
+                    plan.edited.mesh.blendShapeCount > plan.target.sharedMesh.blendShapeCount)
                 {
-                    int added = plan.target.sharedMesh.blendShapeCount;
-                    target.SetBlendShapeWeight(added, plan.edited.renderer.GetBlendShapeWeight(added));
+                    for (int added = plan.target.sharedMesh.blendShapeCount;
+                        added < plan.edited.mesh.blendShapeCount; added++)
+                        target.SetBlendShapeWeight(added, plan.edited.renderer.GetBlendShapeWeight(added));
                 }
                 target.bones = bones;
                 if (plan.task.kind == SourceKind)
@@ -2129,6 +2129,17 @@ public static partial class VapbModelSkinFinalizer
         }
     }
 
+    private static bool IsAddedShapeWeightOverride(PreparedTask plan, PropertyModification mod)
+    {
+        int first = plan.target.sharedMesh.blendShapeCount, count = plan.edited.mesh.blendShapeCount;
+        if (plan.task.kind != SourceKind || count <= first) return false;
+        if (mod.propertyPath == "m_BlendShapeWeights.Array.size")
+            return mod.value == count.ToString(CultureInfo.InvariantCulture);
+        for (int i = first; i < count; i++)
+            if (mod.propertyPath == "m_BlendShapeWeights.Array.data[" + i + "]") return true;
+        return false;
+    }
+
     private static void VerifyVariant(GameObject variant, GameObject original,
         List<PreparedTask> plans)
     {
@@ -2153,11 +2164,7 @@ public static partial class VapbModelSkinFinalizer
                  (modifiedPlan.task.kind == SourceKind &&
                   (Regex.IsMatch(mod.propertyPath, @"^m_AABB\.m_(Center|Extent)\.[xyz]$") ||
                    mod.propertyPath == "m_DirtyAABB")) ||
-                 (modifiedPlan.task.kind == SourceKind &&
-                  modifiedPlan.edited.mesh.blendShapeCount == modifiedPlan.target.sharedMesh.blendShapeCount + 1 &&
-                  (mod.propertyPath == "m_BlendShapeWeights.Array.size" ||
-                   mod.propertyPath == "m_BlendShapeWeights.Array.data[" +
-                       modifiedPlan.target.sharedMesh.blendShapeCount + "]")) ||
+                 IsAddedShapeWeightOverride(modifiedPlan, mod) ||
                  (modifiedPlan.edited.materials != null && (mod.propertyPath == "m_Materials.Array.size" ||
                   mod.propertyPath.StartsWith("m_Materials.Array.data[", StringComparison.Ordinal))));
             bool rootDefault = PrefabUtility.IsDefaultOverride(mod) &&
@@ -2200,7 +2207,7 @@ public static partial class VapbModelSkinFinalizer
                     FollowSource(skin.rootBone, 1) != plan.target.rootBone ||
                     skin.bones.Length != plan.edited.editedBoneUids.Length) Reject("VARIANT_MISMATCH");
                 if (plan.task.kind == SourceKind &&
-                    plan.edited.mesh.blendShapeCount == plan.target.sharedMesh.blendShapeCount + 1)
+                    plan.edited.mesh.blendShapeCount > plan.target.sharedMesh.blendShapeCount)
                     for (int i = 0; i < skin.sharedMesh.blendShapeCount; i++)
                         if (skin.GetBlendShapeWeight(i) != plan.edited.renderer.GetBlendShapeWeight(i))
                             Reject("VARIANT_SHAPE_WEIGHT_CHANGED");
