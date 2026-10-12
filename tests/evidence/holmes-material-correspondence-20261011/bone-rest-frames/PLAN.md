@@ -1,0 +1,8 @@
+# HOLMES-20261012-14 - native Bone rest frame representation
+
+Authority: approved final Bone-state goal; completed13 fresh inference CONFIRMED actualRest rejection, rest transfer UNDETERMINED. Base96a17b73581082946b7574ce934e6d80d323677e.
+NEXT_ACTION:read existing13 imported source/edited assets with one bounded native observer; capture actual localTRS/world/renderer-relative Bone frames and strict same-UID/parent candidate local matrix, no repeat import/export/Apply/witness/Action. OriginalBone/Variant/guard changes forbidden before actual representation evidence.
+DONE_WHEN:fixed13 source/edited GUID-fileIDs/hash/parent-order linkage; original assets/meta allprotected; quantify nativeBindpose self-consistency and candidate Matrix4x4.TRS reconstruction residual. Existing restmatrix0.001 tolerance is a diagnostic threshold, not new product acceptance. Preserve non-Bone parent and source Renderer unchanged. FullVariant runtime/GUI/VRC remain NOT_RUN.
+CURRENT_STAGE:actual2Bone source/edited native frames linked exactly to13; candidate strict same-UID/parent linked-Variant TRS reconstruction max5.960464477539063e-8, edited bindpose self-consistency max3.648057997907017e-7;79 preexisting Projectfiles unchanged, normalownedexit0/resourcesreleased; no original/variant/guard mutation.
+NEXT_ACTION_SAVED:save/exactremote readback then one fresh14 inference to select bounded rest correction or remaining concrete gate. No completed13/14 native repeat; independent code review separate if product correction follows.
+RESUME_ACTION_CHECK:actualAGENTS/Git/latestapproval/currentID/fixedsave/NEXT_ACTION; expiredOnlyYou remains expired; completed13 inference/native not rerun.

@@ -1,0 +1,22 @@
+{
+  "fixed13_identity_hash_renderer_bindpose_linkage": "PASS",
+  "fixed13_uid_order_basis": "13 ResolvePrepared verified identical source/edited UID order before CheckSkinCompatibility rest rejection;14 edited Bone marker maps to same task UID and existing source IDs/parents/mesh/matrices unchanged",
+  "original_project_files_protected": 79,
+  "all_preexisting_files_hashes_unchanged": true,
+  "native_pid": 28664,
+  "native_start_utc": "2026-10-12T05:17:11.5053096Z",
+  "native_exit_utc": "2026-10-12T05:17:20.6892399Z",
+  "release": {
+    "capturedUtc": "2026-10-12T05:17:20.7919370Z",
+    "owner": "VAPB-HOLMES-20261012-14",
+    "ownedChildrenAbsent": true,
+    "lockAbsent": true,
+    "normalExitCode": 0,
+    "releaseVerified": true
+  },
+  "candidate_trs_max_matrix_error": 5.960464477539063e-08,
+  "edited_bindpose_max_matrix_error": 3.648057997907017e-07,
+  "diagnostic_existing_rest_tolerance": 0.001,
+  "full_variant_apply_runtime": "NOT_RUN",
+  "product_guard_changes": false
+}

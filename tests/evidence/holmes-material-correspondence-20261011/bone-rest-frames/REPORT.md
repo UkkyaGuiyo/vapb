@@ -1,0 +1,13 @@
+# Native Bone rest frame representation
+
+Project VAPB; HOLMES-20261012-14; base96a17b73581082946b7574ce934e6d80d323677e; branch feature/holmes-bone-rest-frames-20261012.
+
+BUILT: bounded representation observation, no new product capability or guard correction. Existing imported13 source/edited assets were read once; no package import, witness, Apply/reApply, export, Blender edit, Bone/Renderer/Scene mutation occurred. Both native Bone localTRS/world/renderer-relative frames and bindposes are recorded. Mesh/renderer/root/bone/parent GUID-fileIDs, renderer matrices, exact bindpose arrays and FBX hashes match fixed13 captures.13's existing ResolvePrepared had validated source/edited UID order before its rest rejection;14 maps edited Bone realization markers to the same task UIDs. This is reuse of witnessed identity, not a display-name matching heuristic.
+
+The candidate formula is desiredBoneWorld = originalRendererWorld * editedRendererWorld.inverse * editedBoneWorld. Candidate local = desiredParentWorld.inverse * desiredBoneWorld, using mapped desired parent for a Bone parent and actual unchanged source parent for the root/non-Bone parent. Unity's native Matrix4x4 rotation/lossyScale plus translation reconstitute TRS with max matrix-component error5.960464477539063e-8 for both Bones. Edited bindpose vs actual editedBoneWorld.inverse * editedRendererWorld maximum error3.648057997907017e-7. The existing0.001 rest-matrix tolerance is diagnostic only; no production gate was changed and no full Variant deformation/runtime PASS is claimed.
+
+79 existing Assets/Packages/ProjectSettings files retain hashes. Owned PID28664, start2026-10-12T05:17:11.5053096Z, exit2026-10-12T05:17:20.6892399Z, exit0; children/lock absent and shared slot/mutex returned2026-10-12T05:17:20.7919370Z. The currently restored11manifest remains unchanged;14 reads the external private13fixedmanifest rather than overwriting it. GUI/VRC/wholeproduct and a corrected rest Variant are NOT_RUN. Source runtime remains the exact13 implementation and distribution ZIP remains older.
+
+NEXT_MINIMUM: exact remote save/readback then fresh14 independent inference, verify its one already-approved bounded proposal. Preserve existing Bone UID/root/parent/hash/unit gates and original FBX/meta/Material; do not merely remove rest or Transform guards. Required independent product guard review remains separate. Completed native13/14 and Action acceptance are not rerun.
+
+Model: primary effective model/reasoning unavailable; policy LUNA/low. Completed13 fresh inference requested SOL/xhigh, effective unavailable. No product change in14.
