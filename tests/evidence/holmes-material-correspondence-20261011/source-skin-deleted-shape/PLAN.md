@@ -8,4 +8,4 @@ NEXT_ACTION:protected10 Authored.blend copy -> only Diagnostic_B removal -> norm
 DONE_WHEN:separate Variant has remaining2 Shapes with full intended buffers/defaults[100,0], stable Apply/reApply, original asset-meta/Bone/root/Material/weights preserved, existing scope/route/Cloth protections.
 RESUME_ACTION_CHECK:actual AGENTS/Git/latest authority/current-completed ID/fixedsave/NEXT_ACTION before reply/action. Completed10 inference/runtime/review not rerun. Expired other-project inquiries remain expired absent new human reopening.
 CURRENT_STAGE:11 native GREEN/reApply/fullremaining Shapes/defaults100-0/weightbits/originalasset-meta/protected10scene exact; existing8controls/tamper refuse; normalprocessrelease verified.
-NEXT_ACTION_SAVED:commit/push exactremote readback, then one fresh11 inference; no completed runtime/review repeats.
+NEXT_ACTION_SAVED:completed fresh11 inference and requested independent guard review KEEP received once; next12 compare existing activeShape evaluated Blender vs actualVariant BakeMesh, no product correction before discrepancy. Completed11 runtime/inference/review not rerun.
