@@ -1,0 +1,36 @@
+{
+  "result": {
+    "status": "PASS",
+    "installed_normal_rest_export": true,
+    "source_and_blend_preserved": true,
+    "state_exact": true,
+    "blend_sha256": "5aacfea5e4424dfb10ae0bc686efacc816703ac8f632559a3a61a1dd04e825c1",
+    "source_sha256": "1a11686dad6de231c0703b24cdf854833d683d0fa1fa5d80683a29b14e832027",
+    "output_sha256": "64e97d13e10a9153d1056d3db0316edb819a045d061dfe8aae34fc1abd46f8a6",
+    "helper_sha256": "f8703c3ae23c835b88b35d597609243e52474070136d33f06212028174ae2231",
+    "human_gui_clicks": "NOT_RUN",
+    "unity_remeasurement": "NOT_RUN",
+    "standard_install_enable_disable": true,
+    "isolated_preferences_unsaved": true
+  },
+  "process": {
+    "actual_free_gib": 4.9970550537109375,
+    "owner": "VAPB-HOLMES-20261012-17-installed-export",
+    "start_utc": "2026-10-12T06:47:54.4615233Z",
+    "pid": 28172,
+    "script_sha256": "77059815EBF33D21AFD57AA7B5B6E097F430514F15E25B583A53FC5B9FC747DE"
+  },
+  "exit": {
+    "owned_children_absent": true,
+    "exited_utc": "2026-10-12T06:47:59.2807880Z",
+    "pid": 28172,
+    "exit_code": 0
+  },
+  "mutex_released": true,
+  "protected_file_count": 96,
+  "all_protected_hashes_unchanged": true,
+  "product_source_changed": false,
+  "distribution_local_only": true,
+  "gui": "NOT_RUN",
+  "unity": "NOT_RUN"
+}
