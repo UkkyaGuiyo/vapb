@@ -1,0 +1,17 @@
+# HOLMES-20261012-11 - one existing Shape deletion
+
+PRODUCT_PROGRESS: ordinary deletion of Diagnostic_B from the owned three-Shape standalone source returns the remaining [Authored_Renamed, Diagnostic_C] to a separate Unity Variant with defaults[100,0]. One bounded self-authored case; whole product completion unproven.
+
+Control.blend is a protected exact copy of10 Authored.blend; Source.fbx/package exact copies of protected owned input. Only one existing Key block removed. All remaining full Key buffers, relative Basis links, names/defaults, vertices/UV/faces/material assignments, Bones/weights/transforms and original receipt bytes remain unchanged; saved/reopened state exact. Original import proof becomes MISSING_KEYBLOCK as expected after deletion; no receipt repair/rematching/newidentity introduced. Normal exporter generates final edited Shapes; the historical import proof is not rewritten to claim unchanged source identity.
+
+Native RED Applyfalse MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED, source3/final2, original source preserved. Minimum product correction removes only the final-count lower bound and updates its comment. Old source single100frames/uniform0-or100 defaults, final finite defaults/unique nonempty labels/single100frames, renderer count agreement and standalone component/Cloth scope remain; other routes unchanged. Existing10 assigns every final default and verifies exact expected weights on initial/reApply; no new migration/schema/framework.
+
+Native GREEN Apply/reApply true, remaining2 Shapes/defaults[100,0], stable Prefab bytes/meta/capturedsemantics. Eight existing focused clone controls pass (source deletion eligibility, otherroute refusal, nonuniform original refusal, uniform-original authoreddefaults acceptance, renderercount mismatch, multiframe, unknowncomponent, Cloth). Existing-index default100->0 tamper refuses VARIANT_SHAPE_WEIGHT_CHANGED, altered Variant untouched and exactbaseline bytes/meta restored.
+
+Existing official raw-FBX oracle joins full8CP remaining2Shape delta streams to authored Keys and nativeCP buffers without names selecting identity. Source3Shape calibration retained. Maximum deltaerror4.656612873077393e-10, inherited tolerance1e-7, exactBone realization weight bit mismatches0. Variant full delta vertex/normal/tangent buffers and weights equal editedimport; source Material/Bone/root/matrix references and installed originalFBX/Material/meta exact. Protected10 scene and originalpackage exact. Three identical callbacks are one observation, one representative public.
+
+Normal Blender5.2.1/Unity2022.3.22f1 exit0; ownedchildren absent, Project lock absent, mutex returned. No otherEditor stop/lock deletion. Private Project/logs/purchased corpus not Git. GUI/VRC/deformation NOT_RUN; ZIP older unchanged.
+
+STANDARD self-review plus nearest native/raw controls; no independent code-review claim for this one-predicate correction. Primary actualmodel/reasoning unavailable. One fresh11 inference requestedSOL/xhigh only after exactremote readback.
+
+NEXT_ACTION:normal allowedbranch commit/push exactreadback -> one fresh11 inference -> verify one approved nextminimum. Ordinary save/pass does not stop continuous VAPB.

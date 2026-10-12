@@ -1756,14 +1756,13 @@ public static partial class VapbModelSkinFinalizer
     {
         if (HasNoBlendShapesForReplacement(old, mesh)) return true;
         // Only the standalone source-model route: its scope checks reject Animator, Cloth
-        // and other components. Final labels belong to the edited mesh; new channels are appended.
+        // and other components. Final channel count, labels and buffers belong to the edited mesh.
         // Authored defaults belong to the edited renderer; original defaults stay untouched.
         // Uniform original defaults require no label/index migration of source component state.
         // Final delta buffers belong to the imported edited mesh, not source vertex indices.
         if (source == null || !source.sourceModel || target == null || target.sharedMesh == null ||
             editedRenderer == null || editedRenderer.sharedMesh == null ||
             old == null || old.shapeNames == null ||
-            mesh.blendShapeCount < old.shapeNames.Length ||
             editedRenderer.sharedMesh.blendShapeCount != mesh.blendShapeCount ||
             target.sharedMesh.blendShapeCount != old.shapeNames.Length) return false;
         float uniformWeight = old.shapeNames.Length == 0 ? 0f : target.GetBlendShapeWeight(0);
