@@ -1,0 +1,45 @@
+{
+  "package": "UNCHANGED_SAVED_SKIN_ACTION_MATERIAL_COMBINATION",
+  "package_runtime_revision": "1df0881fccd2f9b3362979051d62be5232ae937e",
+  "selection_inference_fixed_sha": "eefc3d26c88cd95c6f798a67c84a7401bfa6e932",
+  "declared_material_bindings": 2,
+  "distinct_canonical_material_identities_and_labels": 1,
+  "serialized_fbx": {
+    "source_connections": 2,
+    "source_mapping": "ByPolygon",
+    "edited_connections": 1,
+    "edited_mapping": "AllSame",
+    "edited_label": "EXACT_DECLARED_CANONICAL_LABEL"
+  },
+  "native_observation": {
+    "task_kind": "RESTORE_DIRECT_SKIN_VARIANT_V1",
+    "formal_refusal": "TOPOLOGY_OR_LAYOUT_CHANGED",
+    "first_failing_predicate": "DIRECT_SUBMESH_CARDINALITY",
+    "edited_bindposes": 24,
+    "edited_bone_uid_receipts": 24,
+    "bindpose_cardinality": "MATCHED",
+    "shape_condition": "MATCHED",
+    "source_submeshes": 2,
+    "edited_submeshes": 1,
+    "source_index_counts": [28038, 2148],
+    "edited_index_counts": [30186],
+    "source_and_edited_topology": "TRIANGLES",
+    "native_material_labels": 1,
+    "native_label": "EXACT_DECLARED_CANONICAL_LABEL",
+    "source_layout_basis": "RESTORED_SOURCE_LAYOUT_WITH_EXISTING_PRODUCTION_WITNESS_EQUIVALENCE",
+    "source_identity": "PRIOR_VERIFIED_GUID_FILE_ID_WITH_EXACT_SOURCE_FBX_PREFAB_ASSET_META_REVISION",
+    "edited_identity": "EXACT_DECLARED_REALIZATION_RECEIPT_AND_BONE_RECEIPTS",
+    "source_prefab_fbx_meta_manifest_bytes": "EXACT",
+    "variant_clip_material_texture_repeat": "NOT_REACHED",
+    "editor_observation_exit_code": 0
+  },
+  "observer_history": [
+    {"stage": "SERIALIZED_PREPARATION", "failure": "LIST_TUPLE_COMPARISON_ASSERTION", "app_launched": false},
+    {"stage": "WITNESS_CALLBACK_CAPTURE", "failure": "WitnessLayoutUnavailable", "editor_exit_code": 1, "product_refusal": "TOPOLOGY_OR_LAYOUT_CHANGED", "layout_capture": "NOT_REACHED"},
+    {"stage": "SIMPLIFIED_PINNED_SOURCE_LAYOUT_CAPTURE", "result": "OBSERVED", "new_callback_framework": false}
+  ],
+  "project_preservation_each_native_run": {"preexisting_files": 3041, "changed": 0, "unexpected_files": 0},
+  "owned_children_and_lock": "ABSENT",
+  "lease_mutex": "RETURNED",
+  "limits": ["Multiplicity/first divergence observed; no exact triangle-corner membership claim", "No product patch or guard relaxation", "GUI/render NOT_RUN", "Old Atlas read-only; no further knowledge persistence"]
+}
