@@ -1,0 +1,15 @@
+{
+  "status": "FIX_REQUIRED",
+  "review_pass": 2,
+  "product_revision": "cd1961435415cc6381fd71bae4317cb721dd1441",
+  "requested_model": "gpt-6.1-sol",
+  "requested_reasoning": "medium",
+  "actual_model_reasoning": "UNAVAILABLE",
+  "finding": "Saved Variant weights are unchecked; existing altered Variant may pass repeat Apply. Check admitted replacement Shape weights against accepted uniform default after serialization and on existing Variant.",
+  "runtime": "NOT_RUN; source reasoning",
+  "otherwise_preserved": [
+    "uniform matching source/edited weights avoids channel-weight migration",
+    "existing unique single100 structure and standalone-only scope",
+    "Kind/Direct/component/Bone/rest/material/weight/revision guards"
+  ]
+}

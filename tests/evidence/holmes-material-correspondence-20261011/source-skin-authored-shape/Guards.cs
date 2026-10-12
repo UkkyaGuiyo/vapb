@@ -2,11 +2,50 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.IO;
+using System.Security.Cryptography;
+using UnityEditor;
 using UnityEngine;
 
 // Focused controls on the actual imported Shape case; clones only, no original edits.
 public static class HolmesShapeGuards
 {
+    [Serializable] class VariantWeightControl {
+        public bool expected_reject=true,actual_apply,altered_variant_untouched,baseline_bytes_restored,baseline_meta_restored;
+        public float baseline_weight,changed_weight;
+        public string[] rejection;
+    }
+    static string Hash(string path) {using(var h=SHA256.Create())return BitConverter.ToString(h.ComputeHash(File.ReadAllBytes(path))).Replace("-","");}
+    public static void ObserveVariantWeight(Type finalizer,string manifest,string variant,string work)
+    {
+        byte[] original=File.ReadAllBytes(variant),meta=File.ReadAllBytes(variant+".meta");
+        string baseline=Hash(variant),baselineMeta=Hash(variant+".meta");
+        var r=new VariantWeightControl();
+        try
+        {
+            var root=PrefabUtility.LoadPrefabContents(variant);
+            try {
+                var skin=root.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+                r.baseline_weight=skin.GetBlendShapeWeight(0);
+                r.changed_weight=r.baseline_weight==100f?0f:100f;
+                skin.SetBlendShapeWeight(0,r.changed_weight);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(skin);
+                PrefabUtility.SaveAsPrefabAsset(root,variant);
+            } finally {PrefabUtility.UnloadPrefabContents(root);}
+            string altered=Hash(variant);if(altered==baseline)throw new Exception("VariantWeightControlNotChanged");
+            var errors=new List<string>();Application.LogCallback log=(m,s,t)=>{if(t==LogType.Error||t==LogType.Exception)errors.Add(m);};
+            Application.logMessageReceived+=log;
+            try {r.actual_apply=(bool)finalizer.GetMethod("Apply").Invoke(null,new object[]{manifest});}
+            finally {Application.logMessageReceived-=log;}
+            r.rejection=errors.ToArray();r.altered_variant_untouched=Hash(variant)==altered;
+        }
+        finally {
+            File.WriteAllBytes(variant,original);File.WriteAllBytes(variant+".meta",meta);
+            AssetDatabase.ImportAsset(variant,ImportAssetOptions.ForceSynchronousImport|ImportAssetOptions.ForceUpdate);
+            r.baseline_bytes_restored=Hash(variant)==baseline;r.baseline_meta_restored=Hash(variant+".meta")==baselineMeta;
+            File.WriteAllText(Path.Combine(work,"variant-weight-control.json"),JsonUtility.ToJson(r,true));
+        }
+    }
     static object Call(Type type, string method, params object[] args)
     { return type.GetMethod(method, BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, args); }
     public static string[] Run(Type finalizer, GameObject original, GameObject edited)

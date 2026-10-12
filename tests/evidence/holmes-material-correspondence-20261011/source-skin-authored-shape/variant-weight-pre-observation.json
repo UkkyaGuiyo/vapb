@@ -1,0 +1,15 @@
+{
+  "status": "FROZEN_BEFORE_UNITY",
+  "phase": "GREEN3_NORMAL_AND_VARIANT_WEIGHT_RED",
+  "observer_sha256": "3a63e21491c398eadb471099a6e71f2627e205d2b5f61699eb0f04640374605f",
+  "guards_sha256": "5935be74a9d053d6cb051a75d8e96697b030c8074230fd4b93a2aea63f8d1955",
+  "original_numerical_expectations_unchanged": true,
+  "expected": {
+    "normal_apply": true,
+    "variant_weights_preserved": true,
+    "repeat_bytes_meta_semantics_unchanged": true,
+    "altered_variant_weight_apply": false,
+    "altered_variant_untouched": true,
+    "baseline_variant_bytes_meta_restored": true
+  }
+}
