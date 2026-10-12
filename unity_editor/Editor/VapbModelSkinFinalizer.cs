@@ -1745,7 +1745,8 @@ public static partial class VapbModelSkinFinalizer
         if (HasNoBlendShapesForReplacement(old, mesh)) return true;
         // Only the standalone source-model route: its scope checks reject Animator, Cloth
         // and other components. Existing ordered channels remain; new channels are appended.
-        // Uniform matching defaults require no label/index migration of source state.
+        // Existing defaults stay source-derived; appended defaults belong to the edited renderer.
+        // No label/index migration of source state is performed.
         // Final delta buffers belong to the imported edited mesh, not source vertex indices.
         if (source == null || !source.sourceModel || target == null || target.sharedMesh == null ||
             editedRenderer == null || editedRenderer.sharedMesh == null ||
@@ -1763,7 +1764,9 @@ public static partial class VapbModelSkinFinalizer
         for (int i = 0; i < mesh.blendShapeCount; i++)
             if (String.IsNullOrEmpty(mesh.GetBlendShapeName(i)) || !labels.Add(mesh.GetBlendShapeName(i)) ||
                 mesh.GetBlendShapeFrameCount(i) != 1 || mesh.GetBlendShapeFrameWeight(i, 0) != 100f ||
-                editedRenderer.GetBlendShapeWeight(i) != uniformWeight) return false;
+                !Finite(editedRenderer.GetBlendShapeWeight(i)) ||
+                (i < old.shapeNames.Length && editedRenderer.GetBlendShapeWeight(i) != uniformWeight))
+                return false;
         return true;
     }
 
