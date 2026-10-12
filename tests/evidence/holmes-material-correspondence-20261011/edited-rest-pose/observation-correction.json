@@ -1,0 +1,13 @@
+{
+  "initial_observer_error": "CS0136: world delta local shadowed existing Shape delta stream local; no measurement executed",
+  "product_unchanged": true,
+  "first_native_pid": 5196,
+  "first_exit_code": 1,
+  "initial_release_check": false,
+  "owned_children_absent": true,
+  "residual_lock_exclusive_read_confirmed": true,
+  "no_lock_delete": true,
+  "correction": "Rename only observer local to poseDelta; reuse ownedProject only after ownPID exit/children absent and residual lock read-exclusive check",
+  "successful_native_pid": 11136,
+  "successful_release_verified": true
+}

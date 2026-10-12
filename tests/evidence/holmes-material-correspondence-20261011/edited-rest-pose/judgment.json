@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "selected_bone_uid": "529385132",
+  "parent_uid": "44496282",
+  "rotation_radians": 0.45,
+  "blender_nonzero_displacement_m": 0.4139510754017116,
+  "native_nonzero_displacement_m": 0.41395121812820435,
+  "blender_to_BakeMesh_true": {
+    "status": "EXACT",
+    "maximum_distance": 7.275674114068569e-07,
+    "tolerance": 3e-05
+  },
+  "CPU_to_BakeMesh_true": {
+    "status": "EXACT",
+    "maximum_distance": 2.842839421323384e-07,
+    "tolerance": 3e-05
+  },
+  "position_tolerance_m": 3e-05,
+  "local_pose_TRS_max_error": 5.960464477539063e-08,
+  "prior_file_count": 93,
+  "prior_hashes_exact": true,
+  "cp_count": 8,
+  "native_vertex_count": 26,
+  "package_sha256": "28df1faeecab2e298200d66014acdf0a3b154ed7f0dd399e616054c397041156",
+  "blend_sha256": "5aacfea5e4424dfb10ae0bc686efacc816703ac8f632559a3a61a1dd04e825c1",
+  "consumer_sha256": "62d34a43f44714c0edc758dc9297f4c6f25fced6430ba51c09c9cdb67e659698",
+  "temporary_pose_only": true,
+  "no_export_Apply_AnimationClip_or_Product_change": true,
+  "world_contract": "sourceRenderer*editedRenderer.inverse*BlenderToUnity*worldDeltaBlender*UnityToBlender*(sourceRenderer*editedRenderer.inverse).inverse",
+  "native_pid": 11136,
+  "native_start_utc": "2026-10-12T06:20:50.2745241Z",
+  "native_exit_utc": "2026-10-12T06:20:58.2896600Z",
+  "release": {
+    "capturedUtc": "2026-10-12T06:20:58.4602273Z",
+    "owner": "VAPB-HOLMES-20261012-16",
+    "ownedChildrenAbsent": true,
+    "lockAbsent": true,
+    "normalExitCode": 0,
+    "releaseVerified": true
+  },
+  "GUI_VRC_Animation_playback_NOT_RUN": true
+}

@@ -1,0 +1,7 @@
+# HOLMES-20261012-16 - one posed edited-rest geometry
+
+Authority: approved continuous Bone-edit return goal; completed15 independent inference CONFIRMEDrest, poseunverified. Basefc0da039f4a82f4fb76b5b7e59cf74add6cea67f.
+NEXT_ACTION:existing15 exactsourceblend and linkedVariant temporaryinstances only; one childUID529385132 basisZ rotation0.45rad. Capture actual Blender bone worlddelta and evaluated8CP; transfer equivalent worlddelta using frozenUnity/Blender basis and sourceRenderer/editedRenderer frame relation to sameUID VariantBone; validate localTRS then actualBakeTrue/CPU all26vertices using fixed15CPmap. No export/Apply/restart/Action/sourceupdate/SceneSave/Variant mutation.
+DONE_WHEN:nonzero measured deformation, fullCPworld agreement within existing3e-5m, allpriorasset/meta/Variant/blend/package/Project bytes preserved; temporaryobjects and ownprocess/resources released. Inconsistency freezes oneexample before minimumdiagnosis; don't removeguards or reinterpretActionacceptance.
+CURRENT_STAGE:nonzero childPose temporaryinstances, actualBlender evaluation / actualUnityBakeTrue / CPU PASS, existing3e-5m contract. All93 priorfiles unchanged, correctedprobe one successful measurement after initialcompile-only failure; normalexit0/children-lock absent/mutexreleased. No product change or Action acceptance.
+NEXT_ACTION_SAVED:publicsafe evidence normalcommit/push/exactremote readback then one fresh16 inference. No completed15/16 measurements/reviews rerun; GUI/VRC remainNOT_RUN, ZIPolder.
