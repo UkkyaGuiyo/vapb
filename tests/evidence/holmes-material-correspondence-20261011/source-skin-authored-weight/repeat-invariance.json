@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "error": "",
+  "before_variant_sha256": "4ee5cc2bb0363296e13514fe72f9920bfdebe5dcec84c9d8c82d059b7a5e44d5",
+  "after_variant_sha256": "4ee5cc2bb0363296e13514fe72f9920bfdebe5dcec84c9d8c82d059b7a5e44d5",
+  "before_semantic_sha256": "7ff6d3293f32aaf182a7a688daf23c38363812c062371335276a74c0e37d784d",
+  "after_semantic_sha256": "7ff6d3293f32aaf182a7a688daf23c38363812c062371335276a74c0e37d784d",
+  "apply": true,
+  "variant_bytes_unchanged": true,
+  "variant_meta_unchanged": true,
+  "variant_semantics_unchanged": true,
+  "source_material_manifest_files_unchanged": true
+}
