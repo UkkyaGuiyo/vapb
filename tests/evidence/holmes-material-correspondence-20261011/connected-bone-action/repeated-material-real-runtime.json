@@ -1,0 +1,30 @@
+{
+  "source_revision": "553434bdf26094a8f3d25bfa0f0739b6517d430e",
+  "independent_code_review": {"requested_model": "gpt-6.1-sol", "requested_reasoning": "medium", "effective_runtime": "UNAVAILABLE", "verdict": "KEEP", "must_fix": 0},
+  "installed_distribution": {"members": 117, "installed_python_and_csharp_bytes": "EXACT"},
+  "real_input": "UNCHANGED_SAVED_STATIC_MATERIAL_COMBINATION",
+  "normal_export": "PASS",
+  "saved_scene_state": "EXACT",
+  "protected_inputs_and_prior_outputs": "EXACT",
+  "recipe": {"material_slots": 3, "canonical_material_ids": 1},
+  "serialized_fbx": {"distinct_material_connections": 3, "explicit_slot_occurrences": [0, 1, 2], "face_partition": "EXACT", "triangles_by_declared_slot": [432, 864, 9570], "triangles": 10866},
+  "canonical_material_and_three_textures_asset_meta": "EXACT_PRIOR_PACKAGE_BYTES",
+  "native": {
+    "version": "2022.3.22f1",
+    "normal_import": "PASS",
+    "apply_return": false,
+    "finalizer_result": "PARTIAL",
+    "formal_message": "EXTERNAL_DEPENDENCY_REQUIRED MATERIAL=ATTACHED",
+    "previous_cardinality_refusal": "PASSED_THIS_BOUNDARY",
+    "observer_stop": "FINALIZER_REFUSED: PARTIAL",
+    "mesh_slot_texture_numeric_observation": "NOT_REACHED",
+    "reapply": "NOT_REACHED",
+    "protected_project_files": 3041,
+    "changed": 0,
+    "unexpected_files": 0,
+    "owned_editor_exit_code": 1,
+    "lease_mutex": "RETURNED",
+    "owned_children_and_project_lock": "ABSENT"
+  },
+  "limits": ["PARTIAL is not COMPLETE", "Unexecuted zero counts are not empty geometry evidence", "External Shader resolution remains required", "GUI and render NOT_RUN", "Full native slot and repeat acceptance remains unmeasured"]
+}
