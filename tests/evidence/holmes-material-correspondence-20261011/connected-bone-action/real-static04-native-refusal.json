@@ -1,0 +1,40 @@
+{
+  "base_commit": "cdc6f69a6a5d5be73f60493b63f1fa13b7b9c726",
+  "runtime_commit": "1df0881fccd2f9b3362979051d62be5232ae937e",
+  "input": "Unchanged saved STATIC04 real Material combination package; private hash/revision and receipt retained locally",
+  "blender_reexported": false,
+  "unity_version": "2022.3.22f1",
+  "project": "Existing assigned Gimmick01, parent order confirmed",
+  "import": "PASS",
+  "explicit_apply": "FORMALLY_REFUSED",
+  "product_refusal": "NATIVE_MATERIAL_CARDINALITY_MISMATCH",
+  "finalizer_result": "REJECTED",
+  "reapply": "NOT_REACHED",
+  "geometry_receipt_correspondence": "NOT_REACHED",
+  "native_material_texture_acceptance": "NOT_REACHED",
+  "gui": "NOT_RUN",
+  "render": "NOT_RUN",
+  "synthetic": "NOT_USED",
+  "source_changes": false,
+  "retained_observer_failure": {
+    "first_run": "Observer required export marker before calling Apply and stopped with EXPORT_RECEIPT_UNAVAILABLE",
+    "product_refusal": false,
+    "apply": "NOT_REACHED",
+    "correction": "Follow existing Finalizer sequence: normal import, Apply performs required model reimport, then receipt observation",
+    "fresh_attempt": "Previously unreached explicit Apply; no Blender/export repeat or guard change"
+  },
+  "resources": {
+    "runs": [
+      {"pid": 30596, "start_utc": "2026-10-12T16:24:37.1046829Z", "free_gib": 4.897106170654297, "exit_code": 1, "exit_utc": "2026-10-12T16:25:00.2396169Z"},
+      {"pid": 18144, "start_utc": "2026-10-12T16:28:07.7225870Z", "free_gib": 4.839385986328125, "exit_code": 1, "exit_utc": "2026-10-12T16:28:28.4066850Z"}
+    ],
+    "owned_children_absent": true,
+    "project_lock_absent_after_exit": true,
+    "lease_and_mutex_returned": true,
+    "preexisting_project_files": 3041,
+    "changed_preexisting_files": 0,
+    "remaining_unexpected_files_after_owned_cleanup": 0,
+    "retained_cleanup_observations": "Initial inventory recorded 3 import-generated Material files and 2 reimport-generated files. Their exact model/export-Material identities, absent-before inventory and hashes were verified; only those owned files were removed under fresh exclusive resource checks. Historical inventories retained."
+  },
+  "limitations": "Cardinality refusal is established, its underlying cause is not. Actual failing native material/submesh counts were not captured; zero-valued unexecuted observer fields are not evidence of zero geometry. No acceptance or source defect inferred before bounded diagnosis."
+}
