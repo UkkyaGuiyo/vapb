@@ -1348,7 +1348,7 @@ public static partial class VapbModelSkinFinalizer
             }
             else
             {
-                if (!HasCompatibleReplacementShapes(old, mesh, target, source))
+                if (!HasCompatibleReplacementShapes(old, mesh, target, edited.renderer, source))
                     Reject("MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED");
                 ValidateModelSkinReplacementMesh(target, edited, source);
             }
@@ -1737,20 +1737,26 @@ public static partial class VapbModelSkinFinalizer
     }
 
     private static bool HasCompatibleReplacementShapes(MeshLayout old, Mesh mesh,
-        SkinnedMeshRenderer target, SourceIdentity source)
+        SkinnedMeshRenderer target, SkinnedMeshRenderer editedRenderer, SourceIdentity source)
     {
         if (HasNoBlendShapesForReplacement(old, mesh)) return true;
         // Only the standalone source-model route: its scope checks reject Animator, Cloth
-        // and other components. No nonzero source shape state is migrated by label/index.
+        // and other components. Uniform matching defaults require no label/index migration.
         // Final delta buffers belong to the imported edited mesh, not source vertex indices.
         if (source == null || !source.sourceModel || target == null || target.sharedMesh == null ||
+            editedRenderer == null || editedRenderer.sharedMesh == null ||
             old == null || old.shapeNames == null || !SameBlendShapes(old, mesh) ||
+            editedRenderer.sharedMesh.blendShapeCount != mesh.blendShapeCount ||
             target.sharedMesh.blendShapeCount != old.shapeNames.Length) return false;
+        float uniformWeight = target.GetBlendShapeWeight(0);
+        if (uniformWeight != 0f && uniformWeight != 100f) return false;
         var labels = new HashSet<string>(StringComparer.Ordinal);
         for (int i = 0; i < old.shapeNames.Length; i++)
             if (String.IsNullOrEmpty(old.shapeNames[i]) || !labels.Add(old.shapeNames[i]) ||
                 old.frameWeights[i].Length != 1 || old.frameWeights[i][0] != 100f ||
-                mesh.GetBlendShapeFrameWeight(i, 0) != 100f || target.GetBlendShapeWeight(i) != 0f)
+                mesh.GetBlendShapeFrameWeight(i, 0) != 100f ||
+                target.GetBlendShapeWeight(i) != uniformWeight ||
+                editedRenderer.GetBlendShapeWeight(i) != uniformWeight)
                 return false;
         return true;
     }
@@ -1821,7 +1827,7 @@ public static partial class VapbModelSkinFinalizer
     {
         Mesh mesh = edited.mesh;
         if (target.sharedMesh == null || !HasCompatibleReplacementShapes(
-            CaptureLayout(target.sharedMesh), mesh, target, source))
+            CaptureLayout(target.sharedMesh), mesh, target, edited.renderer, source))
             Reject("MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED");
         if (target.GetComponent<Cloth>() != null) Reject("CLOTH_INDEX_STATE_UNSUPPORTED");
         if (mesh.vertexCount == 0 || mesh.subMeshCount == 0 || edited.materials == null ||

@@ -1,0 +1,27 @@
+{
+  "instruction_id": "HOLMES-20261012-04",
+  "phase": "GREEN3",
+  "status": "FROZEN_BEFORE_UNITY",
+  "consumer_sha256": "a8dcc1af35ccf0029e6f5a482d97b441db89fe2bd331fb010a2c853b6a2588a8",
+  "observer_sha256": "82d06aaeb9b856a01428371221eee824b673fe725ff2fa0db4b784c09665ba52",
+  "guards_sha256": "a7738183adb7d6cebe642940c235b65d8b916fe74ed41f0e3bb012a42e7262f2",
+  "package_sha256": "a4ff679718e2ff34624c71914ef8e93f86289c99a8faa27f3281554d8357cb15",
+  "expected": {
+    "apply": true,
+    "repeat_apply": true,
+    "variant_bytes_meta_semantics_unchanged": true,
+    "source_shape_weights": "all native values equal edited native values, uniformly0 or100 only",
+    "shape_delta_max_abs_error": 1e-07,
+    "guard_controls": [
+      "other_routes",
+      "nonuniform_source_weight",
+      "uniform_source_edited_mismatch",
+      "unmatched_channel",
+      "multiframe",
+      "unknown_component",
+      "cloth"
+    ]
+  },
+  "unchanged_original_edit_expectations": true,
+  "unity_observation": "NOT_RUN"
+}

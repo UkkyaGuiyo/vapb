@@ -17,23 +17,28 @@ public static class HolmesShapeGuards
         try
         {
             var target = clone.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+            var editedRenderer = edited.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
             var layout = Call(finalizer, "CaptureLayout", target.sharedMesh);
             var identityType = finalizer.GetNestedType("SourceIdentity", BindingFlags.NonPublic);
             var source = Activator.CreateInstance(identityType, true);
             var route = identityType.GetField("sourceModel");
-            Func<bool> compatible = () => (bool)Call(finalizer, "HasCompatibleReplacementShapes", layout, mesh, target, source);
+            Func<bool> compatible = () => (bool)Call(finalizer, "HasCompatibleReplacementShapes", layout, mesh, target, editedRenderer, source);
             Action<string, bool> check = (label, expected) => {
                 if (compatible() != expected) throw new Exception("ShapeControl:" + label);
                 results.Add(label + ":PASS");
             };
             route.SetValue(source, true);
-            check("source_model_matching_existing_zero_weight", true);
+            check("source_model_matching_existing_uniform_weight", true);
             route.SetValue(source, false);
             check("other_routes_still_reject_shape_replacement", false);
             route.SetValue(source, true);
+            float originalWeight = target.GetBlendShapeWeight(0);
             target.SetBlendShapeWeight(0, 1f);
-            check("nonzero_source_weight_not_migrated", false);
-            target.SetBlendShapeWeight(0, 0f);
+            check("nonuniform_source_weight_not_migrated", false);
+            target.SetBlendShapeWeight(0, originalWeight);
+            for(int i=0;i<target.sharedMesh.blendShapeCount;i++)target.SetBlendShapeWeight(i,originalWeight==100f?0f:100f);
+            check("uniform_source_edited_weight_mismatch",false);
+            for(int i=0;i<target.sharedMesh.blendShapeCount;i++)target.SetBlendShapeWeight(i,originalWeight);
             var zeros = new Vector3[mesh.vertexCount];
             mesh.AddBlendShapeFrame("unmatched-control", 100, zeros, zeros, zeros);
             check("unmatched_channel_rejected", false);
