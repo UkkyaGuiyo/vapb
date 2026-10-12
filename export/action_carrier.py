@@ -29,7 +29,7 @@ def action_plan(rig, bone_mappings):
             raise ValueError('ACTION_CARRIER_BONE_IDENTITY_INVALID')
         identities[identity] = pose.name
         if (bone.bbone_segments != 1 or bone.inherit_scale != 'FULL' or not bone.use_inherit_rotation
-                or not bone.use_local_location or bone.use_relative_parent or bone.use_connect):
+                or not bone.use_local_location or bone.use_relative_parent):
             raise ValueError('ACTION_CARRIER_BONE_INHERITANCE_UNSUPPORTED')
         rotation = ('rotation_quaternion' if pose.rotation_mode == 'QUATERNION' else
                     'rotation_axis_angle' if pose.rotation_mode == 'AXIS_ANGLE' else 'rotation_euler')
@@ -44,7 +44,10 @@ def action_plan(rig, bone_mappings):
     addresses, animated, frames = set(), set(), []
     for curve in bag.fcurves:
         row = paths.get(curve.data_path)
-        if row is None or not 0 <= curve.array_index < row[2] or curve.modifiers or curve.mute:
+        # Blender evaluates connected children without their location channels.
+        # Bake rotation/scale with the original connection; do not silently drop authored location.
+        if (row is None or not 0 <= curve.array_index < row[2] or curve.modifiers or curve.mute or
+                (row[1] == 'location' and rig.pose.bones[identities[row[0]]].bone.use_connect)):
             raise ValueError('ACTION_CARRIER_CHANNEL_UNSUPPORTED')
         address = (row[0],row[1],curve.array_index)
         if address in addresses or not curve.keyframe_points:

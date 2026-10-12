@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "official_fbx_operator": true,
+  "product_guard_unchanged": true,
+  "connected_original_preserved": true,
+  "uid_parent_graph_exact": true,
+  "matrix_max_error": 2.384185791015625e-07,
+  "skin_vertex_max_error": 6.365778852490731e-08,
+  "threshold": 0.0001,
+  "samples": 3,
+  "rna_connection_description": "When bone has a parent, bone's head is stuck to the parent's tail"
+}
