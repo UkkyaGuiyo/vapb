@@ -7,7 +7,7 @@
   "saved_scene_state": "EXACT",
   "protected_inputs_and_prior_outputs": "EXACT",
   "recipe": {"material_slots": 3, "canonical_material_ids": 1},
-  "serialized_fbx": {"distinct_material_connections": 3, "explicit_slot_occurrences": [0, 1, 2], "face_partition": "EXACT", "triangles_by_declared_slot": [432, 864, 9570], "triangles": 10866},
+  "serialized_fbx": {"distinct_material_connections": 3, "explicit_slot_occurrences": [0, 1, 2], "partition_triangle_counts": "EXACT_SOURCE_COUNTS", "triangle_corner_membership": "NOT_MEASURED", "triangles_by_declared_slot": [432, 864, 9570], "triangles": 10866},
   "canonical_material_and_three_textures_asset_meta": "EXACT_PRIOR_PACKAGE_BYTES",
   "native": {
     "version": "2022.3.22f1",
@@ -26,5 +26,40 @@
     "lease_mutex": "RETURNED",
     "owned_children_and_project_lock": "ABSENT"
   },
-  "limits": ["PARTIAL is not COMPLETE", "Unexecuted zero counts are not empty geometry evidence", "External Shader resolution remains required", "GUI and render NOT_RUN", "Full native slot and repeat acceptance remains unmeasured"]
+  "observer_only_followup": {
+    "unchanged_package": true,
+    "status": "PARTIAL_OBSERVED",
+    "apply_return": false,
+    "reapply_return": false,
+    "both_finalizer_results": "PARTIAL",
+    "exact_declared_external_reference": "ONE_SHADER_REQUIRED_AND_STABLE",
+    "mesh_export_marker_guid_file_id": "EXACT",
+    "native_submeshes": 3,
+    "canonical_material_slots": 3,
+    "canonical_material_guid_file_id": "EXACT",
+    "declared_texture_identities": "ALL_THREE_RESOLVED",
+    "shader_property_texture_function": "UNVERIFIED_EXTERNAL_SHADER",
+    "native_vertices": 9162,
+    "native_triangles": 10866,
+    "explicit_occurrences": [0, 1, 2],
+    "native_triangle_counts_by_occurrence": [432, 864, 9570],
+    "prefab_meta_numeric_references_material_texture_model_manifest_stability": "EXACT",
+    "corner_multiset_observation": {
+      "frame": "FBX_centimetre_model_local_to_Unity_metre_reflectX_no_fitted_transform",
+      "duplicate_multiplicity": "PRESERVED_IN_COUNTERS",
+      "float32_converted_corner_multisets_by_occurrence": [false, false, false],
+      "six_decimal_diagnostic_corner_multisets_by_occurrence": [true, true, true],
+      "exact_membership_acceptance": "UNPROVED",
+      "winding": "NOT_MEASURED",
+      "blender_to_fbx_corners": "NOT_MEASURED",
+      "quantization_is_acceptance_tolerance": false
+    },
+    "protected_project_files": 3041,
+    "changed": 0,
+    "unexpected_files": 0,
+    "observer_editor_exit_code": 0,
+    "lease_mutex": "RETURNED",
+    "owned_children_and_project_lock": "ABSENT"
+  },
+  "limits": ["PARTIAL is not COMPLETE", "Initial unexecuted zero counts are not empty geometry evidence", "External Shader resolution remains required", "GUI and render NOT_RUN", "Count equality is not exact face membership", "Quantized diagnostic is not exact float32 acceptance or a new tolerance", "No product defect inferred from unmatched diagnostic float32 conversion"]
 }
