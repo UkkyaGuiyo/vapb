@@ -1744,9 +1744,9 @@ public static partial class VapbModelSkinFinalizer
     {
         if (HasNoBlendShapesForReplacement(old, mesh)) return true;
         // Only the standalone source-model route: its scope checks reject Animator, Cloth
-        // and other components. Existing ordered channels remain; new channels are appended.
+        // and other components. Final labels belong to the edited mesh; new channels are appended.
         // Existing defaults stay source-derived; appended defaults belong to the edited renderer.
-        // No label/index migration of source state is performed.
+        // Uniform retained defaults require no label/index migration of source state.
         // Final delta buffers belong to the imported edited mesh, not source vertex indices.
         if (source == null || !source.sourceModel || target == null || target.sharedMesh == null ||
             editedRenderer == null || editedRenderer.sharedMesh == null ||
@@ -1757,8 +1757,7 @@ public static partial class VapbModelSkinFinalizer
         float uniformWeight = old.shapeNames.Length == 0 ? 0f : target.GetBlendShapeWeight(0);
         if (uniformWeight != 0f && uniformWeight != 100f) return false;
         for (int i = 0; i < old.shapeNames.Length; i++)
-            if (old.shapeNames[i] != mesh.GetBlendShapeName(i) ||
-                old.frameWeights[i].Length != 1 || old.frameWeights[i][0] != 100f ||
+            if (old.frameWeights[i].Length != 1 || old.frameWeights[i][0] != 100f ||
                 target.GetBlendShapeWeight(i) != uniformWeight) return false;
         var labels = new HashSet<string>(StringComparer.Ordinal);
         for (int i = 0; i < mesh.blendShapeCount; i++)
