@@ -1,0 +1,73 @@
+{
+  "base_commit": "89b3e437c054f94940b13036672d5ab740ea84d9",
+  "runtime_commit": "1df0881fccd2f9b3362979051d62be5232ae937e",
+  "purpose": "Compare one explicitly selected revision-bound real Material across edited static UV and Action-bearing Skin routes without repeating established outputs",
+  "inputs": "Existing authorized owned corpus; copied input archives and saved checkpoints; exact input, checkpoint, donor Material and output hashes retained privately per case",
+  "selection": "Previously recorded accepted Material GUID/fileID and source package revision, verified against the existing donor record; no name, slot-order or single-candidate identity inference",
+  "historical_control": {
+    "case": "CASE04",
+    "edit": "Previously saved intentional Smart Project UV edit",
+    "result": "dependency provider UNRESOLVED for one selected Texture",
+    "reexecuted": false
+  },
+  "cases": [
+    {
+      "label": "STATIC04_CLOSED_MATERIAL",
+      "edit": "Keep saved UV geometry; explicitly replace each existing slot with the recorded Material using object-owned slots",
+      "blender": "PASS",
+      "save_reopen": "PASS",
+      "export": "PASS",
+      "task_kind": "BUILD_EXPORTED_STATIC_V2",
+      "material_bindings": 1,
+      "texture_references": 3,
+      "exact_intended_material_reference": true,
+      "material_asset_bytes_equal_source": true,
+      "declared_texture_payloads_present": true,
+      "geometry_bone_action_state_preserved": true,
+      "other_owner_materials_preserved": true,
+      "originals_and_owned_input_copies_hash_exact": true,
+      "unity": "NOT_RUN",
+      "gui": "NOT_RUN",
+      "render": "NOT_RUN"
+    },
+    {
+      "label": "SKIN23_ACTION_CLOSED_MATERIAL",
+      "edit": "Keep saved mapped Bone quaternion Action and Skin; explicitly replace each existing slot with the same recorded Material using object-owned slots",
+      "blender": "PASS",
+      "save_reopen": "PASS",
+      "export": "PASS",
+      "task_kind": "RESTORE_DIRECT_SKIN_VARIANT_V1",
+      "material_bindings": 2,
+      "texture_references": 3,
+      "action_clip_declared": true,
+      "required_action_bindings": 1,
+      "exact_intended_material_reference": true,
+      "material_asset_bytes_equal_source": true,
+      "declared_texture_payloads_present": true,
+      "geometry_bone_action_state_preserved": true,
+      "other_owner_materials_preserved": true,
+      "originals_and_owned_input_copies_hash_exact": true,
+      "unity": "NOT_RUN",
+      "gui": "NOT_RUN",
+      "render": "NOT_RUN"
+    }
+  ],
+  "retained_failure": {
+    "scope": "Private comparison observer before Skin import/edit/save/export",
+    "error": "AttributeError: Action has no attribute fcurves",
+    "product_refusal": false,
+    "correction": "Read the existing Blender 5.2 layered Action channelbag as production already does",
+    "retry_scope": "Previously unreached Skin case only; successful static case not repeated"
+  },
+  "resources": {
+    "blender_version": "5.2.1 LTS",
+    "runs": [
+      {"pid": 21644, "free_gib": 4.541637420654297, "exit_code": 0, "owned_children_absent": true, "mutex_returned": true},
+      {"pid": 19116, "free_gib": 4.503059387207031, "exit_code": 0, "owned_children_absent": true, "mutex_returned": true}
+    ],
+    "unity_launched": false
+  },
+  "source_changes": false,
+  "synthetic_inputs": false,
+  "limitations": "Whole Material/provider selection changed together; does not isolate a single Texture cause or prove Unity application, GUI/render, all consumers or general Avatar acceptance. Purchased bytes, identities, revisions and raw logs remain local."
+}
