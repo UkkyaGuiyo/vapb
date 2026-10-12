@@ -64,12 +64,13 @@ def action_plan(rig, bone_mappings):
                 animated_bone_realization_ids=sorted(animated),frames=[start,(start+end)/2,end])
 
 
-def _inspect_curve_targets(output, expected):
+def _inspect_curve_targets(output, expected, mapped_bones):
     from io_scene_fbx import parse_fbx
     root,_ = parse_fbx.parse(str(output),use_namedtuple=True)
     objects = next(n for n in root.elems if n.id == b'Objects')
     connections = next(n for n in root.elems if n.id == b'Connections')
-    models = {int(n.props[0]):n.props[1].split(b'\x00')[0].decode() for n in objects.elems if n.id==b'Model'}
+    model_nodes = {int(n.props[0]):n for n in objects.elems if n.id==b'Model'}
+    models = {uid:n.props[1].split(b'\x00')[0].decode() for uid,n in model_nodes.items()}
     curve_nodes = {int(n.props[0]) for n in objects.elems if n.id==b'AnimationCurveNode'}
     stacks = [n for n in objects.elems if n.id==b'AnimationStack']
     curve_count = sum(n.id==b'AnimationCurve' for n in objects.elems)
@@ -77,22 +78,33 @@ def _inspect_curve_targets(output, expected):
                      if n.id==b'C' and int(n.props[1]) in curve_nodes and int(n.props[2]) in models}
     targets = set(target_by_node.values())
     omitted = {uid for uid,name in target_by_node.items() if name not in expected}
+    required = set(expected)
+    identities = {label:identity for identity,label in mapped_bones.items()}
     curves = {int(n.props[0]):n for n in objects.elems if n.id==b'AnimationCurve'}
     for curve in curves.values():
         values = next(n.props[0] for n in curve.elems if n.id==b'KeyValueFloat')
         if not len(values) or any(not math.isfinite(value) for value in values):
             raise ValueError('ACTION_CARRIER_BAKED_VALUES_INVALID')
-    # The native baker also emits static rig/untouched-bone channels. They must
-    # never become extra authored bindings: only verified constant curves may
-    # be excluded by the consumer's explicit animated-Bone scope.
+    # Unkeyed mapped descendants can have nonconstant evaluated/baked channels.
+    # Retain those values with explicit receipt-bound bindings; never round/drop them.
+    # Root/object and unknown targets still cannot become extra authored bindings.
     for link in connections.elems:
         if link.id==b'C' and int(link.props[1]) in curves and int(link.props[2]) in omitted:
             values = next(n.props[0] for n in curves[int(link.props[1])].elems if n.id==b'KeyValueFloat')
             if not len(values) or any(value != values[0] for value in values):
-                raise ValueError('ACTION_CARRIER_UNEXPECTED_BAKED_MOTION')
+                label = target_by_node[int(link.props[2])]
+                if label not in identities:
+                    raise ValueError('ACTION_CARRIER_UNEXPECTED_BAKED_MOTION')
+                model = next(n for uid,n in model_nodes.items() if models[uid]==label)
+                props = next((n for n in model.elems if n.id==b'Properties70'), None)
+                marker = next((p.props[-1] for p in props.elems
+                               if p.id==b'P' and p.props[0]==b'_vapb_fbx_bone_realization_id'), None) if props else None
+                if marker != identities[label].encode():
+                    raise ValueError('ACTION_CARRIER_BONE_IDENTITY_INVALID')
+                required.add(label)
     if len(stacks)!=1 or not curve_count or not expected <= targets:
         raise ValueError('ACTION_CARRIER_UNEXPECTED_BAKED_TARGETS')
-    return curve_count
+    return curve_count, required
 
 
 def export_action_carrier(context, rig, output, bone_mappings, *, scale_options='FBX_SCALE_NONE'):
@@ -147,8 +159,8 @@ def export_action_carrier(context, rig, output, bone_mappings, *, scale_options=
                 bake_anim_force_startend_keying=False,bake_anim_step=0.5,bake_anim_simplify_factor=0.0,
                 bake_space_transform=False,apply_scale_options=scale_options,path_mode='STRIP',embed_textures=False)
         if result!={'FINISHED'} or not output.is_file(): raise ValueError('ACTION_CARRIER_EXPORT_FAILED')
-        count=_inspect_curve_targets(output,{labels[i] for i in plan['animated_bone_realization_ids']})
-        return dict(animated_bone_realization_ids=plan['animated_bone_realization_ids'],
+        count,required=_inspect_curve_targets(output,{labels[i] for i in plan['animated_bone_realization_ids']},labels)
+        return dict(animated_bone_realization_ids=sorted(identity for identity,label in labels.items() if label in required),
                     frames=plan['frames'],fps=scene.render.fps/scene.render.fps_base,animation_curve_count=count)
     except BaseException:
         if output.is_file(): output.unlink()

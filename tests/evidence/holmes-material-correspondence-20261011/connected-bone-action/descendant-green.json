@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "authored_bones": 1,
+  "required_carrier_bindings": [
+    "connected-extra",
+    "connected-tip"
+  ],
+  "original_connections_rest_curves_preserved": true,
+  "uid_parent_graph_exact": true,
+  "unknown_moving_target_refused": true,
+  "derived_marker_mismatch_refused": true,
+  "artifact_unchanged": true,
+  "samples": 3,
+  "matrix_max_error": 4.76837158203125e-07,
+  "skin_vertex_max_error": 5.607273495860928e-07,
+  "threshold": 0.0001,
+  "unity": "NOT_RUN"
+}
