@@ -1,0 +1,64 @@
+{
+  "before_json_field_aliases_postedit_state": true,
+  "preedit_uv_independently_frozen_in_completed03_inspection": true,
+  "only_one_uv_delta_exact": true,
+  "loop": 2,
+  "cp": 1,
+  "original_uv": [
+    [
+      1.0,
+      1.0
+    ],
+    [
+      0.0,
+      1.0
+    ],
+    [
+      1.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0
+    ],
+    [
+      0.0,
+      0.0
+    ],
+    [
+      1.0,
+      0.0
+    ]
+  ],
+  "edited_uv": [
+    [
+      1.0,
+      1.0
+    ],
+    [
+      0.0,
+      1.0
+    ],
+    [
+      1.125,
+      0.0
+    ],
+    [
+      0.0,
+      1.0
+    ],
+    [
+      0.0,
+      0.0
+    ],
+    [
+      1.0,
+      0.0
+    ]
+  ],
+  "actual_script_asserts_full_preedit_to_expected_one_uv_state": true,
+  "product_source_changed": false,
+  "own_copy_omitted_prior_variant_and_meta": true,
+  "prior_variant_preserved": true,
+  "helper_from_installed17_unchanged": true
+}
