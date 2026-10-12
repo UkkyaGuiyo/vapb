@@ -1,0 +1,41 @@
+{
+  "base_commit": "c280188a5abf6c2fd04501d0fb3ff9fb1950c1da",
+  "scope": "Minimal correction of static repeated-Material slot transport, preserving canonical Material identity and authored face partitions",
+  "production_changes": [
+    "Static staging makes one disposable carrier per slot; repeated canonical IDs use explicit SLOT occurrence labels, unique Materials retain plain labels",
+    "Static Finalizer validates occurrence against the existing slot declaration, rejects duplicate/wrong/mixed occurrence labels, retains cardinality/multiplicity and legacy plain-label handling"
+  ],
+  "schema_or_canonical_identity_changed": false,
+  "first_party_actual_fbx": {
+    "red": {"pid": 17896, "exit_code": 1, "failure": "USED_REPEATED_SLOT_CONNECTIONS_COLLAPSED", "declared_used_slots": 3, "material_ids": 1, "connections": 1, "mapping": "AllSame", "source_preserved": true},
+    "green": {"pid": 9788, "exit_code": 0, "link_modes": ["DATA", "OBJECT"], "connections_each": 3, "canonical_material_ids_each": 1, "mapping_each": "ByPolygon", "face_slot_occurrences_each": [0, 1, 2], "source_preserved": true}
+  },
+  "native_consumer_tests": {
+    "red": {"pid": 30400, "exit_code": 2, "total": 1, "passed": 0, "failed": 1, "test": "MapsRepeatedSlotsByExplicitOccurrenceAndCanonicalIdentity", "reason": "Current production resolver rejects occurrence labels with NATIVE_MATERIAL_LABEL_INVALID"},
+    "green_run": {"pid": 27932, "exit_code": 2, "total": 30, "passed": 29, "failed": 1, "result": "FULL_CLASS_FAILED_FIXTURE_CONTEXT"},
+    "new_occurrence_positive_and_refusal_controls": "PASS",
+    "legacy_plain_label_cardinality_multiplicity_controls": "PASS",
+    "remaining_failure": {"test": "V1ApplyExposesActionableReexportResultBeforeAssetResolution", "reason": "Existing test requires a disposable Unity Project marker, absent from the protected real Project", "guard_bypassed": false},
+    "project_preexisting_files": 3041,
+    "project_changed_files": 0,
+    "unexpected_files": 0,
+    "owned_children_and_lock_absent": true,
+    "lease_and_mutex_returned": true
+  },
+  "related_regressions": {
+    "host_material_ids": {"tests": 10, "passed": 10},
+    "host_v2_payload": {"tests": 4, "passed": 4},
+    "host_dependency_providers_normal_host": {"tests": 11, "passed": 11},
+    "blender_existing_carriers": {"pid": 15692, "tests": 4, "failures": 0, "errors": 0, "skips": 0}
+  },
+  "retained_setup_failures": [
+    "Initial consumer RED preparation omitted a preexisting self-helper meta: guard stopped before Editor launch. Exact original meta staged; guard retained.",
+    "Initial host invocation used an unqualified tests module alias and failed import; corrected existing runner's qualified package path.",
+    "Sandbox dependency regression encountered os.link WinError5; same relevant module passes on authorized normal host with owned TEMP. No code, ACL or authentication change."
+  ],
+  "independent_code_review": "PENDING_SEPARATE_GATE",
+  "corrected_real_export_and_native_return": "NOT_RUN",
+  "gui": "NOT_RUN",
+  "render": "NOT_RUN",
+  "limitations": "First-party FBX transport and focused native resolver behavior are verified. Full native class has one explicitly recorded fixture-precondition failure; no full-class or whole-suite GREEN claim. Affected real package return remains pending review and normal installed-source verification."
+}

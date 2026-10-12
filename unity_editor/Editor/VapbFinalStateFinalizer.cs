@@ -270,16 +270,33 @@ public static class VapbFinalStateFinalizer
             expectedCounts[slot.export_material_id] = count + 1;
         }
         var actualCounts = new Dictionary<string, int>(StringComparer.Ordinal);
+        var occurrences = new HashSet<int>();
+        var taggedMaterials = new HashSet<string>(StringComparer.Ordinal);
+        var plainMaterials = new HashSet<string>(StringComparer.Ordinal);
         var result = new int[nativeLabels.Length];
         for (int i = 0; i < nativeLabels.Length; i++)
         {
-            string label = nativeLabels[i];
-            if (!Regex.IsMatch(label ?? "", @"\AVAPB-MAT-[0-9a-f]{32}\z") ||
+            Match occurrence = Regex.Match(nativeLabels[i] ?? "",
+                @"\A(VAPB-MAT-[0-9a-f]{32})(?:-SLOT-(0|[1-9][0-9]*))?\z");
+            string label = occurrence.Success ? occurrence.Groups[1].Value : null;
+            if (!occurrence.Success ||
                 !materialIndexes.TryGetValue(label, out result[i]))
                 throw new InvalidOperationException("NATIVE_MATERIAL_LABEL_INVALID");
+            if (occurrence.Groups[2].Success)
+            {
+                if (!int.TryParse(occurrence.Groups[2].Value, out int slotIndex) ||
+                    slotIndex >= task.material_slots.Length ||
+                    task.material_slots[slotIndex].export_material_id != label ||
+                    !occurrences.Add(slotIndex))
+                    throw new InvalidOperationException("NATIVE_MATERIAL_LABEL_INVALID");
+                taggedMaterials.Add(label);
+            }
+            else plainMaterials.Add(label);
             actualCounts.TryGetValue(label, out int count);
             actualCounts[label] = count + 1;
         }
+        if (taggedMaterials.Overlaps(plainMaterials))
+            throw new InvalidOperationException("NATIVE_MATERIAL_LABEL_INVALID");
         if (expectedCounts.Count != actualCounts.Count)
             throw new InvalidOperationException("NATIVE_MATERIAL_MULTIPLICITY_MISMATCH");
         foreach (var expected in expectedCounts)

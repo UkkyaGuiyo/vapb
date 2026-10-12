@@ -122,19 +122,18 @@ class FinalStateFbxCarrierTests(unittest.TestCase):
                 bpy.context, self.mesh_object, self.export_id, output,
                 material_ids_by_pointer=self.material_ids)
 
-        self.assertEqual([[self.label_a, self.label_b, self.label_a]], captured)
+        self.assertEqual([[self.label_a + "-SLOT-0", self.label_b,
+                           self.label_a + "-SLOT-2"]], captured)
 
     def _assert_imported_material_identity(self, imported):
         slot_names = [slot.material.name for slot in imported.material_slots]
-        # Blender's FBX roundtrip coalesces the repeated A carrier into two
-        # material slots. Face identity survives; native Unity multiplicity
-        # remains unverified and must be checked by the Finalizer in Stage 3.
-        self.assertEqual([self.label_a, self.label_b], slot_names)
+        expected = [self.label_a + "-SLOT-0", self.label_b, self.label_a + "-SLOT-2"]
+        self.assertEqual(expected, slot_names)
         face_names = [imported.material_slots[poly.material_index].material.name
                       for poly in imported.data.polygons]
-        self.assertEqual([self.label_a, self.label_b, self.label_a], face_names)
+        self.assertEqual(expected, face_names)
 
-    def test_staging_keeps_a_b_a_slots_and_blender_roundtrip_records_coalescing(self):
+    def test_staging_and_blender_roundtrip_preserve_a_b_a_slot_partitions(self):
         before = self.snapshot()
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "Generated.fbx"
@@ -159,7 +158,7 @@ class FinalStateFbxCarrierTests(unittest.TestCase):
 
     def test_renamed_carrier_suffix_is_rejected_and_cleaned_up(self):
         before = self.snapshot()
-        blocker = bpy.data.materials.new(self.label_a)
+        blocker = bpy.data.materials.new(self.label_a + "-SLOT-0")
         before = self.snapshot()
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "Generated.fbx"
@@ -170,7 +169,7 @@ class FinalStateFbxCarrierTests(unittest.TestCase):
 
             self.assertFalse(output.exists())
 
-        self.assertEqual(self.label_a, blocker.name)
+        self.assertEqual(self.label_a + "-SLOT-0", blocker.name)
         self.assert_stage_cleanup_and_source_unchanged(before)
 
     def test_export_exception_cleans_staging_and_preserves_sources(self):

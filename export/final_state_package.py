@@ -205,7 +205,11 @@ def _stage_fbx(context, mesh, export_id: str, output: Path,
             for key in list(block.keys()):
                 del block[key]
         copied["_vapb_export_object_id"] = export_id
-        carriers_by_pointer = {}
+        slot_counts = {}
+        for slot in mesh.material_slots:
+            if slot.material is not None:
+                pointer = slot.material.as_pointer()
+                slot_counts[pointer] = slot_counts.get(pointer, 0) + 1
         for index, slot in enumerate(mesh.material_slots):
             material = slot.material
             if material is None:
@@ -215,14 +219,14 @@ def _stage_fbx(context, mesh, export_id: str, output: Path,
             if not isinstance(material_id, str) or not re.fullmatch(
                     r"VAPB-MAT-[0-9a-f]{32}", material_id):
                 raise ValueError("final-state FBX Material identity label is missing or invalid")
-            carrier = carriers_by_pointer.get(pointer)
-            if carrier is None:
-                carrier = material.copy()
-                carriers.append(carrier)
-                carrier.name = material_id
-                if carrier.name != material_id:
-                    raise ValueError("final-state FBX material label must remain exact")
-                carriers_by_pointer[pointer] = carrier
+            # FBX merges repeated datablocks. Separate disposable carriers retain
+            # authored face slots while sharing the canonical Unity Material ID.
+            label = (f"{material_id}-SLOT-{index}" if slot_counts[pointer] > 1 else material_id)
+            carrier = material.copy()
+            carriers.append(carrier)
+            carrier.name = label
+            if carrier.name != label:
+                raise ValueError("final-state FBX material label must remain exact")
             copied.material_slots[index].material = carrier
         context.scene.collection.objects.link(copied)
         for obj in selected_before:

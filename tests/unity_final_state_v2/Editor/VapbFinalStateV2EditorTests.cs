@@ -156,6 +156,50 @@ public sealed class VapbFinalStateV2EditorTests
             "NATIVE_MATERIAL_MULTIPLICITY_MISMATCH");
     }
 
+    [Test]
+    public void MapsRepeatedSlotsByExplicitOccurrenceAndCanonicalIdentity()
+    {
+        object task = Task(Records('a', 'b'), Slots('a', 'a', 'b'));
+        Assert.AreEqual(new[] { 1, 0, 0 }, Resolve(task,
+            new[] { Id('b'), Id('a') + "-SLOT-1", Id('a') + "-SLOT-0" }, 3));
+    }
+
+    [Test]
+    public void RejectsOccurrenceBoundToAnotherDeclaredMaterial()
+    {
+        object task = Task(Records('a', 'b'), Slots('a', 'a', 'b'));
+        AssertRejected(() => Resolve(task,
+            new[] { Id('a') + "-SLOT-0", Id('a') + "-SLOT-2", Id('b') }, 3),
+            "NATIVE_MATERIAL_LABEL_INVALID");
+    }
+
+    [Test]
+    public void RejectsDuplicateOccurrenceDespiteCorrectCanonicalMultiplicity()
+    {
+        object task = Task(Records('a', 'b'), Slots('a', 'a', 'b'));
+        AssertRejected(() => Resolve(task,
+            new[] { Id('a') + "-SLOT-0", Id('a') + "-SLOT-0", Id('b') }, 3),
+            "NATIVE_MATERIAL_LABEL_INVALID");
+    }
+
+    [Test]
+    public void RejectsMixedPlainAndOccurrenceLabelsForSameMaterial()
+    {
+        object task = Task(Records('a', 'b'), Slots('a', 'a', 'b'));
+        AssertRejected(() => Resolve(task,
+            new[] { Id('a') + "-SLOT-0", Id('a'), Id('b') }, 3),
+            "NATIVE_MATERIAL_LABEL_INVALID");
+    }
+
+    [Test]
+    public void RejectsNoncanonicalOccurrenceSuffix()
+    {
+        object task = Task(Records('a', 'b'), Slots('a', 'a', 'b'));
+        AssertRejected(() => Resolve(task,
+            new[] { Id('a') + "-SLOT-00", Id('a') + "-SLOT-1", Id('b') }, 3),
+            "NATIVE_MATERIAL_LABEL_INVALID");
+    }
+
     [TestCase(null)]
     [TestCase("")]
     [TestCase("Renamed")]
