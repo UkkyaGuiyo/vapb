@@ -3,11 +3,120 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 public sealed class ModelSkinRouteCompatibilityTests
 {
     private const string NormalKind = "RESTORE_MODEL_SKIN_VARIANT_V1";
+
+    [Test]
+    public void RepeatedSkinMaterialTransportUsesExplicitOccurrencesAndCanonicalAssets()
+    {
+        AssertSkinMaterialTransport(new[] { "A", "B", "A" },
+            new[] { "A-SLOT-2", "B", "A-SLOT-0" }, null);
+    }
+
+    [Test]
+    public void RepeatedSkinMaterialTransportKeepsLegacyPlainLabels()
+    {
+        AssertSkinMaterialTransport(new[] { "A", "B", "A" }, new[] { "A", "B", "A" }, null);
+    }
+
+    [TestCase("A-SLOT-0", "A-SLOT-0", "MATERIAL_TRANSPORT_LAYOUT_INVALID")]
+    [TestCase("A-SLOT-2", "A-SLOT-1", "MATERIAL_TRANSPORT_LAYOUT_INVALID")]
+    [TestCase("A-SLOT-0", "A", "MATERIAL_TRANSPORT_LAYOUT_INVALID")]
+    [TestCase("A", "A-SLOT-1", "MATERIAL_TRANSPORT_LAYOUT_INVALID")]
+    [TestCase("A-SLOT-00", "A-SLOT-1", "MATERIAL_TRANSPORT_LABEL_MISSING")]
+    [TestCase("A-SLOT-2147483648", "A-SLOT-1", "MATERIAL_TRANSPORT_LAYOUT_INVALID")]
+    [TestCase("A-SLOT-0", "A-SLOT-1\n", "MATERIAL_TRANSPORT_LABEL_MISSING")]
+    public void RepeatedSkinMaterialTransportRejectsInvalidOccurrences(string first, string second, string reason)
+    {
+        AssertSkinMaterialTransport(new[] { "A", "A" }, new[] { first, second }, reason);
+    }
+
+    [Test]
+    public void RepeatedSkinMaterialTransportRejectsWrongDeclaredSlotIdentity()
+    {
+        AssertSkinMaterialTransport(new[] { "A", "B" },
+            new[] { "B-SLOT-0", "A-SLOT-1" }, "MATERIAL_TRANSPORT_LAYOUT_INVALID");
+    }
+
+    [Test]
+    public void RepeatedSkinMaterialTransportRejectsCollapsedMultiplicity()
+    {
+        AssertSkinMaterialTransport(new[] { "A", "A" }, new[] { "A" }, "MATERIAL_TRANSPORT_LAYOUT_INVALID");
+        AssertSkinMaterialTransport(new[] { "A", "B", "A" },
+            new[] { "A", "B", "B" }, "MATERIAL_TRANSPORT_LAYOUT_INVALID");
+    }
+
+    private static void AssertSkinMaterialTransport(string[] declarations, string[] labels, string expectedRefusal)
+    {
+        const string root = "Assets/VapbSkinTransportFixture40";
+        Assert.IsFalse(AssetDatabase.IsValidFolder(root), "Fixture must not overwrite existing assets.");
+        Type finalizer = FindFinalizer();
+        GameObject obj = null; Mesh mesh = null;
+        var carriers = new List<Material>();
+        try
+        {
+            AssetDatabase.CreateFolder("Assets", "VapbSkinTransportFixture40");
+            var source = new Dictionary<string, Material>();
+            var canonical = new Dictionary<string, string>();
+            Type bindingType = finalizer.GetNestedType("MaterialBinding", BindingFlags.NonPublic);
+            Type taskType = finalizer.GetNestedType("Task", BindingFlags.NonPublic);
+            var bindings = new Dictionary<string, object>();
+            foreach (string key in new[] { "A", "B" })
+            {
+                Material material = new Material(Shader.Find("Standard"));
+                AssetDatabase.CreateAsset(material, root + "/" + key + ".mat");
+                Assert.IsTrue(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material, out string guid, out long id));
+                string fileId = id.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                string label;
+                using (var hash = System.Security.Cryptography.SHA256.Create())
+                    label = "VAPB-MAT-" + BitConverter.ToString(hash.ComputeHash(System.Text.Encoding.ASCII.GetBytes(
+                        "MODEL_SKIN_MATERIAL_V1:" + guid + ":" + fileId))).Replace("-", "").ToLowerInvariant().Substring(0, 32);
+                object binding = Activator.CreateInstance(bindingType, true);
+                bindingType.GetField("guid").SetValue(binding, guid);
+                bindingType.GetField("file_id").SetValue(binding, fileId);
+                bindingType.GetField("transport_id").SetValue(binding, label);
+                source.Add(key, material); canonical.Add(key, label); bindings.Add(key, binding);
+            }
+            Array declared = Array.CreateInstance(bindingType, declarations.Length);
+            for (int i = 0; i < declarations.Length; i++) declared.SetValue(bindings[declarations[i]], i);
+            object task = Activator.CreateInstance(taskType, true);
+            taskType.GetField("material_bindings").SetValue(task, declared);
+            obj = new GameObject("first-party-skin-material-transport");
+            SkinnedMeshRenderer skin = obj.AddComponent<SkinnedMeshRenderer>();
+            mesh = new Mesh(); mesh.vertices = new[] { Vector3.zero, Vector3.right, Vector3.up };
+            mesh.subMeshCount = labels.Length;
+            for (int i = 0; i < labels.Length; i++)
+            {
+                mesh.SetIndices(new[] { 0, 1, 2 }, MeshTopology.Triangles, i);
+                carriers.Add(new Material(Shader.Find("Standard"))
+                    { name = canonical[labels[i].Substring(0, 1)] + labels[i].Substring(1) });
+            }
+            skin.sharedMesh = mesh; skin.sharedMaterials = carriers.ToArray();
+            if (expectedRefusal != null)
+            {
+                var error = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ResolveMaterialTransport", task, skin));
+                Assert.AreEqual(expectedRefusal, error.InnerException.Message);
+            }
+            else
+            {
+                var actual = (Material[])Invoke(finalizer, "ResolveMaterialTransport", task, skin);
+                Assert.AreEqual(labels.Length, actual.Length);
+                for (int i = 0; i < actual.Length; i++) Assert.AreSame(source[labels[i].Substring(0, 1)], actual[i]);
+            }
+        }
+        finally
+        {
+            if (obj != null) UnityEngine.Object.DestroyImmediate(obj);
+            if (mesh != null) UnityEngine.Object.DestroyImmediate(mesh);
+            foreach (Material material in carriers) UnityEngine.Object.DestroyImmediate(material);
+            AssetDatabase.DeleteAsset(root + "/A.mat"); AssetDatabase.DeleteAsset(root + "/B.mat");
+            AssetDatabase.DeleteAsset(root);
+        }
+    }
 
     [Test]
     public void JsonMissingOptionalReceiptsStayAbsentWhileExplicitObjectsStayPresent()

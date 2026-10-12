@@ -1311,18 +1311,50 @@ public static partial class VapbModelSkinFinalizer
         if (task.material_bindings == null || task.material_bindings.Length == 0) return null;
         Dictionary<string, Material> materialByLabel = ResolveMaterialBindings(task);
         Material[] carriers = native.sharedMaterials;
-        if (carriers.Length != native.sharedMesh.subMeshCount) Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
+        if (carriers.Length != native.sharedMesh.subMeshCount ||
+            carriers.Length != task.material_bindings.Length) Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
         var assigned = new Material[carriers.Length];
         var used = new HashSet<string>(StringComparer.Ordinal);
+        var occurrences = new HashSet<int>();
+        var plainIds = new HashSet<string>(StringComparer.Ordinal);
+        var occurrenceIds = new HashSet<string>(StringComparer.Ordinal);
+        var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         for (int i = 0; i < carriers.Length; i++)
         {
             // Explicit export transport labels, never source display-name identity.
-            Material material = null;
-            if (carriers[i] == null || !materialByLabel.TryGetValue(carriers[i].name, out material))
+            if (carriers[i] == null) Reject("MATERIAL_TRANSPORT_LABEL_MISSING");
+            Match match = Regex.Match(carriers[i].name,
+                @"\A(VAPB-MAT-[0-9a-f]{32})(?:-SLOT-(0|[1-9][0-9]*))?\z");
+            if (!match.Success) Reject("MATERIAL_TRANSPORT_LABEL_MISSING");
+            string canonical = match.Groups[1].Value;
+            if (!materialByLabel.TryGetValue(canonical, out Material material))
                 Reject("MATERIAL_TRANSPORT_LABEL_MISSING");
-            assigned[i] = material; used.Add(carriers[i].name);
+            if (match.Groups[2].Success)
+            {
+                if (!Int32.TryParse(match.Groups[2].Value, NumberStyles.None,
+                    CultureInfo.InvariantCulture, out int slot) || slot >= task.material_bindings.Length ||
+                    task.material_bindings[slot].transport_id != canonical ||
+                    !occurrences.Add(slot) || plainIds.Contains(canonical))
+                    Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
+                occurrenceIds.Add(canonical);
+            }
+            else
+            {
+                if (occurrenceIds.Contains(canonical)) Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
+                plainIds.Add(canonical);
+            }
+            assigned[i] = material; used.Add(canonical);
+            counts[canonical] = counts.TryGetValue(canonical, out int count) ? count + 1 : 1;
         }
         if (used.Count != materialByLabel.Count) Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
+        foreach (KeyValuePair<string, int> count in counts)
+        {
+            int expected = 0;
+            foreach (MaterialBinding binding in task.material_bindings)
+                if (binding.transport_id == count.Key) expected++;
+            if (count.Value != expected)
+                Reject("MATERIAL_TRANSPORT_LAYOUT_INVALID");
+        }
         return assigned;
     }
 

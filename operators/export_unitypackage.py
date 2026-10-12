@@ -229,19 +229,21 @@ def _export_staged_skin(context, source, armature, output, skin_binding, *,
         if material_bindings:
             if len(material_bindings) != len(mesh.material_slots):
                 raise ValueError('Material transport slot count changed')
-            material_by_label = {}
-            for slot, binding in zip(mesh.material_slots, material_bindings):
-                label = binding['transport_id']
+            label_counts = {}
+            for binding in material_bindings:
+                canonical = binding['transport_id']
+                label_counts[canonical] = label_counts.get(canonical, 0) + 1
+            for index, (slot, binding) in enumerate(zip(mesh.material_slots, material_bindings)):
+                canonical = binding['transport_id']
+                label = (f'{canonical}-SLOT-{index}' if label_counts[canonical] > 1 else canonical)
                 if slot.material is None:
                     raise ValueError('Material transport source is unavailable')
-                if label not in material_by_label:
-                    material = slot.material.copy()
-                    material_copies.append(material)
-                    material.name = label
-                    if material.name != label:
-                        raise ValueError('Material transport label is occupied')
-                    material_by_label[label] = material
-                slot.material = material_by_label[label]
+                material = slot.material.copy()
+                material_copies.append(material)
+                material.name = label
+                if material.name != label:
+                    raise ValueError('Material transport label is occupied')
+                slot.material = material
         scene.collection.objects.link(mesh)
         mesh.parent = rig
         mesh.matrix_world = source.matrix_world.copy()
