@@ -1,0 +1,23 @@
+{
+  "protected_project_file_count": 65,
+  "protected_project_final_hashes_unchanged": true,
+  "imported_manifest_temporarily_replaced": true,
+  "prior_manifest_restored_byte_exact_from_existing11_package": true,
+  "prior_input_and_scene_hashes_unchanged": true,
+  "source_original_preserved": true,
+  "apply": false,
+  "first_consumer_rejection": "EDITED_REST_MISMATCH",
+  "variant_created": false,
+  "native_pid": 26036,
+  "native_start_utc": "2026-10-12T05:05:32.1278657Z",
+  "native_exit_utc": "2026-10-12T05:05:56.9152757Z",
+  "native_exit_code": 0,
+  "release": {
+    "capturedUtc": "2026-10-12T05:05:57.0645718Z",
+    "owner": "VAPB-HOLMES-20261012-13",
+    "ownedChildrenAbsent": true,
+    "lockAbsent": true,
+    "normalExitCode": 0,
+    "releaseVerified": true
+  }
+}

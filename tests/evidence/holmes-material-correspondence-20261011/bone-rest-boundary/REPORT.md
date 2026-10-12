@@ -1,0 +1,17 @@
+# Connected child Bone Rest boundary
+
+Project VAPB; HOLMES-20261012-13; base e3e8282aeec952e597c05cba3d839acde73885fc; branch feature/holmes-bone-rest-boundary-20261012.
+
+BUILT: observation only, no product correction. A normal import of the existing first-party09 source, one connected child Bone EditMode head/tail move +0.025m on Blender X, save/reopen and normal export succeed. Blender naturally moves the parent tail and changes parent rest rotation; this is recorded rather than disconnecting/reparenting the input. Geometry, Shapes/defaults/receipt, UV, weights/groups, identities/parent mappings and Material remain unchanged.
+
+Actual Unity2022.3.22f1 import and existing Finalizer Apply reject `VAPB_MODEL_SKIN_VARIANT_REJECTED=EDITED_REST_MISMATCH`. No Variant was created; reApply is NOT_RUN. The existing consumer compares edited bindposes with original Bone world-to-local * source renderer local-to-world. It also constructs a linked Variant using original corresponding Bones and currently requires all Variant Transform locals unchanged. Removing only the first guard would leave the downstream contract unresolved.
+
+Protection: all65 existing owned Project files are byte-exact after the observation. Normal import temporarily replaced the shared manifest; the exact prior11package manifest was restored and its baseline hash verified. Source FBX/Material/meta, previous edited outputs/Variants and original09inputs/prior11 Authored.blend remain intact. NativePID26036 ran 05:05:32.1278657 ->2026-10-12T05:05:56.9152757Z, normalexit0, ownchildren/lock absent and release verified05:05:57.0645718 UTC. GUI/VRC/playback/real purchased input are NOT_RUN. Distribution ZIP remains older.
+
+Failures retained: first launch inside restricted shell could not access CIM and launched no Editor. The authorized guarded launch then stopped at an observation assertion before save/export because a connected edit also changes the parent matrix. One edit-only diagnostic identified that concrete difference. Final observer explicitly records connectivity/head/tail, checks child head/tail and parent tail moved by the intended vector (numeric observation tolerance1e-7m), parent head fixed and all other state exact, then saves/reopens/exports. No product rejection criterion was loosened. Initial/difference/final private logs and processes remain preserved; public observer-correction.json distinguishes those failures from the actual consumer rejection.
+
+NEXT_MINIMUM: one fresh independent inference over fixed saved evidence and approved final Bone-authority/source-Variant-rest contracts; select one already-approved smallest action without silently replacing original Bones or accepting unchecked bindposes. No repeat of12 deformation or13 native observation. Independent product guard review remains separate if a correction follows.
+
+Model: primary effective model/reasoning unavailable; policy LUNA/low. Completed12 inference requested SOL/xhigh, effective unavailable. No code-review pass required for product-unchanged13.
+
+KNOWLEDGE_REPORT (Atlas NOT_SAVED): moving a connected Blender EditMode child head also moves its parent tail, changing parent rest orientation. A one-operation edit is not necessarily a one-Bone-matrix change. Observe head/tail/connectivity before treating such propagation as importer corruption; preserve the actual normal operation rather than disconnecting a fixture to satisfy an observer. Confirmed bounded two-Bone Blender5.2.1 case; no general skeleton guarantee.

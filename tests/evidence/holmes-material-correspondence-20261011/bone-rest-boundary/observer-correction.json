@@ -1,0 +1,61 @@
+{
+  "initial_observer_assertion": "after != expected; no save/export yet",
+  "diagnostic_difference_fields": [
+    "parent Bone rest matrix"
+  ],
+  "parent_before": [
+    [
+      1.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      -1.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "parent_after": [
+    [
+      0.9992290139198303,
+      0.027767067775130272,
+      -0.027756361290812492,
+      0.0
+    ],
+    [
+      -0.027767067775130272,
+      -8.673617379884035e-19,
+      -0.999614417552948,
+      0.0
+    ],
+    [
+      -0.027756361290812492,
+      0.999614417552948,
+      0.0007710456848144531,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "cause": "connected child EditMode head translation propagates to parent tail and rest rotation; captured normal head/tail/connectivity in final run",
+  "initial_capture_failed_not_product_rejection": true,
+  "final_run_without_disconnect_or_reparent": true
+}
