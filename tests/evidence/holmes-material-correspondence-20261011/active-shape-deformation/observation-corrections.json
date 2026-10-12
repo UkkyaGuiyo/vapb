@@ -1,0 +1,9 @@
+{
+  "initial_blender": "Aborted before evaluated geometry on unnecessary exact Matrix.Identity precondition",
+  "observed_pose_basis_max_identity_error": 1.6292068494294654e-07,
+  "initial_product_blend_unchanged": true,
+  "revised_launcher_attempt": "Executable basename accidentally changed by phase-folder substitution; no Blender started, mutex returned",
+  "correction": "Capture unchanged actual saved pose, restore exact existing executable basename; frozen tolerance/axes/active values unchanged",
+  "native_measurements": 1,
+  "product_code_changed": false
+}

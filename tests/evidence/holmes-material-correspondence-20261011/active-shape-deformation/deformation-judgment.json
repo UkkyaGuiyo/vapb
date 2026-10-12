@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "blender_to_actual_BakeMesh_true": {
+    "status": "EXACT",
+    "maximum_distance": 4.826228243321671e-07,
+    "tolerance": 3e-05
+  },
+  "CPU_effective_skin_to_BakeMesh_true": {
+    "status": "EXACT",
+    "maximum_distance": 2.6987150723151616e-07,
+    "tolerance": 3e-05
+  },
+  "BakeMesh_false_existing_diagnostic_only": {
+    "status": "POSITION_MISMATCH",
+    "maximum_distance": 161.3473418687905,
+    "tolerance": 3e-05
+  },
+  "position_tolerance_m": 3e-05,
+  "metric_sha256": "0064441a7b07db7f95b7e5c1786fd8014ca1ec32f5e0807cad536c9f75a4663c",
+  "blend_sha256": "c9d35ffdd3d1f4c0d9c54abf21f88ab4c81fe2e41ff51ef6890e92c1daf70f3f",
+  "package_sha256": "2fc09c1784bc1971daf8bcc8a97580596c154c89e221a289c17ed28de7117d44",
+  "mesh_asset_sha256": "5f0a412078018798253387cc667b7c5a40179efbfc1db57698ca95a5b55b9749",
+  "source_package_sha256": "1a11686dad6de231c0703b24cdf854833d683d0fa1fa5d80683a29b14e832027",
+  "protected_files_exact": true,
+  "active_values": [
+    1.0,
+    0.0
+  ],
+  "native_defaults": [
+    100.0,
+    0.0
+  ],
+  "cp_count": 8,
+  "native_vertex_count": 26,
+  "pose_basis_max_identity_error": 1.6292068494294654e-07,
+  "unity_to_blender_world_axes": [
+    "-x",
+    "-z",
+    "y"
+  ],
+  "identity_from_frozen_exact_CP_marker": true,
+  "product_code_changed": false,
+  "GUI_VRC_rendered_visual_not_run": true
+}
