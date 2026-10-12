@@ -1,0 +1,147 @@
+{
+  "status": "PASS",
+  "source": {
+    "sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+    "geometry_uid": 808198139,
+    "points": [
+      [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        2.0,
+        0.0
+      ],
+      [
+        -1.0,
+        2.0,
+        0.0
+      ]
+    ],
+    "channels": []
+  },
+  "final": {
+    "sha256": "8ba03c90f30405aba806ab085fe640600d9407276459e0c5f89243a0ea67001e",
+    "geometry_uid": 662769516,
+    "points": [
+      [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        0.0,
+        0.0
+      ],
+      [
+        1.0,
+        2.0,
+        0.0
+      ],
+      [
+        -1.0,
+        2.0,
+        0.0
+      ]
+    ],
+    "channels": [
+      {
+        "channel_uid": 351501708,
+        "shape_uid": 762694395,
+        "deltas": [
+          [
+            0.0,
+            0.0,
+            0.03999999910593033
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            0.0,
+            0.0
+          ]
+        ],
+        "deform_percent": 0.0
+      }
+    ]
+  },
+  "source_channel_native_joins": [],
+  "final_channel_authored_key_joins": [
+    {
+      "channel_uid": 351501708,
+      "shape_uid": 762694395,
+      "authored_key_index": 1,
+      "deform_percent": 0.0
+    }
+  ],
+  "native_cp_channel_observations": [
+    {
+      "fbx_sha256": "141186ef3290b49fe1c4d585bf4192d733dbd473b96bfef636a6c68d7ca0d52a",
+      "channel_joins": [
+        {
+          "channel_uid": 351501708,
+          "shape_uid": 762694395,
+          "native_channel": 0,
+          "max_abs_error": 0.0
+        }
+      ]
+    },
+    {
+      "fbx_sha256": "141186ef3290b49fe1c4d585bf4192d733dbd473b96bfef636a6c68d7ca0d52a",
+      "channel_joins": [
+        {
+          "channel_uid": 351501708,
+          "shape_uid": 762694395,
+          "native_channel": 0,
+          "max_abs_error": 0.0
+        }
+      ]
+    },
+    {
+      "fbx_sha256": "141186ef3290b49fe1c4d585bf4192d733dbd473b96bfef636a6c68d7ca0d52a",
+      "channel_joins": [
+        {
+          "channel_uid": 351501708,
+          "shape_uid": 762694395,
+          "native_channel": 0,
+          "max_abs_error": 0.0
+        }
+      ]
+    }
+  ],
+  "native_variant_final_delta_and_uniform_weights_exact": true,
+  "repeat_variant_bytes_meta_semantics_exact": true,
+  "tolerance": 1e-07,
+  "parser_sha256": "96fe3f11b5c9b2950d9c434857e3b0db1a1b558510e2ad360b767643a69c2047",
+  "labels_used_for_identity": false,
+  "exact_cp_weight_bit_mismatches": 0,
+  "installed_originals_exact": [
+    {
+      "guid": "75f6b54b17e02744598ae3ba28ab8047",
+      "asset_sha256": "f7ddb9a7625f3190498256c28444a6dab09ae3208a40bb90a0e63ae33a16179e",
+      "meta_sha256": "7fd5843c1bdb26a4583a56f0043a85e879b9478ae0833dc9fdd68c8c72cfa836"
+    },
+    {
+      "guid": "8d27441c691fdcb46b8a7a273827ebba",
+      "asset_sha256": "4da860914beeee165b7077560251f917d90888476aeb486b4605e59b7823f362",
+      "meta_sha256": "6746b5c2b47d9cb1571c9f4709eb176ea1dbf9b1f1c29d9f98c8c5b3c4c07956"
+    }
+  ]
+}
