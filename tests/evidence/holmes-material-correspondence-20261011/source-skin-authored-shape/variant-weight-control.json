@@ -1,0 +1,12 @@
+{
+    "expected_reject": true,
+    "actual_apply": false,
+    "altered_variant_untouched": true,
+    "baseline_bytes_restored": true,
+    "baseline_meta_restored": true,
+    "baseline_weight": 100.0,
+    "changed_weight": 0.0,
+    "rejection": [
+        "VAPB_MODEL_SKIN_VARIANT_REJECTED=VARIANT_MODIFICATION_UNKNOWN"
+    ]
+}
