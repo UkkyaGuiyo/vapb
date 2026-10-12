@@ -1,0 +1,11 @@
+{
+  "instruction_id": "HOLMES-20261012-05",
+  "status": "OBSERVER_PREPARATION_COMPILE_FAILURE",
+  "product_apply_executed": false,
+  "missing_firstparty_runtime_type": "VapbRealizationMarker",
+  "editor_exit_code": 1,
+  "owned_children_absent": true,
+  "residual_lock_exclusive_read": true,
+  "lock_removed": false,
+  "correction": "Copy the existing required first-party runtime source and meta before normal import; fresh existing guards still required."
+}

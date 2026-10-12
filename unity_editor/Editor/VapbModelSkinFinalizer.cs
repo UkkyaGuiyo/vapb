@@ -662,7 +662,8 @@ public static partial class VapbModelSkinFinalizer
                 Reject("SOURCE_MODEL_WEIGHTS_CHANGED");
         }
         CheckSkinCompatibility(mapping, target, edited, source, direct);
-        if (sourceModel && !SameNormalSkinIndexLayout(mapping.sourceLayout, edited.mesh))
+        if (sourceModel && (!SameNormalSkinIndexLayout(mapping.sourceLayout, edited.mesh) ||
+            !SameBlendShapes(mapping.sourceLayout, edited.mesh)))
         {
             // Source-model replacement has its own bounded scope; Kind eligibility stays unchanged.
             ValidateSourceModelReplacementScope(prefab, target);
@@ -1344,7 +1345,9 @@ public static partial class VapbModelSkinFinalizer
         {
             if (SameNormalSkinIndexLayout(old, mesh))
             {
-                if (!SameBlendShapes(old, mesh)) Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
+                if (!SameBlendShapes(old, mesh) &&
+                    !HasCompatibleReplacementShapes(old, mesh, target, edited.renderer, source))
+                    Reject("TOPOLOGY_OR_LAYOUT_CHANGED");
             }
             else
             {
@@ -1741,23 +1744,27 @@ public static partial class VapbModelSkinFinalizer
     {
         if (HasNoBlendShapesForReplacement(old, mesh)) return true;
         // Only the standalone source-model route: its scope checks reject Animator, Cloth
-        // and other components. Uniform matching defaults require no label/index migration.
+        // and other components. Existing ordered channels remain; at most one channel is appended.
+        // Uniform matching defaults require no label/index migration of source state.
         // Final delta buffers belong to the imported edited mesh, not source vertex indices.
         if (source == null || !source.sourceModel || target == null || target.sharedMesh == null ||
             editedRenderer == null || editedRenderer.sharedMesh == null ||
-            old == null || old.shapeNames == null || !SameBlendShapes(old, mesh) ||
+            old == null || old.shapeNames == null || old.shapeNames.Length == 0 ||
+            (mesh.blendShapeCount != old.shapeNames.Length &&
+             mesh.blendShapeCount != old.shapeNames.Length + 1) ||
             editedRenderer.sharedMesh.blendShapeCount != mesh.blendShapeCount ||
             target.sharedMesh.blendShapeCount != old.shapeNames.Length) return false;
         float uniformWeight = target.GetBlendShapeWeight(0);
         if (uniformWeight != 0f && uniformWeight != 100f) return false;
-        var labels = new HashSet<string>(StringComparer.Ordinal);
         for (int i = 0; i < old.shapeNames.Length; i++)
-            if (String.IsNullOrEmpty(old.shapeNames[i]) || !labels.Add(old.shapeNames[i]) ||
+            if (old.shapeNames[i] != mesh.GetBlendShapeName(i) ||
                 old.frameWeights[i].Length != 1 || old.frameWeights[i][0] != 100f ||
-                mesh.GetBlendShapeFrameWeight(i, 0) != 100f ||
-                target.GetBlendShapeWeight(i) != uniformWeight ||
-                editedRenderer.GetBlendShapeWeight(i) != uniformWeight)
-                return false;
+                target.GetBlendShapeWeight(i) != uniformWeight) return false;
+        var labels = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < mesh.blendShapeCount; i++)
+            if (String.IsNullOrEmpty(mesh.GetBlendShapeName(i)) || !labels.Add(mesh.GetBlendShapeName(i)) ||
+                mesh.GetBlendShapeFrameCount(i) != 1 || mesh.GetBlendShapeFrameWeight(i, 0) != 100f ||
+                editedRenderer.GetBlendShapeWeight(i) != uniformWeight) return false;
         return true;
     }
 
@@ -2090,6 +2097,12 @@ public static partial class VapbModelSkinFinalizer
                     if (bones[i] == null) Reject("VARIANT_BONE_MISSING");
                 }
                 target.sharedMesh = plan.edited.mesh;
+                if (plan.task.kind == SourceKind &&
+                    plan.edited.mesh.blendShapeCount == plan.target.sharedMesh.blendShapeCount + 1)
+                {
+                    int added = plan.target.sharedMesh.blendShapeCount;
+                    target.SetBlendShapeWeight(added, plan.edited.renderer.GetBlendShapeWeight(added));
+                }
                 target.bones = bones;
                 if (plan.task.kind == SourceKind)
                     SaveSourceModelBounds(target, SourceModelBounds(plan.target, plan.edited.mesh,
@@ -2140,6 +2153,11 @@ public static partial class VapbModelSkinFinalizer
                  (modifiedPlan.task.kind == SourceKind &&
                   (Regex.IsMatch(mod.propertyPath, @"^m_AABB\.m_(Center|Extent)\.[xyz]$") ||
                    mod.propertyPath == "m_DirtyAABB")) ||
+                 (modifiedPlan.task.kind == SourceKind &&
+                  modifiedPlan.edited.mesh.blendShapeCount == modifiedPlan.target.sharedMesh.blendShapeCount + 1 &&
+                  (mod.propertyPath == "m_BlendShapeWeights.Array.size" ||
+                   mod.propertyPath == "m_BlendShapeWeights.Array.data[" +
+                       modifiedPlan.target.sharedMesh.blendShapeCount + "]")) ||
                  (modifiedPlan.edited.materials != null && (mod.propertyPath == "m_Materials.Array.size" ||
                   mod.propertyPath.StartsWith("m_Materials.Array.data[", StringComparison.Ordinal))));
             bool rootDefault = PrefabUtility.IsDefaultOverride(mod) &&
@@ -2181,6 +2199,11 @@ public static partial class VapbModelSkinFinalizer
                 if (skin.sharedMesh != plan.edited.mesh || skin.rootBone == null ||
                     FollowSource(skin.rootBone, 1) != plan.target.rootBone ||
                     skin.bones.Length != plan.edited.editedBoneUids.Length) Reject("VARIANT_MISMATCH");
+                if (plan.task.kind == SourceKind &&
+                    plan.edited.mesh.blendShapeCount == plan.target.sharedMesh.blendShapeCount + 1)
+                    for (int i = 0; i < skin.sharedMesh.blendShapeCount; i++)
+                        if (skin.GetBlendShapeWeight(i) != plan.edited.renderer.GetBlendShapeWeight(i))
+                            Reject("VARIANT_SHAPE_WEIGHT_CHANGED");
                 if (plan.task.kind == SourceKind &&
                     (!SourceModelBoundsStored(skin, SourceModelBounds(plan.target, plan.edited.mesh,
                         MappedTargetBones(plan.edited, plan.source))) ||
