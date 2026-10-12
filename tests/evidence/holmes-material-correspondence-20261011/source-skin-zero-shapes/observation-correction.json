@@ -1,0 +1,15 @@
+{
+  "initial_observation": "Apply refused occupied copied Variant; new zero-Shape Variant creation NOT_RUN",
+  "occupied_variant_path": "Assets/VAPBExport/EditedVariant_29e398847b10292ffc1b1a63acf23fcdc46bc40ab0e024f7106055dd1df1b527.prefab",
+  "prior_variant_hash": "7b4f0d296f2e7c8f1adc9d85fd115a6eb585dc2e442b2ebaa0f5465a21f294b0",
+  "copied_variant_bytes_unchanged": true,
+  "diagnostic_unknown_path": "m_BlendShapeWeights.Array.data[0]",
+  "diagnostic_value": "100",
+  "diagnostic_report_overwrote_initial_native_json": true,
+  "initial_process_log_exit_release_preserved": true,
+  "diagnostic_logging_only": true,
+  "product_source_changed": false,
+  "unoccupied_copy_omits_only_prior_target_variant_and_meta": true,
+  "prior_target_variant_preserved": true,
+  "private_helper_restored": true
+}

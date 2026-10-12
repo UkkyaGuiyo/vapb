@@ -1,0 +1,6 @@
+# HOLMES-20261012-18 - remove all Shape Keys
+
+Authority: current continuous ordinary-edit goal and fresh17 inference. Fixed base3c67f6fc4ffac1006fa390f9e431ef05b0336276. Existing11 deletion implementation statically admits source>0/final0, runtime boundary unverified.
+NEXT_ACTION: protected copy of existing11 saved Authored.blend; ordinary remove all remaining Shape Keys, save/reopen, normal export through existing17 installed distribution; one existing-consumer Unity Apply/reApply and actual final geometry observation in a dedicated owned copy of prior firstparty Project, under existing resource/lease guards.
+DONE_WHEN: final export/linkedVariant zero Shapes; actual geometry, sourceFBX/meta/Material/Bones/weights preserved, save/reApply stable, originals unchanged, owned resources released. Preserve refusal; no speculative fix/new schema/framework/general acceptance.
+CURRENT_STAGE: zero-Shape export/linkedVariant Apply/reApply and actual24vertex/8CP geometry PASS. Source unchanged. Initial copied occupied Variant correctly refused; dedicated unoccupied copy measured final boundary. Correction record preserves diagnostic output-path error. Publicsafe save/exactremote readback then one fresh18 inference. GUI/real purchased/VRC not included. Completed runtime/reviews not rerun.

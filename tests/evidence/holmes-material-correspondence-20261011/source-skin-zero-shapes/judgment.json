@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "source_shape_count": 3,
+  "edited_and_variant_shapes": 0,
+  "shape_arrays_empty": true,
+  "Apply_reApply_stable": true,
+  "actual_BakeMesh_geometry": {
+    "status": "EXACT",
+    "maximum_distance": 4.826228243321671e-07,
+    "tolerance": 3e-05
+  },
+  "tolerance_m": 3e-05,
+  "cp_count": 8,
+  "native_vertex_count": 24,
+  "linked_original_bones_root_and_materials": true,
+  "all_final_weights_and_vertices_exact_to_import": true,
+  "original_native_asset_meta_files_exact": [
+    "Assets\\VAPBExport\\Unassigned\\Materials\\SourceMaterial.mat",
+    "Assets\\VAPBExport\\Unassigned\\Materials\\SourceMaterial.mat.meta",
+    "Assets\\HolmesSource\\Source.fbx",
+    "Assets\\HolmesSource\\Source.fbx.meta"
+  ],
+  "source_assets_joined_by_original_guid": true,
+  "prior_protected_files": 97,
+  "prior_all_hashes_exact": true,
+  "package_sha256": "b681f931af8122a863d916ae450c1f404d5c338380187eba6b19b2d7559e3176",
+  "helper_raw_sha256": "f8703c3ae23c835b88b35d597609243e52474070136d33f06212028174ae2231",
+  "product_source_changed": false,
+  "process": {
+    "owner": "VAPB-HOLMES-20261012-18",
+    "actual_free_gib": 4.495449066162109,
+    "purpose": "HOLMES1218 zero Shape boundary native",
+    "pid": 30656,
+    "startUtc": "2026-10-12T07:13:16.8201674Z",
+    "startUtcTicks": 639273859968201674,
+    "state": "OWNED",
+    "capturedUtc": "2026-10-12T07:13:16.8394653Z"
+  },
+  "exit": {
+    "pid": 30656,
+    "startUtc": "2026-10-12T07:13:16.8201674Z",
+    "exitUtc": "2026-10-12T07:13:36.8601302Z",
+    "exitCode": 0
+  },
+  "release": {
+    "capturedUtc": "2026-10-12T07:13:36.9716468Z",
+    "owner": "VAPB-HOLMES-20261012-18",
+    "ownedChildrenAbsent": true,
+    "lockAbsent": true,
+    "normalExitCode": 0,
+    "releaseVerified": true
+  },
+  "gui_vrc": "NOT_RUN"
+}
