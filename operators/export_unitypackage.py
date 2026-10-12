@@ -750,10 +750,14 @@ class VAPB_OT_export_unitypackage(bpy.types.Operator, ExportHelper):
                 self.layout.label(text='Prefabなしの元モデルSkinは1 Meshずつ出力')
                 self.layout.label(text='他のMeshを選択から外してください')
                 self.layout.label(text='「アクティブMeshのみ」でも出力できます')
+                self.layout.label(text='骨対応・親子関係を保つrest編集のみ対応条件付きで復元')
+                self.layout.label(text='Unityの位置・回転・スケールで表せないrestは停止')
+                self.layout.label(text='rest変更とActionを含む同時復元は未対応')
             else:
                 self.layout.label(text='同じPrefab個体のモデル由来Skinを選択してまとめて復元')
             self.layout.label(text='Unityで出所を確認し、新しいPrefab Variantへ復元します')
-            self.layout.label(text='原本・骨階層・素材を保持。形状とウェイトの編集が対象です')
+            self.layout.label(text='原本・骨対応・素材を保持。形状・ウェイト・Shape Keyを対応条件内で復元'
+                             if source_model else '原本・骨階層・素材を保持。形状とウェイトの編集が対象です')
             self.layout.label(text='骨階層変更・複数Prefab個体の混在はこの経路では未対応')
         else:
             self.layout.label(text='対象: アクティブな確定済みMesh一つ')
