@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "normal_installed_package": true,
+  "apply_repeat": true,
+  "clip_created": true,
+  "clip_and_variant_repeat_bytes_meta_semantics": true,
+  "original_bone_root_parent_material_refs_exact": true,
+  "variant_mesh_streams_exact_to_edited": true,
+  "original_asset_meta_pairs_exact": 2,
+  "three_native_skin_samples_match_carrier": true,
+  "skin_world_max_error": 0.0,
+  "skin_moves": true,
+  "unity_version": "2022.3.22f1",
+  "purchased_data": false,
+  "gui": "NOT_RUN",
+  "general_avatar": "NOT_RUN"
+}

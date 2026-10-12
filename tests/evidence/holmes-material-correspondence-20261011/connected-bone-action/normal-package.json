@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "normal_install_enable_disable": true,
+  "installed_carrier_bytes_exact": true,
+  "save_reopen": true,
+  "connection_flags_preserved": true,
+  "geometry_weights_rest_material_unchanged": true,
+  "originals_unchanged": true,
+  "animated_bones": 2,
+  "kind": "RESTORE_SOURCE_MODEL_SKIN_VARIANT_V1",
+  "zip_sha256": "99f30fe4e6b34a61ee2061649a16f95f4d90691116137a9f3aedd875a525317b",
+  "output_sha256": "314cec4b385096adcd0005dd25366f3ee6c51e0582d7537fc2045a8e1e5a5a83",
+  "unity": "NOT_RUN"
+}
