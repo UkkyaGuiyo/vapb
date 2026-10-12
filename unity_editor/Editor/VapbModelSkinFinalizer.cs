@@ -164,6 +164,7 @@ public static partial class VapbModelSkinFinalizer
     private sealed class SourceIdentity
     {
         public SkinnedMeshRenderer renderer;
+        public bool sourceModel;
         public readonly Dictionary<string, Transform> bonesByUid = new Dictionary<string, Transform>(StringComparer.Ordinal);
         public Transform parentTransform;
         public string[] sourceBoneUids;
@@ -609,6 +610,7 @@ public static partial class VapbModelSkinFinalizer
         SourceIdentity source = direct ?
             ResolveDirectSourceIdentity(target, sourceRenderer, task, mapping) :
             ResolveSourceIdentity(target, sourceRenderer, sourceGuid, targetBoneIds);
+        source.sourceModel = sourceModel;
         if (!mapping.transformIds.TryGetValue(task.source_model_uid, out long mappedRendererTransform) ||
             mappedRendererTransform != LocalId(sourceRenderer.transform, sourceGuid))
             Reject("WITNESS_RENDERER_MISMATCH");
@@ -1346,7 +1348,7 @@ public static partial class VapbModelSkinFinalizer
             }
             else
             {
-                if (!HasNoBlendShapesForReplacement(old, mesh))
+                if (!HasCompatibleReplacementShapes(old, mesh, target, source))
                     Reject("MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED");
                 ValidateModelSkinReplacementMesh(target, edited, source);
             }
@@ -1734,6 +1736,25 @@ public static partial class VapbModelSkinFinalizer
             mesh != null && mesh.blendShapeCount == 0;
     }
 
+    private static bool HasCompatibleReplacementShapes(MeshLayout old, Mesh mesh,
+        SkinnedMeshRenderer target, SourceIdentity source)
+    {
+        if (HasNoBlendShapesForReplacement(old, mesh)) return true;
+        // Only the standalone source-model route: its scope checks reject Animator, Cloth
+        // and other components. No nonzero source shape state is migrated by label/index.
+        // Final delta buffers belong to the imported edited mesh, not source vertex indices.
+        if (source == null || !source.sourceModel || target == null || target.sharedMesh == null ||
+            old == null || old.shapeNames == null || !SameBlendShapes(old, mesh) ||
+            target.sharedMesh.blendShapeCount != old.shapeNames.Length) return false;
+        var labels = new HashSet<string>(StringComparer.Ordinal);
+        for (int i = 0; i < old.shapeNames.Length; i++)
+            if (String.IsNullOrEmpty(old.shapeNames[i]) || !labels.Add(old.shapeNames[i]) ||
+                old.frameWeights[i].Length != 1 || old.frameWeights[i][0] != 100f ||
+                mesh.GetBlendShapeFrameWeight(i, 0) != 100f || target.GetBlendShapeWeight(i) != 0f)
+                return false;
+        return true;
+    }
+
     private static void ValidateModelSkinReplacementScope(GameObject original, List<PreparedTask> plans)
     {
         bool replacementRoute = plans.Exists(plan => plan.requiresReplacementEligibility);
@@ -1799,7 +1820,8 @@ public static partial class VapbModelSkinFinalizer
     private static void ValidateModelSkinReplacementMesh(SkinnedMeshRenderer target, EditedIdentity edited, SourceIdentity source)
     {
         Mesh mesh = edited.mesh;
-        if (target.sharedMesh == null || target.sharedMesh.blendShapeCount != 0 || mesh.blendShapeCount != 0)
+        if (target.sharedMesh == null || !HasCompatibleReplacementShapes(
+            CaptureLayout(target.sharedMesh), mesh, target, source))
             Reject("MODEL_SKIN_SHAPE_KEYS_UNSUPPORTED");
         if (target.GetComponent<Cloth>() != null) Reject("CLOTH_INDEX_STATE_UNSUPPORTED");
         if (mesh.vertexCount == 0 || mesh.subMeshCount == 0 || edited.materials == null ||

@@ -142,7 +142,8 @@ try:
         bpy.ops.object.select_all(action='DESELECT')
         obj.select_set(True)
         bpy.context.view_layer.objects.active = obj
-        output = work / 'AuthoredShapeOutput.unitypackage'
+        output = work / ('AuthoredShapeGreenOutput.unitypackage' if phase == 'green-export'
+                         else 'AuthoredShapeOutput.unitypackage')
         assert not output.exists()
         try:
             outcome = bpy.ops.export_scene.vapb_unitypackage(filepath=str(output))
