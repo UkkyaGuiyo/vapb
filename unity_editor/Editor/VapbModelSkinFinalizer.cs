@@ -1750,11 +1750,11 @@ public static partial class VapbModelSkinFinalizer
         // Final delta buffers belong to the imported edited mesh, not source vertex indices.
         if (source == null || !source.sourceModel || target == null || target.sharedMesh == null ||
             editedRenderer == null || editedRenderer.sharedMesh == null ||
-            old == null || old.shapeNames == null || old.shapeNames.Length == 0 ||
+            old == null || old.shapeNames == null ||
             mesh.blendShapeCount < old.shapeNames.Length ||
             editedRenderer.sharedMesh.blendShapeCount != mesh.blendShapeCount ||
             target.sharedMesh.blendShapeCount != old.shapeNames.Length) return false;
-        float uniformWeight = target.GetBlendShapeWeight(0);
+        float uniformWeight = old.shapeNames.Length == 0 ? 0f : target.GetBlendShapeWeight(0);
         if (uniformWeight != 0f && uniformWeight != 100f) return false;
         for (int i = 0; i < old.shapeNames.Length; i++)
             if (old.shapeNames[i] != mesh.GetBlendShapeName(i) ||
