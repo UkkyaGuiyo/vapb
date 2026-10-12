@@ -1,0 +1,9 @@
+{
+  "status": "KEEP",
+  "reviewed_sha": "35764b923af4e90007332ab6f9ef5bd69ad3ded7",
+  "requested_model": "gpt-6.1-sol",
+  "requested_reasoning": "medium",
+  "actual_settings": "UNAVAILABLE",
+  "scope": "independent source review; runtime verified separately by primary",
+  "findings": []
+}
