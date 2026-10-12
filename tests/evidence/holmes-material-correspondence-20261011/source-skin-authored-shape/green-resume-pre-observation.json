@@ -1,0 +1,26 @@
+{
+  "instruction_id": "HOLMES-20261012-04",
+  "phase": "GREEN2",
+  "status": "FROZEN_BEFORE_UNITY",
+  "consumer_sha256": "3a4fac192ca86b1240ea060117dfa60aaeaeffaa211854d2af586b2d028de56a",
+  "observer_sha256": "24fd6a9f89bc895ee959aeb5bab0981739abda717d51fe0a32083e56fdc78e0a",
+  "guards_sha256": "0f7b065572c95613f7b131889ea9d54a776c4407d58b1c5afe33bc07a4b371dd",
+  "package_sha256": "d973f675bf892e45028316a16f2259b9b77ff1c1b62cc4779eb535442bed047a",
+  "expected": {
+    "apply": true,
+    "repeat_apply": true,
+    "variant_bytes_meta_semantics_unchanged": true,
+    "source_shape_weights": "zero-only",
+    "guard_controls": [
+      "other_routes",
+      "nonzero_source_weight",
+      "unmatched_channel",
+      "multiframe",
+      "unknown_component",
+      "cloth"
+    ]
+  },
+  "unity_observation": "NOT_RUN",
+  "previous_observer_revision": "07bfbf8ac1bb9d5e85919e9cfed5ba52e5096e80",
+  "correction": "Observer readiness only; original product and numerical expectations unchanged."
+}

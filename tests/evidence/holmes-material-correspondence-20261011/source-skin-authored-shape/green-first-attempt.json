@@ -1,0 +1,22 @@
+{
+  "phase": "GREEN_FIRST_ATTEMPT",
+  "status": "OBSERVER_BLOCKED_BEFORE_APPLY",
+  "reason": "Observer unconditionally awaited code reload after import into existing Project; identical already-installed helper triggered no post-import reload.",
+  "product_result": "NOT_RUN",
+  "corrected": "Remove observer-only unconditional reload wait; normal import completion and isCompiling/isUpdating gates remain.",
+  "original_numeric_expectations_changed": false,
+  "normal_close_requested_for_owned_window": true,
+  "exit": {
+    "pid": 14092,
+    "startUtc": "2026-10-12T00:41:15.1035580Z",
+    "exitUtc": "2026-10-12T00:46:09.0734199Z",
+    "exitCode": 0
+  },
+  "release": {
+    "capturedUtc": "2026-10-12T00:46:09.2028412Z",
+    "ownedChildrenAbsent": true,
+    "lockAbsent": true,
+    "normalExitCode": 0,
+    "releaseVerified": true
+  }
+}

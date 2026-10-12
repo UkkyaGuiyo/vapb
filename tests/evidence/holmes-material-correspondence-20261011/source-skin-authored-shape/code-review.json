@@ -1,0 +1,18 @@
+{
+  "status": "KEEP",
+  "type": "independent_code_review",
+  "base": "abac53d7692733555dadab2bfe14de92017f6c9e",
+  "head": "07bfbf8ac1bb9d5e85919e9cfed5ba52e5096e80",
+  "requested_model": "gpt-6.1-sol",
+  "requested_reasoning": "medium",
+  "actual_model_reasoning": "UNAVAILABLE",
+  "runtime": "NOT_RUN",
+  "findings": [],
+  "verified_scope": [
+    "SourceKind-only; existing unique single100 channels and zero source weights",
+    "Kind/Direct exclusions unchanged",
+    "original/edited Cloth/Animator/unknown-component/extra-renderer checks retained",
+    "Bone/order/weight/rest/material/revision checks retained",
+    "Final delta buffers use final edited vertex count; source vertex indices not used"
+  ]
+}
