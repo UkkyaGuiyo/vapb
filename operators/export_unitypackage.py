@@ -476,7 +476,7 @@ def _prepare_model_skin(context, mesh, assets, *, direct=False, source_model=Fal
         action_asset = None
         if action is not None:
             carrier = folder / 'action.fbx'
-            recipe = export_action_carrier(context, rig, carrier, bones)
+            recipe = export_action_carrier(context, rig, carrier, bones, scale_options=scale_options)
             carrier_bytes = carrier.read_bytes()
             carrier_sha = hashlib.sha256(carrier_bytes).hexdigest()
             carrier_guid = hashlib.sha256(('VAPB_ACTION_V1:' + package_id + ':' + realization + ':' + carrier_sha).encode()).hexdigest()[:32]

@@ -1,0 +1,19 @@
+{
+  "status": "FAIL",
+  "conventions": [
+    {
+      "policy": "FBX_SCALE_NONE",
+      "source_units": 1.0,
+      "carrier_units": 1.0,
+      "bone_local_translation_max_error": 0.0
+    },
+    {
+      "policy": "FBX_SCALE_ALL",
+      "source_units": 100.0,
+      "carrier_units": 1.0,
+      "bone_local_translation_max_error": 0.0
+    }
+  ],
+  "unity": "NOT_RUN",
+  "reason": "ACTION_SOURCE_UNIT_OR_LOCAL_REST_MISMATCH"
+}
