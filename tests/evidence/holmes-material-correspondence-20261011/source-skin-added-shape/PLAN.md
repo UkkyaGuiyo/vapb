@@ -14,3 +14,7 @@ Fresh Holmes after task04 is already completed at fixed8df46cda; do not respawn 
 Reuse existing source, observer and guards. No purchased input, SDK, private logs, new schema or infrastructure. Shared Atlas relevant lessons read only; synchronization/writes not performed. Requested primary LUNA/low; actual settings unavailable. Fresh inference requested SOL/xhigh, actual settings unavailable. Account remaining86% at start.
 
 CHECKPOINT: actual05 DONE_WHEN verified in bounded scope; source saved at6ba99e7ea4ac0bacdab137d9c52d9387524d00a0, final raw evidence pending save/readback, then fresh inference and next action.
+
+RESUME_ACTION_CHECK: immediately after compaction/resume, apply AGENTS action-selection reconciliation before any reply/action: current project/goal, latest explicit approval/stop, current/completed ID, actual Git/save point and NEXT_ACTION. Expired other-project inquiries do not renew themselves; newer explicit user reopening takes precedence. Current05 is complete at e6be9f42cd53b4c7e27012642793957b9c6892d3; fresh inference has been received once; its grounded next product action is HOLMES-20261012-06 normal two-Key append. Separate authorized operational-rule review does not cancel product continuation.
+
+CURRENT_RESTART:05 is complete; no duplicate inference.06 normal-path two-Key append is started. Preserve existing3 channels; use separate owned output, real source-model Apply, and fix only actual count/default refusal. Follow the active06 PLAN when saved. Operational rule/scenario review KEEP; runtime compaction NOT_RUN.
