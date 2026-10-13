@@ -143,12 +143,53 @@
     "manual_slot_edit_save_export_unity_fps_correction": "NOT_RUN",
     "product_changes": 0,
     "boundary_verdict": "OBSERVED_NORMAL_DONOR_IMPORT_CHANGES_EXISTING_SCENE_TIMEBASE_25_TO_30",
-    "inference": "PENDING_FRESH_INDEPENDENT_ASSESSMENT",
+    "inference": "FRESH_SOL_XHIGH_CONFIRMED_EXISTING_ACTION_TIME_CHANGE_NO_FIX_YET",
     "limitations": [
       "Identifies this one normal donor Import boundary, not the exact internal write site",
       "Does not establish all imports, all runtimes, foreground GUI behavior or a fix",
       "Existing Action key equality is not unchanged seconds",
       "No new product timing policy or retiming behavior selected"
+    ]
+  },
+  "donor_fbx_timebase_inspection_45": {
+    "selection_inference": {
+      "fixed_revision": "a15a1a096605ad033607e4807c5352d1dd6ed906",
+      "verdict": "CONFIRMED_NORMAL_IMPORT_SIDE_EFFECT",
+      "requested_model": "gpt-6.1-sol",
+      "requested_reasoning": "xhigh",
+      "effective_runtime": "UNAVAILABLE",
+      "permissions": "INHERITED_WORKSPACE_WRITE_AUTO_REVIEW_ROLE_PROHIBITS_CHANGES"
+    },
+    "operation": "READ_ONLY_SAME_RECORDED_DONOR_FBX_GLOBAL_SETTINGS_AND_ANIMATION_OBJECTS_WITH_INSTALLED_OFFICIAL_PARSER",
+    "donor_package": "SAME_PROTECTED_INPUT_NO_NEW_PROVIDER",
+    "fbx_count": 1,
+    "fbx_version": 7400,
+    "time_mode": 6,
+    "custom_frame_rate": 30.0,
+    "effective_fps": 30.0,
+    "official_fps": 30,
+    "official_fps_base": 1.0,
+    "animation_object_counts": {
+      "AnimationStack": 0,
+      "AnimationLayer": 0,
+      "AnimationCurveNode": 0,
+      "AnimationCurve": 0
+    },
+    "curve_key_time_arrays": 0,
+    "curve_key_count": 0,
+    "animation_present": false,
+    "animation_time_encoding": "NO_CURVES_OR_STACKS_PRESENT_NOT_A_CLAIM_ABOUT_ANIMATED_DONORS",
+    "protected_file_count": 13,
+    "protected_input_archive_scene_hashes": "EXACT",
+    "blender_unity_import_save_export": "NOT_RUN",
+    "product_changes": 0,
+    "verdict": "OBSERVED_30_FPS_METADATA_WITH_ZERO_ANIMATION_STACK_LAYER_NODE_CURVE_OBJECTS",
+    "next": "FRESH_INDEPENDENT_ASSESSMENT_OF_MINIMUM_PRESERVATION_CORRECTION_OR_MEANING_GATE",
+    "limits": [
+      "Bounds this single donor FBX only",
+      "No correction or native rerun performed",
+      "Animated donors and multi-FBX timing still require separate established meaning",
+      "Does not make prior final30FPS Scene equal original25FPS seconds"
     ]
   }
 }
