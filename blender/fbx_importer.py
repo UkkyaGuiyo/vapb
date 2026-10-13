@@ -12,6 +12,22 @@ import bpy  # type: ignore
 from .fbx_receipt import import_with_receipts
 
 
+def _fbx_has_animation(path: Path) -> bool | None:
+    """Return verified animation presence; unreadable evidence is unknown."""
+    try:
+        from io_scene_fbx import parse_fbx
+
+        root, _ = parse_fbx.parse(str(path), use_namedtuple=True)
+        objects = [node for node in root.elems if node.id == b'Objects']
+        if len(objects) != 1:
+            return None
+        return (any(node.id.startswith(b'Animation') for node in objects[0].elems)
+                or any(child.id == b'Take' for node in root.elems if node.id == b'Takes'
+                       for child in node.elems))
+    except (ImportError, AttributeError, OSError, RuntimeError, TypeError, ValueError):
+        return None
+
+
 def import_fbx(
     path: Path,
     use_custom_props: bool = True,
@@ -19,6 +35,12 @@ def import_fbx(
     source_asset_guid: str = "",
 ) -> list[bpy.types.Object]:
     before = set(bpy.data.objects)
+    scene = bpy.context.scene
+    timebase = scene.render.fps, scene.render.fps_base
+    existing_action = any(obj.animation_data and obj.animation_data.action
+                          for obj in scene.objects)
+    preserve_timebase = existing_action and _fbx_has_animation(path) is False
+
     def native_import() -> None:
         bpy.ops.import_scene.fbx(
             filepath=str(path),
@@ -32,7 +54,12 @@ def import_fbx(
             use_prepost_rot=True,
         )
 
-    import_with_receipts(path, native_import, source_asset_guid, bpy)
+    try:
+        import_with_receipts(path, native_import, source_asset_guid, bpy)
+    finally:
+        if preserve_timebase:
+            # A static donor must not retime an untouched object Action.
+            scene.render.fps, scene.render.fps_base = timebase
     imported = [obj for obj in bpy.data.objects if obj not in before]
     for obj in imported:
         obj["unity_source_fbx"] = str(path)

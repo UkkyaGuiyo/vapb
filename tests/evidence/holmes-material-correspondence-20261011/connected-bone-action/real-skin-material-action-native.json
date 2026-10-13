@@ -191,5 +191,200 @@
       "Animated donors and multi-FBX timing still require separate established meaning",
       "Does not make prior final30FPS Scene equal original25FPS seconds"
     ]
+  },
+  "static_donor_timebase_correction_46": {
+    "selection_inference": {
+      "fixed_revision": "ce3b6ac76ca885392bff3fc7ad4fbc64e95c40aa",
+      "verdict": "CONFIRMED_CONDITIONAL_PRESERVATION_CORRECTION_NO_NEW_STATIC_DONOR_TIMING_POLICY",
+      "requested_model": "gpt-6.1-sol",
+      "requested_reasoning": "xhigh",
+      "effective_runtime": "UNAVAILABLE"
+    },
+    "production_path": "blender/fbx_importer.py",
+    "correction": "RESTORE_EXACT_SCENE_FPS_BASE_ONLY_FOR_EXISTING_OBJECT_ACTION_AND_OFFICIAL_PARSER_VERIFIED_NO_INCOMING_ANIMATION",
+    "unknown_animation_evidence": "NO_RESTORE_NOT_VERIFIED_ABSENCE",
+    "schema_retiming_guard_changes": "NONE",
+    "regression": "tests/blender_static_donor_timebase_test.py",
+    "fixture": "SELF_AUTHORED_ONE_BONE_SKIN_ACTION_PLUS_STATIC_AND_ANIMATED_30_FPS_DONORS_NO_PURCHASED_PAYLOAD",
+    "native_source_red": {
+      "cases": [
+        {
+          "case": "STATIC_DONOR_EXISTING_ACTION",
+          "expected_timebase": [
+            25,
+            1.0
+          ],
+          "actual_timebase": [
+            30,
+            1.0
+          ],
+          "prior_skin_bone_action_state_exact": true,
+          "prior_key_span_seconds": 0.4,
+          "incoming_animated": false,
+          "incoming_animation_objects": {
+            "AnimationStack": 0,
+            "AnimationLayer": 0,
+            "AnimationCurveNode": 0,
+            "AnimationCurve": 0
+          },
+          "imported_objects": 1,
+          "new_actions": 0,
+          "pass": false
+        },
+        {
+          "case": "INITIAL_STATIC_IMPORT",
+          "expected_timebase": [
+            30,
+            1.0
+          ],
+          "actual_timebase": [
+            30,
+            1.0
+          ],
+          "prior_skin_bone_action_state_exact": true,
+          "prior_key_span_seconds": null,
+          "incoming_animated": false,
+          "incoming_animation_objects": {
+            "AnimationStack": 0,
+            "AnimationLayer": 0,
+            "AnimationCurveNode": 0,
+            "AnimationCurve": 0
+          },
+          "imported_objects": 1,
+          "new_actions": 0,
+          "pass": true
+        },
+        {
+          "case": "ANIMATED_DONOR_EXISTING_ACTION",
+          "expected_timebase": [
+            30,
+            1.0
+          ],
+          "actual_timebase": [
+            30,
+            1.0
+          ],
+          "prior_skin_bone_action_state_exact": true,
+          "prior_key_span_seconds": 0.4,
+          "incoming_animated": true,
+          "incoming_animation_objects": {
+            "AnimationStack": 1,
+            "AnimationLayer": 1,
+            "AnimationCurveNode": 1,
+            "AnimationCurve": 1
+          },
+          "imported_objects": 1,
+          "new_actions": 1,
+          "pass": true
+        }
+      ],
+      "normal_exit_code": 1,
+      "normal_exit_utc": "2026-10-13T02:18:28.0095589Z",
+      "failure": "STATIC_DONOR_RETIMES_UNTOUCHED_ACTION",
+      "owned_children": "ABSENT",
+      "mutex": "RETURNED"
+    },
+    "native_source_green": {
+      "cases": [
+        {
+          "case": "STATIC_DONOR_EXISTING_ACTION",
+          "expected_timebase": [
+            25,
+            1.0
+          ],
+          "actual_timebase": [
+            25,
+            1.0
+          ],
+          "prior_skin_bone_action_state_exact": true,
+          "prior_key_span_seconds": 0.48,
+          "incoming_animated": false,
+          "incoming_animation_objects": {
+            "AnimationStack": 0,
+            "AnimationLayer": 0,
+            "AnimationCurveNode": 0,
+            "AnimationCurve": 0
+          },
+          "imported_objects": 1,
+          "new_actions": 0,
+          "pass": true
+        },
+        {
+          "case": "INITIAL_STATIC_IMPORT",
+          "expected_timebase": [
+            30,
+            1.0
+          ],
+          "actual_timebase": [
+            30,
+            1.0
+          ],
+          "prior_skin_bone_action_state_exact": true,
+          "prior_key_span_seconds": null,
+          "incoming_animated": false,
+          "incoming_animation_objects": {
+            "AnimationStack": 0,
+            "AnimationLayer": 0,
+            "AnimationCurveNode": 0,
+            "AnimationCurve": 0
+          },
+          "imported_objects": 1,
+          "new_actions": 0,
+          "pass": true
+        },
+        {
+          "case": "ANIMATED_DONOR_EXISTING_ACTION",
+          "expected_timebase": [
+            30,
+            1.0
+          ],
+          "actual_timebase": [
+            30,
+            1.0
+          ],
+          "prior_skin_bone_action_state_exact": true,
+          "prior_key_span_seconds": 0.4,
+          "incoming_animated": true,
+          "incoming_animation_objects": {
+            "AnimationStack": 1,
+            "AnimationLayer": 1,
+            "AnimationCurveNode": 1,
+            "AnimationCurve": 1
+          },
+          "imported_objects": 1,
+          "new_actions": 1,
+          "pass": true
+        }
+      ],
+      "normal_exit_code": 0,
+      "normal_exit_utc": "2026-10-13T02:19:30.0211143Z",
+      "owned_children": "ABSENT",
+      "mutex": "RETURNED"
+    },
+    "actual_official_parser_gate": {
+      "static": false,
+      "animated": true,
+      "unreadable": null,
+      "unreadable_is_verified_absence": false
+    },
+    "nearest_host_tests": {
+      "tests": 25,
+      "first_attempt_pass": 24,
+      "first_attempt_error": "test_source_hash_is_sha256_of_payload_TEMP_PERMISSION_DENIED",
+      "failed_case_only_retry": 1,
+      "retry_result": "PASS_WITH_PROCESS_LOCAL_OWNED_TEMP",
+      "scope": "24_PRIOR_PASS_PLUS_ONE_CORRECTED_ENVIRONMENT_RETRY_NOT_A_NEW_FULL_SUITE"
+    },
+    "protected_file_count": 13,
+    "protected_original_scene_archive_hashes": "EXACT",
+    "unity_save_export_zip_build": "NOT_RUN",
+    "independent_code_review": "PENDING_ON_SAVED_SOURCE",
+    "real_affected_normal_import": "NOT_RUN_CORRECTED_RUNTIME",
+    "limitations": [
+      "Existing object active Action with verified nonanimated FBX only",
+      "Initial and animated imports keep official FPS behavior; mixed animation timing is not fixed",
+      "No GUI, Unity return or full product claim",
+      "Existing33b final30FPS scene not rewritten"
+    ]
   }
 }
