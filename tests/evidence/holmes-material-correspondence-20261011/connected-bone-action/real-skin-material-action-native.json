@@ -460,13 +460,68 @@
     "known_parser_limit": "TRUNCATED_BINARY_HEADER_CAN_RAISE_STRUCT_ERROR_AS_PRIOR_RECEIPT_PATH_ALREADY_DID_NOT_FALSE_ABSENCE",
     "watson_review_ground_check": "CONFIRMED_WITH_INSTALLED_OFFICIAL_PARSER",
     "verdict": "SUPPORTED_IN_SCOPE_NORMAL_STATIC_DONOR_IMPORT_PRESERVES_EXISTING_ACTION_SECONDS",
-    "fresh_inference": "PENDING_FIXED_SAVE_AND_READBACK",
+    "fresh_inference": "FRESH_SOL_XHIGH_CONFIRMED_NEXT_EXISTING_APPROVED_COMBINATION_48",
     "limits": [
       "Existing object active Action and positively verified nonanimated FBX only",
       "Animated import control preserves prior official behavior and can still retime existing Actions",
       "No arbitrary mixed-FPS animation policy selected",
       "No GUI/export/Unity/full-product claim",
       "Prior saved30FPS combination remains historical and unchanged"
+    ]
+  },
+  "corrected_action_material_combination_48": {
+    "selection_inference": {
+      "fixed_revision": "cb89517bea3ae12a2f12d1426ef77a8340520b60",
+      "verdict": "CONFIRMED_BOUNDED_STATIC_DONOR_CORRECTION",
+      "requested_model": "gpt-6.1-sol",
+      "requested_reasoning": "xhigh",
+      "effective_runtime": "UNAVAILABLE",
+      "next_action": "EXISTING_APPROVED_CASE23_ACTION_DONOR_COMBINATION_SAVE_REOPEN_ACTIVE_EXPORT"
+    },
+    "source_revision": "b98aeeace1ab33f08d3f0a17113ebdb6aab76282",
+    "distribution": "SAME_REVIEWED_INSTALLED_117_MEMBER_47_ZIP_NOT_REBUILT",
+    "installed_python_files_exact": 100,
+    "scene": "NEW_PRIVATE_PROTECTED_PRE_COMBINATION_COPY_NOT_REWRITE_OF_PRIOR_30_FPS_SCENE",
+    "edit": "SAME_APPROVED_ALL_EXISTING_SELECTED_SLOTS_OBJECT_LINKED_RECORDED_DONOR",
+    "selected_slots": 2,
+    "normal_import": "PASS_TIMEBASE_PRESERVED",
+    "fps": 25,
+    "fps_base": 1.0,
+    "action_key_frame_range": [
+      1.0,
+      13.0
+    ],
+    "action_key_span_seconds": 0.48,
+    "non_material_mesh_geometry_uv_weights_matrix": "EXACT",
+    "bone_uid_parent_rest_connected_matrix": "EXACT",
+    "action_channels_keys_interpolation_handles": "EXACT",
+    "other_mesh_owner_slots": "EXACT",
+    "save_reopen": "PASS_EXACT_PERSISTENT_EXPECTED_STATE",
+    "normal_active_export": "PASS",
+    "export_scene_state": "EXACT",
+    "output_package_sha256": "9ed399561a2250fe43a8f4003e0e9db12f65454146bead8c169b5816438e98f2",
+    "saved_scene_sha256": "e13451f96b9843d5e33795d42809ac4189c205a0b24e7e6bd672086cc6dbcfad",
+    "task_kind": "RESTORE_DIRECT_SKIN_VARIANT_V1",
+    "material_bindings": "EXACT_RECORDED_PROVIDER_GUID_SIGNED_FILE_ID",
+    "donor_material_asset_meta": "EXACT_ORIGINAL_PACKAGE_BYTES",
+    "action_clip_declaration": {
+      "fps": 25.0,
+      "duration": 0.48,
+      "required_bones": 1
+    },
+    "protected_file_count": 16,
+    "protected_input_scene_archive_zip_hashes": "EXACT",
+    "normal_exit_code": 0,
+    "normal_exit_utc": "2026-10-13T02:40:11.7230391Z",
+    "owned_children": "ABSENT",
+    "mutex": "RETURNED",
+    "manual_fps_correction": "NOT_RUN",
+    "unity_gui_render": "NOT_RUN",
+    "fresh_inference": "PENDING_FIXED_SAVE_READBACK",
+    "limits": [
+      "New25FPS package return toUnity remainsunverified",
+      "Previous30FPS combination and its native evidence unchanged",
+      "No arbitrarymixed-FPS animatedImport policy or generalAvatar/GUI claim"
     ]
   }
 }
