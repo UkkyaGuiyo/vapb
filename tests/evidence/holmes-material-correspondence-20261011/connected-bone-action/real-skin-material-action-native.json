@@ -36,6 +36,28 @@
     "strict_destination_face_correspondence": "UNPROVED",
     "scope": "BOUNDED_SELECTED_SKIN_ACTION_MATERIAL_TEXTURE_RETURN_NOT_GENERAL_AVATAR_OR_RENDER"
   },
+  "native_material_property_observation_42": {
+    "selection_authority": "PARENT_REQUESTED_ONE_INDEPENDENT_APPROVED_TASK_WHILE_POIROT_INPUT_PREPARATION_PENDING",
+    "spec_basis": "PRESERVED_UNITY_MATERIAL_STATE_AND_TEXTURE_REFERENCE_RECONNECTION",
+    "base_revision": "8a42978944a968880a7f6de25d113bb215bbfe7d",
+    "runtime_source_revision": "c135e7a78a0981ccb8212686c2abe2ae79fdd259",
+    "package_sha256": "1a77cec2b0cacd1b441cd1f0ca5c1cdc602c8574de2e070cf857d6dfbd20f374",
+    "package_scene_production_changes": 0,
+    "unity_version": "2022.3.22f1",
+    "operation": "ONE_NORMAL_IMPORT_AND_READ_ONLY_MATERIAL_PROPERTY_GETTERS_NO_APPLY_REAPPLY_OR_CLIP_RETEST",
+    "material_guid_signed_file_id": "EXACT",
+    "material_asset_bytes": "EXACT",
+    "texture_properties_observed": 3,
+    "roles": [{"index": 0, "has_property": true, "texture_guid_signed_file_id": "EXACT"}, {"index": 1, "has_property": true, "texture_guid_signed_file_id": "EXACT"}, {"index": 2, "has_property": true, "texture_guid_signed_file_id": "EXACT"}],
+    "shader_unavailable": false,
+    "observer_error": "NONE",
+    "exit_code": 0,
+    "project_preservation": {"preexisting_files": 3041, "changed": 0, "unexpected_files": 0},
+    "owned_children_marker": "ABSENT",
+    "lease_mutex": "RETURNED",
+    "verdict": "SUPPORTED_IN_SCOPE_MATERIAL_PROPERTY_TEXTURE_BINDINGS",
+    "limits": ["Normal import observation, not a repeated Variant Apply proof", "Material getter identity is not render fidelity", "Does not prove face-to-slot or arbitrary Shader/Avatar behavior", "POIROT fixture/provider preparation gate unchanged"]
+  },
   "gui_render": "NOT_RUN",
   "limits": ["Unexecuted zero fields are not native count evidence", "Refusal does not establish cause", "Prior successful23/24 conditions are not rerun", "No source fix or guard change justified at this checkpoint"]
 }
