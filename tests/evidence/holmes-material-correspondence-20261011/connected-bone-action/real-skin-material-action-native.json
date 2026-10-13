@@ -378,13 +378,95 @@
     "protected_file_count": 13,
     "protected_original_scene_archive_hashes": "EXACT",
     "unity_save_export_zip_build": "NOT_RUN",
-    "independent_code_review": "PENDING_ON_SAVED_SOURCE",
-    "real_affected_normal_import": "NOT_RUN_CORRECTED_RUNTIME",
+    "independent_code_review": "SEPARATE_SOL_MEDIUM_KEEP_MUST_FIX0_ON_B98AEEA",
+    "real_affected_normal_import": "PASS_RECORDED_SEPARATELY_IN_CORRECTED_NORMAL_DONOR_IMPORT_47",
     "limitations": [
       "Existing object active Action with verified nonanimated FBX only",
       "Initial and animated imports keep official FPS behavior; mixed animation timing is not fixed",
       "No GUI, Unity return or full product claim",
       "Existing33b final30FPS scene not rewritten"
+    ]
+  },
+  "corrected_normal_donor_import_47": {
+    "source_revision": "b98aeeace1ab33f08d3f0a17113ebdb6aab76282",
+    "independent_code_review": {
+      "verdict": "KEEP",
+      "must_fix": 0,
+      "fixed_revision": "b98aeeace1ab33f08d3f0a17113ebdb6aab76282",
+      "requested_model": "gpt-6.1-sol",
+      "requested_reasoning": "medium",
+      "effective_runtime": "UNAVAILABLE",
+      "scope": "SEPARATE_CODE_REVIEW_NOT_HOLMES_INFERENCE"
+    },
+    "distribution": {
+      "source_revision": "b98aeeace1ab33f08d3f0a17113ebdb6aab76282",
+      "sha256": "590b54a0840ab5d5201ea0766af312e55c60b92549e9f249f94e5873efef331e",
+      "members": 117,
+      "installed_python_files_exact": 100,
+      "build_count": 1
+    },
+    "operation": "ONE_AFFECTED_NORMAL_DONOR_IMPORT_ON_BYTE_IDENTICAL_PROTECTED_PRE_COMBINATION_SCENE_COPY",
+    "input_donor": "SAME_EXISTING_RECORDED_DONOR",
+    "normal_import": "FINISHED",
+    "before": {
+      "fps": 25,
+      "fps_base": 1.0,
+      "frame_range": [
+        1,
+        250
+      ],
+      "current_frame": 1,
+      "subframe": 0.0,
+      "action_key_frame_range": [
+        1.0,
+        13.0
+      ],
+      "action_key_span_seconds": 0.48
+    },
+    "after": {
+      "fps": 25,
+      "fps_base": 1.0,
+      "frame_range": [
+        1,
+        250
+      ],
+      "current_frame": 1,
+      "subframe": 0.0,
+      "action_key_frame_range": [
+        1.0,
+        13.0
+      ],
+      "action_key_span_seconds": 0.48
+    },
+    "counts": {
+      "vertices": 5311,
+      "polygons": 9498,
+      "bones": 24,
+      "action_curves": 4
+    },
+    "existing_mesh_geometry_faces_uv_weights_object_matrix_material_slots": "EXACT",
+    "existing_bone_uid_parent_rest_connected_rig_matrix": "EXACT",
+    "existing_action_channels_keys_interpolation_handles": "EXACT",
+    "original_mesh_armature_action_pointers": "EXACT_WITHIN_PROCESS",
+    "source_mesh_receipt": "EXACT",
+    "protected_file_count": 15,
+    "protected_input_scene_archive_zip_hashes": "EXACT",
+    "normal_exit_code": 0,
+    "normal_exit_utc": "2026-10-13T02:28:24.6634236Z",
+    "owned_children": "ABSENT",
+    "mutex": "RETURNED",
+    "observer_manual_fps_correction_slot_edit_save_export_unity": "NOT_RUN",
+    "prior_saved_scene_rewrite": "NONE",
+    "known_parser_limit": "TRUNCATED_BINARY_HEADER_CAN_RAISE_STRUCT_ERROR_AS_PRIOR_RECEIPT_PATH_ALREADY_DID_NOT_FALSE_ABSENCE",
+    "watson_review_ground_check": "CONFIRMED_WITH_INSTALLED_OFFICIAL_PARSER",
+    "verdict": "SUPPORTED_IN_SCOPE_NORMAL_STATIC_DONOR_IMPORT_PRESERVES_EXISTING_ACTION_SECONDS",
+    "fresh_inference": "PENDING_FIXED_SAVE_AND_READBACK",
+    "limits": [
+      "Existing object active Action and positively verified nonanimated FBX only",
+      "Animated import control preserves prior official behavior and can still retime existing Actions",
+      "No arbitrary mixed-FPS animation policy selected",
+      "No GUI/export/Unity/full-product claim",
+      "Prior saved30FPS combination remains historical and unchanged"
     ]
   }
 }
