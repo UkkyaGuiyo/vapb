@@ -517,11 +517,33 @@
     "mutex": "RETURNED",
     "manual_fps_correction": "NOT_RUN",
     "unity_gui_render": "NOT_RUN",
-    "fresh_inference": "PENDING_FIXED_SAVE_READBACK",
+    "fresh_inference": "FRESH_SOL_XHIGH_CONFIRMED_PRODUCER_NEXT_PARENT_ORDERED_NATIVE_RETURN_49",
     "limits": [
       "New25FPS package return toUnity remainsunverified",
       "Previous30FPS combination and its native evidence unchanged",
       "No arbitrarymixed-FPS animatedImport policy or generalAvatar/GUI claim"
     ]
+  },
+  "corrected_combination_native_preparation_49": {
+    "status": "PREPARED_NOT_RUN",
+    "parent_native_frame": "REQUIRED_NOT_ASSIGNED",
+    "unity_executed": false,
+    "source_revision": "b98aeeace1ab33f08d3f0a17113ebdb6aab76282",
+    "package_sha256": "9ed399561a2250fe43a8f4003e0e9db12f65454146bead8c169b5816438e98f2",
+    "project": "EXISTING_OWNED_GIMMICK01_ONLY_NO_SECOND_PROJECT_OR_EDITOR",
+    "consumer": "EXISTING_PACKAGED_FIRST_PARTY_FINALIZERS",
+    "packaged_consumer_files": 6,
+    "packaged_consumer_vs_reviewed_zip_bytes": "ALL6_EXACT",
+    "packaged_consumer_vs_working_tree_text": "ALL6_EXACT_ONE_NEWLINE_ONLY_DIFFERENCE",
+    "observer": "EXISTING41_OBSERVER_WITH_RETAINED_HASH_NORMALIZATION_AND_FROZEN_CLIP_TIMING_FIELDS",
+    "expected_clip_frame_rate": 25.0,
+    "expected_clip_duration": 0.48,
+    "duration_acceptance": "EXISTING_FINALIZER_1E_MINUS4_NO_NEW_TOLERANCE",
+    "preparation_geometry_material_check": "NEW_PACKAGE_TWO_OCCURRENCES_9346_716_TRIANGLE_COUNTS_NOT_EXACT_CORNER_PROOF",
+    "material_texture_asset_meta_vs_existing_donor_output": "EXACT",
+    "native_acceptance": "LINKED_VARIANT_CANONICAL_MATERIALS_SOURCE_BONE_ROOT_ANCESTRY_CLIP_TIMING_SAMPLED_MOTION_REPEAT_AND_ORIGINAL_PRESERVATION",
+    "resource_gate": "FRESH_PID_START_OWNERSHIP_RAM_MUTEX_POOL_PROJECT_BACKUP_RESTORE_NORMAL_EXIT_RELEASE_REQUIRED",
+    "gui": "NOT_RUN",
+    "whole_product_stop": "NOT_DECLARED"
   }
 }
