@@ -58,6 +58,26 @@
     "verdict": "SUPPORTED_IN_SCOPE_MATERIAL_PROPERTY_TEXTURE_BINDINGS",
     "limits": ["Normal import observation, not a repeated Variant Apply proof", "Material getter identity is not render fidelity", "Does not prove face-to-slot or arbitrary Shader/Avatar behavior", "POIROT fixture/provider preparation gate unchanged"]
   },
+  "saved_scene_timebase_observation_43": {
+    "selection_inference": {"fixed_revision": "7b175e7865c763d6526415a74fded6eb6070cf2d", "material_property_verdict": "CONFIRMED", "time_preservation_verdict": "UNDETERMINED", "requested_model": "gpt-6.1-sol", "requested_reasoning": "xhigh", "effective_runtime": "UNAVAILABLE"},
+    "operation": "ONE_PROTECTED_READ_ONLY_COMPARISON_OF_TWO_EXISTING_SAVED_SCENES",
+    "new_input_or_fixture": false,
+    "scene_before_combination": {"fps": 25, "fps_base": 1.0, "effective_fps": 25.0, "frame_range": [1, 250], "action_key_frame_range": [1.0, 13.0], "action_key_span_seconds": 0.48},
+    "saved_combination_scene": {"fps": 30, "fps_base": 1.0, "effective_fps": 30.0, "frame_range": [1, 250], "action_key_frame_range": [1.0, 13.0], "action_key_span_seconds": 0.4},
+    "action_curves": 4,
+    "channels_key_coordinates_interpolation_handles": "EXACT_BETWEEN_SAVED_SCENES",
+    "selected_mesh_receipt": "EXACT",
+    "bone_receipts": "COMPLETE_AND_EXACT",
+    "existing_manifest_timebases": "CONSISTENT_WITH_OBSERVED_25_AND_30_FPS",
+    "protected_scene_hashes": "EXACT_BEFORE_AFTER_READ",
+    "edited_saved_exported_or_unity": "NONE",
+    "owned_blender_exit_code": 0,
+    "owned_children_mutex": "ABSENT_RETURNED",
+    "verdict": "OBSERVED_SAVED_SCENE_TIMEBASE_DIFFERENCE_CAUSATION_UNDETERMINED",
+    "scope_correction": "EARLIER_ACTION_KEY_PRESERVATION_DOES_NOT_ESTABLISH_UNCHANGED_SECONDS_BETWEEN_COMBINATION_CHECKPOINTS",
+    "runtime41_interpretation": "RETURN_MATCHES_ITS_30_FPS_SAVED_FINAL_SCENE_NOT_A_CLAIM_OF_ORIGINAL_25_FPS_SECONDS",
+    "product_regression": "NOT_ESTABLISHED_BY_TWO_CHECKPOINT_COMPARISON"
+  },
   "gui_render": "NOT_RUN",
   "limits": ["Unexecuted zero fields are not native count evidence", "Refusal does not establish cause", "Prior successful23/24 conditions are not rerun", "No source fix or guard change justified at this checkpoint"]
 }
