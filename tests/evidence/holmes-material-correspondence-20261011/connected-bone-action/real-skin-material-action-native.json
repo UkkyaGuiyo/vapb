@@ -79,5 +79,76 @@
     "product_regression": "NOT_ESTABLISHED_BY_TWO_CHECKPOINT_COMPARISON"
   },
   "gui_render": "NOT_RUN",
-  "limits": ["Unexecuted zero fields are not native count evidence", "Refusal does not establish cause", "Prior successful23/24 conditions are not rerun", "No source fix or guard change justified at this checkpoint"]
+  "limits": ["Unexecuted zero fields are not native count evidence", "Refusal does not establish cause", "Prior successful23/24 conditions are not rerun", "No source fix or guard change justified at this checkpoint"],
+  "normal_donor_import_timebase_observation_44": {
+    "authority": "LATEST_PARENT_EXPLICIT_ONE_BOUNDARY_OBSERVATION_NO_SAVE_EXPORT_UNITY_OR_FPS_CORRECTION",
+    "base_revision": "e61735c19d7482fcdadb7cc22732c87af19a33c4",
+    "runtime_revision": "1df0881fccd2f9b3362979051d62be5232ae937e",
+    "runtime_archive_sha256": "dfffcf13054e839c6c90ad8c930c44fe2e2dea785877e2c62ff6270d29d69734",
+    "installed_python_files_exact": 100,
+    "scene": "BYTE_IDENTICAL_PROTECTED_COPY_OF_EXISTING_PRE_COMBINATION_ACTION_CHECKPOINT",
+    "normal_import": "FINISHED",
+    "import_mode": "RECONSTRUCT",
+    "use_materials": true,
+    "use_textures": true,
+    "keep_extracted": false,
+    "operation_count": 1,
+    "before": {
+      "fps": 25,
+      "fps_base": 1.0,
+      "frame_range": [
+        1,
+        250
+      ],
+      "current_frame": 1,
+      "subframe": 0.0,
+      "action_key_frame_range": [
+        1.0,
+        13.0
+      ],
+      "action_key_span_seconds": 0.48
+    },
+    "after": {
+      "fps": 30,
+      "fps_base": 1.0,
+      "frame_range": [
+        1,
+        250
+      ],
+      "current_frame": 1,
+      "subframe": 0.0,
+      "action_key_frame_range": [
+        1.0,
+        13.0
+      ],
+      "action_key_span_seconds": 0.4
+    },
+    "counts": {
+      "vertices": 5311,
+      "polygons": 9498,
+      "bones": 24,
+      "action_curves": 4
+    },
+    "source_mesh_receipt": "EXACT",
+    "original_object_mesh_armature_action_pointers": "EXACT_WITHIN_SAME_PROCESS_NOT_PERSISTENT_IDENTITY",
+    "existing_mesh_geometry_faces_uv_weights_object_matrix_material_slots": "EXACT",
+    "existing_bone_uid_parent_rest_connected_rig_matrix": "EXACT",
+    "existing_action_channels_keys_interpolation_handles": "EXACT",
+    "protected_file_count": 13,
+    "protected_input_archive_scene_hashes": "EXACT",
+    "owned_blender_exit_code": 0,
+    "normal_exit_utc": "2026-10-13T02:00:34.4175710Z",
+    "owned_children": "ABSENT",
+    "mutex": "RETURNED",
+    "manual_slot_edit_save_export_unity_fps_correction": "NOT_RUN",
+    "product_changes": 0,
+    "boundary_verdict": "OBSERVED_NORMAL_DONOR_IMPORT_CHANGES_EXISTING_SCENE_TIMEBASE_25_TO_30",
+    "inference": "PENDING_FRESH_INDEPENDENT_ASSESSMENT",
+    "limitations": [
+      "Identifies this one normal donor Import boundary, not the exact internal write site",
+      "Does not establish all imports, all runtimes, foreground GUI behavior or a fix",
+      "Existing Action key equality is not unchanged seconds",
+      "No new product timing policy or retiming behavior selected"
+    ]
+  }
 }
