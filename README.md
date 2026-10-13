@@ -2,11 +2,15 @@
 
 ## Current handoff
 
-Current audit source: [`feature/material-safety-audit-20261011`](https://github.com/UkkyaGuiyo/vapb/tree/feature/material-safety-audit-20261011), based on `e675fe6432d8e085af8aa392ec6fd3d4a8a969f7`. See [the classified findings, measurements and limits](docs/2026-10-11-material-safety-audit.md). This source removes name-only Material assignment, preserves other Assistant entries on individual cancellation, and skips provider preflight for remembered prompts while retaining fresh display/Apply validation.
+Current development source: [`feature/connected-bone-action-20261012`](https://github.com/UkkyaGuiyo/vapb/tree/feature/connected-bone-action-20261012). The latest runtime correction is [source b98aeea](https://github.com/UkkyaGuiyo/vapb/commit/b98aeeace1ab33f08d3f0a17113ebdb6aab76282): a positively verified nonanimated FBX donor preserves the Scene FPS/base when a Scene object already has an active Action. Connected Bone rotation/scale, mapped baked descendant motion and existing source-unit export options are also included. See [the normal package/native results and limits](tests/evidence/holmes-material-correspondence-20261011/connected-bone-action/REPORT.md).
+
+The existing locally verified add-on ZIP was built from `b98aeeace1ab33f08d3f0a17113ebdb6aab76282`, contains 117 runtime members, and has SHA-256 `590b54a0840ab5d5201ea0766af312e55c60b92549e9f249f94e5873efef331e`. Standard installation and affected normal Blender/Unity return were checked separately. This ZIP is local, not a Release asset; no new ZIP or release was generated for this documentation update. Current owner GUI acceptance remains pending.
+
+Historical audit source: [`feature/material-safety-audit-20261011`](https://github.com/UkkyaGuiyo/vapb/tree/feature/material-safety-audit-20261011), based on `e675fe6432d8e085af8aa392ec6fd3d4a8a969f7`. See [the classified findings, measurements and limits](docs/2026-10-11-material-safety-audit.md). Those fixes remove name-only Material assignment, preserve other Assistant entries on individual cancellation, and skip provider preflight for remembered prompts while retaining fresh display/Apply validation.
 
 Locally checked installation ZIP retained before this audit: source `7727a7dfb14c54a59e3beb461ea0186641e5eb99`, SHA-256 `1b236ba739a5f4383a8f39c0fbab7f658e02c2060ac9dcedf7557c3dced6ca53`. This local ZIP is not a Release asset and does not include these audit fixes. No new ZIP was built in this audit.
 
-The newest listed [Experimental / Alpha prerelease](https://github.com/UkkyaGuiyo/vapb/releases/tag/v0.4.0-alpha.20260930.7d21318) targets `7d21318444c4d422565fe54f373ac1af8444a0ee`; its add-on ZIP SHA-256 is `8080c4c49883a2c1962cc5de2497ca032b8b95bf4481e8f5cf3dae91ec369c47`. The default branch `feature/multi-package-identity` still points its handoff at an older development checkpoint. Use the audit source link above for these fixes; default-branch integration remains pending.
+The historical [Experimental / Alpha prerelease](https://github.com/UkkyaGuiyo/vapb/releases/tag/v0.4.0-alpha.20260930.7d21318) targets `7d21318444c4d422565fe54f373ac1af8444a0ee`; its add-on ZIP SHA-256 is `8080c4c49883a2c1962cc5de2497ca032b8b95bf4481e8f5cf3dae91ec369c47`. It predates the development source above. Default-branch integration remains pending.
 
 Historical installable WIP snapshot: `vapb-c5585a6.zip`, code commit `c5585a669320faece2133cab80470ca65104fa09`, SHA-256 `9c71fb2dd8cff24615e15245efc7da7b6dd5deed4c411d353f786b53de30f04c`. Rebuild that historical snapshot with:
 
@@ -384,6 +388,16 @@ identity or ambiguous target paths refuse. Skin still travels separately in rest
 pose. The owned two-Bone source-model case passes native Unity Clip creation,
 repeat/collision controls and three sampled final-Variant Skin deformations.
 Human GUI assignment, general Avatar/retargeting and VRC runtime remain unverified.
+Connected Bones retain their connections for supported rotation/scale Actions;
+authored location channels on a connected Bone refuse. Two selected real Direct
+Skin cases also passed normal package return with separate Clips and linked
+Variants. The Action+donor-Material case retains 25 FPS and approximately 0.48 seconds
+through save/reopen/export and Unity Apply/reApply; three sampled Skin poses match
+the carrier under the existing checks. These results do not prove continuous-time
+equivalence, rendered appearance or independent exact weight/face transport.
+Importing an animated donor still uses the native importer timebase behavior;
+mixed-FPS animation retiming is outside this correction's supported scope.
+See [the current bounded evidence](tests/evidence/holmes-material-correspondence-20261011/connected-bone-action/REPORT.md).
 The installable ZIP builder includes the independent Clip consumer. Generate a source-revision ZIP with `python tools/build_distribution_zip.py --repo . --revision HEAD --output-dir dist`. Local ZIP delivery and standard installation checks are recorded separately from source/GitHub saves.
 
 ## 通常 UnityPackage 往復 — 元モデル由来の Skin
