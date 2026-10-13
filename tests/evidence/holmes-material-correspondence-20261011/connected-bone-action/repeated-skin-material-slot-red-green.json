@@ -28,8 +28,12 @@
     "next_unity_launch": "HELD_NO_GUARD_BYPASS_OR_MANUAL_LOCK_REMOVAL"
   },
   "independent_code_review": {"source_revision": "67cc2ae38fa5df7cbc2bc6cc280df00cf0cc92c3", "verdict": "KEEP", "must_fix_findings": 0, "requested_model": "gpt-6.1-sol", "requested_reasoning": "medium", "effective_runtime": "UNAVAILABLE", "completion_claims": "DEFER_PENDING_CORRECTED_NATIVE_COMPILE_TESTS_AND_REAL_RETURN"},
+  "standard_owned_recovery": {"owner_authorization_utc": "2026-10-13T00:21:08Z", "unity_version": "2022.3.22f1", "runs": 1, "arguments": "BATCHMODE_NOGRAPHICS_QUIT", "exit_code": 0, "marker": "CLEARED_BY_NORMAL_UNITY_EXIT", "manual_marker_operations": 0, "protected_files": 3041, "changed": 0, "unexpected": 0, "immediate_children": 2, "postflight_children": 0, "lease_mutex": "RETURNED_AFTER_CHILD_ABSENCE", "environment": "SAME_PROJECT_NO_NEW_PROJECT"},
+  "corrected_native_compile": "SUCCEEDED",
+  "native_consumer_corrected_class_run": {"tests": 21, "passed": 19, "failed": 2, "exit_code": 2, "failures": ["NEW_TEST_MANAGED_REFERENCE_IDENTITY_INSTEAD_OF_CANONICAL_ASSET_IDENTITY", "EXISTING_ROUTE_TEST_MISSING_WEIGHT_PRESENCE_FOR_PARENT_RECEIPT"], "protected_files": 3041, "changed": 0, "unexpected": 0, "lease_mutex": "RETURNED"},
+  "native_consumer_failed_cases_retry": {"tests": 2, "passed": 2, "failed": 0, "production_changes_after_review": 0, "test_correction": "COMPARE_EXACT_GUID_SIGNED_FILE_ID_AND_EXPLICITLY_TEST_MISSING_WEIGHT_PRESENCE_BEFORE_ROUTE_ONLY_PRESENCE", "protected_files": 3041, "changed": 0, "unexpected": 0, "lease_mutex": "RETURNED", "scope": "FOCUSED_NATIVE_GREEN_19_PRIOR_PLUS_2_CORRECTED_NOT_A_NEW_FULL_SUITE_RUN"},
   "corrected_real_return": "NOT_RUN",
   "gui_render": "NOT_RUN",
   "old_atlas": "READ_ONLY_NO_FURTHER_PERSISTENCE",
-  "status": "SOURCE_WIP_NOT_NATIVE_GREEN_OR_PRODUCT_COMPLETE"
+  "status": "FOCUSED_NATIVE_GREEN_REAL_RETURN_PENDING_NOT_PRODUCT_COMPLETE"
 }

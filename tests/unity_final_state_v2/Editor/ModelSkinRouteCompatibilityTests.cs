@@ -105,7 +105,13 @@ public sealed class ModelSkinRouteCompatibilityTests
             {
                 var actual = (Material[])Invoke(finalizer, "ResolveMaterialTransport", task, skin);
                 Assert.AreEqual(labels.Length, actual.Length);
-                for (int i = 0; i < actual.Length; i++) Assert.AreSame(source[labels[i].Substring(0, 1)], actual[i]);
+                for (int i = 0; i < actual.Length; i++)
+                {
+                    Assert.IsTrue(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(source[labels[i].Substring(0, 1)], out string expectedGuid, out long expectedId));
+                    Assert.IsTrue(AssetDatabase.TryGetGUIDAndLocalFileIdentifier(actual[i], out string actualGuid, out long actualId));
+                    Assert.AreEqual(expectedGuid, actualGuid);
+                    Assert.AreEqual(expectedId, actualId);
+                }
             }
         }
         finally
@@ -372,6 +378,10 @@ public sealed class ModelSkinRouteCompatibilityTests
         set("source_model_uids", new[] { "101", "303", "404" });
         setParent("source_model_uid", "404"); setParent("edited_transform_realization_id", "parent-object");
         set("parent_transform_mapping", parent);
+        var missingWeight = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", task));
+        Assert.AreEqual("EXPORTED_WEIGHT_DATA_MISSING", missingWeight.InnerException.Message);
+        // This route-only test supplies presence; exported weight content has separate validation.
+        set("weight_transport", Activator.CreateInstance(finalizer.GetNestedType("WeightTransport", BindingFlags.NonPublic), true));
         Invoke(finalizer, "ValidateTask", task);
         foreach (string uid in new[] { "101", "303", "405", "0404", "0" })
         {
@@ -387,6 +397,7 @@ public sealed class ModelSkinRouteCompatibilityTests
             Assert.AreEqual("PARENT_TRANSFORM_MAPPING_INVALID", rejected.InnerException.Message);
         }
         setParent("edited_transform_realization_id", "parent-object");
+        set("weight_transport", null);
         set("kind", NormalKind);
         var wrongRoute = Assert.Throws<TargetInvocationException>(() => Invoke(finalizer, "ValidateTask", task));
         Assert.AreEqual("PARENT_TRANSFORM_MAPPING_INVALID", wrongRoute.InnerException.Message);
