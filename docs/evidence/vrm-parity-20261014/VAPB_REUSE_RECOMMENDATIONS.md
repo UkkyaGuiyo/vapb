@@ -1,0 +1,19 @@
+# VAPB reuse recommendations — provisional r2
+
+**No measured substitution verdict yet.** Preparation completed; controls/edits and detailed implementation research remain pending. See [comparison report](ABC_COMPARISON_REPORT.md), [loss matrix](VRM_DATA_LOSS_MATRIX.md), and [acquisition record](SOULFLAME_IMPLEMENTATION_RESEARCH.md).
+
+The original goal is to avoid Unity→VRM→Blender preparation. A route that begins with SoulFlame in Unity Play Mode still requires that entry step according to its README. VAPB's approved package-entry design is relevant to this goal. This establishes a documented workflow difference; it does not establish measured time savings or the owner's acceptable losses.
+
+Prioritize an unchanged V/R control before product decisions. Distinguish reusable geometry editing from original Unity Material/reference/VRChat-state recovery. A successful VRM appearance export cannot alone establish retention of FXController, ExpressionMenu, PrefabVariant or native Unity identity. Equally, older VAPB bounded evidence cannot establish current complete support. Report both limitations symmetrically.
+
+Reuse existing first-party shape, weight and independent UV-face/corner fixtures and capture probes; adapt only one minimal common Humanoid input after project allocation. Preserve existing source/evidence and avoid a new runner, bulk fixture suite or general validator. Optional shader dependencies belong to the disposable project; don't redistribute them with public evidence without checking licenses.
+
+After measured ABC and implementation investigation, assess each proposed reuse with explicit evidence: concrete VAPB gap, source algorithm/license, smallest adaptation, expected preserved semantics, negative case and test. Potential topics are material conversion eligibility, dependency reporting, non-destructive temporary capture, cleanup after failure, and content-based cache invalidation. These are questions, not implementation recommendations supported by analysis. Do not copy third-party code or alter product behavior during this comparison.
+
+Owner decision remains open: which observed losses are acceptable for the desired editing tasks, and whether the measured workflow reduces the original burden. No LOSSY_ACCEPTABLE judgment or owner timing is invented.
+
+The 11:51 owner clarification sets the acceptance target to intended edits only, unedited Unity state preserved, edit-aware proven reconnection, original asset reuse preferred and reasoned refusal when incompatible. It already permits approximate preview; no further owner preference is needed for that preview-only allowance. It does not approve semantic loss, data regeneration disguised as retention, arbitrary code copying or product replacement.
+
+Candidate after measurements: source parsing → VRM/glTF 3D transport plus existing Unity Manifest/Recipe → Blender edits → verified recombination. Compare fidelity against FBX and VAPB, material-face semantics, bones/weights/shapes, identity, non-Humanoid scope, user burden and dependency maintenance. This is a proposal to evaluate, not an implementation decision. A format omission compensated by separately proven original-state restoration is not automatically a whole-route failure. C1 original/C2 regenerated/C3 restored edited mesh will expose this distinction. Hair over-amplification is an owner-reported motivation; measure parameters, correspondence and Editor behavior separately rather than claiming it reproduced.
+
+Independent fixture/judge proposal review completed (GPT-6.1 SOL / medium; KEEP with bounded corrections applied). Next action: obtain parent hardware/project allocation, create the common first-party input, pin all actual runtime tools, then V0/R0. If resources remain unavailable, preserve this checkpoint and report BLOCKED, without treating document completion as completed comparison.
