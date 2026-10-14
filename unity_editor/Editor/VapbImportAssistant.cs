@@ -267,6 +267,14 @@ public sealed class VapbImportAssistant : EditorWindow
         if (entries.Count == 0) Close();
         else Repaint();
     }
+    private static string ApplyResultMessage(bool applied, bool inspectionPartial, bool providerPartial)
+    {
+        if (applied ? inspectionPartial : providerPartial)
+            return "部分対応：Prefabを生成しました。未解決項目が残っています。確認画面の警告を確認してください。";
+        return applied ? "適用が完了しました。出力Prefabを開いて確認してください。" :
+            "適用できませんでした。Consoleの理由を確認してください。";
+    }
+
     private void ApplyEntry(Entry entry)
     {
         if (EditorApplication.isCompiling || EditorApplication.isUpdating || EditorApplication.isPlayingOrWillChangePlaymode) return;
@@ -284,8 +292,7 @@ public sealed class VapbImportAssistant : EditorWindow
             if (output != null) { Selection.activeObject = output; EditorGUIUtility.PingObject(output); }
             try { Remember(fresh, "applied"); } catch (Exception error) { Debug.LogWarning(error.GetType().Name); }
         }
-        EditorUtility.DisplayDialog("VAPB：適用結果", complete ? "適用が完了しました。出力Prefabを開いて確認してください。" :
-            partial ? "部分対応：Prefabを生成しました。外部依存の解決が必要です。" :
-            "適用できませんでした。Consoleの理由を確認してください。", "閉じる");
+        EditorUtility.DisplayDialog("VAPB：適用結果",
+            ApplyResultMessage(complete, fresh.inspection.partial, partial), "閉じる");
     }
 }

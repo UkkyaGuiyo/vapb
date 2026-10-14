@@ -10,6 +10,25 @@ public sealed class ModelSkinRouteCompatibilityTests
 {
     private const string NormalKind = "RESTORE_MODEL_SKIN_VARIANT_V1";
 
+    [TestCase(true, true, false, "部分対応")]
+    [TestCase(true, false, false, "適用が完了")]
+    [TestCase(false, false, true, "部分対応")]
+    [TestCase(false, true, false, "適用できません")]
+    [TestCase(false, false, false, "適用できません")]
+    public void ApplyResultDistinguishesUnresolvedSuccessFromRejection(bool applied,
+        bool inspectionPartial, bool providerPartial, string expected)
+    {
+        Type assistant = null;
+        foreach (Assembly assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            assistant = assembly.GetType("VapbImportAssistant", false);
+            if (assistant != null) break;
+        }
+        Assert.IsNotNull(assistant);
+        StringAssert.StartsWith(expected, (string)Invoke(assistant, "ApplyResultMessage",
+            applied, inspectionPartial, providerPartial));
+    }
+
     [TestCase("4800000", "4800000", null)]
     [TestCase("-4800000", "-4800000", null)]
     [TestCase("4800001", "4800000", "SHADER_REFERENCE_MISMATCH")]
