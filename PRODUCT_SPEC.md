@@ -40,6 +40,51 @@ Core rules:
 7. **Finalizer role.** The Finalizer reattaches preserved Unity semantics to the newly imported Blender-authored structure. It is not primarily a mechanism for preserving source Mesh local fileIDs.
 8. **Source identity still matters on import.** GUID/fileID/package/occurrence evidence remains essential for dependency recovery, Prefab/Variant interpretation, state capture, ambiguity handling, diagnostics, and reusable Unity assets. The narrowed rule applies to mandatory geometry lineage across regenerated FBX.
 
+## Unedited Unity state and external Shader authority (2026-10-14)
+
+The owner's 11:51/12:29 UTC clarifications apply to the product as well as the
+separate VRM comparison. Acceptance means that Unity contains the intended edits
+without unintended changes. Blender final state remains authoritative for edited
+geometry, topology, UV, normals/tangents, Bones, Transform, weights, Shape Keys,
+Material slots/face assignment and explicitly supported edits. Unedited Unity
+semantics remain authoritative in the original available assets/serialized data:
+Material/Shader properties, Texture references/settings, PhysBone/Collider,
+Contacts, Avatar Descriptor, Animation/FX/Playable Layers, Controllers and their
+states/transitions/parameters, Expression Menu/Parameters, Constraints, MA/NDMF,
+and Prefab/Variant/Nested state.
+
+Prefer proven original asset reuse. Preserve available asset/meta bytes and
+scoped GUID/signed fileID, ownership, references and dependencies; reconnect edited
+entities only with proven correspondence. Unresolved correspondence remains
+UNRESOLVED, not a name-similarity repair or unconditional component copy. A
+preserved parameter is not proof of unchanged behavior after Bone/weight/rest
+editing. Blender Shader/motion previews are approximate and never restoration
+truth; no Shader or PhysBone settings may be inferred from those approximations.
+
+Judge SOURCE_PRESERVED, IDENTITY_RESOLVED and UNITY_RESTORED independently.
+Retained references do not prove preservation of an absent asset's content, and a
+snapshot does not prove native restoration. Existing bounded acceptance and
+refusals remain in force; this clarification adds no unmeasured restore support.
+
+Missing external Shader implementation alone must not prevent an otherwise
+editable Import. Preserve the original Material/meta bytes, `m_Shader`, serialized
+properties, Texture references/settings and dependency declarations. A matching
+provider already installed in the destination Unity Project may satisfy that
+dependency after native validation; it need not be bundled in the input/output.
+Missing or ambiguous restoration must identify its dependency/reason. Same name
+is not identity, and GUID equality alone does not prove version/property/rendering
+compatibility. No silent replacement by a generic Shader or auto-installation of
+SDK, Shader, MA/NDMF providers. Appearance is a separate observation from original
+Material/Texture identity, values and face/slot correspondence.
+
+These are acceptance requirements, not a new persistent schema, transport
+migration or permission to redistribute providers. VRM/glTF reuse remains a
+design candidate; its preliminary generic-glTF observation is not VAPB/VRM route
+parity, and the unchanged-state contract does not authorize a format migration.
+Frozen owner-clarification records:
+[Unity source preservation](https://github.com/UkkyaGuiyo/vapb/blob/4e4d86de46888304b126a0f0b456f71b2b2d7360/docs/evidence/vrm-parity-20261014/UNITY_SOURCE_PRESERVATION_MATRIX.md),
+[external Shader dependencies](https://github.com/UkkyaGuiyo/vapb/blob/4e4d86de46888304b126a0f0b456f71b2b2d7360/docs/evidence/vrm-parity-20261014/EXTERNAL_SHADER_DEPENDENCY_MATRIX.md).
+
 Minimum proof cases:
 
 - **Unchanged E2E:** UnityPackage → Blender → no edit → VAPB export → fresh Unity import → required Material/state reconstruction.
