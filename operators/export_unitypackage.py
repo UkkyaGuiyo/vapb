@@ -683,9 +683,14 @@ def export_static_package(context, mesh, output):
 
 
 def _write_package(tree, manifest, output):
-    from ..export.script_dependencies import script_dependencies_for_tasks
+    from ..export.script_dependencies import (script_dependencies_for_tasks,
+        missing_material_shader_dependencies_for_tasks)
     script_dependencies = script_dependencies_for_tasks(manifest.reference_rebind_tasks, tree.entries)
-    manifest = replace(manifest, external_dependencies=manifest.external_dependencies + script_dependencies)
+    shader_dependencies = missing_material_shader_dependencies_for_tasks(
+        manifest.reference_rebind_tasks, tree.entries)
+    manifest = replace(manifest,
+        external_dependencies=manifest.external_dependencies + script_dependencies + shader_dependencies,
+        warnings=manifest.warnings + (('EXTERNAL_SHADER_DEPENDENCY_UNRESOLVED',) if shader_dependencies else ()))
     from ..export.skin_import_policy import skin_weight_policy_assets
     policies = skin_weight_policy_assets(manifest.reference_rebind_tasks)
     for policy in policies:

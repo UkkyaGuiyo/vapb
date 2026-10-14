@@ -4,7 +4,8 @@ import hashlib
 from types import SimpleNamespace
 import unittest
 
-from unitypackage_blender_importer.export.script_dependencies import script_dependencies_for_tasks
+from unitypackage_blender_importer.export.script_dependencies import (
+    script_dependencies_for_tasks, missing_material_shader_dependencies_for_tasks)
 
 
 def asset(guid, path, text):
@@ -82,6 +83,58 @@ class ScriptDependencyTests(unittest.TestCase):
         t[0]['prefab_source_sha256'] = hashlib.sha256(a.asset_bytes).hexdigest()
         self.assertEqual(script_dependencies_for_tasks(t, [a]), ())
         self.assertEqual(script_dependencies_for_tasks([{'kind': 'UNRELATED'}], self.assets), ())
+
+
+class MissingMaterialShaderTests(unittest.TestCase):
+    def dependencies(self, tasks, assets):
+        return missing_material_shader_dependencies_for_tasks(tasks, assets)
+
+    def setUp(self):
+        self.material, self.shader = '6' * 32, '7' * 32
+        self.text = ('--- !u!21 &2100000\nMaterial:\n'
+                     f'  m_Shader: {{fileID: 4800000, guid: {self.shader}, type: 3}}\n')
+        self.asset = asset(self.material, 'Assets/Bound.mat', self.text)
+        self.task = dict(kind='RESTORE_DIRECT_SKIN_VARIANT_V1', material_bindings=[
+            dict(guid=self.material, file_id='2100000')])
+
+    def test_missing_bound_provider_declared_without_changing_material(self):
+        rows = self.dependencies([self.task], [self.asset])
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]['kind'], 'SHADER')
+        self.assertEqual(rows[0]['guid'], self.shader)
+        self.assertEqual(rows[0]['file_id'], '4800000')
+        self.assertEqual(rows[0]['status'], 'UNRESOLVED_BUT_PRESERVED')
+        self.assertEqual(rows[0]['required_by'], [dict(asset_guid=self.material,
+            asset_sha256=hashlib.sha256(self.text.encode()).hexdigest(), component_file_id='2100000')])
+        self.assertEqual(self.asset.asset_bytes, self.text.encode())
+
+    def test_bundled_or_builtin_provider_is_not_missing(self):
+        self.assertEqual(self.dependencies([self.task], [self.asset,
+            asset(self.shader, 'Assets/Provider.shader', 'Shader "Authored" {}')]), ())
+        self.asset.asset_bytes = self.text.replace(self.shader,
+            '0000000000000000f000000000000000').replace('4800000', '46').encode()
+        self.assertEqual(self.dependencies([self.task], [self.asset]), ())
+
+    def test_only_bound_materials_and_supported_task_kinds(self):
+        self.assertEqual(self.dependencies([], [self.asset]), ())
+        task = copy.deepcopy(self.task)
+        task['kind'] = 'UNRELATED'
+        self.assertEqual(self.dependencies([task], [self.asset]), ())
+        self.assertEqual(len(self.dependencies([self.task] * 2, [self.asset])), 1)
+
+    def test_material_file_id_mismatch_is_not_a_name_match(self):
+        self.task['material_bindings'][0]['file_id'] = '2100001'
+        with self.assertRaises(ValueError):
+            self.dependencies([self.task], [self.asset])
+
+    def test_null_or_malformed_shader_is_not_a_deferred_provider(self):
+        for text in (self.text.replace(self.shader, '0' * 32),
+                     self.text.replace('4800000', '0'),
+                     self.text.replace('4800000', '9223372036854775808')):
+            with self.subTest(text=text):
+                self.asset.asset_bytes = text.encode()
+                with self.assertRaises(ValueError):
+                    self.dependencies([self.task], [self.asset])
 
 
 if __name__ == '__main__':

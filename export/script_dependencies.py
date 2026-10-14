@@ -95,3 +95,57 @@ def script_dependencies_for_tasks(tasks, assets):
     for record in records.values():
         record['required_by'].sort(key=lambda row: (row['asset_guid'], int(row['component_file_id'])))
     return tuple(records[key] for key in sorted(records))
+
+
+def missing_material_shader_dependencies_for_tasks(tasks, assets):
+    """Declare absent providers for exact bound serialized Materials; never repair them.
+
+    Provider presence is not proof of Shader compatibility or rendering. Embedded
+    model Materials are outside this serialized .mat diagnostic.
+    """
+    by_guid = {}
+    for asset in assets:
+        guid = _guid(asset.guid)
+        if guid in by_guid:
+            raise ValueError('Shader dependency closure has duplicated asset GUIDs')
+        by_guid[guid] = asset
+    records, visited = {}, set()
+    for task in tasks:
+        if task.get('kind') not in _KINDS:
+            continue
+        for binding in task.get('material_bindings') or ():
+            material_guid, material_id = _guid(binding.get('guid')), _signed(binding.get('file_id'))
+            key = (material_guid, material_id)
+            if key in visited:
+                continue
+            visited.add(key)
+            material = by_guid.get(material_guid)
+            if material is None:
+                raise ValueError('Shader dependency bound Material is unavailable')
+            if PurePosixPath(material.pathname).suffix.lower() != '.mat':
+                continue
+            docs = [doc for doc in parse_unity_yaml(material.asset_bytes.decode('utf-8-sig'))
+                    if doc.class_id == 21 and str(doc.file_id) == material_id]
+            if len(docs) != 1:
+                raise ValueError('Shader dependency Material identity is unresolved')
+            reference = docs[0].data.get('m_Shader')
+            if not isinstance(reference, dict):
+                raise ValueError('Shader dependency reference is malformed')
+            guid, file_id = _guid(reference.get('guid')), _signed(reference.get('fileID'))
+            if guid == '0' * 32:
+                raise ValueError('Shader dependency GUID is null')
+            if guid == '0000000000000000f000000000000000' and file_id == '46':
+                continue
+            if guid in by_guid:
+                continue
+            record = records.setdefault((guid, file_id), dict(
+                classification='UNRESOLVED_BUT_PRESERVED', kind='SHADER',
+                reference_id='VAPB-REF-' + hashlib.sha256(
+                    f'SHADER:{guid}:{file_id}'.encode('ascii')).hexdigest()[:32],
+                guid=guid, file_id=file_id, status='UNRESOLVED_BUT_PRESERVED', required_by=[]))
+            record['required_by'].append(dict(asset_guid=material_guid,
+                asset_sha256=hashlib.sha256(material.asset_bytes).hexdigest(),
+                component_file_id=material_id))
+    for record in records.values():
+        record['required_by'].sort(key=lambda row: (row['asset_guid'], int(row['component_file_id'])))
+    return tuple(records[key] for key in sorted(records))
