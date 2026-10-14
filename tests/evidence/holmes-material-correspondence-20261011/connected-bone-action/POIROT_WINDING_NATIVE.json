@@ -1,0 +1,521 @@
+{
+  "instruction_id": "POIROT-20261014-01",
+  "stage": "NEW_RECONSTRUCTION_NOT_OLD_CAPTURE",
+  "verdict": "SUPPORTED_IN_SCOPE",
+  "W1": "SUPPORTED_IN_SCOPE",
+  "W2": "NOT_OBSERVED_IN_SCOPE",
+  "join": "EXACT_FLOAT32_POSITION_UV_UNIQUE_FROZEN_CORNERS_NO_TOLERANCE_SIGNED_ZERO_GEOMETRICALLY_EQUAL",
+  "frame": "SOURCE_PREFAB_AND_FINAL_VARIANT_NATIVE_LOCAL_WITH_EXACT_IDENTICAL_INVERTIBLE_WORLD_MATRIX",
+  "exact_world_matrix": true,
+  "determinant_sign": 1,
+  "exact_rational_determinant": "1099511460003862025/1099511627776",
+  "unity_determinant": 999999.875,
+  "orientation_to_world": "SAME_POSITIVE_DETERMINANT_NO_MIRROR_DIFFERENCE",
+  "normal_scope": "LOCAL_GEOMETRIC_CROSS_DOT_EACH_NATIVE_CORNER_NORMAL_POSITIVE; SAME_TRANSFORM_INVERSE_TRANSPOSE_PRESERVES_SIGN",
+  "rows": [
+    {
+      "face_id": "7af28f094004b1cfbd4949dcd87e820ae3e852f217075418558ec1d669c2ce26",
+      "source_indices": [
+        0,
+        2,
+        1
+      ],
+      "final_indices": [
+        0,
+        2,
+        1
+      ],
+      "source_ordered_corners": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.009999999776482582,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          -0.009999999776482582,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "final_ordered_corners": [
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.009999999776482582,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          -0.009999999776482582,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "cyclic_order": "PRESERVED",
+      "reversed": false,
+      "source_submesh": 0,
+      "final_submesh": 0,
+      "source_material": "3f77663a081c14944b0f13bb3cc139a6/2100000",
+      "final_material": "3f77663a081c14944b0f13bb3cc139a6/2100000",
+      "final_material_matches_prior": true,
+      "source_local_geometric_cross": [
+        0.0,
+        0.0,
+        9.999999552965169e-05
+      ],
+      "final_local_geometric_cross": [
+        0.0,
+        0.0,
+        9.999999552965169e-05
+      ],
+      "source_normal_dot_signs": [
+        1,
+        1,
+        1
+      ],
+      "final_normal_dot_signs": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "face_id": "9f67a0215846516ae25887bfc4286151d3120c8fa91900572a37c13aabc8ac0f",
+      "source_indices": [
+        3,
+        5,
+        4
+      ],
+      "final_indices": [
+        3,
+        5,
+        4
+      ],
+      "source_ordered_corners": [
+        [
+          -0.019999999552965164,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          -0.019999999552965164,
+          0.009999999776482582,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          -0.029999999329447746,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "final_ordered_corners": [
+        [
+          -0.019999999552965164,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          -0.019999999552965164,
+          0.009999999776482582,
+          0.0,
+          0.0,
+          1.0
+        ],
+        [
+          -0.029999999329447746,
+          0.0,
+          0.0,
+          1.0,
+          0.0
+        ]
+      ],
+      "cyclic_order": "PRESERVED",
+      "reversed": false,
+      "source_submesh": 1,
+      "final_submesh": 1,
+      "source_material": "3f77663a081c14944b0f13bb3cc139a6/2100000",
+      "final_material": "5221bf0c1c21d4446b22699654a18425/2100000",
+      "final_material_matches_prior": true,
+      "source_local_geometric_cross": [
+        0.0,
+        0.0,
+        9.999999552965169e-05
+      ],
+      "final_local_geometric_cross": [
+        0.0,
+        0.0,
+        9.999999552965169e-05
+      ],
+      "source_normal_dot_signs": [
+        1,
+        1,
+        1
+      ],
+      "final_normal_dot_signs": [
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "apply_calls": 1,
+  "source_original_bytes_exact": true,
+  "source_model_streams_equal_source_prefab": true,
+  "edited_model_streams_equal_final": true,
+  "edited_model_world_matrix_equals_source": false,
+  "edited_model_world_matrix": [
+    100.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -3.5762786865234375e-05,
+    100.0,
+    0.0,
+    0.0,
+    -100.0,
+    -3.5762786865234375e-05,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    1.0
+  ],
+  "edited_model_determinant_sign": 1,
+  "result_sha256": "ced777ef0c513432215fbc3822ed098a110e831ce60907fd5e96c0ba117690a1",
+  "observer_sha256": "304b01f7dae9ad77da28e9a2d895554441bd08562b88ff6bfa378788d26601d3",
+  "preservation": {
+    "changed": [],
+    "unexpected_files": [],
+    "protected_files": 3041,
+    "active_owned_children": [
+      null
+    ],
+    "project_lock_present": false
+  },
+  "exit": {
+    "pid": 6968,
+    "exited_utc": "2026-10-14T02:51:05.7684182Z",
+    "exit_code": 0
+  },
+  "release": {
+    "result": "RELEASED",
+    "slot": 1,
+    "project": "VRC-Avatar-Gimmick-01",
+    "releasedAtUtc": "2026-10-14T02:51:07.8763339Z"
+  },
+  "source_model_identity": "704df84fcfe318c48908f90130e496e6/-7985938101188212478",
+  "edited_model_identity": "dd427cbcafa0154657e14b3bbbf50a83/3356982228806475034",
+  "source": {
+    "renderer_identity": "b1ef5076bc94668488e5d59e6c373d8c/6330520556445165755",
+    "mesh_identity": "704df84fcfe318c48908f90130e496e6/-7643034884740281656",
+    "asset_identity": "b1ef5076bc94668488e5d59e6c373d8c/7796247973072833958",
+    "corresponding_renderer_identity": "704df84fcfe318c48908f90130e496e6/-7985938101188212478",
+    "vertices": [
+      0.0,
+      0.0,
+      0.0,
+      -0.009999999776482582,
+      0.0,
+      0.0,
+      0.0,
+      0.009999999776482582,
+      0.0,
+      -0.019999999552965164,
+      0.0,
+      0.0,
+      -0.029999999329447746,
+      0.0,
+      0.0,
+      -0.019999999552965164,
+      0.009999999776482582,
+      0.0
+    ],
+    "uv": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "normals": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "local_matrix": [
+      100.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.1920928955078125e-05,
+      99.99999237060547,
+      0.0,
+      0.0,
+      -99.99999237060547,
+      -1.1920928955078125e-05,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "parent_world_matrix": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "world_matrix": [
+      100.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.1920928955078125e-05,
+      99.99999237060547,
+      0.0,
+      0.0,
+      -99.99999237060547,
+      -1.1920928955078125e-05,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "world_determinant": 999999.875,
+    "groups": [
+      {
+        "slot": 0,
+        "topology": "Triangles",
+        "material_identity": "3f77663a081c14944b0f13bb3cc139a6/2100000",
+        "indices": [
+          0,
+          2,
+          1
+        ]
+      },
+      {
+        "slot": 1,
+        "topology": "Triangles",
+        "material_identity": "3f77663a081c14944b0f13bb3cc139a6/2100000",
+        "indices": [
+          3,
+          5,
+          4
+        ]
+      }
+    ],
+    "use_file_scale": true,
+    "file_scale": 0.009999999776482582,
+    "global_scale": 1.0
+  },
+  "final": {
+    "renderer_identity": "b946cd15b799f344cae14d2f1d85e633/355806476397743439",
+    "mesh_identity": "dd427cbcafa0154657e14b3bbbf50a83/-249969726160171967",
+    "asset_identity": "b946cd15b799f344cae14d2f1d85e633/4547303860042852434",
+    "corresponding_renderer_identity": "b1ef5076bc94668488e5d59e6c373d8c/6330520556445165755",
+    "vertices": [
+      0.0,
+      0.0,
+      0.0,
+      -0.009999999776482582,
+      0.0,
+      0.0,
+      0.0,
+      0.009999999776482582,
+      0.0,
+      -0.019999999552965164,
+      0.0,
+      0.0,
+      -0.029999999329447746,
+      0.0,
+      0.0,
+      -0.019999999552965164,
+      0.009999999776482582,
+      0.0
+    ],
+    "uv": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "normals": [
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "local_matrix": [
+      100.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.1920928955078125e-05,
+      99.99999237060547,
+      0.0,
+      0.0,
+      -99.99999237060547,
+      -1.1920928955078125e-05,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "parent_world_matrix": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "world_matrix": [
+      100.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.1920928955078125e-05,
+      99.99999237060547,
+      0.0,
+      0.0,
+      -99.99999237060547,
+      -1.1920928955078125e-05,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "world_determinant": 999999.875,
+    "groups": [
+      {
+        "slot": 0,
+        "topology": "Triangles",
+        "material_identity": "3f77663a081c14944b0f13bb3cc139a6/2100000",
+        "indices": [
+          0,
+          2,
+          1
+        ]
+      },
+      {
+        "slot": 1,
+        "topology": "Triangles",
+        "material_identity": "5221bf0c1c21d4446b22699654a18425/2100000",
+        "indices": [
+          3,
+          5,
+          4
+        ]
+      }
+    ],
+    "use_file_scale": true,
+    "file_scale": 0.009999999776482582,
+    "global_scale": 1.0
+  },
+  "render_gui_vrc": "NOT_RUN",
+  "product_change": "NONE",
+  "reapply": "NOT_RUN",
+  "existing13input_hashes_exact": true
+}

@@ -1,6 +1,8 @@
 # POIROT-20261014-01 — directed face correspondence
 
-Outcome: **UNDETERMINED**. Phase1 saved-observation inspection completed offline. Neither W1_ORIENTATION_PRESERVED nor W2_ORIENTATION_REVERSED is established for original Unity native source -> completed Unity Variant. No product change or application launch.
+Current outcome, phase2 new reconstruction: **W1_ORIENTATION_PRESERVED — SUPPORTED_IN_SCOPE**; W2 **NOT_OBSERVED_IN_SCOPE**. Independent result review KEEP/must-fix0. This concerns the two self-authored native faces and captured Mesh/Transform state only; no rendered, animated/skinned, GUI or VRC acceptance. Product code unchanged.
+
+Historical phase1 outcome: **UNDETERMINED**. Saved-observation inspection completed offline. Neither W1 nor W2 was established from the old original Unity native source -> completed Unity Variant records. Phase1 performed no application launch. Those missing-array/sorted-order records remain unmodified and are not retrospectively promoted to PASS.
 
 ## Authority and baseline
 
@@ -79,3 +81,51 @@ Fixed phase1 result commit: [0a15e9f1358806becfdb5bd2990e0793ceb7cabd](https://g
 Fresh independent Holmes completed: **UNDETERMINED for W1 and W2**, supporting the bounded phase1 conclusion. It independently inspected the observers/results and five assigned retained artifact folders, verified all13input hashes, and confirmed that sorting destroys final order while the source observation omits native arrays. It found no retained native Variant/ordered-array snapshot in those folders; this is not a global absence claim. Saved Blender order, logical permutation control, separate detail identities and Material results remain separate from native orientation. Requested/configured SOL/xhigh, effective runtime unavailable; inherited workspace-write/auto_review with a behavioral read-only role. No inference edits, Git writes or application launches.
 
 Watson checks those grounds against the existing capture code and results. Next remains the single parent-allocated same-Project ordered observation specified above, including any necessary import/one unchanged Apply reconstruction explicitly; no reApply acceptance repeat, product fix or CASE24 cancellation. Phase2 remains NOT_RUN pending allocation/procedure. A missing observation prevents W1/W2 acceptance, not all project work.
+
+## Phase2 — newly approved reconstruction and ordered capture
+
+Owner approved the parent's concrete Import/one existing Apply/read/restore proposal at2026-10-14 02:44:41UTC. Parent assigned this next shared frame after the other project reported Unity unused/no planned use. This clears the phase1 resource/procedure gate only; product correction, new fixture and repeated acceptance remain out of scope.
+
+Actual start baseline remained branch `feature/connected-bone-action-20261012` / `c94c78911bcbca7db94b44bbf619f16d842696b8`, canonical remote and clean. Same fixed Output package3daadb5 and its bundled original assets/helpers are normally imported into the existing owned Gimmick01 Project. The established lease/mutex/backup/restore guard is reused. Fresh preflight found only recognized Hub serve, no Editor/Blender, all slots FREE/unowned, no Project lock or shared batch opt-in, actual freeRAM5.2244682GiB. Owner VAPB-POIROT-winding-20261014; Unity2022.3.22f1 PID6968/start02:50:10.8715203UTC.
+
+Observer preserves native index order and captures source model, source Prefab, edited model and newly reconstructed Variant in one run. Existing Finalizer Apply calls=**1**; no reApply, new export, Blender launch, or additional Action/Weight/Shape acceptance. Original asset/meta plus manifest hashes before/after Apply match. No GUI operation or scene-authoring step.
+
+Sanitized first-party capture/judgment: [POIROT_WINDING_NATIVE.json](POIROT_WINDING_NATIVE.json). Private raw result SHA256 `ced777ef0c513432215fbc3822ed098a110e831ce60907fd5e96c0ba117690a1`; private observer SHA256 `304b01f7dae9ad77da28e9a2d895554441bd08562b88ff6bfa378788d26601d3`. Raw observers/logs/absolute paths stay local.
+
+### Actual identities and independent joins
+
+| New capture role | Renderer GUID / signed fileID | Mesh GUID / signed fileID |
+| --- | --- | --- |
+| Source model | `704df84fcfe318c48908f90130e496e6/-7985938101188212478` | `704df84fcfe318c48908f90130e496e6/-7643034884740281656` |
+| Source Prefab | `b1ef5076bc94668488e5d59e6c373d8c/6330520556445165755` | Same original Mesh above |
+| Edited model | `dd427cbcafa0154657e14b3bbbf50a83/3356982228806475034` | `dd427cbcafa0154657e14b3bbbf50a83/-249969726160171967` |
+| New final Variant | `b946cd15b799f344cae14d2f1d85e633/355806476397743439` | Same edited Mesh above |
+
+Actual final corresponding Renderer is the captured source Prefab Renderer; source Prefab corresponding Renderer is the captured source model Renderer. These are **this reconstruction's identities**, not the old face-run or old detail-run Variant identity.
+
+The previously frozen unique position/UV corner sets identify F0/F1 independently of slot, Material or face-number prediction. Actual source and final index arrays supply order only after that join. Float32 position/UV identities match exactly; numerical signed zero is treated as geometric zero as in the existing equality convention, no epsilon or fitted conversion.
+
+| Face | Source actual indices | Final actual indices | Ordered corner permutation relative to the existing Blender triplet | Source -> final cycle | Final Material |
+| --- | --- | --- | --- | --- | --- |
+| F0 | `[0,2,1]` | `[0,2,1]` | Native first/third/second in both captures | SAME_CYCLE; reverse=false | A `3f77663a081c14944b0f13bb3cc139a6/2100000` |
+| F1 | `[3,5,4]` | `[3,5,4]` | Native first/third/second in both captures | SAME_CYCLE; reverse=false | B `5221bf0c1c21d4446b22699654a18425/2100000` |
+
+Three distinct corners and nonzero geometric cross per triangle; duplicate/ambiguous/degenerate joins are absent. Source F1 retains A while final F1 has intentionally authored B. Material preservation is a separate exact GUID/fileID observation; it does not decide orientation. FBX/Blender index order is not assumed to be Unity order.
+
+### Transform and normal findings
+
+Source Prefab and final Variant local matrices, parent-world matrices and complete local-to-world matrices match exactly. Therefore their native-local corner comparison is also valid under the same invertible world map. Recorded importer useFileScale=true/fileScale0.01/globalScale1 agree. Independent exact rational determinant of the captured world matrix is `1099511460003862025/1099511627776`, positive; Unity's float determinant999999.875 is independently positive. No mirror-sign difference or unknown frame is required to obtain this result.
+
+Available local native corner normals give positive dot with the ordered geometric cross at all three corners of each face, on both source and final. With the same positive-determinant matrix, inverse-transpose normal transformation preserves that sign relationship in world space. This is stored native rest-Mesh normal/cross consistency, not rendered shading or evaluated Skin deformation.
+
+Diagnostic distinction: the edited model asset's own import-root matrix is not bitwise identical to the source/final root matrix (for example its y/z rotation terms differ); its determinant sign is also positive. Its native vertices/UV/normals/index orders agree with the final Mesh, while the final Variant retains the original Prefab's exact Transform. The raw model-root difference is retained in the JSON, not hidden behind a tolerance or called a winding defect. No full Blender->FBX->raw-model world-transform equivalence claim.
+
+### Restoration, independent review and current result
+
+Unity normal exit0 at02:51:05.7684182UTC; all3041preexisting Project files exact, unexpected0, owned children and Project lock absent. Lease release02:51:07.8763339UTC and mutex returned. Fresh02:59:04UTC host recheck found only recognized Hub serve, no Editor/Blender, all slots FREE/unowned and mutex immediately acquired/released. All13historical input/evidence hashes independently rechecked unchanged. This does not replace the phase1/previous-run preservation records.
+
+Independent SOL/medium result/observer review completed **before publication**, as the latest owner instruction requires; KEEP/must-fix0. It recomputed both ordered joins, determinant, corner-normal signs, actual ancestry, oneApply and preservation, and reviewed public safety. Effective model/reasoning unavailable; behavioral read-only review, no writes/runtime launches. This is an independent result review, not a repeated production code review or a claim that role rules technically prevent writes. Primary actual settings unavailable.
+
+Current stage verdicts: reconstructed native ordered comparison **PASS_IN_SCOPE/W1 SUPPORTED_IN_SCOPE**, W2 **NOT_OBSERVED_IN_SCOPE**, Material **EXACT_SEPARATE**, captured Transform/determinant/normal findings **PASS_IN_SCOPE**, restoration/resource return **PASS**. Product implementation, reApply, animated/skinned deformation, GUI, rendering and VRC **NOT_RUN**. Old phase1 winding remains **UNDETERMINED**. No counterexample or product correction follows from this evidence.
+
+POIROT-20261014-01 directed-face question is complete for this bounded reconstruction. Remaining main next minimum is CASE24 actual GUI acceptance when the supported operation surface/parent ordering is available; this supplement neither cancels it nor creates a global stop. Normal purpose-specific save and exact remote readback follow the independent review; final save SHA is reported to parent.
