@@ -268,10 +268,113 @@ public static partial class VapbModelSkinFinalizer
                 AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(existing)) != rootPath)
                 Reject("VARIANT_PATH_OCCUPIED");
         }
-        return new VapbImportAssistant.Inspection {
+        string shaderWarning = InspectShaderDependencies(manifest, out bool shaderUnresolved);
+        var inspection = new VapbImportAssistant.Inspection {
             target = rootPath, output = first.variant_path, count = manifest.reference_rebind_tasks.Length,
             changes = "編集Meshとウェイトを別Prefab Variantへ復元します。原本・骨階層・Material参照を保持し、Bone/rootBoneを再接続します。既存Unity設定の未対応変更は推測しません。" + ActionInstructions(manifest.reference_rebind_tasks),
             warning = "source・編集データ・素材・必要Script・保存先の事前確認を通過しました。FBXの出所識別・骨のrest・編集範囲は、適用時に再検証します。未対応なら適用を拒否します。" };
+        inspection.warning += shaderWarning;
+        inspection.partial = shaderUnresolved;
+        return inspection;
+    }
+
+    private static string InspectShaderDependencies(Manifest manifest, out bool unresolved)
+    {
+        unresolved = false;
+        var warnings = new List<string>();
+        var references = new HashSet<string>(StringComparer.Ordinal);
+        foreach (ExternalDependency dependency in manifest.external_dependencies ?? new ExternalDependency[0])
+        {
+            if (dependency == null || dependency.kind != "SHADER") continue;
+            string reason = null;
+            if (dependency.classification != "UNRESOLVED_BUT_PRESERVED" ||
+                dependency.status != "UNRESOLVED_BUT_PRESERVED" ||
+                !CanonicalGuid(dependency.guid) || dependency.guid == new string('0', 32) ||
+                !ValidUid(dependency.file_id) ||
+                dependency.reference_id != "VAPB-REF-" + HashBytes(Encoding.ASCII.GetBytes(
+                    "SHADER:" + dependency.guid + ":" + dependency.file_id)).Substring(0, 32) ||
+                !references.Add(dependency.reference_id) || dependency.required_by == null ||
+                dependency.required_by.Length == 0)
+            {
+                unresolved = true;
+                warnings.Add("SHADER_DECLARATION_INVALID: Shader依存の宣言を確認できません。");
+                continue;
+            }
+            var contexts = new HashSet<string>(StringComparer.Ordinal);
+            foreach (RequiredBy required in dependency.required_by)
+            {
+                string context = required == null ? null : required.asset_guid + "/" + required.component_file_id;
+                if (required == null || !CanonicalGuid(required.asset_guid) ||
+                    !ValidUid(required.component_file_id) || !ValidSha(required.asset_sha256) ||
+                    !contexts.Add(context) || !Array.Exists(manifest.reference_rebind_tasks, task =>
+                        task.material_bindings != null && Array.Exists(task.material_bindings, binding =>
+                            binding != null && binding.guid == required.asset_guid &&
+                            binding.file_id == required.component_file_id)))
+                    reason = "SHADER_MATERIAL_CONTEXT_INVALID";
+                else
+                {
+                    string path = AssetDatabase.GUIDToAssetPath(required.asset_guid);
+                    if (String.IsNullOrEmpty(path) || !path.EndsWith(".mat", StringComparison.OrdinalIgnoreCase))
+                        reason = "SHADER_MATERIAL_IDENTITY_UNRESOLVED";
+                    else if (!path.StartsWith("Assets/", StringComparison.Ordinal) || path.Contains(".."))
+                        reason = "SHADER_MATERIAL_PATH_UNSUPPORTED";
+                    else
+                    {
+                        try
+                        {
+                            byte[] bytes = File.ReadAllBytes(Disk(path));
+                            reason = !HashBytes(bytes).Equals(required.asset_sha256, StringComparison.OrdinalIgnoreCase)
+                                ? "SHADER_MATERIAL_REVISION_MISMATCH"
+                                : SerializedShaderDependencyProblem(Encoding.UTF8.GetString(bytes),
+                                    required.component_file_id, dependency.guid, dependency.file_id);
+                        }
+                        catch (IOException) { reason = "SHADER_MATERIAL_UNREADABLE"; }
+                        catch (UnauthorizedAccessException) { reason = "SHADER_MATERIAL_UNREADABLE"; }
+                    }
+                }
+                if (reason != null)
+                {
+                    warnings.Add(reason + ": 要求元Material " + (context ?? "(不明)"));
+                    unresolved = true;
+                }
+                else warnings.Add("Shader要求元Material: " + context);
+            }
+            // Resolve the preserved identity, never Material.shader (which may be an ErrorShader fallback).
+            string provider = AssetDatabase.GUIDToAssetPath(dependency.guid);
+            int matches = 0;
+            if (!String.IsNullOrEmpty(provider))
+                foreach (UnityEngine.Object candidate in AssetDatabase.LoadAllAssetsAtPath(provider))
+                    if (candidate is Shader && AssetDatabase.TryGetGUIDAndLocalFileIdentifier(candidate,
+                        out string guid, out long id) && guid == dependency.guid &&
+                        id.ToString(CultureInfo.InvariantCulture) == dependency.file_id) matches++;
+            string providerReason = String.IsNullOrEmpty(provider) ? "SHADER_PROVIDER_MISSING" :
+                matches == 0 ? "SHADER_PROVIDER_IDENTITY_UNRESOLVED" :
+                matches > 1 ? "SHADER_PROVIDER_IDENTITY_AMBIGUOUS" : "SHADER_IDENTITY_RESOLVED";
+            if (matches != 1) unresolved = true;
+            warnings.Add(providerReason + ": " + dependency.guid + "/" + dependency.file_id +
+                "。元Materialは変更しません。Shaderの版・設定互換性・復元・描画は未確認です。");
+        }
+        return warnings.Count == 0 ? "" : "\n外部Shader依存の確認（Mesh適用可否とは別）:\n" + String.Join("\n", warnings);
+    }
+
+    private static string SerializedShaderDependencyProblem(string text, string materialId, string guid, string fileId)
+    {
+        string body = null;
+        foreach (Match document in PrefabDocuments(text))
+            if (document.Groups[1].Value == "21" && document.Groups[2].Value == materialId)
+            {
+                if (body != null) return "SHADER_MATERIAL_IDENTITY_AMBIGUOUS";
+                body = document.Groups[3].Value;
+            }
+        if (body == null) return "SHADER_MATERIAL_IDENTITY_UNRESOLVED";
+        if (Regex.Matches(body, @"^  m_Shader:", RegexOptions.Multiline).Count != 1)
+            return "SHADER_REFERENCE_INVALID";
+        MatchCollection shaders = Regex.Matches(body,
+            @"^  m_Shader:\s*\{fileID:\s*(-?\d+),\s*guid:\s*([0-9a-fA-F]{32}),\s*type:\s*3\}\s*$",
+            RegexOptions.Multiline);
+        if (shaders.Count != 1) return "SHADER_REFERENCE_INVALID";
+        return shaders[0].Groups[1].Value == fileId && shaders[0].Groups[2].Value.ToLowerInvariant() == guid
+            ? null : "SHADER_REFERENCE_MISMATCH";
     }
 
     public static bool Handles(string manifestAssetPath)

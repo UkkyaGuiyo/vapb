@@ -10,6 +10,35 @@ public sealed class ModelSkinRouteCompatibilityTests
 {
     private const string NormalKind = "RESTORE_MODEL_SKIN_VARIANT_V1";
 
+    [TestCase("4800000", "4800000", null)]
+    [TestCase("-4800000", "-4800000", null)]
+    [TestCase("4800001", "4800000", "SHADER_REFERENCE_MISMATCH")]
+    public void ShaderDiagnosticRequiresExactSerializedReference(string actualId, string expectedId, string reason)
+    {
+        string guid = new string('a', 32);
+        string text = "--- !u!21 &2100000\nMaterial:\n  m_Shader: {fileID: " + actualId +
+            ", guid: " + guid + ", type: 3}\n";
+        Assert.AreEqual(reason, Invoke(FindFinalizer(), "SerializedShaderDependencyProblem",
+            text, "2100000", guid, expectedId));
+        Assert.AreEqual("SHADER_REFERENCE_MISMATCH", Invoke(FindFinalizer(),
+            "SerializedShaderDependencyProblem", text, "2100000", new string('b', 32), expectedId));
+    }
+
+    [Test]
+    public void ShaderDiagnosticDistinguishesMissingAmbiguousAndMalformedMaterialReference()
+    {
+        string guid = new string('a', 32);
+        string text = "--- !u!21 &2100000\nMaterial:\n  m_Shader: {fileID: 4800000, guid: " + guid + ", type: 3}\n";
+        Assert.AreEqual("SHADER_MATERIAL_IDENTITY_UNRESOLVED", Invoke(FindFinalizer(),
+            "SerializedShaderDependencyProblem", text, "2100001", guid, "4800000"));
+        Assert.AreEqual("SHADER_MATERIAL_IDENTITY_AMBIGUOUS", Invoke(FindFinalizer(),
+            "SerializedShaderDependencyProblem", text + text, "2100000", guid, "4800000"));
+        Assert.AreEqual("SHADER_REFERENCE_INVALID", Invoke(FindFinalizer(),
+            "SerializedShaderDependencyProblem", text.Replace("type: 3", "type: 2"), "2100000", guid, "4800000"));
+        Assert.AreEqual("SHADER_REFERENCE_INVALID", Invoke(FindFinalizer(),
+            "SerializedShaderDependencyProblem", text + "  m_Shader: {fileID: 0}\n", "2100000", guid, "4800000"));
+    }
+
     [Test]
     public void RepeatedSkinMaterialTransportUsesExplicitOccurrencesAndCanonicalAssets()
     {
