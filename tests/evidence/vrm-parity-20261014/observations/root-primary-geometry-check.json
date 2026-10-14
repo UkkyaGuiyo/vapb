@@ -1,0 +1,15 @@
+{
+  "matched_faces": 12,
+  "matched_corners": 36,
+  "world_position_max_error": 0,
+  "additional_meshes": [
+    {
+      "diagnostic_name": "Icosphere",
+      "vertices": 42,
+      "faces": 80,
+      "source_uv_matches": 0,
+      "ownership_visibility": "NOT_CAPTURED"
+    }
+  ],
+  "scope": "primary mesh independent UV joins, not entire scene or Unity roundtrip"
+}

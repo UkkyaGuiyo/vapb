@@ -34,6 +34,8 @@ For B all native preservation fields apply to Poiyomi as well. MToon conversion 
 
 ## Verdict rules
 
+Latest r5 observations are preliminary G1 generic glTF only: primary native geometry/UV/shape correspondence observed, diagnostic color retention FAIL; bone numeric changes measured without accepted tolerance; tangent retention and skin ownership NOT_MEASURED; additional mesh correspondence/visibility UNRESOLVED. See [format assessment](VRM_GLTF_REUSE_ASSESSMENT.md) and saved native observations. V0/R0/edited-route judgments remain BLOCKED/NOT_MEASURED. These observations must not be promoted into any full-route PASS.
+
 - `PASS`: observed required semantics at all stated boundaries, save/reopen and Unity readback; unexplained or ambiguous correspondence prohibits PASS. Geometry may be regenerated, but identity continuity and semantic parity must be judged independently. Skin transport obeys the existing PRODUCT_SPEC exact expected-representation/positive-influence contract; no new epsilon overrides it.
 - `LOSSY_ACCEPTABLE`: measured loss, its amount/affected scope, and an explicit owner-approved acceptance condition. Owner preference has not been supplied; do not assign it now.
 - `FAIL`: execution succeeded enough to observe a violation of the stated feature contract; record first divergent stage and expected/actual.
