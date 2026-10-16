@@ -14,7 +14,7 @@ public sealed class VapbImportAssistant : EditorWindow
 {
     public sealed class Inspection
     {
-        public string target, output, changes, warning;
+        public string target, output, changes, warning, details;
         public int count;
         public bool partial;
     }
@@ -237,6 +237,8 @@ public sealed class VapbImportAssistant : EditorWindow
             {
                 EditorGUILayout.SelectableLabel(entry.path, GUILayout.Height(35));
                 if (entry.error != null) EditorGUILayout.SelectableLabel(entry.error, GUILayout.Height(35));
+                if (view != null && !String.IsNullOrEmpty(view.details))
+                    EditorGUILayout.HelpBox(view.details, MessageType.None);
             }
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("再確認"))

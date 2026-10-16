@@ -10,6 +10,25 @@ public sealed class ModelSkinRouteCompatibilityTests
 {
     private const string NormalKind = "RESTORE_MODEL_SKIN_VARIANT_V1";
 
+    [TestCase(true, "未解決")]
+    [TestCase(false, "未確認")]
+    public void ShaderNormalWarningKeepsTechnicalIdentityInDetails(bool unresolved, string expected)
+    {
+        string details = "SHADER_PROVIDER_MISSING: " + new string('a', 32) + "/4800000";
+        string warning = (string)Invoke(FindFinalizer(), "ShaderDiagnosticWarning", details, unresolved);
+        StringAssert.Contains(expected, warning);
+        StringAssert.Contains("詳細", warning);
+        StringAssert.DoesNotContain(new string('a', 32), warning);
+        StringAssert.DoesNotContain("4800000", warning);
+        StringAssert.DoesNotContain("SHADER_PROVIDER_MISSING", warning);
+    }
+
+    [Test]
+    public void NoShaderDiagnosticDoesNotIntroduceWarning()
+    {
+        Assert.AreEqual("", Invoke(FindFinalizer(), "ShaderDiagnosticWarning", "", false));
+    }
+
     [TestCase(true, true, false, "部分対応")]
     [TestCase(true, false, false, "適用が完了")]
     [TestCase(false, false, true, "部分対応")]

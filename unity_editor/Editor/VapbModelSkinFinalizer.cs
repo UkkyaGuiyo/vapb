@@ -268,17 +268,18 @@ public static partial class VapbModelSkinFinalizer
                 AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(existing)) != rootPath)
                 Reject("VARIANT_PATH_OCCUPIED");
         }
-        string shaderWarning = InspectShaderDependencies(manifest, out bool shaderUnresolved);
+        string shaderWarning = InspectShaderDependencies(manifest, out bool shaderUnresolved, out string shaderDetails);
         var inspection = new VapbImportAssistant.Inspection {
             target = rootPath, output = first.variant_path, count = manifest.reference_rebind_tasks.Length,
             changes = "編集Meshとウェイトを別Prefab Variantへ復元します。原本・骨階層・Material参照を保持し、Bone/rootBoneを再接続します。既存Unity設定の未対応変更は推測しません。" + ActionInstructions(manifest.reference_rebind_tasks),
             warning = "source・編集データ・素材・必要Script・保存先の事前確認を通過しました。FBXの出所識別・骨のrest・編集範囲は、適用時に再検証します。未対応なら適用を拒否します。" };
         inspection.warning += shaderWarning;
+        inspection.details = shaderDetails;
         inspection.partial = shaderUnresolved;
         return inspection;
     }
 
-    private static string InspectShaderDependencies(Manifest manifest, out bool unresolved)
+    private static string InspectShaderDependencies(Manifest manifest, out bool unresolved, out string details)
     {
         unresolved = false;
         var warnings = new List<string>();
@@ -354,7 +355,16 @@ public static partial class VapbModelSkinFinalizer
             warnings.Add(providerReason + ": " + dependency.guid + "/" + dependency.file_id +
                 "。元Materialは変更しません。Shaderの版・設定互換性・復元・描画は未確認です。");
         }
-        return warnings.Count == 0 ? "" : "\n外部Shader依存の確認（Mesh適用可否とは別）:\n" + String.Join("\n", warnings);
+        details = String.Join("\n", warnings);
+        return ShaderDiagnosticWarning(details, unresolved);
+    }
+
+    private static string ShaderDiagnosticWarning(string details, bool unresolved)
+    {
+        if (String.IsNullOrEmpty(details)) return "";
+        return unresolved
+            ? "\n外部Shader依存に未解決項目があります。元Materialは変更しません。対象と理由は「詳細」を確認してください。"
+            : "\n元のShader参照は見つかりました。版・設定互換性・復元・描画は未確認です。確認内容は「詳細」を確認してください。";
     }
 
     private static string SerializedShaderDependencyProblem(string text, string materialId, string guid, string fileId)
